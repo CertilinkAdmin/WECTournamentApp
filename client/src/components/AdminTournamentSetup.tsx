@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Trophy, MapPin, Calendar } from "lucide-react";
+import { Plus, Users, Trophy, MapPin, Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminTournamentSetup() {
@@ -31,6 +31,14 @@ export default function AdminTournamentSetup() {
     toast({
       title: "Tournament Created",
       description: `${tournamentName} has been initialized with ${totalCompetitors} competitors.`,
+    });
+  };
+
+  const handleRandomizeCompetitors = () => {
+    console.log("Randomizing competitors for bracket seeding");
+    toast({
+      title: "Competitors Randomized",
+      description: "Bracket has been populated with randomized seeding.",
     });
   };
 
@@ -114,10 +122,20 @@ export default function AdminTournamentSetup() {
                     </Button>
                   </div>
                 ))}
-                <Button variant="outline" className="w-full mt-4" data-testid="button-add-competitor">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Competitor
-                </Button>
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <Button variant="outline" data-testid="button-add-competitor">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Competitor
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    onClick={handleRandomizeCompetitors}
+                    data-testid="button-randomize-bracket"
+                  >
+                    <Shuffle className="h-4 w-4 mr-2" />
+                    Randomize Bracket
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

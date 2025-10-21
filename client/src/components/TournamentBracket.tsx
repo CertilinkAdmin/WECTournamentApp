@@ -1,6 +1,25 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useToast } from "@/hooks/use-toast";
 
 interface BracketHeat {
   heatNumber: number;
@@ -11,9 +30,63 @@ interface BracketHeat {
   nextHeat?: number;
 }
 
+interface SortableHeatProps {
+  heat: BracketHeat;
+  isSmall?: boolean;
+  stationColors: Record<string, string>;
+}
+
+function SortableHeat({ heat, isSmall = false, stationColors }: SortableHeatProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: heat.heatNumber });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <Card
+        className={`hover-elevate cursor-grab active:cursor-grabbing ${isSmall ? "p-2" : "p-3"}`}
+        data-testid={`bracket-heat-${heat.heatNumber}`}
+      >
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className={`${isSmall ? "text-lg" : "text-xl"} font-heading font-bold`}>
+              {heat.heatNumber}
+            </span>
+            <Badge className={`${stationColors[heat.station]} text-white text-xs`}>
+              {heat.station}
+            </Badge>
+          </div>
+          <div className="space-y-1">
+            <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor1 ? "font-bold" : ""}`}>
+              {heat.competitor1 || "—"}
+            </div>
+            <div className={`${isSmall ? "text-xs" : "text-sm"} text-muted-foreground`}>vs</div>
+            <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor2 ? "font-bold" : ""}`}>
+              {heat.competitor2 || "—"}
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export default function TournamentBracket() {
+  const { toast } = useToast();
+  
   // todo: remove mock functionality
-  const round1: BracketHeat[] = [
+  const [round1, setRound1] = useState<BracketHeat[]>([
     { heatNumber: 1, station: "A", competitor1: "1", competitor2: "2", winner: "1", nextHeat: 17 },
     { heatNumber: 2, station: "B", competitor1: "3", competitor2: "4", nextHeat: 17 },
     { heatNumber: 3, station: "C", competitor1: "5", competitor2: "6", winner: "5", nextHeat: 18 },
@@ -22,7 +95,7 @@ export default function TournamentBracket() {
     { heatNumber: 6, station: "C", competitor1: "11", competitor2: "12", nextHeat: 19 },
     { heatNumber: 7, station: "A", competitor1: "13", competitor2: "14", nextHeat: 20 },
     { heatNumber: 8, station: "B", competitor1: "15", competitor2: "16", nextHeat: 20 },
-  ];
+  ]);
 
   const round2: BracketHeat[] = [
     { heatNumber: 17, station: "B", competitor1: "H1", competitor2: "H2", nextHeat: 25 },
@@ -46,10 +119,38 @@ export default function TournamentBracket() {
     C: "bg-chart-1"
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setRound1((heats) => {
+        const oldIndex = heats.findIndex((h) => h.heatNumber === active.id);
+        const newIndex = heats.findIndex((h) => h.heatNumber === over.id);
+
+        const newOrder = arrayMove(heats, oldIndex, newIndex);
+        console.log("Bracket order updated:", newOrder);
+        
+        toast({
+          title: "Bracket Updated",
+          description: `Heat ${active.id} moved to new position`,
+        });
+        
+        return newOrder;
+      });
+    }
+  };
+
   const renderHeat = (heat: BracketHeat, isSmall = false) => (
     <Card 
       key={heat.heatNumber} 
-      className={`hover-elevate cursor-pointer ${isSmall ? "p-2" : "p-3"}`}
+      className={`hover-elevate ${isSmall ? "p-2" : "p-3"}`}
       data-testid={`bracket-heat-${heat.heatNumber}`}
     >
       <div className="space-y-1">
@@ -88,10 +189,27 @@ export default function TournamentBracket() {
 
         {/* Bracket Grid */}
         <div className="grid grid-cols-5 gap-8 items-center">
-          {/* Round 1 */}
-          <div className="space-y-3">
-            {round1.map(heat => renderHeat(heat))}
-          </div>
+          {/* Round 1 - Draggable */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={round1.map(h => h.heatNumber)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {round1.map(heat => (
+                  <SortableHeat 
+                    key={heat.heatNumber} 
+                    heat={heat} 
+                    stationColors={stationColors}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
 
           {/* Round 2 */}
           <div className="space-y-12 pt-8">

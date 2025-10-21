@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Play, Pause, RotateCcw } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
 export default function TimerPanel() {
@@ -34,7 +33,7 @@ export default function TimerPanel() {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleStartPause = () => {
@@ -56,6 +55,7 @@ export default function TimerPanel() {
   };
 
   const progress = ((segmentTimes[segment] - timeRemaining) / segmentTimes[segment]) * 100;
+  const remainingProgress = 100 - progress;
 
   return (
     <Card data-testid="card-timer">
@@ -81,20 +81,48 @@ export default function TimerPanel() {
           ))}
         </div>
 
-        {/* Timer Display */}
+        {/* Animated Timer Display */}
         <div className="text-center space-y-4">
-          <div>
-            <div className="text-sm text-muted-foreground mb-2">
-              {segmentLabels[segment]}
+          <div className="text-sm text-muted-foreground mb-2">
+            {segmentLabels[segment]}
+          </div>
+          
+          {/* Wave Timer Container */}
+          <div className="relative h-40 bg-black rounded-lg overflow-hidden">
+            {/* Time Display Overlay */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <div 
+                className={`text-7xl font-bold font-mono ${timeRemaining < 60 ? "text-red-500" : "text-white"}`}
+                data-testid="text-timer-display"
+              >
+                {formatTime(timeRemaining)}
+              </div>
             </div>
+
+            {/* Animated Wave Marker */}
             <div 
-              className={`text-6xl font-mono font-bold ${timeRemaining < 60 ? "text-destructive" : ""}`}
-              data-testid="text-timer-display"
+              className="absolute bottom-0 left-0 w-full transition-all duration-1000 ease-linear overflow-hidden"
+              style={{ 
+                height: `${remainingProgress}%`,
+                background: timeRemaining < 60 ? '#DC2626' : '#8B5A3C',
+                opacity: Math.max(0.6, remainingProgress / 100)
+              }}
             >
-              {formatTime(timeRemaining)}
+              {/* Wave Animation */}
+              <div 
+                className="absolute top-0 left-0 w-[200%] h-8 animate-wave"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(255, 255, 255, 0.1) 10px,
+                    rgba(255, 255, 255, 0.1) 20px
+                  )`
+                }}
+              />
             </div>
           </div>
-          <Progress value={progress} className="h-3" />
           
           {timeRemaining === 0 && (
             <Badge variant="destructive" className="text-sm">
