@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Users, Clock, Play, Square, CheckCircle2, Info, ChevronDown } from "lucide-react";
+import { MapPin, Users, Clock, Play, Square, CheckCircle2, Info, ChevronDown, ExternalLink } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import StationWarning from "./StationWarning";
@@ -324,7 +325,7 @@ export default function StationLeadView() {
             Station Lead Control
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <div className="flex gap-2">
             {stations.map((station) => (
               <Button
@@ -337,6 +338,14 @@ export default function StationLeadView() {
               </Button>
             ))}
           </div>
+          {selectedStation && (
+            <Link href={`/station/${selectedStation}`}>
+              <Button variant="outline" size="sm" className="w-full" data-testid="button-view-station-page">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Full Station Page
+              </Button>
+            </Link>
+          )}
         </CardContent>
       </Card>
 

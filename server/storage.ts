@@ -42,6 +42,7 @@ export interface IStorage {
   createMatch(match: InsertMatch): Promise<Match>;
   getMatch(id: number): Promise<Match | undefined>;
   getTournamentMatches(tournamentId: number): Promise<Match[]>;
+  getStationMatches(stationId: number, limit?: number, offset?: number): Promise<Match[]>;
   updateMatch(id: number, data: Partial<InsertMatch>): Promise<Match | undefined>;
 
   // Heat Segments
@@ -165,6 +166,14 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(matches)
       .where(eq(matches.tournamentId, tournamentId));
+  }
+
+  async getStationMatches(stationId: number, limit: number = 10, offset: number = 0): Promise<Match[]> {
+    return await db.select()
+      .from(matches)
+      .where(eq(matches.stationId, stationId))
+      .limit(limit)
+      .offset(offset);
   }
 
   async updateMatch(id: number, data: Partial<InsertMatch>): Promise<Match | undefined> {

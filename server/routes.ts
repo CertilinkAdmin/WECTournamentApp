@@ -233,6 +233,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(stations);
   });
 
+  app.get("/api/stations/:id/matches", async (req, res) => {
+    try {
+      const stationId = parseInt(req.params.id);
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const matches = await storage.getStationMatches(stationId, limit, offset);
+      res.json(matches);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   app.patch("/api/stations/:id", async (req, res) => {
     try {
       const station = await storage.updateStation(parseInt(req.params.id), req.body);

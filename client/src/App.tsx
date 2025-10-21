@@ -12,6 +12,8 @@ import TimerPanel from "@/components/TimerPanel";
 import AdminTournamentSetup from "@/components/AdminTournamentSetup";
 import StationLeadView from "@/components/StationLeadView";
 import HeatCard from "@/components/HeatCard";
+import StationPage from "@/pages/StationPage";
+import NotFound from "@/pages/not-found";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, FileText, Trophy, Settings } from "lucide-react";
 
@@ -175,20 +177,40 @@ function Router() {
   const [currentRole, setCurrentRole] = useState<"admin" | "judge" | "barista" | "station_lead">("admin");
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
-        currentRole={currentRole} 
-        onRoleChange={setCurrentRole}
-        tournamentName="World Espresso Championships"
-        currentRound={1}
-      />
-      <main className="container mx-auto py-6 px-4">
-        {currentRole === "admin" && <AdminView />}
-        {currentRole === "judge" && <JudgeView />}
-        {currentRole === "barista" && <BaristaView />}
-        {currentRole === "station_lead" && <StationLeadView />}
-      </main>
-    </div>
+    <Switch>
+      <Route path="/station/:stationId">
+        {(params) => (
+          <div className="min-h-screen bg-background">
+            <Header 
+              currentRole={currentRole} 
+              onRoleChange={setCurrentRole}
+              tournamentName="World Espresso Championships"
+              currentRound={1}
+            />
+            <main className="container mx-auto py-6 px-4">
+              <StationPage />
+            </main>
+          </div>
+        )}
+      </Route>
+      <Route path="/">
+        <div className="min-h-screen bg-background">
+          <Header 
+            currentRole={currentRole} 
+            onRoleChange={setCurrentRole}
+            tournamentName="World Espresso Championships"
+            currentRound={1}
+          />
+          <main className="container mx-auto py-6 px-4">
+            {currentRole === "admin" && <AdminView />}
+            {currentRole === "judge" && <JudgeView />}
+            {currentRole === "barista" && <BaristaView />}
+            {currentRole === "station_lead" && <StationLeadView />}
+          </main>
+        </div>
+      </Route>
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
