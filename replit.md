@@ -126,11 +126,28 @@ Matching World Espresso Championships branding:
 - Accent: Cream/beige tones
 - Background: Clean white with subtle warm tints
 
+### Station Lead View (October 21, 2025)
+- Created complete Station Lead interface with:
+  - Station selection (A, B, C) with visual indicators
+  - Current heat display showing both competitors
+  - Sequential segment controls (Dial-In → Cappuccino → Espresso)
+  - Animated wave timer with countdown display
+  - Start/Stop controls for each segment
+  - Automatic segment progression with time-up alerts
+- Implemented SegmentTimer component with:
+  - Real-time countdown based on actual start time
+  - Wave animation effect matching TimerPanel design
+  - Color changes for low time warnings (< 60 seconds)
+  - Automatic completion callback
+- Updated Header component to include Station Lead role selector
+- Added WebSocket hook for real-time tournament updates
+- Fixed React Query patterns to use correct API endpoint URLs
+
 ## Next Steps
 
-- Implement Station Lead view with timer controls
 - Build Judge scorecard interface
 - Create Barista schedule view
 - Add bracket visualization with drag-and-drop
-- Implement real-time score updates
+- Implement real-time score updates via WebSocket
 - Add tournament analytics dashboard
+- Enhance WebSocket events for segment status changes

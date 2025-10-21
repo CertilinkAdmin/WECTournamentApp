@@ -10,6 +10,7 @@ import JudgeScorecard from "@/components/JudgeScorecard";
 import CompetitionRules from "@/components/CompetitionRules";
 import TimerPanel from "@/components/TimerPanel";
 import AdminTournamentSetup from "@/components/AdminTournamentSetup";
+import StationLeadView from "@/components/StationLeadView";
 import HeatCard from "@/components/HeatCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, FileText, Trophy, Settings } from "lucide-react";
@@ -171,7 +172,7 @@ function BaristaView() {
 }
 
 function Router() {
-  const [currentRole, setCurrentRole] = useState<"admin" | "judge" | "barista">("admin");
+  const [currentRole, setCurrentRole] = useState<"admin" | "judge" | "barista" | "station_lead">("admin");
 
   return (
     <div className="min-h-screen bg-background">
@@ -185,6 +186,7 @@ function Router() {
         {currentRole === "admin" && <AdminView />}
         {currentRole === "judge" && <JudgeView />}
         {currentRole === "barista" && <BaristaView />}
+        {currentRole === "station_lead" && <StationLeadView />}
       </main>
     </div>
   );
