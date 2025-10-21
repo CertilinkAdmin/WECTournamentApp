@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Users, Clock, Play, Square, CheckCircle2, Info, ChevronDown, ExternalLink } from "lucide-react";
+import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import StationWarning from "./StationWarning";
@@ -16,16 +16,36 @@ import StationWarning from "./StationWarning";
 interface SegmentTimerProps {
   startTime: Date;
   durationMinutes: number;
+  isPaused?: boolean;
   onComplete?: () => void;
 }
 
-function SegmentTimer({ startTime, durationMinutes, onComplete }: SegmentTimerProps) {
+function SegmentTimer({ startTime, durationMinutes, isPaused = false, onComplete }: SegmentTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState(durationMinutes * 60);
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
 
   useEffect(() => {
+    if (isPaused) {
+      // When pausing, store the current time remaining
+      if (pausedAt === null) {
+        setPausedAt(timeRemaining);
+      }
+      return;
+    }
+
+    // When resuming from pause, use the pausedAt value as the new baseline
+    const effectiveStartTime = pausedAt !== null 
+      ? new Date(Date.now() - ((durationMinutes * 60 - pausedAt) * 1000))
+      : startTime;
+
+    // Clear pausedAt when resuming
+    if (pausedAt !== null) {
+      setPausedAt(null);
+    }
+
     const interval = setInterval(() => {
       const now = new Date();
-      const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+      const elapsed = Math.floor((now.getTime() - effectiveStartTime.getTime()) / 1000);
       const remaining = Math.max(0, (durationMinutes * 60) - elapsed);
       setTimeRemaining(remaining);
 
@@ -36,7 +56,7 @@ function SegmentTimer({ startTime, durationMinutes, onComplete }: SegmentTimerPr
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTime, durationMinutes, onComplete]);
+  }, [startTime, durationMinutes, isPaused, pausedAt, onComplete, timeRemaining]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -99,6 +119,7 @@ export default function StationLeadView() {
   const { toast } = useToast();
   const [selectedStation, setSelectedStation] = useState<number | null>(null);
   const [currentSegmentId, setCurrentSegmentId] = useState<number | null>(null);
+  const [pausedSegmentId, setPausedSegmentId] = useState<number | null>(null);
   const socket = useWebSocket();
 
   // Fetch stations
@@ -511,17 +532,38 @@ export default function StationLeadView() {
                         <SegmentTimer
                           durationMinutes={segment.plannedMinutes}
                           startTime={new Date(segment.startTime)}
+                          isPaused={pausedSegmentId === segment.id}
                           onComplete={() => handleEndSegment(segment.id)}
                         />
-                        <Button
-                          variant="destructive"
-                          className="w-full"
-                          onClick={() => handleEndSegment(segment.id)}
-                          data-testid={`button-end-${segment.segment}`}
-                        >
-                          <Square className="h-4 w-4 mr-2" />
-                          End {segment.segment} Segment
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant={pausedSegmentId === segment.id ? "default" : "secondary"}
+                            className="flex-1"
+                            onClick={() => setPausedSegmentId(pausedSegmentId === segment.id ? null : segment.id)}
+                            data-testid={`button-pause-${segment.segment}`}
+                          >
+                            {pausedSegmentId === segment.id ? (
+                              <>
+                                <Play className="h-4 w-4 mr-2" />
+                                Resume
+                              </>
+                            ) : (
+                              <>
+                                <Pause className="h-4 w-4 mr-2" />
+                                Pause
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={() => handleEndSegment(segment.id)}
+                            data-testid={`button-end-${segment.segment}`}
+                          >
+                            <Square className="h-4 w-4 mr-2" />
+                            End Segment
+                          </Button>
+                        </div>
                       </div>
                     ) : isEnded ? (
                       <div className="text-center p-4 text-muted-foreground">
