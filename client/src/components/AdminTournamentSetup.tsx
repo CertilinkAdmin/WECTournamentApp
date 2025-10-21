@@ -402,6 +402,20 @@ export default function AdminTournamentSetup() {
                 placeholder="Enter tournament name"
               />
             </div>
+            <div>
+              <Label htmlFor="total-competitors" className="text-sm font-medium">Number of Competitors</Label>
+              <Input
+                id="total-competitors"
+                type="number"
+                value={totalCompetitors}
+                onChange={(e) => setTotalCompetitors(Number(e.target.value))}
+                data-testid="input-total-competitors"
+                className="mt-1"
+                placeholder="Enter number of competitors"
+                min="2"
+                max="64"
+              />
+            </div>
 
             <Button 
               variant="default"
