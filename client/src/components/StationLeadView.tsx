@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Users, Clock, Play, Square } from "lucide-react";
+import { MapPin, Users, Clock, Play, Square, CheckCircle2 } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import StationWarning from "./StationWarning";
@@ -185,6 +185,50 @@ export default function StationLeadView() {
     }
   });
 
+  const startMatchMutation = useMutation({
+    mutationFn: async (matchId: number) => {
+      const response = await fetch(`/api/matches/${matchId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'RUNNING',
+          startTime: new Date().toISOString()
+        })
+      });
+      if (!response.ok) throw new Error('Failed to start match');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      toast({
+        title: "Heat Started",
+        description: `Round ${data.round}, Heat ${data.heatNumber} has begun.`,
+      });
+    }
+  });
+
+  const completeMatchMutation = useMutation({
+    mutationFn: async (matchId: number) => {
+      const response = await fetch(`/api/matches/${matchId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'DONE',
+          endTime: new Date().toISOString()
+        })
+      });
+      if (!response.ok) throw new Error('Failed to complete match');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      toast({
+        title: "Heat Completed",
+        description: `Round ${data.round}, Heat ${data.heatNumber} is complete.`,
+      });
+    }
+  });
+
   const handleStartSegment = (segmentId: number) => {
     startSegmentMutation.mutate(segmentId);
   };
@@ -193,11 +237,20 @@ export default function StationLeadView() {
     endSegmentMutation.mutate(segmentId);
   };
 
+  const handleStartMatch = (matchId: number) => {
+    startMatchMutation.mutate(matchId);
+  };
+
+  const handleCompleteMatch = (matchId: number) => {
+    completeMatchMutation.mutate(matchId);
+  };
+
   const selectedStationData = stations.find(s => s.id === selectedStation);
   const competitor1 = users.find(u => u.id === currentMatch?.competitor1Id);
   const competitor2 = users.find(u => u.id === currentMatch?.competitor2Id);
 
   const runningSegment = segments.find(s => s.status === 'RUNNING');
+  const allSegmentsEnded = segments.length > 0 && segments.every(s => s.status === 'ENDED');
 
   // Calculate station warnings based on other stations
   const getStationWarnings = () => {
@@ -308,7 +361,7 @@ export default function StationLeadView() {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground mb-1">Competitor 1</div>
@@ -323,6 +376,41 @@ export default function StationLeadView() {
                   </div>
                 </div>
               </div>
+
+              {currentMatch.status !== 'RUNNING' && currentMatch.status !== 'DONE' && (
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => handleStartMatch(currentMatch.id)}
+                  disabled={startMatchMutation.isPending}
+                  data-testid="button-start-heat"
+                >
+                  <Play className="h-5 w-5 mr-2" />
+                  Start Heat
+                </Button>
+              )}
+
+              {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => handleCompleteMatch(currentMatch.id)}
+                  disabled={completeMatchMutation.isPending}
+                  data-testid="button-complete-heat"
+                >
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                  Complete Heat
+                </Button>
+              )}
+
+              {currentMatch.status === 'DONE' && (
+                <div className="p-4 bg-primary/10 rounded-md text-center">
+                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-primary" />
+                  <div className="font-semibold text-primary">Heat Completed</div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -378,7 +466,7 @@ export default function StationLeadView() {
                         variant="default"
                         className="w-full"
                         onClick={() => handleStartSegment(segment.id)}
-                        disabled={!canStart}
+                        disabled={!canStart || currentMatch.status !== 'RUNNING'}
                         data-testid={`button-start-${segment.segment}`}
                       >
                         <Play className="h-4 w-4 mr-2" />
