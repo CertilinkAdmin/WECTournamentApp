@@ -15,7 +15,6 @@ import ParticipantSelection from "./ParticipantSelection";
 
 interface SelectedParticipants {
   competitors: Array<{ id: string; name: string; role: string; experience?: string; location?: string; specialty?: string; }>;
-  baristas: Array<{ id: string; name: string; role: string; experience?: string; location?: string; specialty?: string; }>;
   judges: Array<{ id: string; name: string; role: string; experience?: string; location?: string; specialty?: string; }>;
 }
 
@@ -26,7 +25,6 @@ export default function AdminTournamentSetup() {
   const [currentTournamentId, setCurrentTournamentId] = useState<number | null>(null);
   const [selectedParticipants, setSelectedParticipants] = useState<SelectedParticipants>({
     competitors: [],
-    baristas: [],
     judges: []
   });
   const [showParticipantSelection, setShowParticipantSelection] = useState(false);
@@ -88,20 +86,7 @@ export default function AdminTournamentSetup() {
         );
       }
 
-      // Add baristas and judges as participants too (they can also compete)
-      for (let i = 0; i < selectedParticipants.baristas.length; i++) {
-        const barista = selectedParticipants.baristas[i];
-        participantPromises.push(
-          fetch(`/api/tournaments/${tournament.id}/participants`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: barista.id,
-              seed: selectedParticipants.competitors.length + i + 1
-            })
-          })
-        );
-      }
+      // All participants are competitors - no separate barista handling needed
 
       // Wait for all participants to be created
       try {
@@ -121,7 +106,7 @@ export default function AdminTournamentSetup() {
       setShowParticipantSelection(false);
       toast({
         title: "Tournament Created",
-        description: `${tournamentName} has been initialized with ${selectedParticipants.competitors.length} competitors, ${selectedParticipants.baristas.length} baristas, and ${selectedParticipants.judges.length} judges.`,
+        description: `${tournamentName} has been initialized with ${selectedParticipants.competitors.length} competitors and ${selectedParticipants.judges.length} judges.`,
       });
     },
     onError: (error: any) => {
@@ -158,19 +143,19 @@ export default function AdminTournamentSetup() {
     }
   });
 
-  const addAllBaristasMutation = useMutation({
+  const addAllCompetitorsMutation = useMutation({
     mutationFn: async () => {
       if (!currentTournamentId) throw new Error("No tournament selected");
       
-      // Add all baristas as competitors (participants) with sequential seeds
-      const baristasToAdd = baristas.slice(0, 16); // Limit to first 16 for power-of-2
-      const promises = baristasToAdd.map((barista, index) => 
+      // Add all competitors with sequential seeds
+      const competitorsToAdd = users.filter(u => u.role === 'BARISTA').slice(0, 32);
+      const promises = competitorsToAdd.map((competitor, index) => 
         fetch(`/api/tournaments/${currentTournamentId}/participants`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            userId: barista.id,
+            userId: competitor.id,
             seed: index + 1
           })
         })
@@ -188,7 +173,7 @@ export default function AdminTournamentSetup() {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'participants'] });
       toast({
         title: "Competitors Added",
-        description: `Successfully added ${Math.min(baristas.length, 16)} baristas as competitors.`,
+        description: `Successfully added competitors to the tournament.`,
       });
     },
     onError: (error: any) => {
@@ -241,8 +226,8 @@ export default function AdminTournamentSetup() {
     generateBracketMutation.mutate();
   };
 
-  const handleAddAllBaristas = () => {
-    addAllBaristasMutation.mutate();
+  const handleAddAllCompetitors = () => {
+    addAllCompetitorsMutation.mutate();
   };
 
   // Helper to check if number is power of 2
@@ -305,22 +290,15 @@ export default function AdminTournamentSetup() {
     }
 
     // Validate participant counts
-    if (selectedParticipants.competitors.length < 16) {
+    if (selectedParticipants.competitors.length < 32) {
       toast({
         title: "Insufficient Competitors",
-        description: "Please select at least 16 competitors for the tournament.",
+        description: "Please select 32 competitors for the tournament.",
         variant: "destructive"
       });
       return;
     }
-    if (selectedParticipants.baristas.length < 4) {
-      toast({
-        title: "Insufficient Baristas",
-        description: "Please select at least 4 baristas for the tournament.",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Removed barista validation - all participants are competitors
     if (selectedParticipants.judges.length < 3) {
       toast({
         title: "Insufficient Judges",
@@ -400,10 +378,6 @@ export default function AdminTournamentSetup() {
                     {selectedParticipants.competitors.length} Competitors
                   </Badge>
                   <Badge variant="secondary" className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {selectedParticipants.baristas.length} Baristas
-                  </Badge>
-                  <Badge variant="secondary" className="flex items-center gap-1">
                     <Trophy className="h-3 w-3" />
                     {selectedParticipants.judges.length} Judges
                   </Badge>
@@ -416,7 +390,7 @@ export default function AdminTournamentSetup() {
             <Button 
               onClick={handleCreateTournamentWithParticipants} 
               className="flex-1" 
-              disabled={createTournamentMutation.isPending || selectedParticipants.competitors.length < 16}
+              disabled={createTournamentMutation.isPending || selectedParticipants.competitors.length < 32}
               data-testid="button-create-tournament"
             >
               {createTournamentMutation.isPending ? (
@@ -454,7 +428,7 @@ export default function AdminTournamentSetup() {
             )}
           </div>
 
-          {selectedParticipants.competitors.length < 16 && (
+          {selectedParticipants.competitors.length < 32 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-md">
                 <AlertTriangle className="h-4 w-4" />
@@ -537,14 +511,14 @@ export default function AdminTournamentSetup() {
                   ))
                 )}
                 <div className="flex flex-col gap-2 mt-4">
-                  {participants.length === 0 && (
-                    <Button 
-                      variant="outline"
-                      onClick={handleAddAllBaristas}
-                      disabled={!currentTournamentId || baristas.length === 0 || addAllBaristasMutation.isPending}
-                      data-testid="button-add-all-baristas"
-                    >
-                       {addAllBaristasMutation.isPending ? (
+                   {participants.length === 0 && (
+                     <Button 
+                       variant="outline"
+                       onClick={handleAddAllCompetitors}
+                       disabled={!currentTournamentId || users.filter(u => u.role === 'BARISTA').length === 0 || addAllCompetitorsMutation.isPending}
+                       data-testid="button-add-all-competitors"
+                     >
+                       {addAllCompetitorsMutation.isPending ? (
                          <>
                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                            Adding Competitors...
@@ -552,11 +526,11 @@ export default function AdminTournamentSetup() {
                        ) : (
                          <>
                            <Users className="h-4 w-4 mr-2" />
-                           Add All Baristas as Competitors ({Math.min(baristas.length, 16)})
+                           Add All Competitors ({Math.min(users.filter(u => u.role === 'BARISTA').length, 32)})
                          </>
                        )}
-                    </Button>
-                  )}
+                     </Button>
+                   )}
                   
                   {/* Power-of-2 validation message */}
                   {participants.length > 0 && !isPowerOfTwo(participants.length) && (

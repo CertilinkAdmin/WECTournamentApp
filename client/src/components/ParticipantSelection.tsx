@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Users, 
   Trophy, 
-  Coffee, 
   Search, 
   Plus, 
   X, 
@@ -21,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 interface MockParticipant {
   id: string;
   name: string;
-  role: 'COMPETITOR' | 'BARISTA' | 'JUDGE';
+  role: 'COMPETITOR' | 'JUDGE';
   experience?: string;
   location?: string;
   specialty?: string;
@@ -30,17 +29,15 @@ interface MockParticipant {
 interface ParticipantSelectionProps {
   onSelectionChange: (selected: {
     competitors: MockParticipant[];
-    baristas: MockParticipant[];
     judges: MockParticipant[];
   }) => void;
   initialSelection?: {
     competitors: MockParticipant[];
-    baristas: MockParticipant[];
     judges: MockParticipant[];
   };
 }
 
-// Mock data pools
+// Unified competitor pool (no distinction between baristas and competitors)
 const MOCK_COMPETITORS: MockParticipant[] = [
   { id: "comp-1", name: "Alex Chen", role: "COMPETITOR", experience: "5 years", location: "Seattle, WA", specialty: "Espresso" },
   { id: "comp-2", name: "Maria Rodriguez", role: "COMPETITOR", experience: "3 years", location: "Portland, OR", specialty: "Latte Art" },
@@ -58,17 +55,22 @@ const MOCK_COMPETITORS: MockParticipant[] = [
   { id: "comp-14", name: "Rachel Green", role: "COMPETITOR", experience: "5 years", location: "Detroit, MI", specialty: "Cold Brew" },
   { id: "comp-15", name: "Tom Anderson", role: "COMPETITOR", experience: "4 years", location: "Cleveland, OH", specialty: "Cappuccino" },
   { id: "comp-16", name: "Nina Patel", role: "COMPETITOR", experience: "6 years", location: "Tampa, FL", specialty: "Macchiato" },
-];
-
-const MOCK_BARISTAS: MockParticipant[] = [
-  { id: "bar-1", name: "Sophie Martinez", role: "BARISTA", experience: "10 years", location: "Seattle, WA", specialty: "Training" },
-  { id: "bar-2", name: "Marcus Johnson", role: "BARISTA", experience: "8 years", location: "Portland, OR", specialty: "Competition Prep" },
-  { id: "bar-3", name: "Elena Rodriguez", role: "BARISTA", experience: "12 years", location: "San Francisco, CA", specialty: "Latte Art" },
-  { id: "bar-4", name: "Daniel Kim", role: "BARISTA", experience: "9 years", location: "Los Angeles, CA", specialty: "Espresso" },
-  { id: "bar-5", name: "Isabella Chen", role: "BARISTA", experience: "7 years", location: "Austin, TX", specialty: "Pour Over" },
-  { id: "bar-6", name: "Lucas Williams", role: "BARISTA", experience: "11 years", location: "Denver, CO", specialty: "Cold Brew" },
-  { id: "bar-7", name: "Olivia Davis", role: "BARISTA", experience: "6 years", location: "Chicago, IL", specialty: "Cappuccino" },
-  { id: "bar-8", name: "Noah Thompson", role: "BARISTA", experience: "13 years", location: "Boston, MA", specialty: "Training" },
+  { id: "comp-17", name: "Sophie Martinez", role: "COMPETITOR", experience: "10 years", location: "Seattle, WA", specialty: "Espresso" },
+  { id: "comp-18", name: "Marcus Johnson", role: "COMPETITOR", experience: "8 years", location: "Portland, OR", specialty: "Latte Art" },
+  { id: "comp-19", name: "Elena Rodriguez", role: "COMPETITOR", experience: "12 years", location: "San Francisco, CA", specialty: "Pour Over" },
+  { id: "comp-20", name: "Daniel Kim", role: "COMPETITOR", experience: "9 years", location: "Los Angeles, CA", specialty: "Cold Brew" },
+  { id: "comp-21", name: "Isabella Chen", role: "COMPETITOR", experience: "7 years", location: "Austin, TX", specialty: "Cappuccino" },
+  { id: "comp-22", name: "Lucas Williams", role: "COMPETITOR", experience: "11 years", location: "Denver, CO", specialty: "Macchiato" },
+  { id: "comp-23", name: "Olivia Davis", role: "COMPETITOR", experience: "6 years", location: "Chicago, IL", specialty: "Flat White" },
+  { id: "comp-24", name: "Noah Thompson", role: "COMPETITOR", experience: "13 years", location: "Boston, MA", specialty: "Americano" },
+  { id: "comp-25", name: "Grace Wilson", role: "COMPETITOR", experience: "4 years", location: "New York, NY", specialty: "Cortado" },
+  { id: "comp-26", name: "Ethan Brown", role: "COMPETITOR", experience: "5 years", location: "Philadelphia, PA", specialty: "Espresso" },
+  { id: "comp-27", name: "Zoe Garcia", role: "COMPETITOR", experience: "3 years", location: "Houston, TX", specialty: "Latte Art" },
+  { id: "comp-28", name: "Liam Taylor", role: "COMPETITOR", experience: "8 years", location: "San Diego, CA", specialty: "Pour Over" },
+  { id: "comp-29", name: "Ava Miller", role: "COMPETITOR", experience: "6 years", location: "Orlando, FL", specialty: "Cold Brew" },
+  { id: "comp-30", name: "Mason White", role: "COMPETITOR", experience: "9 years", location: "Las Vegas, NV", specialty: "Cappuccino" },
+  { id: "comp-31", name: "Sophia Clark", role: "COMPETITOR", experience: "7 years", location: "Atlanta, GA", specialty: "Macchiato" },
+  { id: "comp-32", name: "Jackson Lewis", role: "COMPETITOR", experience: "5 years", location: "San Antonio, TX", specialty: "Flat White" },
 ];
 
 const MOCK_JUDGES: MockParticipant[] = [
@@ -84,7 +86,6 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCompetitors, setSelectedCompetitors] = useState<MockParticipant[]>(initialSelection?.competitors || []);
-  const [selectedBaristas, setSelectedBaristas] = useState<MockParticipant[]>(initialSelection?.baristas || []);
   const [selectedJudges, setSelectedJudges] = useState<MockParticipant[]>(initialSelection?.judges || []);
 
   // Filter participants based on search term
@@ -94,29 +95,19 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
     comp.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const filteredBaristas = MOCK_BARISTAS.filter(bar => 
-    bar.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bar.specialty?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bar.location?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
   const filteredJudges = MOCK_JUDGES.filter(judge => 
     judge.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     judge.specialty?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     judge.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleParticipantToggle = (participant: MockParticipant, type: 'competitor' | 'barista' | 'judge') => {
-    const isSelected = (type === 'competitor' ? selectedCompetitors : 
-                       type === 'barista' ? selectedBaristas : 
-                       selectedJudges).some(p => p.id === participant.id);
+  const handleParticipantToggle = (participant: MockParticipant, type: 'competitor' | 'judge') => {
+    const isSelected = (type === 'competitor' ? selectedCompetitors : selectedJudges).some(p => p.id === participant.id);
 
     if (isSelected) {
       // Remove participant
       if (type === 'competitor') {
         setSelectedCompetitors(prev => prev.filter(p => p.id !== participant.id));
-      } else if (type === 'barista') {
-        setSelectedBaristas(prev => prev.filter(p => p.id !== participant.id));
       } else {
         setSelectedJudges(prev => prev.filter(p => p.id !== participant.id));
       }
@@ -124,8 +115,6 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
       // Add participant
       if (type === 'competitor') {
         setSelectedCompetitors(prev => [...prev, participant]);
-      } else if (type === 'barista') {
-        setSelectedBaristas(prev => [...prev, participant]);
       } else {
         setSelectedJudges(prev => [...prev, participant]);
       }
@@ -133,14 +122,12 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
   };
 
   const handleRandomize = () => {
-    // Randomly select 16 competitors, 4 baristas, and 3 judges
+    // Randomly select 32 competitors and 6 judges
     const shuffledCompetitors = [...MOCK_COMPETITORS].sort(() => Math.random() - 0.5);
-    const shuffledBaristas = [...MOCK_BARISTAS].sort(() => Math.random() - 0.5);
     const shuffledJudges = [...MOCK_JUDGES].sort(() => Math.random() - 0.5);
 
-    setSelectedCompetitors(shuffledCompetitors.slice(0, 16));
-    setSelectedBaristas(shuffledBaristas.slice(0, 4));
-    setSelectedJudges(shuffledJudges.slice(0, 3));
+    setSelectedCompetitors(shuffledCompetitors.slice(0, 32));
+    setSelectedJudges(shuffledJudges.slice(0, 6));
 
     toast({
       title: "Participants Randomized",
@@ -150,7 +137,6 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
 
   const handleClearAll = () => {
     setSelectedCompetitors([]);
-    setSelectedBaristas([]);
     setSelectedJudges([]);
     
     toast({
@@ -163,15 +149,12 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
   useEffect(() => {
     onSelectionChange({
       competitors: selectedCompetitors,
-      baristas: selectedBaristas,
       judges: selectedJudges,
     });
-  }, [selectedCompetitors, selectedBaristas, selectedJudges, onSelectionChange]);
+  }, [selectedCompetitors, selectedJudges, onSelectionChange]);
 
-  const renderParticipantCard = (participant: MockParticipant, type: 'competitor' | 'barista' | 'judge') => {
-    const isSelected = (type === 'competitor' ? selectedCompetitors : 
-                       type === 'barista' ? selectedBaristas : 
-                       selectedJudges).some(p => p.id === participant.id);
+  const renderParticipantCard = (participant: MockParticipant, type: 'competitor' | 'judge') => {
+    const isSelected = (type === 'competitor' ? selectedCompetitors : selectedJudges).some(p => p.id === participant.id);
 
     return (
       <Card 
@@ -245,10 +228,6 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
               {selectedCompetitors.length} Competitors
             </Badge>
             <Badge variant="secondary" className="flex items-center gap-1">
-              <Coffee className="h-3 w-3" />
-              {selectedBaristas.length} Baristas
-            </Badge>
-            <Badge variant="secondary" className="flex items-center gap-1">
               <Trophy className="h-3 w-3" />
               {selectedJudges.length} Judges
             </Badge>
@@ -261,7 +240,7 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Competitors ({selectedCompetitors.length}/16 selected)
+            Competitors ({selectedCompetitors.length}/32 selected)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -273,28 +252,6 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
           {filteredCompetitors.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No competitors found matching your search.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Baristas Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Coffee className="h-5 w-5" />
-            Baristas ({selectedBaristas.length}/8 selected)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filteredBaristas.map(participant => 
-              renderParticipantCard(participant, 'barista')
-            )}
-          </div>
-          {filteredBaristas.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No baristas found matching your search.
             </div>
           )}
         </CardContent>
@@ -323,23 +280,12 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
       </Card>
 
       {/* Validation Messages */}
-      {selectedCompetitors.length < 16 && (
+      {selectedCompetitors.length < 32 && (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-amber-800">
               <AlertCircle className="h-4 w-4" />
-              <span>Please select 16 competitors for the tournament.</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {selectedBaristas.length < 4 && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-amber-800">
-              <AlertCircle className="h-4 w-4" />
-              <span>Please select at least 4 baristas for the tournament.</span>
+              <span>Please select 32 competitors for the tournament.</span>
             </div>
           </CardContent>
         </Card>

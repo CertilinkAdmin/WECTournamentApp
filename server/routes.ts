@@ -395,5 +395,238 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(scores);
   });
 
+  // ===== TOURNAMENT MODE MANAGEMENT =====
+  // Get tournament mode status
+  app.get("/api/tournament-mode/:tournamentId/status", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.tournamentId);
+      const tournament = await storage.getTournament(tournamentId);
+      
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+      
+      // Tournament mode is active if status is not SETUP
+      const isActive = tournament.status !== 'SETUP';
+      
+      res.json({
+        tournamentId,
+        isActive,
+        status: tournament.status,
+        currentRound: tournament.currentRound,
+        totalRounds: tournament.totalRounds
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Activate tournament mode
+  app.post("/api/tournament-mode/:tournamentId/activate", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.tournamentId);
+      const tournament = await storage.updateTournament(tournamentId, { 
+        status: 'ACTIVE',
+        startDate: new Date()
+      });
+      
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+      
+      io.to(`tournament:${tournamentId}`).emit("tournament:activated", tournament);
+      res.json({ success: true, tournament });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Deactivate tournament mode
+  app.post("/api/tournament-mode/:tournamentId/deactivate", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.tournamentId);
+      const tournament = await storage.updateTournament(tournamentId, { 
+        status: 'COMPLETED',
+        endDate: new Date()
+      });
+      
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+      
+      io.to(`tournament:${tournamentId}`).emit("tournament:deactivated", tournament);
+      res.json({ success: true, tournament });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ===== HEAT CONTROL APIs =====
+  // Start a heat
+  app.post("/api/heats/:id/start", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.id);
+      const match = await storage.updateMatch(matchId, { 
+        status: 'RUNNING',
+        startTime: new Date()
+      });
+      
+      if (!match) {
+        return res.status(404).json({ error: "Heat not found" });
+      }
+      
+      io.to(`tournament:${match.tournamentId}`).emit("heat:started", match);
+      res.json(match);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Start a segment
+  app.post("/api/heats/:id/segment/:code/start", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.id);
+      const segmentCode = req.params.code.toUpperCase();
+      
+      // Find the segment
+      const segments = await storage.getMatchSegments(matchId);
+      const segment = segments.find(s => s.segment === segmentCode);
+      
+      if (!segment) {
+        return res.status(404).json({ error: "Segment not found" });
+      }
+      
+      const updatedSegment = await storage.updateHeatSegment(segment.id, {
+        status: 'RUNNING',
+        startTime: new Date()
+      });
+      
+      const match = await storage.getMatch(matchId);
+      if (match) {
+        io.to(`tournament:${match.tournamentId}`).emit("segment:started", updatedSegment);
+      }
+      
+      res.json(updatedSegment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Stop a segment
+  app.post("/api/heats/:id/segment/:code/stop", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.id);
+      const segmentCode = req.params.code.toUpperCase();
+      
+      // Find the segment
+      const segments = await storage.getMatchSegments(matchId);
+      const segment = segments.find(s => s.segment === segmentCode);
+      
+      if (!segment) {
+        return res.status(404).json({ error: "Segment not found" });
+      }
+      
+      const updatedSegment = await storage.updateHeatSegment(segment.id, {
+        status: 'ENDED',
+        endTime: new Date()
+      });
+      
+      const match = await storage.getMatch(matchId);
+      if (match) {
+        io.to(`tournament:${match.tournamentId}`).emit("segment:ended", updatedSegment);
+      }
+      
+      res.json(updatedSegment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Complete a heat
+  app.post("/api/heats/:id/complete", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.id);
+      const { winnerId } = req.body;
+      
+      const match = await storage.updateMatch(matchId, { 
+        status: 'DONE',
+        winnerId,
+        endTime: new Date()
+      });
+      
+      if (!match) {
+        return res.status(404).json({ error: "Heat not found" });
+      }
+      
+      io.to(`tournament:${match.tournamentId}`).emit("heat:completed", match);
+      res.json(match);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ===== STATION QUEUE MANAGEMENT =====
+  // Get station queue
+  app.get("/api/stations/:stationId/queue", async (req, res) => {
+    try {
+      const stationId = parseInt(req.params.stationId);
+      const station = await storage.getStation(stationId);
+      
+      if (!station) {
+        return res.status(404).json({ error: "Station not found" });
+      }
+      
+      // Get matches for this station
+      const matches = await storage.getStationMatches(stationId, 10, 0);
+      
+      res.json({
+        station,
+        queue: matches,
+        nextAvailableAt: station.nextAvailableAt
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ===== BRACKET MANAGEMENT =====
+  // Get tournament bracket
+  app.get("/api/tournaments/:id/bracket", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const matches = await storage.getTournamentMatches(tournamentId);
+      const participants = await storage.getTournamentParticipants(tournamentId);
+      
+      res.json({
+        tournamentId,
+        matches,
+        participants
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Seed tournament bracket
+  app.post("/api/tournaments/:id/seed", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const participants = await storage.getTournamentParticipants(tournamentId);
+      
+      if (participants.length === 0) {
+        return res.status(400).json({ error: "No participants found" });
+      }
+
+      await BracketGenerator.generateBracket(tournamentId, participants);
+      
+      const matches = await storage.getTournamentMatches(tournamentId);
+      io.to(`tournament:${tournamentId}`).emit("bracket:seeded", matches);
+      
+      res.json({ success: true, matches });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
