@@ -204,7 +204,7 @@ function Router() {
           <main className="container mx-auto py-6 px-4">
             {currentRole === "admin" && <AdminView />}
             {currentRole === "judge" && <JudgeView />}
-            {currentRole === "barista" && <BaristaView />}
+            {currentRole === "competitor" && <CompetitorView />}
             {currentRole === "station_lead" && <StationLeadView />}
           </main>
         </div>

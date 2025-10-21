@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import ThemeToggle from "./ThemeToggle";
 
 interface HeaderProps {
-  currentRole: "admin" | "judge" | "barista" | "station_lead";
-  onRoleChange?: (role: "admin" | "judge" | "barista" | "station_lead") => void;
+  currentRole: "admin" | "judge" | "competitor" | "station_lead";
+  onRoleChange?: (role: "admin" | "judge" | "competitor" | "station_lead") => void;
   tournamentName?: string;
   currentRound?: number;
 }
@@ -25,14 +25,14 @@ export default function Header({
   const roleColors = {
     admin: "bg-primary text-primary-foreground",
     judge: "bg-chart-3 text-white",
-    barista: "bg-secondary text-secondary-foreground",
+    competitor: "bg-secondary text-secondary-foreground",
     station_lead: "bg-chart-1 text-white"
   };
 
   const roleLabels = {
     admin: "Admin",
     judge: "Judge",
-    barista: "Barista",
+    competitor: "Competitor",
     station_lead: "Station Lead"
   };
 
@@ -85,10 +85,10 @@ export default function Header({
                 Judge View
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => onRoleChange?.("barista")}
-                data-testid="menu-role-barista"
+                onClick={() => onRoleChange?.("competitor")}
+                data-testid="menu-role-competitor"
               >
-                Barista View
+                Competitor View
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
