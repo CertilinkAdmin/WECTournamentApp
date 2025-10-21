@@ -53,6 +53,21 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Recent Changes
 
+### Individual Station Pages with Pagination (October 21, 2025)
+- Created dedicated pages for each station accessible at `/station/:stationId`
+- Implemented paginated match display (5 matches per page)
+- Added backend API route: `GET /api/stations/:id/matches?limit=&offset=`
+- Storage method `getStationMatches()` with pagination support
+- Each station page displays:
+  - Station information and current status
+  - Paginated list of matches assigned to that station
+  - Competitor details with winner indicators
+  - Judge assignments with role badges (HEAD, TECHNICAL, SENSORY)
+- Navigation link from Station Lead View to access full station page
+- Automatic pagination reset when switching between stations
+- Optimized queries to avoid redundant data fetching
+- Full authentication support with credentials included in all API calls
+
 ### Neon PostgreSQL Database Integration (October 21, 2025)
 - Successfully connected to Neon PostgreSQL cloud database
 - Added all 13 foreign key constraints for data integrity
@@ -129,6 +144,7 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ### Stations
 - `GET /api/stations` - List stations
+- `GET /api/stations/:id/matches` - Get paginated matches for a station
 - `PATCH /api/stations/:id` - Update station
 
 ### Judges & Scoring
@@ -166,6 +182,8 @@ Matching World Espresso Championships branding:
 - Tournament management and bracket generation
 - Segment time configuration per round
 - Station Lead interface with timer and rules
+- Individual station pages with pagination
+- Match display with competitors and judges
 - Real-time WebSocket foundation
 - Neon PostgreSQL cloud database integration
 
