@@ -415,7 +415,10 @@ export default function StationLeadView() {
                   <p className="text-sm">
                     Use the <strong className="text-primary">Start</strong> button to begin a segment when ready. 
                     The timer will countdown and turn <span className="text-destructive font-semibold">red</span> in the final 60 seconds.
-                    Use <strong className="text-destructive">End Segment</strong> to stop the timer when the segment is complete.
+                  </p>
+                  <p className="text-sm">
+                    Once running, you can <strong>Pause</strong> the timer if needed and <strong>Resume</strong> to continue from where it stopped.
+                    The timer will automatically end when time expires, or you can manually use <strong className="text-destructive">End Segment</strong> to stop early.
                   </p>
                 </AlertDescription>
               </Alert>
