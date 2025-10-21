@@ -11,8 +11,8 @@ export const stationStatusEnum = pgEnum('station_status', ['AVAILABLE', 'BUSY', 
 export const judgeRoleEnum = pgEnum('judge_role', ['HEAD', 'TECHNICAL', 'SENSORY']);
 export const userRoleEnum = pgEnum('user_role', ['ADMIN', 'JUDGE', 'BARISTA', 'STATION_LEAD']);
 
-// Users table
-export const users = pgTable("users", {
+// Tournament Users table
+export const users = pgTable("tournament_users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
