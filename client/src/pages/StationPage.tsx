@@ -30,7 +30,9 @@ export default function StationPage() {
   const { data: matches = [], isLoading: matchesLoading } = useQuery<Match[]>({
     queryKey: ['/api/stations', stationId, 'matches', { limit: ITEMS_PER_PAGE, offset: currentPage * ITEMS_PER_PAGE }],
     queryFn: async () => {
-      const response = await fetch(`/api/stations/${stationId}/matches?limit=${ITEMS_PER_PAGE}&offset=${currentPage * ITEMS_PER_PAGE}`);
+      const response = await fetch(`/api/stations/${stationId}/matches?limit=${ITEMS_PER_PAGE}&offset=${currentPage * ITEMS_PER_PAGE}`, {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Failed to fetch matches');
       return response.json();
     },
@@ -160,7 +162,9 @@ function MatchCard({ match, users, getInitials }: MatchCardProps) {
   const { data: judges = [] } = useQuery<HeatJudge[]>({
     queryKey: ['/api/matches', match.id, 'judges'],
     queryFn: async () => {
-      const response = await fetch(`/api/matches/${match.id}/judges`);
+      const response = await fetch(`/api/matches/${match.id}/judges`, {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Failed to fetch judges');
       return response.json();
     },
