@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Users, Clock, Play, Square, CheckCircle2 } from "lucide-react";
+import { MapPin, Users, Clock, Play, Square, CheckCircle2, Info, ChevronDown } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import StationWarning from "./StationWarning";
@@ -267,43 +269,43 @@ export default function StationLeadView() {
     // Calculate warnings based on which stations have started
     const stationsStartTimes: Record<string, Date | null> = {};
     
-    // Get start times for all stations
+    // Get start times for all stations (not just RUNNING - include DONE matches too)
     for (const station of stations) {
-      const match = allMatches.find(m => m.stationId === station.id && m.status === 'RUNNING');
+      const match = allMatches.find(m => 
+        m.stationId === station.id && 
+        m.startTime && 
+        (m.status === 'RUNNING' || m.status === 'DONE')
+      );
       if (match?.startTime) {
         stationsStartTimes[station.name] = new Date(match.startTime);
       }
     }
 
-    // Find the first station that started
-    let earliestStation: string | null = null;
-    let earliestTime: Date | null = null;
+    // Find the most recent preceding station that has started
+    // Look backwards from current station to find the closest one that's running
+    let precedingStation: string | null = null;
+    let precedingTime: Date | null = null;
 
-    for (const stationName of stationOrder) {
+    for (let i = currentStationIndex - 1; i >= 0; i--) {
+      const stationName = stationOrder[i];
       if (stationsStartTimes[stationName]) {
-        if (!earliestTime || stationsStartTimes[stationName]! < earliestTime) {
-          earliestTime = stationsStartTimes[stationName];
-          earliestStation = stationName;
-        }
+        precedingStation = stationName;
+        precedingTime = stationsStartTimes[stationName];
+        break; // Found the most recent preceding station
       }
     }
 
-    // If a station has started and current station hasn't started yet
-    if (earliestStation && earliestTime && !stationsStartTimes[selectedStationData?.name || '']) {
-      const earliestIndex = stationOrder.indexOf(earliestStation);
-      const stationDiff = currentStationIndex - earliestIndex;
+    // If a preceding station has started and current station hasn't started yet
+    if (precedingStation && precedingTime && !stationsStartTimes[selectedStationData?.name || '']) {
+      // Current station should start 10 minutes after the preceding station
+      const targetStartTime = new Date(precedingTime.getTime() + (10 * 60 * 1000));
+      const secondsUntilStart = Math.ceil((targetStartTime.getTime() - Date.now()) / 1000);
       
-      // Each station should start 10 minutes apart
-      if (stationDiff > 0) {
-        const targetStartTime = new Date(earliestTime.getTime() + (stationDiff * 10 * 60 * 1000));
-        const secondsUntilStart = Math.ceil((targetStartTime.getTime() - Date.now()) / 1000);
-        
-        if (secondsUntilStart > 0 && secondsUntilStart <= 20 * 60) {
-          warnings.push({
-            referenceStationName: earliestStation,
-            targetStartTime
-          });
-        }
+      if (secondsUntilStart > 0 && secondsUntilStart <= 20 * 60) {
+        warnings.push({
+          referenceStationName: precedingStation,
+          targetStartTime
+        });
       }
     }
 
@@ -311,6 +313,7 @@ export default function StationLeadView() {
   };
 
   const stationWarnings = getStationWarnings();
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   return (
     <div className="space-y-6 p-6">
@@ -336,6 +339,60 @@ export default function StationLeadView() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Heat Management Rules & Instructions */}
+      <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CollapsibleTrigger className="flex items-center justify-between w-full group" data-testid="button-toggle-rules">
+              <div className="flex items-center gap-2">
+                <Info className="w-5 h-5 text-primary" />
+                <CardTitle className="text-lg">Heat Management Guidelines</CardTitle>
+              </div>
+              <ChevronDown className={`w-5 h-5 transition-transform ${rulesOpen ? 'rotate-180' : ''}`} />
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <Alert>
+                <AlertTitle className="text-base font-semibold">Segment Sequence</AlertTitle>
+                <AlertDescription className="space-y-2 mt-2">
+                  <p className="text-sm">Each heat consists of three timed segments that must run in order:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-sm ml-2">
+                    <li><strong>Dial-In</strong> - Competitors calibrate their espresso machines and test shots</li>
+                    <li><strong>Cappuccino</strong> - Competitors prepare cappuccinos for judging</li>
+                    <li><strong>Espresso</strong> - Competitors prepare espresso shots for final scoring</li>
+                  </ol>
+                </AlertDescription>
+              </Alert>
+
+              <Alert>
+                <AlertTitle className="text-base font-semibold">Station Lead Responsibilities</AlertTitle>
+                <AlertDescription className="space-y-2 mt-2">
+                  <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                    <li>Start each segment only when both competitors are ready</li>
+                    <li>Monitor the timer and provide 1-minute and 30-second warnings</li>
+                    <li>End the segment when time expires or both competitors finish early</li>
+                    <li>Ensure judges have received all items before ending the segment</li>
+                    <li>Maintain a fair and organized competition environment</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+
+              <Alert>
+                <AlertTitle className="text-base font-semibold">Timer Controls</AlertTitle>
+                <AlertDescription className="space-y-2 mt-2">
+                  <p className="text-sm">
+                    Use the <strong className="text-primary">Start</strong> button to begin a segment when ready. 
+                    The timer will countdown and turn <span className="text-destructive font-semibold">red</span> in the final 60 seconds.
+                    Use <strong className="text-destructive">End Segment</strong> to stop the timer when the segment is complete.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Station Warnings - Show when other stations are starting */}
       {stationWarnings.map((warning) => (
