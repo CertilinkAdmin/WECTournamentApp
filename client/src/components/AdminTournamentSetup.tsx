@@ -5,15 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Trophy, MapPin, Shuffle, Loader2, Clock, Trash2, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Users, Trophy, MapPin, Shuffle, Loader2, Clock, Trash2, AlertTriangle, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Tournament, User, TournamentParticipant } from "@shared/schema";
 import SegmentTimeConfig from "./SegmentTimeConfig";
-import ParticipantSelection from "./ParticipantSelection";
 
-interface SelectedParticipants {
+interface SelectedCompetitors {
   competitors: Array<{ id: string; name: string; role: string; experience?: string; location?: string; specialty?: string; }>;
   judges: Array<{ id: string; name: string; role: string; experience?: string; location?: string; specialty?: string; }>;
 }
@@ -23,11 +23,12 @@ export default function AdminTournamentSetup() {
   const [tournamentName, setTournamentName] = useState("World Espresso Championships");
   const [totalCompetitors, setTotalCompetitors] = useState(32);
   const [currentTournamentId, setCurrentTournamentId] = useState<number | null>(null);
-  const [selectedParticipants, setSelectedParticipants] = useState<SelectedParticipants>({
+  const [selectedCompetitors, setSelectedCompetitors] = useState<SelectedCompetitors>({
     competitors: [],
     judges: []
   });
-  const [showParticipantSelection, setShowParticipantSelection] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'setup' | 'competitors' | 'judges' | 'segments' | 'seeds' | 'bracket'>('setup');
 
   // Helper functions for power-of-2 validation
   const isPowerOfTwo = (n: number) => n > 0 && (n & (n - 1)) === 0;
@@ -46,8 +47,8 @@ export default function AdminTournamentSetup() {
     queryKey: ['/api/users'],
   });
 
-  // Fetch participants for current tournament
-  const { data: participants = [] } = useQuery<TournamentParticipant[]>({
+  // Fetch competitors for current tournament
+  const { data: competitors = [] } = useQuery<TournamentParticipant[]>({
     queryKey: ['/api/tournaments', currentTournamentId, 'participants'],
     enabled: !!currentTournamentId,
   });
@@ -75,45 +76,17 @@ export default function AdminTournamentSetup() {
       if (!tournamentResponse.ok) throw new Error('Failed to create tournament');
       const tournament = await tournamentResponse.json();
 
-      // Then create participants from selected participants
-      const participantPromises = [];
-      
-      // Add competitors
-      for (let i = 0; i < selectedParticipants.competitors.length; i++) {
-        const competitor = selectedParticipants.competitors[i];
-        participantPromises.push(
-          fetch(`/api/tournaments/${tournament.id}/participants`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: competitor.id, // This would need to be mapped to actual user IDs
-              seed: i + 1
-            })
-          })
-        );
-      }
-
-      // All participants are competitors - no separate barista handling needed
-
-      // Wait for all participants to be created
-      try {
-        await Promise.all(participantPromises);
-      } catch (error) {
-        console.error('Error creating participants:', error);
-        // Tournament was created but participants failed - this is still a partial success
-        throw new Error('Tournament created but some participants failed to be added. Please check the tournament and add participants manually.');
-      }
+      // Tournament created - competitors will be added in next step
 
       return tournament;
     },
     onSuccess: (data: Tournament) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', data.id, 'participants'] });
       setCurrentTournamentId(data.id);
-      setShowParticipantSelection(false);
+      setCurrentStep('competitors');
       toast({
         title: "Tournament Created",
-        description: `${tournamentName} has been initialized with ${selectedParticipants.competitors.length} competitors and ${selectedParticipants.judges.length} judges.`,
+        description: `${tournamentName} has been created. Now select your competitors.`,
       });
     },
     onError: (error: any) => {
@@ -136,9 +109,10 @@ export default function AdminTournamentSetup() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'participants'] });
+      setCurrentStep('bracket');
       toast({
         title: "Seeds Randomized",
-        description: "Competitor seeds have been randomized successfully.",
+        description: "Competitor seeds have been randomized successfully. Ready to generate bracket!",
       });
     },
     onError: (error: any) => {
@@ -207,9 +181,10 @@ export default function AdminTournamentSetup() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'matches'] });
+      setCurrentStep('setup'); // Reset to setup for next tournament
       toast({
-        title: "Bracket Generated",
-        description: "Tournament bracket has been created with all rounds.",
+        title: "Tournament Complete!",
+        description: "Tournament bracket has been created with all rounds. Your tournament is ready to begin!",
       });
     },
     onError: (error: any) => {
@@ -252,7 +227,6 @@ export default function AdminTournamentSetup() {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'participants'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'matches'] });
-      setSelectedParticipants({ competitors: [], judges: [] });
       setCurrentTournamentId(null);
       toast({
         title: "Tournament Cleared",
@@ -274,201 +248,138 @@ export default function AdminTournamentSetup() {
     }
   };
 
-  const handleParticipantSelectionChange = (selection: SelectedParticipants) => {
-    setSelectedParticipants(selection);
-  };
-
-  const handleCreateTournamentWithParticipants = () => {
-    // Validate tournament name
-    if (!tournamentName.trim()) {
-      toast({
-        title: "Tournament Name Required",
-        description: "Please enter a tournament name.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Validate participant counts
-    if (selectedParticipants.competitors.length < 2) {
-      toast({
-        title: "Insufficient Competitors",
-        description: "Please select at least 2 competitors for the tournament.",
-        variant: "destructive"
-      });
-      return;
-    }
-    // Removed barista validation - all participants are competitors
-    if (selectedParticipants.judges.length < 3) {
-      toast({
-        title: "Insufficient Judges",
-        description: "Please select at least 3 judges for the tournament.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Validate total competitors count
-    if (selectedParticipants.competitors.length > totalCompetitors) {
-      toast({
-        title: "Too Many Competitors",
-        description: `You have selected ${selectedParticipants.competitors.length} competitors, but the tournament is set for ${totalCompetitors} competitors.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    createTournamentMutation.mutate();
-  };
-
-  // Get judges and competitors from users
+  // Get judges and baristas from users
   const judges = users.filter(u => u.role === 'JUDGE');
-  const competitors = users.filter(u => u.role === 'BARISTA');
+  const baristas = users.filter(u => u.role === 'BARISTA');
 
   return (
     <div className="space-y-6">
-      {/* Tournament Creation/Management */}
+      {/* Step Progress Indicator */}
       <Card>
-        <CardHeader className="bg-primary/10">
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <Trophy className="h-6 w-6" />
-            Tournament Setup
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6 space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="tournament-name" className="text-sm font-medium">Tournament Name</Label>
-              <Input
-                id="tournament-name"
-                value={tournamentName}
-                onChange={(e) => setTournamentName(e.target.value)}
-                data-testid="input-tournament-name"
-                className="mt-1"
-                placeholder="Enter tournament name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="total-competitors" className="text-sm font-medium">Total Competitors</Label>
-              <Input
-                id="total-competitors"
-                type="number"
-                value={totalCompetitors}
-                onChange={(e) => setTotalCompetitors(Number(e.target.value))}
-                data-testid="input-total-competitors"
-                className="mt-1"
-                min="2"
-                max="64"
-              />
-            </div>
-          </div>
-          
-          {/* Participant Selection Summary */}
-          {selectedParticipants.competitors.length > 0 && (
-            <Card className="bg-muted/50">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                  <h4 className="font-medium text-sm sm:text-base">Selected Participants</h4>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowParticipantSelection(!showParticipantSelection)}
-                    className="w-full sm:w-auto"
-                  >
-                    {showParticipantSelection ? 'Hide' : 'Edit'} Selection
-                  </Button>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm">
-                  <Badge variant="secondary" className="flex items-center gap-1 justify-center sm:justify-start">
-                    <Users className="h-3 w-3" />
-                    {selectedParticipants.competitors.length} Competitors
-                  </Badge>
-                  <Badge variant="secondary" className="flex items-center gap-1 justify-center sm:justify-start">
-                    <Trophy className="h-3 w-3" />
-                    {selectedParticipants.judges.length} Judges
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button 
-              onClick={handleCreateTournamentWithParticipants} 
-              className="flex-1" 
-              disabled={createTournamentMutation.isPending || selectedParticipants.competitors.length < 2}
-              data-testid="button-create-tournament"
-              size="lg"
-            >
-              {createTournamentMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Creating Tournament & Adding Participants...</span>
-                  <span className="sm:hidden">Creating...</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Create Tournament</span>
-                  <span className="sm:hidden">Create</span>
-                </>
-              )}
-            </Button>
-            
-            {currentTournamentId && (
-              <Button 
-                variant="destructive"
-                onClick={handleClearTournament}
-                disabled={clearTournamentMutation.isPending}
-                data-testid="button-clear-tournament"
-                size="lg"
-                className="w-full sm:w-auto"
-              >
-                {clearTournamentMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    <span className="hidden sm:inline">Clearing...</span>
-                    <span className="sm:hidden">Clear...</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Clear Tournament</span>
-                    <span className="sm:hidden">Clear</span>
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-
-          {selectedParticipants.competitors.length < 2 && (
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 text-amber-600 bg-amber-50 p-3 rounded-md">
-                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Please select participants before creating the tournament.</span>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className={`flex items-center space-x-2 ${currentStep === 'setup' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'setup' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>1</div>
+                <span className="text-sm font-medium">Setup Tournament</span>
               </div>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowParticipantSelection(true)}
-                className="w-full"
-                data-testid="button-select-participants"
-                size="lg"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Select Participants
-              </Button>
+              <div className={`flex items-center space-x-2 ${currentStep === 'competitors' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'competitors' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>2</div>
+                <span className="text-sm font-medium">Select Competitors</span>
+              </div>
+              <div className={`flex items-center space-x-2 ${currentStep === 'judges' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'judges' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>3</div>
+                <span className="text-sm font-medium">Select Judges</span>
+              </div>
+              <div className={`flex items-center space-x-2 ${currentStep === 'segments' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'segments' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>4</div>
+                <span className="text-sm font-medium">Segment Times</span>
+              </div>
+              <div className={`flex items-center space-x-2 ${currentStep === 'seeds' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'seeds' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>5</div>
+                <span className="text-sm font-medium">Randomize Seeds</span>
+              </div>
+              <div className={`flex items-center space-x-2 ${currentStep === 'bracket' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'bracket' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>6</div>
+                <span className="text-sm font-medium">Generate Bracket</span>
+              </div>
             </div>
-          )}
+            <Dialog open={showHelpModal} onOpenChange={setShowHelpModal}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+                  <HelpCircle className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <HelpCircle className="h-5 w-5" />
+                    Tournament Creation Tutorial
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-green-800 mb-2">🎯 Step-by-Step Tournament Creation</h3>
+                    <p className="text-green-700 text-sm">
+                      Follow these 6 steps to create a complete tournament with guided workflow.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h4 className="font-semibold text-blue-800">Step 1: Setup Tournament</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Enter tournament name and number of competitors. Click "Create Tournament".
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h4 className="font-semibold text-blue-800">Step 2: Select Competitors</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Choose your competitors (minimum 2). Click "Add Competitors".
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h4 className="font-semibold text-blue-800">Step 3: Select Judges</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Choose your judges (minimum 3). Click "Add Judges".
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h4 className="font-semibold text-blue-800">Step 4: Configure Segment Times</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Set up round times and segment durations. Click "Save Segment Times".
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h4 className="font-semibold text-blue-800">Step 5: Randomize Seeds</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Shuffle competitor order randomly. Click "Randomize Seeds".
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h4 className="font-semibold text-blue-800">Step 6: Generate Bracket</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Create the tournament bracket with matches. Click "Generate Bracket".
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-amber-800 mb-2">⚠️ Common Issues & Solutions</h3>
+                    <div className="space-y-2 text-sm text-gray-800">
+                      <div><strong>Issue:</strong> "Insufficient Competitors" → <strong>Fix:</strong> Add at least 2 competitors</div>
+                      <div><strong>Issue:</strong> "Insufficient Judges" → <strong>Fix:</strong> Add at least 3 judges</div>
+                      <div><strong>Issue:</strong> "No tournament selected" → <strong>Fix:</strong> Create tournament first</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-blue-800 mb-2">🏆 Station Timing</h3>
+                    <p className="text-sm text-blue-700">
+                      Stations run independently: <strong>Station A</strong> (immediate), <strong>Station B</strong> (+10 minutes), <strong>Station C</strong> (+20 minutes)
+                    </p>
+                  </div>
+
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-purple-800 mb-2">💡 Pro Tips</h3>
+                    <ul className="text-sm text-purple-700 space-y-1">
+                      <li>• System handles any number of competitors (2, 6, 7, 12, 15, 22+)</li>
+                      <li>• Odd competitor counts get automatic byes</li>
+                      <li>• Use "Clear Tournament" to start over anytime</li>
+                      <li>• Toast notifications guide you through each step</li>
+                    </ul>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Participant Selection Interface */}
-      {showParticipantSelection && (
-        <ParticipantSelection 
-          onSelectionChange={handleParticipantSelectionChange}
-          initialSelection={selectedParticipants}
-        />
-      )}
 
       <Tabs defaultValue="competitors" className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
@@ -495,27 +406,27 @@ export default function AdminTournamentSetup() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Competitor Registration</span>
-                <Badge variant="secondary">{participants.length} registered</Badge>
+                <Badge variant="secondary">{competitors.length} registered</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {participants.length === 0 ? (
+                {competitors.length === 0 ? (
                   <div className="text-center p-6 text-muted-foreground">
                     No competitors registered yet. Add competitors to the tournament.
                   </div>
                 ) : (
-                  participants.map((participant) => (
+                  competitors.map((competitor) => (
                     <div
-                      key={participant.id}
+                      key={competitor.id}
                       className="flex items-center justify-between p-3 bg-muted rounded-md"
                     >
                       <div className="flex items-center gap-3">
                         <Badge variant="outline" className="font-mono">
-                          #{participant.seed}
+                          #{competitor.seed}
                         </Badge>
                         <span className="font-medium">
-                          {users.find(u => u.id === participant.userId)?.name || 'Unknown'}
+                          {users.find(u => u.id === competitor.userId)?.name || 'Unknown'}
                         </span>
                       </div>
                       <Button variant="ghost" size="sm">
@@ -525,35 +436,35 @@ export default function AdminTournamentSetup() {
                   ))
                 )}
                 <div className="flex flex-col gap-2 mt-4">
-                   {participants.length === 0 && (
+                   {competitors.length === 0 && (
                      <Button 
                        variant="outline"
                        onClick={handleAddAllCompetitors}
-                       disabled={!currentTournamentId || competitors.length === 0 || addAllCompetitorsMutation.isPending}
-                       data-testid="button-add-all-competitors"
+                       disabled={!currentTournamentId || baristas.length === 0 || addAllCompetitorsMutation.isPending}
+                       data-testid="button-add-all-baristas"
                      >
                        {addAllCompetitorsMutation.isPending ? (
                          <>
                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                           Adding Competitors...
+                           Adding Baristas...
                          </>
                        ) : (
                          <>
                            <Users className="h-4 w-4 mr-2" />
-                           Add All Competitors ({Math.min(competitors.length, 16)})
+                           Add All Baristas ({Math.min(baristas.length, 16)})
                          </>
                        )}
                      </Button>
                    )}
                   
-                  {/* Flexible participant count message */}
-                  {participants.length > 0 && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                      <p className="text-sm text-green-800 font-medium">
-                        ✅ Tournament supports {participants.length} participants with automatic bye handling.
+                  {/* Power-of-2 validation message */}
+                  {competitors.length > 0 && !isPowerOfTwo(competitors.length) && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                      <p className="text-sm text-amber-800 font-medium">
+                        Bracket requires power-of-2 participants (8, 16, 32...)
                       </p>
-                      <p className="text-xs text-green-700 mt-1">
-                        Bracket will be generated with byes for any odd numbers.
+                      <p className="text-xs text-amber-700 mt-1">
+                        Current: {competitors.length} participants. Need {getNextPowerOfTwo(competitors.length) - competitors.length} more to reach {getNextPowerOfTwo(competitors.length)}.
                       </p>
                     </div>
                   )}
@@ -561,7 +472,7 @@ export default function AdminTournamentSetup() {
                   <Button 
                     variant="secondary" 
                     onClick={handleRandomizeSeeds}
-                    disabled={!currentTournamentId || participants.length === 0 || randomizeSeedsMutation.isPending}
+                    disabled={!currentTournamentId || competitors.length === 0 || randomizeSeedsMutation.isPending}
                     data-testid="button-randomize-seeds"
                   >
                     {randomizeSeedsMutation.isPending ? (
@@ -579,7 +490,7 @@ export default function AdminTournamentSetup() {
                   <Button 
                     variant="default" 
                     onClick={handleGenerateBracket}
-                    disabled={!currentTournamentId || participants.length === 0 || !isPowerOfTwo(participants.length) || generateBracketMutation.isPending}
+                    disabled={!currentTournamentId || competitors.length === 0 || !isPowerOfTwo(competitors.length) || generateBracketMutation.isPending}
                     data-testid="button-generate-bracket"
                   >
                     {generateBracketMutation.isPending ? (

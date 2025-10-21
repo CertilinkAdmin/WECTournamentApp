@@ -13,7 +13,8 @@ import {
   X, 
   Shuffle,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  HelpCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,7 +27,7 @@ interface MockParticipant {
   specialty?: string;
 }
 
-interface ParticipantSelectionProps {
+interface CompetitorSelectionProps {
   onSelectionChange: (selected: {
     competitors: MockParticipant[];
     judges: MockParticipant[];
@@ -82,7 +83,7 @@ const MOCK_JUDGES: MockParticipant[] = [
   { id: "judge-6", name: "Chief Lisa Davis", role: "JUDGE", experience: "17 years", location: "Denver, CO", specialty: "Pour Over" },
 ];
 
-export default function ParticipantSelection({ onSelectionChange, initialSelection }: ParticipantSelectionProps) {
+export default function CompetitorSelection({ onSelectionChange, initialSelection }: CompetitorSelectionProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCompetitors, setSelectedCompetitors] = useState<MockParticipant[]>(initialSelection?.competitors || []);
@@ -189,9 +190,15 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
       {/* Search and Controls */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Participant Selection
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Competitor & Judge Selection
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <HelpCircle className="h-4 w-4" />
+              <span>Select 2+ competitors, 3+ judges</span>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 space-y-4">
