@@ -53,6 +53,20 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Recent Changes
 
+### Segment Timer Pause/Resume Functionality (October 21, 2025)
+- Added pause/resume controls to segment timers in Station Lead View
+- Timer can be paused during any segment and resumed from the same position
+- Pause state tracked via `pausedSegmentId` in StationLeadView
+- SegmentTimer component enhanced with `isPaused` prop and pause time tracking
+- Updated Heat Management Guidelines to document pause/resume functionality
+- Timer automatically stops when duration completes or can be manually ended
+- Button toggles between "Pause" and "Resume" states
+
+### Test Data Population (October 21, 2025)
+- Populated database with 12 test baristas for tournament participation
+- Added 9 test judges for heat assignments and scoring
+- All test users have realistic names and email addresses
+
 ### Individual Station Pages with Pagination (October 21, 2025)
 - Created dedicated pages for each station accessible at `/station/:stationId`
 - Implemented paginated match display (5 matches per page)
