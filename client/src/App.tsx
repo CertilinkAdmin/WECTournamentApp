@@ -135,7 +135,7 @@ function JudgeView() {
         </TabsContent>
 
         <TabsContent value="timer" className="mt-6 space-y-6">
-          <TimerPanel />
+          <TimerPanel readOnly={true} />
           <CompetitionRules />
         </TabsContent>
       </Tabs>
@@ -159,7 +159,7 @@ function BaristaView() {
         </TabsList>
 
         <TabsContent value="timer" className="mt-6 space-y-6">
-          <TimerPanel />
+          <TimerPanel readOnly={true} />
           <CompetitionRules />
         </TabsContent>
 

@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MapPin, Users, Clock, Play, Square } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import StationWarning from "./StationWarning";
 
 interface SegmentTimerProps {
   startTime: Date;
@@ -198,6 +199,66 @@ export default function StationLeadView() {
 
   const runningSegment = segments.find(s => s.status === 'RUNNING');
 
+  // Calculate station warnings based on other stations
+  const getStationWarnings = () => {
+    const warnings: Array<{ referenceStationName: string; targetStartTime: Date }> = [];
+    
+    // Define station order (A, B, C)
+    const stationOrder = ['A', 'B', 'C'];
+    const currentStationIndex = stationOrder.indexOf(selectedStationData?.name || '');
+    
+    if (currentStationIndex === -1) {
+      return warnings;
+    }
+    
+    // Calculate warnings based on which stations have started
+    const stationsStartTimes: Record<string, Date | null> = {};
+    
+    // Get start times for all stations
+    for (const station of stations) {
+      const match = allMatches.find(m => m.stationId === station.id && m.status === 'RUNNING');
+      if (match?.startTime) {
+        stationsStartTimes[station.name] = new Date(match.startTime);
+      }
+    }
+
+    // Find the first station that started
+    let earliestStation: string | null = null;
+    let earliestTime: Date | null = null;
+
+    for (const stationName of stationOrder) {
+      if (stationsStartTimes[stationName]) {
+        if (!earliestTime || stationsStartTimes[stationName]! < earliestTime) {
+          earliestTime = stationsStartTimes[stationName];
+          earliestStation = stationName;
+        }
+      }
+    }
+
+    // If a station has started and current station hasn't started yet
+    if (earliestStation && earliestTime && !stationsStartTimes[selectedStationData?.name || '']) {
+      const earliestIndex = stationOrder.indexOf(earliestStation);
+      const stationDiff = currentStationIndex - earliestIndex;
+      
+      // Each station should start 10 minutes apart
+      if (stationDiff > 0) {
+        const targetStartTime = new Date(earliestTime.getTime() + (stationDiff * 10 * 60 * 1000));
+        const secondsUntilStart = Math.ceil((targetStartTime.getTime() - Date.now()) / 1000);
+        
+        if (secondsUntilStart > 0 && secondsUntilStart <= 20 * 60) {
+          warnings.push({
+            referenceStationName: earliestStation,
+            targetStartTime
+          });
+        }
+      }
+    }
+
+    return warnings;
+  };
+
+  const stationWarnings = getStationWarnings();
+
   return (
     <div className="space-y-6 p-6">
       <Card className="bg-primary/10">
@@ -222,6 +283,16 @@ export default function StationLeadView() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Station Warnings - Show when other stations are starting */}
+      {stationWarnings.map((warning) => (
+        <StationWarning
+          key={`${selectedStationData?.name}-${warning.referenceStationName}`}
+          currentStationName={selectedStationData?.name || ''}
+          referenceStationName={warning.referenceStationName}
+          targetStartTime={warning.targetStartTime}
+        />
+      ))}
 
       {currentMatch && (
         <>

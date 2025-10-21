@@ -1,0 +1,378 @@
+# ABC Tournament Bracket System
+
+A comprehensive guide to the ABC (Aeropress, Barista, Cappuccino) tournament bracket system for coffee competitions.
+
+## 🏆 Overview
+
+The ABC Tournament Bracket System is designed for coffee competitions with:
+- **5 Rounds** of elimination
+- **2 Baristas** per heat
+- **3 Judges** per heat
+- **3 Sequential Segments**: Dial-In, Cappuccino, Espresso
+- **3 Stations** (A, B, C) running in parallel with staggered timing
+
+## 🎯 Tournament Structure
+
+### **Round Progression**
+```
+Round 1: 32 Baristas → 16 Winners
+Round 2: 16 Baristas → 8 Winners  
+Round 3: 8 Baristas → 4 Winners
+Round 4: 4 Baristas → 2 Winners
+Round 5: 2 Baristas → 1 Champion
+```
+
+### **Heat Structure**
+Each heat consists of:
+- **2 Competitors** (Baristas)
+- **3 Judges** (Scoring)
+- **3 Segments** (Sequential execution)
+- **1 Station** (A, B, or C)
+
+## 🏗️ Bracket Architecture
+
+### **Database Schema**
+
+#### **Tournament Tables**
+```sql
+-- Main tournament record
+tournaments (
+  id, name, status, startDate, endDate, 
+  totalRounds, currentRound, createdAt, updatedAt
+)
+
+-- Tournament participants
+tournamentParticipants (
+  id, tournamentId, userId, seed, 
+  eliminatedRound, finalRank, createdAt
+)
+
+-- Tournament rounds configuration
+tournamentRoundTimes (
+  id, tournamentId, round, dialInMinutes, 
+  cappuccinoMinutes, espressoMinutes, totalMinutes
+)
+```
+
+#### **Match Management**
+```sql
+-- Individual matches/heats
+matches (
+  id, tournamentId, round, stationId, 
+  status, startTime, endTime, winnerId, 
+  createdAt, updatedAt
+)
+
+-- Heat segments (Dial-In, Cappuccino, Espresso)
+heatSegments (
+  id, matchId, segment, status, 
+  startTime, endTime, plannedMinutes
+)
+
+-- Judge assignments
+heatJudges (
+  id, matchId, judgeId, role
+)
+
+-- Scoring records
+heatScores (
+  id, matchId, judgeId, segment, 
+  score, notes, submittedAt
+)
+```
+
+### **Station Management**
+```sql
+-- Station configuration
+stations (
+  id, name, location, status, 
+  nextAvailableAt, currentMatchId
+)
+```
+
+## ⚙️ Bracket Logic
+
+### **Seeding Algorithm**
+1. **Initial Seeding**: Participants ranked by seed (1-32)
+2. **Round 1 Pairings**: 
+   - Seed 1 vs Seed 32
+   - Seed 2 vs Seed 31
+   - ... (standard tournament bracket)
+3. **Subsequent Rounds**: Winners advance, losers eliminated
+
+### **Station Assignment Logic**
+```typescript
+// Station assignment algorithm
+function assignStationToHeat(heat: Heat, stations: Station[]) {
+  // Find station with earliest nextAvailableAt
+  const availableStation = stations
+    .filter(s => s.status === 'AVAILABLE')
+    .sort((a, b) => a.nextAvailableAt - b.nextAvailableAt)[0];
+  
+  // Calculate slot start time with 10-minute offset
+  const slotStart = new Date(availableStation.nextAvailableAt);
+  slotStart.setMinutes(slotStart.getMinutes() + 10);
+  
+  // Update station availability
+  availableStation.nextAvailableAt = new Date(
+    slotStart.getTime() + (heat.totalMinutes * 60000)
+  );
+  
+  return availableStation;
+}
+```
+
+### **Staggered Timing**
+- **Station A**: Starts immediately
+- **Station B**: Starts +10 minutes
+- **Station C**: Starts +20 minutes
+- **Buffer**: 10 minutes between heats
+
+## 🎮 User Interfaces
+
+### **Admin Control Center**
+- **Tournament Creation**: Set up rounds, participants, judges
+- **Station Management**: Monitor availability, assign heats
+- **Bracket Overview**: Visual tournament progression
+- **Real-time Updates**: Live scoring and results
+
+### **Station Lead Interface**
+- **Heat Management**: Start/stop segments, monitor timing
+- **Queue Management**: View upcoming heats, station status
+- **Progress Tracking**: Segment completion, time remaining
+
+### **Judge Interface**
+- **Scorecard**: Submit scores for each segment
+- **Real-time Updates**: Live scoring, heat progression
+- **Validation**: Score range checking, required fields
+
+### **Competitor Interface**
+- **Heat Information**: Current heat, station, timing
+- **Segment Rules**: Instructions for each segment
+- **Progress Tracking**: Current segment, time remaining
+
+## 🔄 State Management
+
+### **Heat State Machine**
+```
+PENDING → READY → RUNNING → DONE
+   ↓        ↓        ↓        ↓
+  Created  Started  Active  Completed
+```
+
+### **Segment State Machine**
+```
+IDLE → RUNNING → ENDED
+  ↓       ↓        ↓
+ Ready  Active  Completed
+```
+
+### **Tournament States**
+- **SETUP**: Configuration phase
+- **ACTIVE**: Tournament in progress
+- **COMPLETED**: All rounds finished
+- **CANCELLED**: Tournament terminated
+
+## 📊 Scoring System
+
+### **Segment Scoring**
+- **Dial-In**: 0-10 points (taste, technique)
+- **Cappuccino**: 0-10 points (latte art, taste)
+- **Espresso**: 0-10 points (extraction, presentation)
+
+### **Heat Scoring**
+- **Total Score**: Sum of all segment scores
+- **Winner**: Highest total score
+- **Tiebreaker**: Judge consensus or additional criteria
+
+### **Judge Roles**
+- **Head Judge**: Final decision authority
+- **Technical Judge**: Equipment and technique focus
+- **Sensory Judge**: Taste and presentation focus
+
+## 🚀 Real-time Features
+
+### **Socket.IO Events**
+```typescript
+// Tournament events
+'tournament:started'     // Tournament begins
+'tournament:completed'    // Tournament ends
+'tournament:round:started' // Round begins
+'tournament:round:completed' // Round ends
+
+// Bracket events  
+'bracket:updated'         // Bracket progression
+'bracket:heat:assigned'   // Heat assigned to station
+'bracket:heat:completed'   // Heat finished
+
+// Station events
+'station:heat:started'    // Heat begins at station
+'station:segment:started' // Segment begins
+'station:segment:ended'   // Segment ends
+'station:heat:completed' // Heat completed
+
+// Match events
+'match:started'          // Match begins
+'match:segment:started'   // Segment starts
+'match:segment:ended'     // Segment ends
+'match:completed'         // Match finished
+'match:scored'           // Scores submitted
+```
+
+### **Live Updates**
+- **Bracket Progression**: Real-time bracket updates
+- **Score Updates**: Live scoring display
+- **Timer Updates**: Countdown timers for segments
+- **Status Updates**: Heat and station status changes
+
+## 🧪 Testing & Mock Mode
+
+### **Mock Data System**
+- **Safe Testing**: No production data impact
+- **Realistic Scenarios**: Full tournament simulation
+- **Data Validation**: Test all edge cases
+- **Performance Testing**: Load testing capabilities
+
+### **Test Scenarios**
+- **Full Tournament**: Complete 5-round simulation
+- **Station Failures**: Station offline scenarios
+- **Judge Absence**: Missing judge handling
+- **Time Overruns**: Segment timing issues
+- **Network Issues**: Connection problems
+
+## 🔧 Configuration
+
+### **Round Times**
+```typescript
+interface RoundTimes {
+  round: number;
+  dialInMinutes: number;
+  cappuccinoMinutes: number;
+  espressoMinutes: number;
+  totalMinutes: number;
+}
+```
+
+### **Station Configuration**
+```typescript
+interface Station {
+  id: string;
+  name: string;
+  location: string;
+  status: 'AVAILABLE' | 'BUSY' | 'OFFLINE';
+  nextAvailableAt: Date;
+  currentMatchId?: string;
+}
+```
+
+### **Judge Assignment**
+```typescript
+interface JudgeAssignment {
+  matchId: string;
+  judgeId: string;
+  role: 'HEAD' | 'TECHNICAL' | 'SENSORY';
+}
+```
+
+## 📱 Mobile Optimization
+
+### **Responsive Design**
+- **Mobile First**: Optimized for mobile devices
+- **Touch Friendly**: Large buttons, easy navigation
+- **Offline Support**: Basic functionality without connection
+- **Progressive Web App**: Installable on mobile devices
+
+### **Mobile Features**
+- **Quick Access**: Fast navigation to current heat
+- **Notifications**: Push notifications for important updates
+- **Offline Mode**: View cached data when offline
+- **Sync**: Automatic sync when connection restored
+
+## 🚨 Error Handling
+
+### **Connection Issues**
+- **Reconnection**: Automatic reconnection to Socket.IO
+- **State Recovery**: Restore previous state on reconnect
+- **Offline Mode**: Graceful degradation when offline
+- **Error Reporting**: User-friendly error messages
+
+### **Validation**
+- **Score Validation**: Range checking, required fields
+- **Time Validation**: Segment timing constraints
+- **Role Validation**: Permission checking
+- **Data Validation**: Input sanitization
+
+## 📈 Performance Optimization
+
+### **Real-time Updates**
+- **Efficient Broadcasting**: Targeted room-based events
+- **Debounced Updates**: Prevent excessive updates
+- **Connection Pooling**: Optimize Socket.IO connections
+- **Caching**: Cache frequently accessed data
+
+### **Database Optimization**
+- **Indexing**: Optimized database queries
+- **Connection Pooling**: Efficient database connections
+- **Query Optimization**: Minimize database load
+- **Caching**: Redis for frequently accessed data
+
+## 🔒 Security & Compliance
+
+### **Role-Based Access**
+- **Admin**: Full tournament management
+- **Station Lead**: Station and heat management
+- **Judge**: Scoring and evaluation
+- **Competitor**: Heat participation
+
+### **Data Security**
+- **Encryption**: Secure data transmission
+- **Authentication**: User authentication
+- **Authorization**: Role-based permissions
+- **Audit Logging**: Track all actions
+
+### **Compliance**
+- **Data Protection**: GDPR compliance
+- **Privacy**: User data protection
+- **Audit Trail**: Complete action logging
+- **Backup**: Regular data backups
+
+## 📚 Documentation
+
+### **User Guides**
+- **Admin Guide**: Tournament management
+- **Judge Guide**: Scoring procedures
+- **Competitor Guide**: Participation instructions
+- **Technical Guide**: System administration
+
+### **API Documentation**
+- **REST Endpoints**: Complete API reference
+- **Socket.IO Events**: Real-time event documentation
+- **Database Schema**: Complete schema documentation
+- **Integration Guide**: Third-party integration
+
+## 🎯 Success Metrics
+
+### **Tournament Metrics**
+- **Completion Rate**: Successful tournament completion
+- **Time Accuracy**: Segment timing precision
+- **Score Accuracy**: Scoring system reliability
+- **User Satisfaction**: Participant feedback
+
+### **System Metrics**
+- **Uptime**: System availability
+- **Performance**: Response times
+- **Scalability**: System capacity
+- **Reliability**: Error-free operation
+
+---
+
+## 🚀 Getting Started
+
+1. **Access**: Navigate to Admin Control Center
+2. **Create**: Set up new tournament
+3. **Configure**: Set round times and participants
+4. **Start**: Begin tournament execution
+5. **Monitor**: Track progress in real-time
+6. **Complete**: Finish tournament and view results
+
+The ABC Tournament Bracket System provides a complete, production-ready solution for managing coffee competition tournaments with real-time updates, comprehensive scoring, and mobile-optimized interfaces.

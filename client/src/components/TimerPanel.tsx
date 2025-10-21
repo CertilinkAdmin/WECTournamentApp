@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Clock, Play, Pause, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function TimerPanel() {
+interface TimerPanelProps {
+  readOnly?: boolean;
+}
+
+export default function TimerPanel({ readOnly = false }: TimerPanelProps) {
   const [segment, setSegment] = useState<"dialIn" | "brew" | "serve">("dialIn");
   const [isRunning, setIsRunning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(120);
@@ -62,24 +66,26 @@ export default function TimerPanel() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          Competition Timer
+          Competition Timer {readOnly && <Badge variant="secondary" className="ml-2">View Only</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Segment Selector */}
-        <div className="grid grid-cols-3 gap-2">
-          {(["dialIn", "brew", "serve"] as const).map((seg) => (
-            <Button
-              key={seg}
-              variant={segment === seg ? "default" : "outline"}
-              onClick={() => handleSegmentChange(seg)}
-              className="text-xs"
-              data-testid={`button-segment-${seg}`}
-            >
-              {segmentLabels[seg]}
-            </Button>
-          ))}
-        </div>
+        {!readOnly && (
+          <div className="grid grid-cols-3 gap-2">
+            {(["dialIn", "brew", "serve"] as const).map((seg) => (
+              <Button
+                key={seg}
+                variant={segment === seg ? "default" : "outline"}
+                onClick={() => handleSegmentChange(seg)}
+                className="text-xs"
+                data-testid={`button-segment-${seg}`}
+              >
+                {segmentLabels[seg]}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {/* Animated Timer Display */}
         <div className="text-center space-y-4">
@@ -131,36 +137,44 @@ export default function TimerPanel() {
           )}
         </div>
 
-        {/* Controls */}
-        <div className="flex gap-2">
-          <Button
-            onClick={handleStartPause}
-            className="flex-1"
-            variant={isRunning ? "secondary" : "default"}
-            size="lg"
-            data-testid="button-timer-start-pause"
-          >
-            {isRunning ? (
-              <>
-                <Pause className="h-5 w-5 mr-2" />
-                Pause
-              </>
-            ) : (
-              <>
-                <Play className="h-5 w-5 mr-2" />
-                Start
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            size="lg"
-            data-testid="button-timer-reset"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* Controls - Only show if not read-only */}
+        {!readOnly && (
+          <div className="flex gap-2">
+            <Button
+              onClick={handleStartPause}
+              className="flex-1"
+              variant={isRunning ? "secondary" : "default"}
+              size="lg"
+              data-testid="button-timer-start-pause"
+            >
+              {isRunning ? (
+                <>
+                  <Pause className="h-5 w-5 mr-2" />
+                  Pause
+                </>
+              ) : (
+                <>
+                  <Play className="h-5 w-5 mr-2" />
+                  Start
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleReset}
+              variant="outline"
+              size="lg"
+              data-testid="button-timer-reset"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        
+        {readOnly && (
+          <div className="text-center text-sm text-muted-foreground">
+            Timer is controlled by Station Manager
+          </div>
+        )}
       </CardContent>
     </Card>
   );
