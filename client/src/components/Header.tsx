@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import ThemeToggle from "./ThemeToggle";
 
 interface HeaderProps {
   currentRole: "admin" | "judge" | "barista";
@@ -48,39 +49,42 @@ export default function Header({
           </div>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/20"
-              data-testid="button-role-switcher"
-            >
-              <Badge className={roleColors[currentRole]} data-testid={`badge-role-${currentRole}`}>
-                {roleLabels[currentRole]}
-              </Badge>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem 
-              onClick={() => onRoleChange?.("admin")}
-              data-testid="menu-role-admin"
-            >
-              Admin View
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => onRoleChange?.("judge")}
-              data-testid="menu-role-judge"
-            >
-              Judge View
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => onRoleChange?.("barista")}
-              data-testid="menu-role-barista"
-            >
-              Barista View
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/20"
+                data-testid="button-role-switcher"
+              >
+                <Badge className={roleColors[currentRole]} data-testid={`badge-role-${currentRole}`}>
+                  {roleLabels[currentRole]}
+                </Badge>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem 
+                onClick={() => onRoleChange?.("admin")}
+                data-testid="menu-role-admin"
+              >
+                Admin View
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => onRoleChange?.("judge")}
+                data-testid="menu-role-judge"
+              >
+                Judge View
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => onRoleChange?.("barista")}
+                data-testid="menu-role-barista"
+              >
+                Barista View
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );

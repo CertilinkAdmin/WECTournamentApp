@@ -7,11 +7,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
 import TournamentBracket from "@/components/TournamentBracket";
 import JudgeScorecard from "@/components/JudgeScorecard";
-import StationDashboard from "@/components/StationDashboard";
 import CompetitionRules from "@/components/CompetitionRules";
+import TimerPanel from "@/components/TimerPanel";
+import AdminTournamentSetup from "@/components/AdminTournamentSetup";
 import HeatCard from "@/components/HeatCard";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Clock, FileText, Trophy, Settings } from "lucide-react";
 
 function AdminView() {
   // todo: remove mock functionality
@@ -51,20 +52,37 @@ function AdminView() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-card p-6 rounded-lg">
-        <h2 className="text-2xl font-heading font-bold mb-4">Admin Control Center</h2>
+      <div className="bg-card p-6 rounded-lg border">
+        <h2 className="text-2xl font-heading font-bold mb-2">Admin Control Center</h2>
         <p className="text-muted-foreground">
-          Monitor and manage the tournament in real-time
+          Complete tournament management and oversight
         </p>
       </div>
 
-      <Tabs defaultValue="bracket" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="bracket" data-testid="tab-bracket">Bracket</TabsTrigger>
-          <TabsTrigger value="heats" data-testid="tab-heats">Heats</TabsTrigger>
-          <TabsTrigger value="rules" data-testid="tab-rules">Rules</TabsTrigger>
+      <Tabs defaultValue="setup" className="w-full">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsTrigger value="setup" data-testid="tab-setup">
+            <Settings className="h-4 w-4 mr-2" />
+            Setup
+          </TabsTrigger>
+          <TabsTrigger value="bracket" data-testid="tab-bracket">
+            <Trophy className="h-4 w-4 mr-2" />
+            Bracket
+          </TabsTrigger>
+          <TabsTrigger value="heats" data-testid="tab-heats">
+            <Clock className="h-4 w-4 mr-2" />
+            Heats
+          </TabsTrigger>
+          <TabsTrigger value="rules" data-testid="tab-rules">
+            <FileText className="h-4 w-4 mr-2" />
+            Rules
+          </TabsTrigger>
         </TabsList>
         
+        <TabsContent value="setup" className="mt-6">
+          <AdminTournamentSetup />
+        </TabsContent>
+
         <TabsContent value="bracket" className="mt-6">
           <TournamentBracket />
         </TabsContent>
@@ -91,71 +109,63 @@ function AdminView() {
 
 function JudgeView() {
   return (
-    <div className="max-w-4xl mx-auto">
-      <JudgeScorecard
-        heatNumber={7}
-        competitors={[
-          { name: "Mike Johnson", code: "BR" },
-          { name: "Sarah Williams", code: "GN" }
-        ]}
-        onSubmit={(scores) => console.log("Scores submitted:", scores)}
-      />
+    <div className="max-w-4xl mx-auto space-y-6">
+      <Tabs defaultValue="scorecard" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="scorecard" data-testid="tab-scorecard">
+            <Trophy className="h-4 w-4 mr-2" />
+            Scorecard
+          </TabsTrigger>
+          <TabsTrigger value="timer" data-testid="tab-timer-rules">
+            <Clock className="h-4 w-4 mr-2" />
+            Timer & Rules
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="scorecard" className="mt-6">
+          <JudgeScorecard
+            heatNumber={7}
+            competitors={[
+              { name: "Mike Johnson", code: "BR" },
+              { name: "Sarah Williams", code: "GN" }
+            ]}
+            onSubmit={(scores) => console.log("Scores submitted:", scores)}
+          />
+        </TabsContent>
+
+        <TabsContent value="timer" className="mt-6 space-y-6">
+          <TimerPanel />
+          <CompetitionRules />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
 
 function BaristaView() {
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-2xl font-heading font-bold mb-4">Your Heat Information</h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-muted-foreground">Heat Number</div>
-                <div className="text-2xl font-mono font-bold">7</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Station</div>
-                <div className="text-2xl font-heading font-bold">B</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Scheduled Time</div>
-                <div className="text-lg font-mono">2:00 PM</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Competitor Code</div>
-                <div className="text-lg font-mono font-bold">BR</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <Tabs defaultValue="timer" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="timer" data-testid="tab-timer-rules">
+            <Clock className="h-4 w-4 mr-2" />
+            Timer & Rules
+          </TabsTrigger>
+          <TabsTrigger value="bracket" data-testid="tab-bracket-view">
+            <Trophy className="h-4 w-4 mr-2" />
+            Live Bracket
+          </TabsTrigger>
+        </TabsList>
 
-      <CompetitionRules />
-    </div>
-  );
-}
+        <TabsContent value="timer" className="mt-6 space-y-6">
+          <TimerPanel />
+          <CompetitionRules />
+        </TabsContent>
 
-function StationView() {
-  return (
-    <div className="max-w-2xl mx-auto">
-      <StationDashboard
-        station="B"
-        currentHeat={{
-          heatNumber: 7,
-          competitors: ["Mike Johnson", "Sarah Williams"],
-          scheduledTime: "2:00 PM"
-        }}
-        upcomingHeats={[
-          {
-            heatNumber: 8,
-            competitors: ["Alex Brown", "Emily Davis"],
-            scheduledTime: "2:20 PM"
-          }
-        ]}
-      />
+        <TabsContent value="bracket" className="mt-6">
+          <TournamentBracket />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

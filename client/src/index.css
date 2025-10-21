@@ -14,9 +14,9 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 0 0% 100%;
+  --background: 40 25% 97%;
 
-  --foreground: 25 35% 15%;
+  --foreground: 25 40% 20%;
 
   --border: 0 0% 88%;
 
@@ -60,9 +60,9 @@
 
   --muted-foreground: 25 20% 45%;
 
-  --accent: 38 25% 88%;
+  --accent: 25 20% 85%;
 
-  --accent-foreground: 38 50% 30%;
+  --accent-foreground: 25 50% 25%;
 
   --destructive: 0 70% 50%;
 
