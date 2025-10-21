@@ -150,7 +150,7 @@ export default function AdminTournamentSetup() {
     }
   });
 
-  const addAllCompetitorsMutation = useMutation({
+  const addAllBaristasMutation = useMutation({
     mutationFn: async () => {
       if (!currentTournamentId) throw new Error("No tournament selected");
       
@@ -233,8 +233,8 @@ export default function AdminTournamentSetup() {
     generateBracketMutation.mutate();
   };
 
-  const handleAddAllCompetitors = () => {
-    addAllCompetitorsMutation.mutate();
+  const handleAddAllBaristas = () => {
+    addAllBaristasMutation.mutate();
   };
 
   // Removed power-of-2 validation - tournaments can handle any number of participants
@@ -252,7 +252,7 @@ export default function AdminTournamentSetup() {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'participants'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'matches'] });
-      setSelectedParticipants({ competitors: [], baristas: [], judges: [] });
+      setSelectedParticipants({ competitors: [], judges: [] });
       setCurrentTournamentId(null);
       toast({
         title: "Tournament Cleared",
@@ -528,35 +528,36 @@ export default function AdminTournamentSetup() {
                    {participants.length === 0 && (
                      <Button 
                        variant="outline"
-                       onClick={handleAddAllCompetitors}
-                       disabled={!currentTournamentId || users.filter(u => u.role === 'BARISTA').length === 0 || addAllCompetitorsMutation.isPending}
-                       data-testid="button-add-all-competitors"
+                       onClick={handleAddAllBaristas}
+                       disabled={!currentTournamentId || baristas.length === 0 || addAllBaristasMutation.isPending}
+                       data-testid="button-add-all-baristas"
                      >
-                       {addAllCompetitorsMutation.isPending ? (
+                       {addAllBaristasMutation.isPending ? (
                          <>
                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                           Adding Competitors...
+                           Adding Baristas...
                          </>
                        ) : (
                          <>
                            <Users className="h-4 w-4 mr-2" />
-                           Add All Competitors ({Math.min(users.filter(u => u.role === 'BARISTA').length, 32)})
+                           Add All Baristas ({Math.min(baristas.length, 16)})
                          </>
                        )}
                      </Button>
                    )}
                   
-                  {/* Tournament ready message */}
-                  {participants.length > 0 && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                      <p className="text-sm text-green-800 font-medium">
-                        ✅ Tournament ready with {participants.length} participants
+                  {/* Power-of-2 validation message */}
+                  {participants.length > 0 && !isPowerOfTwo(participants.length) && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                      <p className="text-sm text-amber-800 font-medium">
+                        ⚠️ Bracket requires power-of-2 participants (8, 16, 32...)
                       </p>
-                      <p className="text-xs text-green-700 mt-1">
-                        Bracket will be generated with byes for any odd numbers.
+                      <p className="text-xs text-amber-700 mt-1">
+                        Current: {participants.length} participants. Need {getNextPowerOfTwo(participants.length) - participants.length} more to reach {getNextPowerOfTwo(participants.length)}.
                       </p>
                     </div>
                   )}
+                  
                   <Button 
                     variant="secondary" 
                     onClick={handleRandomizeSeeds}
@@ -578,7 +579,7 @@ export default function AdminTournamentSetup() {
                   <Button 
                     variant="default" 
                     onClick={handleGenerateBracket}
-                    disabled={!currentTournamentId || participants.length === 0 || generateBracketMutation.isPending}
+                    disabled={!currentTournamentId || participants.length === 0 || !isPowerOfTwo(participants.length) || generateBracketMutation.isPending}
                     data-testid="button-generate-bracket"
                   >
                     {generateBracketMutation.isPending ? (
