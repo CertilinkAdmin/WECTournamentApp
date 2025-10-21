@@ -381,6 +381,85 @@ export default function AdminTournamentSetup() {
         </CardContent>
       </Card>
 
+      {/* Tournament Setup Form */}
+      {!currentTournamentId && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5" />
+              Create New Tournament
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="tournament-name" className="text-sm font-medium">Tournament Name</Label>
+              <Input
+                id="tournament-name"
+                value={tournamentName}
+                onChange={(e) => setTournamentName(e.target.value)}
+                data-testid="input-tournament-name"
+                className="mt-1"
+                placeholder="Enter tournament name"
+              />
+            </div>
+
+            <Button 
+              variant="default"
+              onClick={handleCreateTournament}
+              disabled={createTournamentMutation.isPending || !tournamentName.trim()}
+              data-testid="button-create-tournament"
+              size="lg"
+              className="w-full"
+            >
+              {createTournamentMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Tournament...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Tournament
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tournament Management - Only show after tournament is created */}
+      {currentTournamentId && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  {tournaments?.find(t => t.id === currentTournamentId)?.name || 'Tournament'}
+                </span>
+                <Button 
+                  variant="destructive"
+                  onClick={handleClearTournament}
+                  disabled={clearTournamentMutation.isPending}
+                  data-testid="button-clear-tournament"
+                  size="sm"
+                >
+                  {clearTournamentMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Clearing...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Clear Tournament
+                    </>
+                  )}
+                </Button>
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
       <Tabs defaultValue="competitors" className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
           <TabsTrigger value="competitors" data-testid="tab-competitors" className="flex-col sm:flex-row h-auto py-2">
@@ -588,6 +667,8 @@ export default function AdminTournamentSetup() {
           </Card>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }
