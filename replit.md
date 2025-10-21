@@ -53,6 +53,21 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Recent Changes
 
+### Neon PostgreSQL Database Integration (October 21, 2025)
+- Successfully connected to Neon PostgreSQL cloud database
+- Added all 13 foreign key constraints for data integrity
+- Verified schema alignment with application code
+- Application now runs entirely against Neon database
+- All API endpoints responding with live data from cloud database
+
+### Station Lead Interface Complete (October 21, 2025)
+- Implemented collapsible Heat Management Guidelines section with:
+  - Segment sequence explanation (Dial-In → Cappuccino → Espresso)
+  - Station Lead responsibilities (5 key duties)
+  - Timer control instructions with visual examples
+- Added expandable/collapsible UX for better usability
+- Integrated rules seamlessly with existing timer and controls
+
 ### Segment Time Management (October 21, 2025)
 - Added `tournament_round_times` table to store custom segment durations per round
 - Implemented storage methods for managing round times
@@ -87,9 +102,10 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 - **Frontend**: React + TypeScript, Wouter routing, TanStack Query, shadcn/ui
 - **Backend**: Express.js, WebSocket (Socket.io)
-- **Database**: PostgreSQL with Drizzle ORM
+- **Database**: Neon PostgreSQL (cloud-hosted) with Drizzle ORM
 - **Styling**: Tailwind CSS with brown/cream color palette (#8B5A3C primary)
 - **Real-time**: Socket.io for live tournament updates
+- **Environment**: Replit with secure secret management
 
 ## API Endpoints
 
