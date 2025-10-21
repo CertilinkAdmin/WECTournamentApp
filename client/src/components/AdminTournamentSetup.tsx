@@ -154,8 +154,8 @@ export default function AdminTournamentSetup() {
     mutationFn: async () => {
       if (!currentTournamentId) throw new Error("No tournament selected");
       
-      // Add all competitors with sequential seeds
-      const competitorsToAdd = users.filter(u => u.role === 'BARISTA').slice(0, 32);
+      // Add all competitors with sequential seeds (max 16 for power-of-2 bracket)
+      const competitorsToAdd = users.filter(u => u.role === 'BARISTA').slice(0, 16);
       const promises = competitorsToAdd.map((competitor, index) => 
         fetch(`/api/tournaments/${currentTournamentId}/participants`, {
           method: 'POST',
@@ -550,7 +550,7 @@ export default function AdminTournamentSetup() {
                   {participants.length > 0 && !isPowerOfTwo(participants.length) && (
                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
                       <p className="text-sm text-amber-800 font-medium">
-                        ⚠️ Bracket requires power-of-2 participants (8, 16, 32...)
+                        Bracket requires power-of-2 participants (8, 16, 32...)
                       </p>
                       <p className="text-xs text-amber-700 mt-1">
                         Current: {participants.length} participants. Need {getNextPowerOfTwo(participants.length) - participants.length} more to reach {getNextPowerOfTwo(participants.length)}.
