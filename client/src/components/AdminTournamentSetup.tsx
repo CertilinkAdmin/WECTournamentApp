@@ -150,7 +150,7 @@ export default function AdminTournamentSetup() {
     }
   });
 
-  const addAllBaristasMutation = useMutation({
+  const addAllCompetitorsMutation = useMutation({
     mutationFn: async () => {
       if (!currentTournamentId) throw new Error("No tournament selected");
       
@@ -233,8 +233,8 @@ export default function AdminTournamentSetup() {
     generateBracketMutation.mutate();
   };
 
-  const handleAddAllBaristas = () => {
-    addAllBaristasMutation.mutate();
+  const handleAddAllCompetitors = () => {
+    addAllCompetitorsMutation.mutate();
   };
 
   // Removed power-of-2 validation - tournaments can handle any number of participants
@@ -321,9 +321,9 @@ export default function AdminTournamentSetup() {
     createTournamentMutation.mutate();
   };
 
-  // Get judges and baristas from users
+  // Get judges and competitors from users
   const judges = users.filter(u => u.role === 'JUDGE');
-  const baristas = users.filter(u => u.role === 'BARISTA');
+  const competitors = users.filter(u => u.role === 'BARISTA');
 
   return (
     <div className="space-y-6">
@@ -502,7 +502,7 @@ export default function AdminTournamentSetup() {
               <div className="space-y-2">
                 {participants.length === 0 ? (
                   <div className="text-center p-6 text-muted-foreground">
-                    No competitors registered yet. Add baristas to the tournament.
+                    No competitors registered yet. Add competitors to the tournament.
                   </div>
                 ) : (
                   participants.map((participant) => (
@@ -528,32 +528,32 @@ export default function AdminTournamentSetup() {
                    {participants.length === 0 && (
                      <Button 
                        variant="outline"
-                       onClick={handleAddAllBaristas}
-                       disabled={!currentTournamentId || baristas.length === 0 || addAllBaristasMutation.isPending}
-                       data-testid="button-add-all-baristas"
+                       onClick={handleAddAllCompetitors}
+                       disabled={!currentTournamentId || competitors.length === 0 || addAllCompetitorsMutation.isPending}
+                       data-testid="button-add-all-competitors"
                      >
-                       {addAllBaristasMutation.isPending ? (
+                       {addAllCompetitorsMutation.isPending ? (
                          <>
                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                           Adding Baristas...
+                           Adding Competitors...
                          </>
                        ) : (
                          <>
                            <Users className="h-4 w-4 mr-2" />
-                           Add All Baristas ({Math.min(baristas.length, 16)})
+                           Add All Competitors ({Math.min(competitors.length, 16)})
                          </>
                        )}
                      </Button>
                    )}
                   
-                  {/* Power-of-2 validation message */}
-                  {participants.length > 0 && !isPowerOfTwo(participants.length) && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
-                      <p className="text-sm text-amber-800 font-medium">
-                        Bracket requires power-of-2 participants (8, 16, 32...)
+                  {/* Flexible participant count message */}
+                  {participants.length > 0 && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                      <p className="text-sm text-green-800 font-medium">
+                        ✅ Tournament supports {participants.length} participants with automatic bye handling.
                       </p>
-                      <p className="text-xs text-amber-700 mt-1">
-                        Current: {participants.length} participants. Need {getNextPowerOfTwo(participants.length) - participants.length} more to reach {getNextPowerOfTwo(participants.length)}.
+                      <p className="text-xs text-green-700 mt-1">
+                        Bracket will be generated with byes for any odd numbers.
                       </p>
                     </div>
                   )}

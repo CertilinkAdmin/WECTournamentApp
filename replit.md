@@ -53,6 +53,18 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Recent Changes
 
+### Add All Baristas & Power-of-2 Validation (October 21, 2025)
+- Implemented "Add All Baristas" button that auto-populates tournament with test baristas
+- Button adds up to 16 baristas with sequential seeds (1, 2, 3, ...)
+- Only appears when tournament has zero participants for quick setup
+- Added power-of-2 validation for bracket generation (requires 8, 16, or 32 participants)
+- Generate Bracket button disabled until participant count is valid power-of-2
+- Amber warning message displays current count and guidance to reach next power-of-2
+- Example: "Current: 12 participants. Need 4 more to reach 16."
+- Helper functions `isPowerOfTwo()` and `getNextPowerOfTwo()` ensure valid brackets
+- Removed emoji from validation messages per repository guidelines
+- Aligned mutation limit (16) with UI messaging for consistency
+
 ### Segment Timer Pause/Resume Functionality (October 21, 2025)
 - Added pause/resume controls to segment timers in Station Lead View
 - Timer can be paused during any segment and resumed from the same position

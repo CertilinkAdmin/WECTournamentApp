@@ -145,7 +145,7 @@ function JudgeView() {
   );
 }
 
-function BaristaView() {
+function CompetitorView() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Tabs defaultValue="timer" className="w-full">
@@ -174,7 +174,7 @@ function BaristaView() {
 }
 
 function Router() {
-  const [currentRole, setCurrentRole] = useState<"admin" | "judge" | "barista" | "station_lead">("admin");
+  const [currentRole, setCurrentRole] = useState<"admin" | "judge" | "competitor" | "station_lead">("admin");
 
   return (
     <Switch>
