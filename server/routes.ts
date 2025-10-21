@@ -138,6 +138,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear tournament data
+  app.delete("/api/tournaments/:id/clear", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      
+      // Clear all tournament-related data
+      await storage.clearTournamentData(tournamentId);
+      
+      io.to(`tournament:${tournamentId}`).emit("tournament:cleared", { tournamentId });
+      
+      res.json({ success: true, message: "Tournament data cleared successfully" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Randomize participant seeds
   app.post("/api/tournaments/:id/randomize-seeds", async (req, res) => {
     try {

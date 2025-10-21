@@ -5,18 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Trophy, MapPin, Shuffle, Loader2, Clock } from "lucide-react";
+import { Plus, Users, Trophy, MapPin, Shuffle, Loader2, Clock, Trash2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Tournament, User, TournamentParticipant } from "@shared/schema";
 import SegmentTimeConfig from "./SegmentTimeConfig";
+import ParticipantSelection from "./ParticipantSelection";
+
+interface SelectedParticipants {
+  competitors: Array<{ id: string; name: string; role: string; experience?: string; location?: string; specialty?: string; }>;
+  baristas: Array<{ id: string; name: string; role: string; experience?: string; location?: string; specialty?: string; }>;
+  judges: Array<{ id: string; name: string; role: string; experience?: string; location?: string; specialty?: string; }>;
+}
 
 export default function AdminTournamentSetup() {
   const { toast } = useToast();
   const [tournamentName, setTournamentName] = useState("World Espresso Championships");
   const [totalCompetitors, setTotalCompetitors] = useState(32);
   const [currentTournamentId, setCurrentTournamentId] = useState<number | null>(null);
+  const [selectedParticipants, setSelectedParticipants] = useState<SelectedParticipants>({
+    competitors: [],
+    baristas: [],
+    judges: []
+  });
+  const [showParticipantSelection, setShowParticipantSelection] = useState(false);
 
   // Fetch tournaments
   const { data: tournaments } = useQuery<Tournament[]>({
@@ -43,7 +56,8 @@ export default function AdminTournamentSetup() {
 
   const createTournamentMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/tournaments', {
+      // First create the tournament
+      const tournamentResponse = await fetch('/api/tournaments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -53,15 +67,61 @@ export default function AdminTournamentSetup() {
           currentRound: 1
         })
       });
-      if (!response.ok) throw new Error('Failed to create tournament');
-      return await response.json();
+      if (!tournamentResponse.ok) throw new Error('Failed to create tournament');
+      const tournament = await tournamentResponse.json();
+
+      // Then create participants from selected participants
+      const participantPromises = [];
+      
+      // Add competitors
+      for (let i = 0; i < selectedParticipants.competitors.length; i++) {
+        const competitor = selectedParticipants.competitors[i];
+        participantPromises.push(
+          fetch(`/api/tournaments/${tournament.id}/participants`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: competitor.id, // This would need to be mapped to actual user IDs
+              seed: i + 1
+            })
+          })
+        );
+      }
+
+      // Add baristas and judges as participants too (they can also compete)
+      for (let i = 0; i < selectedParticipants.baristas.length; i++) {
+        const barista = selectedParticipants.baristas[i];
+        participantPromises.push(
+          fetch(`/api/tournaments/${tournament.id}/participants`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: barista.id,
+              seed: selectedParticipants.competitors.length + i + 1
+            })
+          })
+        );
+      }
+
+      // Wait for all participants to be created
+      try {
+        await Promise.all(participantPromises);
+      } catch (error) {
+        console.error('Error creating participants:', error);
+        // Tournament was created but participants failed - this is still a partial success
+        throw new Error('Tournament created but some participants failed to be added. Please check the tournament and add participants manually.');
+      }
+
+      return tournament;
     },
     onSuccess: (data: Tournament) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', data.id, 'participants'] });
       setCurrentTournamentId(data.id);
+      setShowParticipantSelection(false);
       toast({
         title: "Tournament Created",
-        description: `${tournamentName} has been initialized.`,
+        description: `${tournamentName} has been initialized with ${selectedParticipants.competitors.length} competitors, ${selectedParticipants.baristas.length} baristas, and ${selectedParticipants.judges.length} judges.`,
       });
     },
     onError: (error: any) => {
@@ -98,13 +158,59 @@ export default function AdminTournamentSetup() {
     }
   });
 
+  const addAllBaristasMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentTournamentId) throw new Error("No tournament selected");
+      
+      // Add all baristas as competitors (participants) with sequential seeds
+      const baristasToAdd = baristas.slice(0, 16); // Limit to first 16 for power-of-2
+      const promises = baristasToAdd.map((barista, index) => 
+        fetch(`/api/tournaments/${currentTournamentId}/participants`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            userId: barista.id,
+            seed: index + 1
+          })
+        })
+      );
+      
+      const responses = await Promise.all(promises);
+      const failedResponses = responses.filter(r => !r.ok);
+      if (failedResponses.length > 0) {
+        throw new Error(`Failed to add ${failedResponses.length} competitors`);
+      }
+      
+      return responses;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'participants'] });
+      toast({
+        title: "Competitors Added",
+        description: `Successfully added ${Math.min(baristas.length, 16)} baristas as competitors.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const generateBracketMutation = useMutation({
     mutationFn: async () => {
       if (!currentTournamentId) throw new Error("No tournament selected");
       const response = await fetch(`/api/tournaments/${currentTournamentId}/generate-bracket`, {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include'
       });
-      if (!response.ok) throw new Error('Failed to generate bracket');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate bracket');
+      }
       return await response.json();
     },
     onSuccess: () => {
@@ -135,12 +241,115 @@ export default function AdminTournamentSetup() {
     generateBracketMutation.mutate();
   };
 
+  const handleAddAllBaristas = () => {
+    addAllBaristasMutation.mutate();
+  };
+
+  // Helper to check if number is power of 2
+  const isPowerOfTwo = (n: number) => n > 0 && (n & (n - 1)) === 0;
+  
+  // Get next power of 2
+  const getNextPowerOfTwo = (n: number) => {
+    if (n <= 0) return 1;
+    return Math.pow(2, Math.ceil(Math.log2(n)));
+  };
+
+  const clearTournamentMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentTournamentId) throw new Error("No tournament selected");
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/clear`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to clear tournament');
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'participants'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', currentTournamentId, 'matches'] });
+      setSelectedParticipants({ competitors: [], baristas: [], judges: [] });
+      setCurrentTournamentId(null);
+      toast({
+        title: "Tournament Cleared",
+        description: "All tournament data has been cleared. You can start fresh.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleClearTournament = () => {
+    if (window.confirm("Are you sure you want to clear all tournament data? This action cannot be undone.")) {
+      clearTournamentMutation.mutate();
+    }
+  };
+
+  const handleParticipantSelectionChange = (selection: SelectedParticipants) => {
+    setSelectedParticipants(selection);
+  };
+
+  const handleCreateTournamentWithParticipants = () => {
+    // Validate tournament name
+    if (!tournamentName.trim()) {
+      toast({
+        title: "Tournament Name Required",
+        description: "Please enter a tournament name.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate participant counts
+    if (selectedParticipants.competitors.length < 16) {
+      toast({
+        title: "Insufficient Competitors",
+        description: "Please select at least 16 competitors for the tournament.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (selectedParticipants.baristas.length < 4) {
+      toast({
+        title: "Insufficient Baristas",
+        description: "Please select at least 4 baristas for the tournament.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (selectedParticipants.judges.length < 3) {
+      toast({
+        title: "Insufficient Judges",
+        description: "Please select at least 3 judges for the tournament.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate total competitors count
+    if (selectedParticipants.competitors.length > totalCompetitors) {
+      toast({
+        title: "Too Many Competitors",
+        description: `You have selected ${selectedParticipants.competitors.length} competitors, but the tournament is set for ${totalCompetitors} competitors.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    createTournamentMutation.mutate();
+  };
+
   // Get judges and baristas from users
   const judges = users.filter(u => u.role === 'JUDGE');
   const baristas = users.filter(u => u.role === 'BARISTA');
 
   return (
     <div className="space-y-6">
+      {/* Tournament Creation/Management */}
       <Card>
         <CardHeader className="bg-primary/10">
           <CardTitle className="flex items-center gap-2 text-primary">
@@ -170,26 +379,108 @@ export default function AdminTournamentSetup() {
               />
             </div>
           </div>
-          <Button 
-            onClick={handleCreateTournament} 
-            className="w-full" 
-            disabled={createTournamentMutation.isPending}
-            data-testid="button-create-tournament"
-          >
-            {createTournamentMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                Initialize Tournament
-              </>
+          
+          {/* Participant Selection Summary */}
+          {selectedParticipants.competitors.length > 0 && (
+            <Card className="bg-muted/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">Selected Participants</h4>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowParticipantSelection(!showParticipantSelection)}
+                  >
+                    {showParticipantSelection ? 'Hide' : 'Edit'} Selection
+                  </Button>
+                </div>
+                <div className="flex gap-4 text-sm">
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {selectedParticipants.competitors.length} Competitors
+                  </Badge>
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {selectedParticipants.baristas.length} Baristas
+                  </Badge>
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Trophy className="h-3 w-3" />
+                    {selectedParticipants.judges.length} Judges
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleCreateTournamentWithParticipants} 
+              className="flex-1" 
+              disabled={createTournamentMutation.isPending || selectedParticipants.competitors.length < 16}
+              data-testid="button-create-tournament"
+            >
+              {createTournamentMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Tournament & Adding Participants...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Tournament
+                </>
+              )}
+            </Button>
+            
+            {currentTournamentId && (
+              <Button 
+                variant="destructive"
+                onClick={handleClearTournament}
+                disabled={clearTournamentMutation.isPending}
+                data-testid="button-clear-tournament"
+              >
+                {clearTournamentMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Clearing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear Tournament
+                  </>
+                )}
+              </Button>
             )}
-          </Button>
+          </div>
+
+          {selectedParticipants.competitors.length < 16 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-md">
+                <AlertTriangle className="h-4 w-4" />
+                <span className="text-sm">Please select participants before creating the tournament.</span>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowParticipantSelection(true)}
+                className="w-full"
+                data-testid="button-select-participants"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Select Participants
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Participant Selection Interface */}
+      {showParticipantSelection && (
+        <ParticipantSelection 
+          onSelectionChange={handleParticipantSelectionChange}
+          initialSelection={selectedParticipants}
+        />
+      )}
 
       <Tabs defaultValue="competitors" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -246,10 +537,38 @@ export default function AdminTournamentSetup() {
                   ))
                 )}
                 <div className="flex flex-col gap-2 mt-4">
-                  <Button variant="outline" data-testid="button-add-competitor">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Competitor
-                  </Button>
+                  {participants.length === 0 && (
+                    <Button 
+                      variant="outline"
+                      onClick={handleAddAllBaristas}
+                      disabled={!currentTournamentId || baristas.length === 0 || addAllBaristasMutation.isPending}
+                      data-testid="button-add-all-baristas"
+                    >
+                       {addAllBaristasMutation.isPending ? (
+                         <>
+                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                           Adding Competitors...
+                         </>
+                       ) : (
+                         <>
+                           <Users className="h-4 w-4 mr-2" />
+                           Add All Baristas as Competitors ({Math.min(baristas.length, 16)})
+                         </>
+                       )}
+                    </Button>
+                  )}
+                  
+                  {/* Power-of-2 validation message */}
+                  {participants.length > 0 && !isPowerOfTwo(participants.length) && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                      <p className="text-sm text-amber-800 font-medium">
+                        ⚠️ Bracket requires power-of-2 participants (8, 16, 32...)
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Current: {participants.length} participants. Need {getNextPowerOfTwo(participants.length) - participants.length} more to reach {getNextPowerOfTwo(participants.length)}.
+                      </p>
+                    </div>
+                  )}
                   <Button 
                     variant="secondary" 
                     onClick={handleRandomizeSeeds}
@@ -271,7 +590,7 @@ export default function AdminTournamentSetup() {
                   <Button 
                     variant="default" 
                     onClick={handleGenerateBracket}
-                    disabled={!currentTournamentId || participants.length === 0 || generateBracketMutation.isPending}
+                    disabled={!currentTournamentId || participants.length === 0 || !isPowerOfTwo(participants.length) || generateBracketMutation.isPending}
                     data-testid="button-generate-bracket"
                   >
                     {generateBracketMutation.isPending ? (

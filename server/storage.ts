@@ -62,6 +62,9 @@ export interface IStorage {
   setRoundTimes(times: InsertTournamentRoundTime): Promise<TournamentRoundTime>;
   getRoundTimes(tournamentId: number, round: number): Promise<TournamentRoundTime | undefined>;
   getTournamentRoundTimes(tournamentId: number): Promise<TournamentRoundTime[]>;
+
+  // Clear tournament data
+  clearTournamentData(tournamentId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -249,6 +252,16 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(tournamentRoundTimes)
       .where(eq(tournamentRoundTimes.tournamentId, tournamentId));
+  }
+
+  async clearTournamentData(tournamentId: number): Promise<void> {
+    // Clear all tournament-related data in the correct order to avoid foreign key constraints
+    await db.delete(heatScores).where(eq(heatScores.tournamentId, tournamentId));
+    await db.delete(heatJudges).where(eq(heatJudges.tournamentId, tournamentId));
+    await db.delete(heatSegments).where(eq(heatSegments.tournamentId, tournamentId));
+    await db.delete(matches).where(eq(matches.tournamentId, tournamentId));
+    await db.delete(tournamentRoundTimes).where(eq(tournamentRoundTimes.tournamentId, tournamentId));
+    await db.delete(tournamentParticipants).where(eq(tournamentParticipants.tournamentId, tournamentId));
   }
 }
 
