@@ -29,6 +29,13 @@ export default function AdminTournamentSetup() {
   });
   const [showParticipantSelection, setShowParticipantSelection] = useState(false);
 
+  // Helper functions for power-of-2 validation
+  const isPowerOfTwo = (n: number) => n > 0 && (n & (n - 1)) === 0;
+  const getNextPowerOfTwo = (n: number) => {
+    if (n <= 0) return 1;
+    return Math.pow(2, Math.ceil(Math.log2(n)));
+  };
+
   // Fetch tournaments
   const { data: tournaments } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
@@ -230,14 +237,7 @@ export default function AdminTournamentSetup() {
     addAllCompetitorsMutation.mutate();
   };
 
-  // Helper to check if number is power of 2
-  const isPowerOfTwo = (n: number) => n > 0 && (n & (n - 1)) === 0;
-  
-  // Get next power of 2
-  const getNextPowerOfTwo = (n: number) => {
-    if (n <= 0) return 1;
-    return Math.pow(2, Math.ceil(Math.log2(n)));
-  };
+  // Removed power-of-2 validation - tournaments can handle any number of participants
 
   const clearTournamentMutation = useMutation({
     mutationFn: async () => {
@@ -290,10 +290,10 @@ export default function AdminTournamentSetup() {
     }
 
     // Validate participant counts
-    if (selectedParticipants.competitors.length < 32) {
+    if (selectedParticipants.competitors.length < 2) {
       toast({
         title: "Insufficient Competitors",
-        description: "Please select 32 competitors for the tournament.",
+        description: "Please select at least 2 competitors for the tournament.",
         variant: "destructive"
       });
       return;
@@ -335,25 +335,30 @@ export default function AdminTournamentSetup() {
             Tournament Setup
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="p-4 sm:p-6 space-y-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="tournament-name">Tournament Name</Label>
+              <Label htmlFor="tournament-name" className="text-sm font-medium">Tournament Name</Label>
               <Input
                 id="tournament-name"
                 value={tournamentName}
                 onChange={(e) => setTournamentName(e.target.value)}
                 data-testid="input-tournament-name"
+                className="mt-1"
+                placeholder="Enter tournament name"
               />
             </div>
             <div>
-              <Label htmlFor="total-competitors">Total Competitors</Label>
+              <Label htmlFor="total-competitors" className="text-sm font-medium">Total Competitors</Label>
               <Input
                 id="total-competitors"
                 type="number"
                 value={totalCompetitors}
                 onChange={(e) => setTotalCompetitors(Number(e.target.value))}
                 data-testid="input-total-competitors"
+                className="mt-1"
+                min="2"
+                max="64"
               />
             </div>
           </div>
@@ -361,23 +366,24 @@ export default function AdminTournamentSetup() {
           {/* Participant Selection Summary */}
           {selectedParticipants.competitors.length > 0 && (
             <Card className="bg-muted/50">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium">Selected Participants</h4>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <h4 className="font-medium text-sm sm:text-base">Selected Participants</h4>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => setShowParticipantSelection(!showParticipantSelection)}
+                    className="w-full sm:w-auto"
                   >
                     {showParticipantSelection ? 'Hide' : 'Edit'} Selection
                   </Button>
                 </div>
-                <div className="flex gap-4 text-sm">
-                  <Badge variant="secondary" className="flex items-center gap-1">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm">
+                  <Badge variant="secondary" className="flex items-center gap-1 justify-center sm:justify-start">
                     <Users className="h-3 w-3" />
                     {selectedParticipants.competitors.length} Competitors
                   </Badge>
-                  <Badge variant="secondary" className="flex items-center gap-1">
+                  <Badge variant="secondary" className="flex items-center gap-1 justify-center sm:justify-start">
                     <Trophy className="h-3 w-3" />
                     {selectedParticipants.judges.length} Judges
                   </Badge>
@@ -386,22 +392,25 @@ export default function AdminTournamentSetup() {
             </Card>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button 
               onClick={handleCreateTournamentWithParticipants} 
               className="flex-1" 
-              disabled={createTournamentMutation.isPending || selectedParticipants.competitors.length < 32}
+              disabled={createTournamentMutation.isPending || selectedParticipants.competitors.length < 2}
               data-testid="button-create-tournament"
+              size="lg"
             >
               {createTournamentMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating Tournament & Adding Participants...
+                  <span className="hidden sm:inline">Creating Tournament & Adding Participants...</span>
+                  <span className="sm:hidden">Creating...</span>
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Tournament
+                  <span className="hidden sm:inline">Create Tournament</span>
+                  <span className="sm:hidden">Create</span>
                 </>
               )}
             </Button>
@@ -412,26 +421,30 @@ export default function AdminTournamentSetup() {
                 onClick={handleClearTournament}
                 disabled={clearTournamentMutation.isPending}
                 data-testid="button-clear-tournament"
+                size="lg"
+                className="w-full sm:w-auto"
               >
                 {clearTournamentMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Clearing...
+                    <span className="hidden sm:inline">Clearing...</span>
+                    <span className="sm:hidden">Clear...</span>
                   </>
                 ) : (
                   <>
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Clear Tournament
+                    <span className="hidden sm:inline">Clear Tournament</span>
+                    <span className="sm:hidden">Clear</span>
                   </>
                 )}
               </Button>
             )}
           </div>
 
-          {selectedParticipants.competitors.length < 32 && (
+          {selectedParticipants.competitors.length < 2 && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-md">
-                <AlertTriangle className="h-4 w-4" />
+              <div className="flex items-start gap-2 text-amber-600 bg-amber-50 p-3 rounded-md">
+                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <span className="text-sm">Please select participants before creating the tournament.</span>
               </div>
               <Button 
@@ -439,6 +452,7 @@ export default function AdminTournamentSetup() {
                 onClick={() => setShowParticipantSelection(true)}
                 className="w-full"
                 data-testid="button-select-participants"
+                size="lg"
               >
                 <Users className="h-4 w-4 mr-2" />
                 Select Participants
@@ -457,22 +471,22 @@ export default function AdminTournamentSetup() {
       )}
 
       <Tabs defaultValue="competitors" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="competitors" data-testid="tab-competitors">
-            <Users className="h-4 w-4 mr-2" />
-            Competitors
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+          <TabsTrigger value="competitors" data-testid="tab-competitors" className="flex-col sm:flex-row h-auto py-2">
+            <Users className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Competitors</span>
           </TabsTrigger>
-          <TabsTrigger value="segments" data-testid="tab-segments">
-            <Clock className="h-4 w-4 mr-2" />
-            Segments
+          <TabsTrigger value="segments" data-testid="tab-segments" className="flex-col sm:flex-row h-auto py-2">
+            <Clock className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Segments</span>
           </TabsTrigger>
-          <TabsTrigger value="judges" data-testid="tab-judges">
-            <Trophy className="h-4 w-4 mr-2" />
-            Judges
+          <TabsTrigger value="judges" data-testid="tab-judges" className="flex-col sm:flex-row h-auto py-2">
+            <Trophy className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Judges</span>
           </TabsTrigger>
-          <TabsTrigger value="stations" data-testid="tab-stations">
-            <MapPin className="h-4 w-4 mr-2" />
-            Stations
+          <TabsTrigger value="stations" data-testid="tab-stations" className="flex-col sm:flex-row h-auto py-2">
+            <MapPin className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Stations</span>
           </TabsTrigger>
         </TabsList>
 
@@ -532,14 +546,14 @@ export default function AdminTournamentSetup() {
                      </Button>
                    )}
                   
-                  {/* Power-of-2 validation message */}
-                  {participants.length > 0 && !isPowerOfTwo(participants.length) && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
-                      <p className="text-sm text-amber-800 font-medium">
-                        ⚠️ Bracket requires power-of-2 participants (8, 16, 32...)
+                  {/* Tournament ready message */}
+                  {participants.length > 0 && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                      <p className="text-sm text-green-800 font-medium">
+                        ✅ Tournament ready with {participants.length} participants
                       </p>
-                      <p className="text-xs text-amber-700 mt-1">
-                        Current: {participants.length} participants. Need {getNextPowerOfTwo(participants.length) - participants.length} more to reach {getNextPowerOfTwo(participants.length)}.
+                      <p className="text-xs text-green-700 mt-1">
+                        Bracket will be generated with byes for any odd numbers.
                       </p>
                     </div>
                   )}
@@ -564,7 +578,7 @@ export default function AdminTournamentSetup() {
                   <Button 
                     variant="default" 
                     onClick={handleGenerateBracket}
-                    disabled={!currentTournamentId || participants.length === 0 || !isPowerOfTwo(participants.length) || generateBracketMutation.isPending}
+                    disabled={!currentTournamentId || participants.length === 0 || generateBracketMutation.isPending}
                     data-testid="button-generate-bracket"
                   >
                     {generateBracketMutation.isPending ? (

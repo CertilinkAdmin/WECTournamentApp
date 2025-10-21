@@ -122,12 +122,12 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
   };
 
   const handleRandomize = () => {
-    // Randomly select 32 competitors and 6 judges
+    // Randomly select competitors and judges
     const shuffledCompetitors = [...MOCK_COMPETITORS].sort(() => Math.random() - 0.5);
     const shuffledJudges = [...MOCK_JUDGES].sort(() => Math.random() - 0.5);
 
-    setSelectedCompetitors(shuffledCompetitors.slice(0, 32));
-    setSelectedJudges(shuffledJudges.slice(0, 6));
+    setSelectedCompetitors(shuffledCompetitors.slice(0, Math.min(32, MOCK_COMPETITORS.length)));
+    setSelectedJudges(shuffledJudges.slice(0, Math.min(6, MOCK_JUDGES.length)));
 
     toast({
       title: "Participants Randomized",
@@ -159,23 +159,23 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
     return (
       <Card 
         key={participant.id} 
-        className={`cursor-pointer transition-all hover:shadow-md ${
+        className={`cursor-pointer transition-all hover:shadow-md active:scale-95 touch-manipulation ${
           isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
         }`}
         onClick={() => handleParticipantToggle(participant, type)}
       >
-        <CardContent className="p-4">
+        <CardContent className="p-3 sm:p-4">
           <div className="flex items-start justify-between">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <Checkbox checked={isSelected} readOnly />
-                <h4 className="font-medium">{participant.name}</h4>
-                {isSelected && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                <Checkbox checked={isSelected} readOnly className="flex-shrink-0" />
+                <h4 className="font-medium text-sm sm:text-base truncate">{participant.name}</h4>
+                {isSelected && <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />}
               </div>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <p><strong>Experience:</strong> {participant.experience}</p>
-                <p><strong>Location:</strong> {participant.location}</p>
-                <p><strong>Specialty:</strong> {participant.specialty}</p>
+              <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
+                <p className="truncate"><strong>Experience:</strong> {participant.experience}</p>
+                <p className="truncate"><strong>Location:</strong> {participant.location}</p>
+                <p className="truncate"><strong>Specialty:</strong> {participant.specialty}</p>
               </div>
             </div>
           </div>
@@ -194,11 +194,11 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
             Participant Selection
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4">
+        <CardContent className="p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <Label htmlFor="search">Search Participants</Label>
-              <div className="relative">
+              <Label htmlFor="search" className="text-sm font-medium">Search Participants</Label>
+              <div className="relative mt-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
@@ -209,25 +209,27 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
                 />
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleRandomize}>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={handleRandomize} className="w-full sm:w-auto">
                 <Shuffle className="h-4 w-4 mr-2" />
-                Randomize
+                <span className="hidden sm:inline">Randomize</span>
+                <span className="sm:hidden">Random</span>
               </Button>
-              <Button variant="outline" onClick={handleClearAll}>
+              <Button variant="outline" onClick={handleClearAll} className="w-full sm:w-auto">
                 <X className="h-4 w-4 mr-2" />
-                Clear All
+                <span className="hidden sm:inline">Clear All</span>
+                <span className="sm:hidden">Clear</span>
               </Button>
             </div>
           </div>
           
           {/* Selection Summary */}
-          <div className="flex gap-4 text-sm">
-            <Badge variant="secondary" className="flex items-center gap-1">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm">
+            <Badge variant="secondary" className="flex items-center gap-1 justify-center sm:justify-start">
               <Users className="h-3 w-3" />
               {selectedCompetitors.length} Competitors
             </Badge>
-            <Badge variant="secondary" className="flex items-center gap-1">
+            <Badge variant="secondary" className="flex items-center gap-1 justify-center sm:justify-start">
               <Trophy className="h-3 w-3" />
               {selectedJudges.length} Judges
             </Badge>
@@ -240,17 +242,17 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Competitors ({selectedCompetitors.length}/32 selected)
+            Competitors ({selectedCompetitors.length} selected)
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {filteredCompetitors.map(participant => 
               renderParticipantCard(participant, 'competitor')
             )}
           </div>
           {filteredCompetitors.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-6 sm:py-8 text-muted-foreground text-sm">
               No competitors found matching your search.
             </div>
           )}
@@ -265,14 +267,14 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
             Judges ({selectedJudges.length}/6 selected)
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {filteredJudges.map(participant => 
               renderParticipantCard(participant, 'judge')
             )}
           </div>
           {filteredJudges.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-6 sm:py-8 text-muted-foreground text-sm">
               No judges found matching your search.
             </div>
           )}
@@ -280,12 +282,12 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
       </Card>
 
       {/* Validation Messages */}
-      {selectedCompetitors.length < 32 && (
+      {selectedCompetitors.length < 2 && (
         <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-amber-800">
-              <AlertCircle className="h-4 w-4" />
-              <span>Please select 32 competitors for the tournament.</span>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-start gap-2 text-amber-800">
+              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <span className="text-sm">Please select at least 2 competitors for the tournament.</span>
             </div>
           </CardContent>
         </Card>
@@ -293,10 +295,10 @@ export default function ParticipantSelection({ onSelectionChange, initialSelecti
       
       {selectedJudges.length < 3 && (
         <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-amber-800">
-              <AlertCircle className="h-4 w-4" />
-              <span>Please select at least 3 judges for the tournament.</span>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-start gap-2 text-amber-800">
+              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <span className="text-sm">Please select at least 3 judges for the tournament.</span>
             </div>
           </CardContent>
         </Card>

@@ -12,7 +12,7 @@ import {
   type HeatJudge, type InsertHeatJudge,
   type HeatScore, type InsertHeatScore
 } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -255,11 +255,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async clearTournamentData(tournamentId: number): Promise<void> {
+    // First, get all matches for this tournament
+    const tournamentMatches = await db.select({ id: matches.id }).from(matches).where(eq(matches.tournamentId, tournamentId));
+    const matchIds = tournamentMatches.map(m => m.id);
+
     // Clear all tournament-related data in the correct order to avoid foreign key constraints
-    await db.delete(heatScores).where(eq(heatScores.tournamentId, tournamentId));
-    await db.delete(heatJudges).where(eq(heatJudges.tournamentId, tournamentId));
-    await db.delete(heatSegments).where(eq(heatSegments.tournamentId, tournamentId));
+    if (matchIds.length > 0) {
+      // Delete scores, judges, and segments for all matches using inArray
+      await db.delete(heatScores).where(inArray(heatScores.matchId, matchIds));
+      await db.delete(heatJudges).where(inArray(heatJudges.matchId, matchIds));
+      await db.delete(heatSegments).where(inArray(heatSegments.matchId, matchIds));
+    }
+
+    // Delete matches
     await db.delete(matches).where(eq(matches.tournamentId, tournamentId));
+    
+    // Delete tournament-specific data
     await db.delete(tournamentRoundTimes).where(eq(tournamentRoundTimes.tournamentId, tournamentId));
     await db.delete(tournamentParticipants).where(eq(tournamentParticipants.tournamentId, tournamentId));
   }

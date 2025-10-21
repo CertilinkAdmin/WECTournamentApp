@@ -8,23 +8,41 @@ interface BracketPair {
 
 export class BracketGenerator {
   /**
-   * Generate standard tournament bracket pairings for Round 1
-   * @param totalPlayers - Must be a power of 2 (8, 16, 32, etc.)
-   * @returns Array of bracket pairs
+   * Generate tournament bracket pairings for Round 1 with bye support
+   * @param totalPlayers - Any number of players (2 or more)
+   * @returns Array of bracket pairs with byes for odd numbers
    */
   static generateRound1Pairings(totalPlayers: number): BracketPair[] {
-    if (totalPlayers === 0 || (totalPlayers & (totalPlayers - 1)) !== 0) {
-      throw new Error("Total players must be a power of 2");
+    if (totalPlayers < 2) {
+      throw new Error("Need at least 2 players");
     }
 
     const pairings: BracketPair[] = [];
-    const halfPlayers = totalPlayers / 2;
-
-    for (let i = 1; i <= halfPlayers; i++) {
+    
+    // If odd number of players, give the top seed a bye
+    if (totalPlayers % 2 === 1) {
+      // Top seed (seed 1) gets a bye - create a pairing with null for competitor2
       pairings.push({
-        seed1: i,
-        seed2: totalPlayers - i + 1
+        seed1: 1,
+        seed2: 0 // Use 0 to indicate bye (will be handled as null in match creation)
       });
+      
+      // Pair remaining players normally (seeds 2 through totalPlayers)
+      for (let i = 2; i <= Math.floor(totalPlayers / 2) + 1; i++) {
+        pairings.push({
+          seed1: i,
+          seed2: totalPlayers - i + 2
+        });
+      }
+    } else {
+      // Even number of players - standard pairing
+      const halfPlayers = totalPlayers / 2;
+      for (let i = 1; i <= halfPlayers; i++) {
+        pairings.push({
+          seed1: i,
+          seed2: totalPlayers - i + 1
+        });
+      }
     }
 
     return pairings;
@@ -52,17 +70,19 @@ export class BracketGenerator {
   }
 
   /**
-   * Generate complete tournament bracket
+   * Generate complete tournament bracket with bye support
    * @param tournamentId - Tournament ID
    * @param participants - List of tournament participants with seeds
    */
   static async generateBracket(tournamentId: number, participants: TournamentParticipant[]) {
     const totalParticipants = participants.length;
-    const totalRounds = Math.log2(totalParticipants);
-
-    if (totalRounds !== Math.floor(totalRounds)) {
-      throw new Error("Participant count must be a power of 2");
+    
+    if (totalParticipants < 2) {
+      throw new Error("Need at least 2 participants");
     }
+
+    // Calculate total rounds needed (including byes)
+    const totalRounds = Math.ceil(Math.log2(totalParticipants));
 
     // Get stations
     const allStations = await storage.getAllStations();
@@ -97,10 +117,36 @@ export class BracketGenerator {
 
     for (const pairing of round1Pairings) {
       const competitor1 = participants.find(p => p.seed === pairing.seed1);
-      const competitor2 = participants.find(p => p.seed === pairing.seed2);
+      const competitor2 = pairing.seed2 === 0 ? null : participants.find(p => p.seed === pairing.seed2);
 
-      if (!competitor1 || !competitor2) {
-        throw new Error(`Participant not found for seeds ${pairing.seed1} or ${pairing.seed2}`);
+      if (!competitor1) {
+        throw new Error(`Participant not found for seed ${pairing.seed1}`);
+      }
+
+      // Handle bye (seed2 is 0, indicating a bye)
+      if (pairing.seed2 === 0) {
+        // This is a bye - competitor1 advances automatically
+        // Create a special "bye" match that's automatically won
+        const match = await storage.createMatch({
+          tournamentId,
+          round: 1,
+          heatNumber,
+          stationId: null, // No station needed for bye
+          competitor1Id: competitor1.userId,
+          competitor2Id: null, // No second competitor for bye
+          status: 'DONE', // Bye is automatically complete
+          winnerId: competitor1.userId, // Winner is automatic
+          startTime: new Date(),
+          endTime: new Date()
+        });
+        
+        heatNumber++;
+        continue;
+      }
+
+      // Regular match with two competitors
+      if (!competitor2) {
+        throw new Error(`Participant not found for seed ${pairing.seed2}`);
       }
 
       // Assign station
