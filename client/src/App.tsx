@@ -14,6 +14,7 @@ import StationLeadView from "@/components/StationLeadView";
 import HeatCard from "@/components/HeatCard";
 import HeatsView from "@/components/HeatsView";
 import StationPage from "@/pages/StationPage";
+import PublicDisplay from "@/components/PublicDisplay";
 import NotFound from "@/pages/not-found";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, FileText, Trophy, Settings } from "lucide-react";
@@ -171,6 +172,9 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/public">
+        <PublicDisplay />
+      </Route>
       <Route path="/station/:stationId">
         {(params) => (
           <div className="min-h-screen bg-background">

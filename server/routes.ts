@@ -113,8 +113,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/tournaments/:id/participants", async (req, res) => {
-    const participants = await storage.getTournamentParticipants(parseInt(req.params.id));
-    res.json(participants);
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const participants = await storage.getTournamentParticipants(tournamentId);
+      
+      // Filter to only return baristas (competitors), not judges
+      const allUsers = await storage.getAllUsers();
+      const baristaParticipants = participants.filter(participant => {
+        const user = allUsers.find(u => u.id === participant.userId);
+        return user?.role === 'BARISTA';
+      });
+      
+      res.json(baristaParticipants);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   // Generate tournament bracket
@@ -123,11 +136,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tournamentId = parseInt(req.params.id);
       const participants = await storage.getTournamentParticipants(tournamentId);
       
-      if (participants.length === 0) {
-        return res.status(400).json({ error: "No participants found" });
+      // Filter to only use baristas (competitors), not judges
+      const allUsers = await storage.getAllUsers();
+      const baristaParticipants = participants.filter(participant => {
+        const user = allUsers.find(u => u.id === participant.userId);
+        return user?.role === 'BARISTA';
+      });
+      
+      if (baristaParticipants.length === 0) {
+        return res.status(400).json({ error: "No barista participants found" });
       }
 
-      await BracketGenerator.generateBracket(tournamentId, participants);
+      await BracketGenerator.generateBracket(tournamentId, baristaParticipants);
       
       const matches = await storage.getTournamentMatches(tournamentId);
       io.to(`tournament:${tournamentId}`).emit("bracket:generated", matches);

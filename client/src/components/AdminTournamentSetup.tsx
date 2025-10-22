@@ -7,6 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import UserManagement from "./UserManagement";
+import BaristaUpload from "./BaristaUpload";
+import JudgeAssignment from "./JudgeAssignment";
+import StationsManagement from "./StationsManagement";
 import { Plus, Users, Trophy, MapPin, Shuffle, Loader2, Clock, Trash2, AlertTriangle, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -30,7 +34,9 @@ export default function AdminTournamentSetup() {
     judges: []
   });
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'setup' | 'competitors' | 'judges' | 'segments' | 'seeds' | 'bracket' | 'view'>('setup');
+  const [currentStep, setCurrentStep] = useState<'setup' | 'baristas' | 'judges' | 'stations' | 'segments' | 'seeds' | 'bracket' | 'view'>('setup');
+  const [baristasComplete, setBaristasComplete] = useState(false);
+  const [judgesComplete, setJudgesComplete] = useState(false);
 
   // Removed power-of-2 validation - tournaments can handle any number of participants
 
@@ -86,7 +92,7 @@ export default function AdminTournamentSetup() {
     onSuccess: (data: Tournament) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       setCurrentTournamentId(data.id);
-      setCurrentStep('competitors');
+      setCurrentStep('baristas');
       toast({
         title: "Tournament Created",
         description: `${tournamentName} has been created. Now select your competitors.`,
@@ -342,6 +348,10 @@ export default function AdminTournamentSetup() {
   // Get judges and available competitors from users
   const judges = users.filter(u => u.role === 'JUDGE');
   const availableCompetitors = users.filter(u => u.role === 'BARISTA');
+  
+  // The API endpoint now properly filters to only return baristas (competitors)
+  // So 'competitors' array already contains only baristas
+  const actualBaristas = competitors;
 
   return (
     <div className="space-y-6">
@@ -354,8 +364,8 @@ export default function AdminTournamentSetup() {
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'setup' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>1</div>
                 <span className="text-sm font-medium">Setup Tournament</span>
               </div>
-              <div className={`flex items-center space-x-2 ${currentStep === 'competitors' ? 'text-primary' : 'text-muted-foreground'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'competitors' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>2</div>
+              <div className={`flex items-center space-x-2 ${currentStep === 'baristas' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'baristas' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>2</div>
                 <span className="text-sm font-medium">Select Baristas</span>
               </div>
               <div className={`flex items-center space-x-2 ${currentStep === 'judges' ? 'text-primary' : 'text-muted-foreground'}`}>
@@ -542,7 +552,7 @@ export default function AdminTournamentSetup() {
       )}
 
       {/* Step 2: Select Competitors */}
-      {currentStep === 'competitors' && (
+      {currentStep === 'baristas' && (
         <Card>
           <CardHeader className="bg-primary/10">
             <CardTitle className="flex items-center gap-2 text-primary">
@@ -978,41 +988,77 @@ export default function AdminTournamentSetup() {
           </Card>
 
       <Tabs defaultValue="competitors" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
-          <TabsTrigger value="competitors" data-testid="tab-competitors" className="flex-col sm:flex-row h-auto py-2">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-auto">
+          <TabsTrigger value="users" data-testid="tab-users" className="flex-col sm:flex-row h-auto py-2">
+            <Users className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="baristas" data-testid="tab-baristas" className="flex-col sm:flex-row h-auto py-2">
             <Users className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
             <span className="text-xs sm:text-sm">Baristas</span>
-          </TabsTrigger>
-          <TabsTrigger value="segments" data-testid="tab-segments" className="flex-col sm:flex-row h-auto py-2">
-            <Clock className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
-            <span className="text-xs sm:text-sm">Segments</span>
+            {baristasComplete && <span className="text-green-600">✓</span>}
           </TabsTrigger>
           <TabsTrigger value="judges" data-testid="tab-judges" className="flex-col sm:flex-row h-auto py-2">
             <Trophy className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
             <span className="text-xs sm:text-sm">Judges</span>
+            {judgesComplete && <span className="text-green-600">✓</span>}
           </TabsTrigger>
           <TabsTrigger value="stations" data-testid="tab-stations" className="flex-col sm:flex-row h-auto py-2">
             <MapPin className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
             <span className="text-xs sm:text-sm">Stations</span>
           </TabsTrigger>
+          <TabsTrigger value="segments" data-testid="tab-segments" className="flex-col sm:flex-row h-auto py-2">
+            <Clock className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Segments</span>
+          </TabsTrigger>
+          <TabsTrigger value="seeds" data-testid="tab-seeds" className="flex-col sm:flex-row h-auto py-2">
+            <Shuffle className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Seeds</span>
+          </TabsTrigger>
+          <TabsTrigger value="bracket" data-testid="tab-bracket" className="flex-col sm:flex-row h-auto py-2">
+            <Trophy className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Bracket</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="competitors" className="mt-6">
+        <TabsContent value="users" className="mt-6">
+          <UserManagement />
+        </TabsContent>
+
+        <TabsContent value="baristas" className="mt-6">
+          <BaristaUpload 
+            tournamentId={currentTournamentId} 
+            onBaristasComplete={() => setBaristasComplete(true)}
+          />
+        </TabsContent>
+
+        <TabsContent value="judges" className="mt-6">
+          <JudgeAssignment 
+            tournamentId={currentTournamentId} 
+            onJudgesComplete={() => setJudgesComplete(true)}
+          />
+        </TabsContent>
+
+        <TabsContent value="stations" className="mt-6">
+          <StationsManagement />
+        </TabsContent>
+
+        <TabsContent value="seeds" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Competitor Registration</span>
-                <Badge variant="secondary">{competitors.length} registered</Badge>
+                <Badge variant="secondary">{actualBaristas.length} baristas registered</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {competitors.length === 0 ? (
+                {actualBaristas.length === 0 ? (
                   <div className="text-center p-6 text-muted-foreground">
                     No baristas registered yet. Add baristas to the tournament.
                   </div>
                 ) : (
-                  competitors.map((competitor) => (
+                  actualBaristas.map((competitor) => (
                     <div
                       key={competitor.id}
                       className="flex items-center justify-between p-3 bg-muted rounded-md"
@@ -1032,7 +1078,7 @@ export default function AdminTournamentSetup() {
                   ))
                 )}
                 <div className="flex flex-col gap-2 mt-4">
-                   {competitors.length === 0 && (
+                   {actualBaristas.length === 0 && (
                      <Button 
                        variant="outline"
                        onClick={handleAddAllCompetitors}
@@ -1047,20 +1093,20 @@ export default function AdminTournamentSetup() {
                        ) : (
                          <>
                            <Users className="h-4 w-4 mr-2" />
-                           Add All Baristas ({Math.min(availableCompetitors.length, 32)})
+                           Add All Baristas ({availableCompetitors.length})
                          </>
                        )}
                      </Button>
                    )}
                   
-                  {/* Flexible participant count message */}
-                  {competitors.length > 0 && (
+                  {/* Barista count message */}
+                  {actualBaristas.length > 0 && (
                     <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                       <p className="text-sm text-green-800 font-medium">
-                        ✅ Tournament supports {competitors.length} baristas with automatic bye handling.
+                        ✅ Tournament has {actualBaristas.length} baristas (competitors) with automatic bye handling.
                       </p>
                       <p className="text-xs text-green-700 mt-1">
-                        Bracket will be generated with byes for any odd numbers.
+                        Bracket will be generated with byes for any odd numbers. No limit on number of baristas.
                       </p>
                     </div>
                   )}
@@ -1068,7 +1114,7 @@ export default function AdminTournamentSetup() {
                   <Button 
                     variant="secondary" 
                     onClick={handleRandomizeSeeds}
-                    disabled={!currentTournamentId || competitors.length === 0 || randomizeSeedsMutation.isPending}
+                    disabled={!currentTournamentId || actualBaristas.length === 0 || randomizeSeedsMutation.isPending}
                     data-testid="button-randomize-seeds"
                   >
                     {randomizeSeedsMutation.isPending ? (

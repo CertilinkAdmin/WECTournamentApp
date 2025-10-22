@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy } from "lucide-react";
+import { Trophy, Loader2 } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -20,6 +21,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useToast } from "@/hooks/use-toast";
+import type { Match, User, Station } from "@shared/schema";
 
 interface BracketHeat {
   heatNumber: number;
@@ -28,6 +30,11 @@ interface BracketHeat {
   competitor2?: string;
   winner?: string;
   nextHeat?: number;
+  matchId?: number;
+  status?: string;
+  competitor1Name?: string;
+  competitor2Name?: string;
+  winnerName?: string;
 }
 
 interface SortableHeatProps {
@@ -85,33 +92,137 @@ function SortableHeat({ heat, isSmall = false, stationColors }: SortableHeatProp
 export default function TournamentBracket() {
   const { toast } = useToast();
   
-  // todo: remove mock functionality
-  const [round1, setRound1] = useState<BracketHeat[]>([
-    { heatNumber: 1, station: "A", competitor1: "1", competitor2: "2", winner: "1", nextHeat: 17 },
-    { heatNumber: 2, station: "B", competitor1: "3", competitor2: "4", nextHeat: 17 },
-    { heatNumber: 3, station: "C", competitor1: "5", competitor2: "6", winner: "5", nextHeat: 18 },
-    { heatNumber: 4, station: "A", competitor1: "7", competitor2: "8", nextHeat: 18 },
-    { heatNumber: 5, station: "B", competitor1: "9", competitor2: "10", nextHeat: 19 },
-    { heatNumber: 6, station: "C", competitor1: "11", competitor2: "12", nextHeat: 19 },
-    { heatNumber: 7, station: "A", competitor1: "13", competitor2: "14", nextHeat: 20 },
-    { heatNumber: 8, station: "B", competitor1: "15", competitor2: "16", nextHeat: 20 },
-  ]);
+  // Fetch tournaments to get current one
+  const { data: tournaments = [] } = useQuery<any[]>({
+    queryKey: ['/api/tournaments'],
+  });
+  
+  const currentTournamentId = tournaments[0]?.id || 1;
 
-  const round2: BracketHeat[] = [
-    { heatNumber: 17, station: "B", competitor1: "H1", competitor2: "H2", nextHeat: 25 },
-    { heatNumber: 18, station: "C", competitor1: "H3", competitor2: "H4", nextHeat: 25 },
-    { heatNumber: 19, station: "A", competitor1: "H5", competitor2: "H6", nextHeat: 26 },
-    { heatNumber: 20, station: "B", competitor1: "H7", competitor2: "H8", nextHeat: 26 },
-  ];
+  // Fetch all matches for the tournament
+  const { data: allMatches = [], isLoading: matchesLoading } = useQuery<Match[]>({
+    queryKey: [`/api/tournaments/${currentTournamentId}/matches`],
+    enabled: !!currentTournamentId,
+  });
 
-  const round3: BracketHeat[] = [
-    { heatNumber: 25, station: "A", competitor1: "H17", competitor2: "H18", nextHeat: 29 },
-    { heatNumber: 26, station: "B", competitor1: "H19", competitor2: "H20", nextHeat: 29 },
-  ];
+  // Fetch users for competitor names
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+  });
 
-  const round4: BracketHeat[] = [
-    { heatNumber: 29, station: "B", competitor1: "H25", competitor2: "H26", nextHeat: 31 },
-  ];
+  // Fetch stations for station names
+  const { data: stations = [] } = useQuery<Station[]>({
+    queryKey: ['/api/stations'],
+  });
+
+  // Get competitor name by ID
+  const getCompetitorName = (userId: number | null) => {
+    if (!userId) return "BYE";
+    const user = users.find(u => u.id === userId);
+    return user?.name || `User ${userId}`;
+  };
+
+  // Get station name by ID
+  const getStationName = (stationId: number | null) => {
+    if (!stationId) return "A";
+    const station = stations.find(s => s.id === stationId);
+    return station?.name || "A";
+  };
+
+  // Process matches into bracket structure
+  const processBracketData = () => {
+    const round1: BracketHeat[] = [];
+    const round2: BracketHeat[] = [];
+    const round3: BracketHeat[] = [];
+    const round4: BracketHeat[] = [];
+
+    // Group matches by round
+    const matchesByRound = allMatches.reduce((acc, match) => {
+      if (!acc[match.round]) acc[match.round] = [];
+      acc[match.round].push(match);
+      return acc;
+    }, {} as Record<number, Match[]>);
+
+    // Process Round 1
+    if (matchesByRound[1]) {
+      matchesByRound[1].forEach(match => {
+        round1.push({
+          heatNumber: match.heatNumber,
+          station: getStationName(match.stationId) as "A" | "B" | "C",
+          competitor1: match.competitor1Id?.toString(),
+          competitor2: match.competitor2Id?.toString(),
+          winner: match.winnerId?.toString(),
+          competitor1Name: getCompetitorName(match.competitor1Id),
+          competitor2Name: getCompetitorName(match.competitor2Id),
+          winnerName: getCompetitorName(match.winnerId),
+          matchId: match.id,
+          status: match.status,
+          nextHeat: match.heatNumber + 16 // Approximate next heat calculation
+        });
+      });
+    }
+
+    // Process Round 2
+    if (matchesByRound[2]) {
+      matchesByRound[2].forEach(match => {
+        round2.push({
+          heatNumber: match.heatNumber,
+          station: getStationName(match.stationId) as "A" | "B" | "C",
+          competitor1: `H${match.heatNumber - 16}`, // Reference to previous round
+          competitor2: `H${match.heatNumber - 15}`,
+          winner: match.winnerId?.toString(),
+          competitor1Name: getCompetitorName(match.competitor1Id),
+          competitor2Name: getCompetitorName(match.competitor2Id),
+          winnerName: getCompetitorName(match.winnerId),
+          matchId: match.id,
+          status: match.status,
+          nextHeat: match.heatNumber + 8
+        });
+      });
+    }
+
+    // Process Round 3
+    if (matchesByRound[3]) {
+      matchesByRound[3].forEach(match => {
+        round3.push({
+          heatNumber: match.heatNumber,
+          station: getStationName(match.stationId) as "A" | "B" | "C",
+          competitor1: `H${match.heatNumber - 8}`,
+          competitor2: `H${match.heatNumber - 7}`,
+          winner: match.winnerId?.toString(),
+          competitor1Name: getCompetitorName(match.competitor1Id),
+          competitor2Name: getCompetitorName(match.competitor2Id),
+          winnerName: getCompetitorName(match.winnerId),
+          matchId: match.id,
+          status: match.status,
+          nextHeat: match.heatNumber + 4
+        });
+      });
+    }
+
+    // Process Round 4
+    if (matchesByRound[4]) {
+      matchesByRound[4].forEach(match => {
+        round4.push({
+          heatNumber: match.heatNumber,
+          station: getStationName(match.stationId) as "A" | "B" | "C",
+          competitor1: `H${match.heatNumber - 4}`,
+          competitor2: `H${match.heatNumber - 3}`,
+          winner: match.winnerId?.toString(),
+          competitor1Name: getCompetitorName(match.competitor1Id),
+          competitor2Name: getCompetitorName(match.competitor2Id),
+          winnerName: getCompetitorName(match.winnerId),
+          matchId: match.id,
+          status: match.status,
+          nextHeat: match.heatNumber + 2
+        });
+      });
+    }
+
+    return { round1, round2, round3, round4 };
+  };
+
+  const { round1, round2, round3, round4 } = processBracketData();
 
   const stationColors = {
     A: "bg-primary",
@@ -150,7 +261,10 @@ export default function TournamentBracket() {
   const renderHeat = (heat: BracketHeat, isSmall = false) => (
     <Card 
       key={heat.heatNumber} 
-      className={`hover-elevate ${isSmall ? "p-2" : "p-3"}`}
+      className={`hover-elevate ${isSmall ? "p-2" : "p-3"} ${
+        heat.status === 'RUNNING' ? 'ring-2 ring-blue-500' : 
+        heat.status === 'DONE' ? 'ring-2 ring-green-500' : ''
+      }`}
       data-testid={`bracket-heat-${heat.heatNumber}`}
     >
       <div className="space-y-1">
@@ -161,19 +275,40 @@ export default function TournamentBracket() {
           <Badge className={`${stationColors[heat.station]} text-white text-xs`}>
             {heat.station}
           </Badge>
+          {heat.status && (
+            <Badge variant={heat.status === 'RUNNING' ? 'default' : heat.status === 'DONE' ? 'secondary' : 'outline'} className="text-xs">
+              {heat.status}
+            </Badge>
+          )}
         </div>
         <div className="space-y-1">
-          <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor1 ? "font-bold" : ""}`}>
-            {heat.competitor1 || "—"}
+          <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor1 ? "font-bold text-green-600" : ""}`}>
+            {heat.competitor1Name || heat.competitor1 || "—"}
           </div>
           <div className={`${isSmall ? "text-xs" : "text-sm"} text-muted-foreground`}>vs</div>
-          <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor2 ? "font-bold" : ""}`}>
-            {heat.competitor2 || "—"}
+          <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor2 ? "font-bold text-green-600" : ""}`}>
+            {heat.competitor2Name || heat.competitor2 || "—"}
           </div>
         </div>
+        {heat.winnerName && (
+          <div className="text-xs text-green-600 font-medium pt-1 border-t">
+            Winner: {heat.winnerName}
+          </div>
+        )}
       </div>
     </Card>
   );
+
+  if (matchesLoading) {
+    return (
+      <div className="p-6 bg-primary/5 rounded-lg flex items-center justify-center" data-testid="tournament-bracket">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading tournament bracket...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-primary/5 rounded-lg overflow-x-auto" data-testid="tournament-bracket">
@@ -228,19 +363,41 @@ export default function TournamentBracket() {
 
           {/* Final */}
           <div className="pt-32">
-            <Card className="p-6 bg-primary/10 border-primary">
-              <div className="text-center space-y-3">
-                <Trophy className="h-12 w-12 mx-auto text-primary" />
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">HEAT 31</div>
-                  <div className="text-xs text-muted-foreground">H29 vs H30</div>
+            {round4.length > 0 ? (
+              <Card className="p-6 bg-primary/10 border-primary">
+                <div className="text-center space-y-3">
+                  <Trophy className="h-12 w-12 mx-auto text-primary" />
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-muted-foreground">HEAT {round4[0].heatNumber}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {round4[0].competitor1Name || round4[0].competitor1 || "TBD"} vs {round4[0].competitor2Name || round4[0].competitor2 || "TBD"}
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="text-xs font-medium text-primary">
+                      {round4[0].winnerName ? "CHAMPION: " + round4[0].winnerName : "CHAMPION"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {round4[0].status === 'DONE' ? "CROWNED" : "PENDING"}
+                    </div>
+                  </div>
                 </div>
-                <div className="pt-2 border-t">
-                  <div className="text-xs font-medium text-primary">CHAMPION</div>
-                  <div className="text-xs text-muted-foreground">CROWNED</div>
+              </Card>
+            ) : (
+              <Card className="p-6 bg-primary/10 border-primary">
+                <div className="text-center space-y-3">
+                  <Trophy className="h-12 w-12 mx-auto text-primary" />
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-muted-foreground">FINAL</div>
+                    <div className="text-xs text-muted-foreground">TBD vs TBD</div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="text-xs font-medium text-primary">CHAMPION</div>
+                    <div className="text-xs text-muted-foreground">PENDING</div>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            )}
           </div>
         </div>
 
@@ -263,3 +420,4 @@ export default function TournamentBracket() {
     </div>
   );
 }
+
