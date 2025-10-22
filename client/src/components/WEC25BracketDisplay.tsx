@@ -1,8 +1,9 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Users, MapPin, Clock } from 'lucide-react';
-import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from './WEC25BracketData';
+import { Trophy, Users, MapPin, Clock, Loader2 } from 'lucide-react';
+import type { Match, User, TournamentParticipant, Tournament } from '@shared/schema';
 
 interface BracketHeatProps {
   heatNumber: number;
@@ -65,6 +66,82 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, isWinner =
 }
 
 export default function WEC25BracketDisplay() {
+  // Fetch tournament data
+  const { data: tournaments = [] } = useQuery<Tournament[]>({
+    queryKey: ['/api/tournaments'],
+  });
+  
+  const currentTournament = tournaments[0];
+  
+  const { data: matches = [], isLoading: matchesLoading } = useQuery<Match[]>({
+    queryKey: ['/api/tournaments', currentTournament?.id, 'matches'],
+    enabled: !!currentTournament?.id,
+  });
+  
+  const { data: participants = [] } = useQuery<TournamentParticipant[]>({
+    queryKey: ['/api/tournaments', currentTournament?.id, 'participants'],
+    enabled: !!currentTournament?.id,
+  });
+  
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+  });
+  
+  // Helper to get participant name
+  const getParticipantName = (userId: number | null) => {
+    if (!userId) return 'TBD';
+    const user = users.find(u => u.id === userId);
+    return user?.name || `Competitor ${userId}`;
+  };
+  
+  // Organize matches by round
+  const round1Matches = matches.filter(m => m.round === 1).sort((a, b) => a.heatNumber - b.heatNumber);
+  const round2Matches = matches.filter(m => m.round === 2).sort((a, b) => a.heatNumber - b.heatNumber);
+  const round3Matches = matches.filter(m => m.round === 3).sort((a, b) => a.heatNumber - b.heatNumber);
+  const round4Matches = matches.filter(m => m.round === 4).sort((a, b) => a.heatNumber - b.heatNumber);
+  const round5Matches = matches.filter(m => m.round === 5).sort((a, b) => a.heatNumber - b.heatNumber);
+  
+  // Calculate stats
+  const totalHeats = matches.length;
+  const totalCompetitors = participants.length;
+  const totalRounds = currentTournament?.totalRounds || 5;
+  
+  // Count heats per station
+  const stationCounts = matches.reduce((acc, match) => {
+    const station = match.stationId;
+    if (station) {
+      acc[station] = (acc[station] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<number, number>);
+
+  if (matchesLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading tournament bracket...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!currentTournament || matches.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="p-8 text-center">
+            <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">No Tournament Data</h2>
+            <p className="text-muted-foreground">
+              Create a tournament and generate a bracket to view the WEC25 display.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -72,11 +149,11 @@ export default function WEC25BracketDisplay() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-4">
             <Trophy className="h-12 w-12 text-primary" />
-            <h1 className="text-4xl font-bold text-primary">WEC25 Tournament Bracket</h1>
+            <h1 className="text-4xl font-bold text-primary">{currentTournament.name}</h1>
             <Trophy className="h-12 w-12 text-primary" />
           </div>
           <p className="text-xl text-muted-foreground">
-            World Espresso Championship 2025 - Complete Tournament Bracket
+            Complete Tournament Bracket - {totalRounds} Rounds
           </p>
         </div>
 
@@ -85,28 +162,28 @@ export default function WEC25BracketDisplay() {
           <Card className="text-center">
             <CardContent className="p-4">
               <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <div className="text-2xl font-bold">22</div>
+              <div className="text-2xl font-bold">{totalCompetitors}</div>
               <div className="text-sm text-muted-foreground">Competitors</div>
             </CardContent>
           </Card>
           <Card className="text-center">
             <CardContent className="p-4">
               <Trophy className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <div className="text-2xl font-bold">31</div>
+              <div className="text-2xl font-bold">{totalHeats}</div>
               <div className="text-sm text-muted-foreground">Total Heats</div>
             </CardContent>
           </Card>
           <Card className="text-center">
             <CardContent className="p-4">
               <MapPin className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">{Object.keys(stationCounts).length}</div>
               <div className="text-sm text-muted-foreground">Stations</div>
             </CardContent>
           </Card>
           <Card className="text-center">
             <CardContent className="p-4">
               <Clock className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <div className="text-2xl font-bold">5</div>
+              <div className="text-2xl font-bold">{totalRounds}</div>
               <div className="text-sm text-muted-foreground">Rounds</div>
             </CardContent>
           </Card>
@@ -117,105 +194,120 @@ export default function WEC25BracketDisplay() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             
             {/* Round 1 */}
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-primary mb-2">Round 1</h2>
-                <p className="text-sm text-muted-foreground">16 Heats</p>
+            {round1Matches.length > 0 && (
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-primary mb-2">Round 1</h2>
+                  <p className="text-sm text-muted-foreground">{round1Matches.length} Heats</p>
+                </div>
+                
+                <div className="space-y-3">
+                  {round1Matches.map((match) => (
+                    <BracketHeat
+                      key={match.heatNumber}
+                      heatNumber={match.heatNumber}
+                      station={String.fromCharCode(64 + (match.stationId || 1))}
+                      competitor1={getParticipantName(match.competitor1Id)}
+                      competitor2={getParticipantName(match.competitor2Id)}
+                      isWinner={match.winnerId !== null}
+                    />
+                  ))}
+                </div>
               </div>
-              
-              <div className="space-y-3">
-                {WEC25_BRACKET_POSITIONS.map((heat, index) => (
-                  <BracketHeat
-                    key={heat.heatNumber}
-                    heatNumber={heat.heatNumber}
-                    station={heat.station}
-                    competitor1={heat.competitor1}
-                    competitor2={heat.competitor2}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Round 2 */}
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-primary mb-2">Round 2</h2>
-                <p className="text-sm text-muted-foreground">8 Heats</p>
+            {round2Matches.length > 0 && (
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-primary mb-2">Round 2</h2>
+                  <p className="text-sm text-muted-foreground">{round2Matches.length} Heats</p>
+                </div>
+                
+                <div className="space-y-6">
+                  {round2Matches.map((match) => (
+                    <BracketHeat
+                      key={match.heatNumber}
+                      heatNumber={match.heatNumber}
+                      station={String.fromCharCode(64 + (match.stationId || 1))}
+                      competitor1={getParticipantName(match.competitor1Id)}
+                      competitor2={getParticipantName(match.competitor2Id)}
+                      isWinner={match.winnerId !== null}
+                    />
+                  ))}
+                </div>
               </div>
-              
-              <div className="space-y-6">
-                {WEC25_ROUND2_POSITIONS.map((heat, index) => (
-                  <BracketHeat
-                    key={heat.heatNumber}
-                    heatNumber={heat.heatNumber}
-                    station={heat.station}
-                    competitor1={heat.competitor1}
-                    competitor2={heat.competitor2}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Round 3 */}
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-primary mb-2">Round 3</h2>
-                <p className="text-sm text-muted-foreground">4 Heats</p>
+            {round3Matches.length > 0 && (
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-primary mb-2">Round 3</h2>
+                  <p className="text-sm text-muted-foreground">{round3Matches.length} Heats</p>
+                </div>
+                
+                <div className="space-y-8">
+                  {round3Matches.map((match) => (
+                    <BracketHeat
+                      key={match.heatNumber}
+                      heatNumber={match.heatNumber}
+                      station={String.fromCharCode(64 + (match.stationId || 1))}
+                      competitor1={getParticipantName(match.competitor1Id)}
+                      competitor2={getParticipantName(match.competitor2Id)}
+                      isWinner={match.winnerId !== null}
+                    />
+                  ))}
+                </div>
               </div>
-              
-              <div className="space-y-8">
-                {WEC25_ROUND3_POSITIONS.map((heat, index) => (
-                  <BracketHeat
-                    key={heat.heatNumber}
-                    heatNumber={heat.heatNumber}
-                    station={heat.station}
-                    competitor1={heat.competitor1}
-                    competitor2={heat.competitor2}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Round 4 */}
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-primary mb-2">Round 4</h2>
-                <p className="text-sm text-muted-foreground">2 Heats</p>
+            {round4Matches.length > 0 && (
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-primary mb-2">Round 4</h2>
+                  <p className="text-sm text-muted-foreground">{round4Matches.length} Heats</p>
+                </div>
+                
+                <div className="space-y-12">
+                  {round4Matches.map((match) => (
+                    <BracketHeat
+                      key={match.heatNumber}
+                      heatNumber={match.heatNumber}
+                      station={String.fromCharCode(64 + (match.stationId || 1))}
+                      competitor1={getParticipantName(match.competitor1Id)}
+                      competitor2={getParticipantName(match.competitor2Id)}
+                      isWinner={match.winnerId !== null}
+                    />
+                  ))}
+                </div>
               </div>
-              
-              <div className="space-y-12">
-                {WEC25_ROUND4_POSITIONS.map((heat, index) => (
-                  <BracketHeat
-                    key={heat.heatNumber}
-                    heatNumber={heat.heatNumber}
-                    station={heat.station}
-                    competitor1={heat.competitor1}
-                    competitor2={heat.competitor2}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Final */}
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-primary mb-2">Final</h2>
-                <p className="text-sm text-muted-foreground">1 Heat</p>
+            {round5Matches.length > 0 && (
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-primary mb-2">Final</h2>
+                  <p className="text-sm text-muted-foreground">{round5Matches.length} Heat</p>
+                </div>
+                
+                <div className="flex justify-center">
+                  {round5Matches.map((match) => (
+                    <BracketHeat
+                      key={match.heatNumber}
+                      heatNumber={match.heatNumber}
+                      station={String.fromCharCode(64 + (match.stationId || 1))}
+                      competitor1={getParticipantName(match.competitor1Id)}
+                      competitor2={getParticipantName(match.competitor2Id)}
+                      isWinner={match.winnerId !== null}
+                      isFinal={true}
+                    />
+                  ))}
+                </div>
               </div>
-              
-              <div className="flex justify-center">
-                {WEC25_FINAL_POSITION.map((heat, index) => (
-                  <BracketHeat
-                    key={heat.heatNumber}
-                    heatNumber={heat.heatNumber}
-                    station={heat.station}
-                    competitor1={heat.competitor1}
-                    competitor2={heat.competitor2}
-                    isFinal={true}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
