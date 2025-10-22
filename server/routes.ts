@@ -194,6 +194,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get round times for tournament
+  app.get("/api/tournaments/:id/round-times", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const roundTimes = await storage.getTournamentRoundTimes(tournamentId);
+      res.json(roundTimes);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Set round times
   app.post("/api/tournaments/:id/round-times", async (req, res) => {
     try {
@@ -488,12 +499,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const matchId = parseInt(req.params.id);
       const segmentCode = req.params.code.toUpperCase();
       
+      // Validate segment code
+      const validSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+      if (!validSegments.includes(segmentCode)) {
+        return res.status(400).json({ error: "Invalid segment code. Must be DIAL_IN, CAPPUCCINO, or ESPRESSO" });
+      }
+      
       // Find the segment
       const segments = await storage.getMatchSegments(matchId);
       const segment = segments.find(s => s.segment === segmentCode);
       
       if (!segment) {
         return res.status(404).json({ error: "Segment not found" });
+      }
+      
+      // Validate that all required segments exist for this match
+      const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+      const existingSegments = segments.map(s => s.segment);
+      const missingSegments = requiredSegments.filter(seg => !existingSegments.includes(seg));
+      
+      if (missingSegments.length > 0) {
+        return res.status(400).json({ 
+          error: `Match is missing required segments: ${missingSegments.join(', ')}` 
+        });
+      }
+      
+      // Check if previous segment is completed (if not the first segment)
+      const segmentOrder = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+      const currentIndex = segmentOrder.indexOf(segmentCode);
+      
+      if (currentIndex > 0) {
+        const previousSegmentCode = segmentOrder[currentIndex - 1];
+        const previousSegment = segments.find(s => s.segment === previousSegmentCode);
+        
+        if (previousSegment && previousSegment.status !== 'ENDED') {
+          return res.status(400).json({ 
+            error: `Previous segment ${previousSegmentCode} must be completed before starting ${segmentCode}` 
+          });
+        }
       }
       
       const updatedSegment = await storage.updateHeatSegment(segment.id, {
@@ -518,12 +561,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const matchId = parseInt(req.params.id);
       const segmentCode = req.params.code.toUpperCase();
       
+      // Validate segment code
+      const validSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+      if (!validSegments.includes(segmentCode)) {
+        return res.status(400).json({ error: "Invalid segment code. Must be DIAL_IN, CAPPUCCINO, or ESPRESSO" });
+      }
+      
       // Find the segment
       const segments = await storage.getMatchSegments(matchId);
       const segment = segments.find(s => s.segment === segmentCode);
       
       if (!segment) {
         return res.status(404).json({ error: "Segment not found" });
+      }
+      
+      // Validate that segment is currently running
+      if (segment.status !== 'RUNNING') {
+        return res.status(400).json({ 
+          error: `Segment ${segmentCode} is not currently running. Current status: ${segment.status}` 
+        });
       }
       
       const updatedSegment = await storage.updateHeatSegment(segment.id, {
@@ -537,6 +593,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(updatedSegment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Validate match segments
+  app.get("/api/matches/:id/segments/validate", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.id);
+      
+      const segments = await storage.getMatchSegments(matchId);
+      const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+      const existingSegments = segments.map(s => s.segment);
+      
+      const missingSegments = requiredSegments.filter(seg => !existingSegments.includes(seg));
+      const extraSegments = existingSegments.filter(seg => !requiredSegments.includes(seg));
+      
+      const isValid = missingSegments.length === 0 && extraSegments.length === 0;
+      
+      res.json({
+        isValid,
+        requiredSegments,
+        existingSegments: existingSegments,
+        missingSegments,
+        extraSegments,
+        message: isValid 
+          ? "Match has all required segments" 
+          : `Match is invalid: missing ${missingSegments.join(', ')}, extra ${extraSegments.join(', ')}`
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Populate next round of competitors across all stations
+  app.post("/api/tournaments/:id/populate-next-round", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      
+      // Get current tournament
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      // Get all matches for the current round
+      const currentMatches = await storage.getTournamentMatches(tournamentId);
+      const currentRound = Math.max(...currentMatches.map(m => m.round));
+      const currentRoundMatches = currentMatches.filter(m => m.round === currentRound);
+      
+      // Check if all current round matches are complete
+      const allCurrentRoundComplete = currentRoundMatches.every(m => m.status === 'DONE');
+      if (!allCurrentRoundComplete) {
+        return res.status(400).json({ error: "Current round must be complete before populating next round" });
+      }
+
+      // Get winners from current round
+      const winners = currentRoundMatches
+        .filter(m => m.winnerId)
+        .map(m => m.winnerId!);
+
+      if (winners.length === 0) {
+        return res.status(400).json({ error: "No winners found in current round" });
+      }
+
+      // Get stations
+      const stations = await storage.getAllStations();
+      const availableStations = stations.filter(s => s.status === 'AVAILABLE');
+
+      if (availableStations.length < 3) {
+        return res.status(400).json({ error: "Need at least 3 available stations" });
+      }
+
+      // Sort stations by name (A, B, C)
+      const sortedStations = availableStations.sort((a, b) => a.name.localeCompare(b.name));
+
+      // Split winners into 3 groups for stations A, B, C
+      const groupSize = Math.ceil(winners.length / 3);
+      const groups = [
+        winners.slice(0, groupSize),
+        winners.slice(groupSize, groupSize * 2),
+        winners.slice(groupSize * 2)
+      ].filter(group => group.length > 0);
+
+      // Create matches for next round
+      const nextRound = currentRound + 1;
+      let heatNumber = 1;
+
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i];
+        const station = sortedStations[i];
+        
+        // Create matches for this group
+        for (let j = 0; j < group.length; j += 2) {
+          const competitor1 = group[j];
+          const competitor2 = group[j + 1];
+          
+          if (competitor2) {
+            // Regular match with two competitors
+            const match = await storage.createMatch({
+              tournamentId,
+              round: nextRound,
+              heatNumber: heatNumber++,
+              stationId: station.id,
+              competitor1Id: competitor1,
+              competitor2Id: competitor2,
+              status: 'PENDING',
+              startTime: station.nextAvailableAt
+            });
+
+            // Get segment times for this round
+            let roundTimes = await storage.getRoundTimes(tournamentId, nextRound);
+            if (!roundTimes) {
+              roundTimes = await storage.setRoundTimes({
+                tournamentId,
+                round: nextRound,
+                dialInMinutes: 10,
+                cappuccinoMinutes: 3,
+                espressoMinutes: 2,
+                totalMinutes: 15
+              });
+            }
+
+            // Create heat segments
+            await storage.createHeatSegment({
+              matchId: match.id,
+              segment: 'DIAL_IN',
+              status: 'IDLE',
+              plannedMinutes: roundTimes.dialInMinutes
+            });
+            
+            await storage.createHeatSegment({
+              matchId: match.id,
+              segment: 'CAPPUCCINO',
+              status: 'IDLE',
+              plannedMinutes: roundTimes.cappuccinoMinutes
+            });
+            
+            await storage.createHeatSegment({
+              matchId: match.id,
+              segment: 'ESPRESSO',
+              status: 'IDLE',
+              plannedMinutes: roundTimes.espressoMinutes
+            });
+
+            // Update station availability
+            const nextAvailable = new Date(station.nextAvailableAt.getTime() + (roundTimes.totalMinutes + 10) * 60 * 1000);
+            await storage.updateStation(station.id, { nextAvailableAt: nextAvailable });
+          } else {
+            // Bye - competitor advances automatically
+            await storage.createMatch({
+              tournamentId,
+              round: nextRound,
+              heatNumber: heatNumber++,
+              stationId: null,
+              competitor1Id: competitor1,
+              competitor2Id: null,
+              status: 'DONE',
+              winnerId: competitor1,
+              startTime: new Date(),
+              endTime: new Date()
+            });
+          }
+        }
+      }
+
+      // Emit WebSocket update
+      io.to(`tournament:${tournamentId}`).emit("next-round-populated", {
+        round: nextRound,
+        message: "Next round has been populated with competitors"
+      });
+
+      res.json({ 
+        success: true, 
+        nextRound, 
+        matchesCreated: heatNumber - 1,
+        message: "Next round populated successfully" 
+      });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

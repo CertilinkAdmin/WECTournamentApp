@@ -36,6 +36,8 @@ interface CompetitorSelectionProps {
     competitors: MockParticipant[];
     judges: MockParticipant[];
   };
+  availableBaristas?: Array<{ id: number; name: string; role: string; email: string; }>;
+  availableJudges?: Array<{ id: number; name: string; role: string; email: string; }>;
 }
 
 // Unified competitor pool (no distinction between baristas and competitors)
@@ -83,20 +85,43 @@ const MOCK_JUDGES: MockParticipant[] = [
   { id: "judge-6", name: "Chief Lisa Davis", role: "JUDGE", experience: "17 years", location: "Denver, CO", specialty: "Pour Over" },
 ];
 
-export default function CompetitorSelection({ onSelectionChange, initialSelection }: CompetitorSelectionProps) {
+export default function CompetitorSelection({ onSelectionChange, initialSelection, availableBaristas = [], availableJudges = [] }: CompetitorSelectionProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCompetitors, setSelectedCompetitors] = useState<MockParticipant[]>(initialSelection?.competitors || []);
   const [selectedJudges, setSelectedJudges] = useState<MockParticipant[]>(initialSelection?.judges || []);
 
+  // Convert real users to MockParticipant format for compatibility
+  const realBaristas: MockParticipant[] = availableBaristas.map(user => ({
+    id: user.id.toString(),
+    name: user.name,
+    role: 'COMPETITOR' as const,
+    experience: 'Professional',
+    location: 'Tournament',
+    specialty: 'Coffee'
+  }));
+
+  const realJudges: MockParticipant[] = availableJudges.map(user => ({
+    id: user.id.toString(),
+    name: user.name,
+    role: 'JUDGE' as const,
+    experience: 'Professional',
+    location: 'Tournament',
+    specialty: 'Judging'
+  }));
+
+  // Use real users if available, otherwise fall back to mock data
+  const competitorsToShow = realBaristas.length > 0 ? realBaristas : MOCK_COMPETITORS;
+  const judgesToShow = realJudges.length > 0 ? realJudges : MOCK_JUDGES;
+
   // Filter participants based on search term
-  const filteredCompetitors = MOCK_COMPETITORS.filter(comp => 
+  const filteredCompetitors = competitorsToShow.filter(comp => 
     comp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     comp.specialty?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     comp.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const filteredJudges = MOCK_JUDGES.filter(judge => 
+  const filteredJudges = judgesToShow.filter(judge => 
     judge.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     judge.specialty?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     judge.location?.toLowerCase().includes(searchTerm.toLowerCase())

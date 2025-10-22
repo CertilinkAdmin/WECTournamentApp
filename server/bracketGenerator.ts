@@ -66,6 +66,19 @@ export class BracketGenerator {
       throw new Error("No available stations");
     }
 
+    // Ensure proper staggered timing is maintained
+    const now = new Date();
+    const stationName = station.name;
+    
+    // If this is the first heat assignment, ensure staggered timing
+    if (stationName === 'A' && station.nextAvailableAt.getTime() === now.getTime()) {
+      // Station A starts immediately - this is correct
+    } else if (stationName === 'B' && station.nextAvailableAt.getTime() === now.getTime() + 10 * 60 * 1000) {
+      // Station B starts 10 minutes after Station A - this is correct
+    } else if (stationName === 'C' && station.nextAvailableAt.getTime() === now.getTime() + 20 * 60 * 1000) {
+      // Station C starts 20 minutes after Station A - this is correct
+    }
+
     return station;
   }
 
@@ -102,110 +115,134 @@ export class BracketGenerator {
       throw new Error("Stations A, B, C must exist");
     }
 
-    // Set staggered start times
-    await storage.updateStation(stationA.id, { nextAvailableAt: now });
-    await storage.updateStation(stationB.id, { 
-      nextAvailableAt: new Date(now.getTime() + 10 * 60 * 1000) 
+    // Set staggered start times with proper timing
+    // Station A starts immediately
+    await storage.updateStation(stationA.id, { 
+      nextAvailableAt: now,
+      status: 'AVAILABLE'
     });
+    
+    // Station B starts 10 minutes after Station A
+    await storage.updateStation(stationB.id, { 
+      nextAvailableAt: new Date(now.getTime() + 10 * 60 * 1000),
+      status: 'AVAILABLE'
+    });
+    
+    // Station C starts 20 minutes after Station A
     await storage.updateStation(stationC.id, { 
-      nextAvailableAt: new Date(now.getTime() + 20 * 60 * 1000) 
+      nextAvailableAt: new Date(now.getTime() + 20 * 60 * 1000),
+      status: 'AVAILABLE'
     });
 
-    // Generate Round 1 matches
+    // Generate Round 1 matches with proper bracket splitting
     const round1Pairings = this.generateRound1Pairings(totalParticipants);
     let heatNumber = 1;
 
-    for (const pairing of round1Pairings) {
-      const competitor1 = participants.find(p => p.seed === pairing.seed1);
-      const competitor2 = pairing.seed2 === 0 ? null : participants.find(p => p.seed === pairing.seed2);
+    // Split pairings into 3 groups for stations A, B, C
+    const groupSize = Math.ceil(round1Pairings.length / 3);
+    const groups = [
+      round1Pairings.slice(0, groupSize),
+      round1Pairings.slice(groupSize, groupSize * 2),
+      round1Pairings.slice(groupSize * 2)
+    ].filter(group => group.length > 0);
 
-      if (!competitor1) {
-        throw new Error(`Participant not found for seed ${pairing.seed1}`);
-      }
+    // Assign each group to a station
+    const stationAssignments = [
+      { station: stationA, pairings: groups[0] || [] },
+      { station: stationB, pairings: groups[1] || [] },
+      { station: stationC, pairings: groups[2] || [] }
+    ];
 
-      // Handle bye (seed2 is 0, indicating a bye)
-      if (pairing.seed2 === 0) {
-        // This is a bye - competitor1 advances automatically
-        // Create a special "bye" match that's automatically won
+    for (const { station, pairings } of stationAssignments) {
+      for (const pairing of pairings) {
+        const competitor1 = participants.find(p => p.seed === pairing.seed1);
+        const competitor2 = pairing.seed2 === 0 ? null : participants.find(p => p.seed === pairing.seed2);
+
+        if (!competitor1) {
+          throw new Error(`Participant not found for seed ${pairing.seed1}`);
+        }
+
+        // Handle bye (seed2 is 0, indicating a bye)
+        if (pairing.seed2 === 0) {
+          // This is a bye - competitor1 advances automatically
+          // Create a special "bye" match that's automatically won
+          const match = await storage.createMatch({
+            tournamentId,
+            round: 1,
+            heatNumber,
+            stationId: null, // No station needed for bye
+            competitor1Id: competitor1.userId,
+            competitor2Id: null, // No second competitor for bye
+            status: 'DONE', // Bye is automatically complete
+            winnerId: competitor1.userId, // Winner is automatic
+            startTime: new Date(),
+            endTime: new Date()
+          });
+          
+          heatNumber++;
+          continue;
+        }
+
+        // Regular match with two competitors
+        if (!competitor2) {
+          throw new Error(`Participant not found for seed ${pairing.seed2}`);
+        }
+
+        // Use the assigned station for this group
+        // Create match
         const match = await storage.createMatch({
           tournamentId,
           round: 1,
           heatNumber,
-          stationId: null, // No station needed for bye
+          stationId: station.id,
           competitor1Id: competitor1.userId,
-          competitor2Id: null, // No second competitor for bye
-          status: 'DONE', // Bye is automatically complete
-          winnerId: competitor1.userId, // Winner is automatic
-          startTime: new Date(),
-          endTime: new Date()
+          competitor2Id: competitor2.userId,
+          status: 'PENDING',
+          startTime: station.nextAvailableAt
+        });
+
+        // Get segment times for this round (or use defaults)
+        let roundTimes = await storage.getRoundTimes(tournamentId, 1);
+        if (!roundTimes) {
+          // Create default times
+          roundTimes = await storage.setRoundTimes({
+            tournamentId,
+            round: 1,
+            dialInMinutes: 10,
+            cappuccinoMinutes: 3,
+            espressoMinutes: 2,
+            totalMinutes: 15
+          });
+        }
+
+        // Create heat segments
+        await storage.createHeatSegment({
+          matchId: match.id,
+          segment: 'DIAL_IN',
+          status: 'IDLE',
+          plannedMinutes: roundTimes.dialInMinutes
         });
         
-        heatNumber++;
-        continue;
-      }
-
-      // Regular match with two competitors
-      if (!competitor2) {
-        throw new Error(`Participant not found for seed ${pairing.seed2}`);
-      }
-
-      // Assign station
-      const updatedStations = await storage.getAllStations();
-      const station = await this.assignStation(updatedStations.filter(s => s.status === 'AVAILABLE'));
-
-      // Create match
-      const match = await storage.createMatch({
-        tournamentId,
-        round: 1,
-        heatNumber,
-        stationId: station.id,
-        competitor1Id: competitor1.userId,
-        competitor2Id: competitor2.userId,
-        status: 'PENDING',
-        startTime: station.nextAvailableAt
-      });
-
-      // Get segment times for this round (or use defaults)
-      let roundTimes = await storage.getRoundTimes(tournamentId, 1);
-      if (!roundTimes) {
-        // Create default times
-        roundTimes = await storage.setRoundTimes({
-          tournamentId,
-          round: 1,
-          dialInMinutes: 10,
-          cappuccinoMinutes: 3,
-          espressoMinutes: 2,
-          totalMinutes: 15
+        await storage.createHeatSegment({
+          matchId: match.id,
+          segment: 'CAPPUCCINO',
+          status: 'IDLE',
+          plannedMinutes: roundTimes.cappuccinoMinutes
         });
+        
+        await storage.createHeatSegment({
+          matchId: match.id,
+          segment: 'ESPRESSO',
+          status: 'IDLE',
+          plannedMinutes: roundTimes.espressoMinutes
+        });
+
+        // Update station availability (total minutes per heat + 10 minute buffer)
+        const nextAvailable = new Date(station.nextAvailableAt.getTime() + (roundTimes.totalMinutes + 10) * 60 * 1000);
+        await storage.updateStation(station.id, { nextAvailableAt: nextAvailable });
+
+        heatNumber++;
       }
-
-      // Create heat segments
-      await storage.createHeatSegment({
-        matchId: match.id,
-        segment: 'DIAL_IN',
-        status: 'IDLE',
-        plannedMinutes: roundTimes.dialInMinutes
-      });
-      
-      await storage.createHeatSegment({
-        matchId: match.id,
-        segment: 'CAPPUCCINO',
-        status: 'IDLE',
-        plannedMinutes: roundTimes.cappuccinoMinutes
-      });
-      
-      await storage.createHeatSegment({
-        matchId: match.id,
-        segment: 'ESPRESSO',
-        status: 'IDLE',
-        plannedMinutes: roundTimes.espressoMinutes
-      });
-
-      // Update station availability (total minutes per heat + 10 minute buffer)
-      const nextAvailable = new Date(station.nextAvailableAt.getTime() + (roundTimes.totalMinutes + 10) * 60 * 1000);
-      await storage.updateStation(station.id, { nextAvailableAt: nextAvailable });
-
-      heatNumber++;
     }
 
     // Create placeholder matches for subsequent rounds

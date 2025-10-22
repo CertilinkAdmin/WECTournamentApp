@@ -1,0 +1,217 @@
+{
+  "prompt_chain": [
+    {
+      "id": "1",
+      "title": "Station Lead Timer Control System",
+      "description": "Implement comprehensive timer controls for station leads with segment management",
+      "requirements": [
+        "Station lead can start timer for each segment (Dial-in, Cappuccino, Espresso)",
+        "Timer automatically stops at segment end, station lead doesn't need to stop it",
+        "Station lead can start next segment or next heat when ready",
+        "Visual countdown with warnings at 1-minute and 30-second marks",
+        "Station lead can pause/resume timers if needed"
+      ],
+      "test_criteria": [
+        "Station lead can start Dial-in segment timer",
+        "Timer counts down correctly and shows warnings",
+        "Station lead can advance to next segment after completion",
+        "Timer automatically stops when time expires",
+        "Station lead can start next heat when current heat completes"
+      ],
+      "files_to_modify": [
+        "client/src/components/StationLeadView.tsx",
+        "client/src/components/SegmentTimer.tsx",
+        "server/routes.ts"
+      ]
+    },
+    {
+      "id": "2", 
+      "title": "Staggered Station Timing System",
+      "description": "Implement proper staggered timing where Station A starts immediately, B starts +10min, C starts +20min",
+      "requirements": [
+        "Station A starts immediately when tournament begins",
+        "Station B countdown starts when Station A starts (+10 minutes)",
+        "Station C countdown starts when Station A starts (+20 minutes)",
+        "Visual countdown displays for each station showing time until start",
+        "Stations automatically become available at their scheduled times"
+      ],
+      "test_criteria": [
+        "Station A starts immediately when tournament begins",
+        "Station B shows 10-minute countdown when Station A starts",
+        "Station C shows 20-minute countdown when Station A starts",
+        "Stations become available at correct staggered times",
+        "Countdown displays update in real-time"
+      ],
+      "files_to_modify": [
+        "client/src/components/StationWarning.tsx",
+        "server/bracketGenerator.ts",
+        "client/src/components/StationDashboard.tsx"
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Station Replenishment System",
+      "description": "Implement system where Station A lead can populate next round of competitors across all stations",
+      "requirements": [
+        "Station A lead has button to populate next round of competitors",
+        "System automatically assigns next bracket to available stations",
+        "Station A lead can trigger replenishment for all stations",
+        "System maintains proper bracket progression",
+        "Visual confirmation when stations are replenished"
+      ],
+      "test_criteria": [
+        "Station A lead can see 'Populate Next Round' button",
+        "Button populates next bracket across all stations",
+        "System assigns competitors to correct stations",
+        "Visual confirmation shows successful replenishment",
+        "Bracket progression is maintained correctly"
+      ],
+      "files_to_modify": [
+        "client/src/components/StationLeadView.tsx",
+        "server/routes.ts",
+        "server/bracketGenerator.ts"
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Judge Assignment System",
+      "description": "Ensure exactly 9 judges are assigned (3 per station A, B, C) and properly managed",
+      "requirements": [
+        "System validates exactly 9 judges are available",
+        "3 judges assigned to Station A, 3 to Station B, 3 to Station C",
+        "Judge assignments are displayed clearly",
+        "System prevents tournament start without proper judge assignment",
+        "Judges can see their assigned station and heats"
+      ],
+      "test_criteria": [
+        "System requires exactly 9 judges before tournament can start",
+        "3 judges are assigned to each station (A, B, C)",
+        "Judge assignments are displayed in admin interface",
+        "Judges can see their assigned station and upcoming heats",
+        "System prevents starting tournament with insufficient judges"
+      ],
+      "files_to_modify": [
+        "client/src/components/AdminTournamentSetup.tsx",
+        "server/routes.ts",
+        "server/bracketGenerator.ts"
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Bracket Splitting Logic",
+      "description": "Implement accurate bracket splitting into 3 groups for stations A, B, C",
+      "requirements": [
+        "Competitors are evenly split into 3 groups",
+        "Each group is assigned to a specific station (A, B, C)",
+        "Groups maintain proper seeding and bracket integrity",
+        "System handles odd numbers of competitors correctly",
+        "Visual display shows which competitors are in which station group"
+      ],
+      "test_criteria": [
+        "Competitors are evenly distributed across 3 stations",
+        "Each station group maintains proper bracket structure",
+        "System handles odd numbers of competitors with byes",
+        "Admin can see which competitors are assigned to which station",
+        "Bracket integrity is maintained across all stations"
+      ],
+      "files_to_modify": [
+        "server/bracketGenerator.ts",
+        "client/src/components/AdminTournamentSetup.tsx",
+        "client/src/components/TournamentBracket.tsx"
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Segment Timing Validation",
+      "description": "Validate that each heat has 3 official timed segments: Dial-in, Cappuccino, Espresso",
+      "requirements": [
+        "Each heat must have exactly 3 segments: Dial-in, Cappuccino, Espresso",
+        "Each segment has configurable time limits",
+        "Segments run sequentially (Dial-in → Cappuccino → Espresso)",
+        "System validates all segments are completed before heat ends",
+        "Time limits are enforced and displayed clearly"
+      ],
+      "test_criteria": [
+        "Each heat has exactly 3 segments in correct order",
+        "Segment time limits are configurable and enforced",
+        "Segments run sequentially without overlap",
+        "System prevents heat completion until all segments are done",
+        "Time limits are clearly displayed and enforced"
+      ],
+      "files_to_modify": [
+        "server/bracketGenerator.ts",
+        "client/src/components/StationLeadView.tsx",
+        "server/routes.ts"
+      ]
+    },
+    {
+      "id": "7",
+      "title": "Complete Station Lead Workflow",
+      "description": "Implement complete station lead workflow for timer management and heat progression",
+      "requirements": [
+        "Station lead can start heat when competitors are ready",
+        "Station lead manages all 3 segments sequentially",
+        "Station lead can complete heat when all segments are done",
+        "Station lead can start next heat or replenish stations",
+        "System provides clear workflow guidance and status updates"
+      ],
+      "test_criteria": [
+        "Station lead can start heat with clear workflow",
+        "All 3 segments are managed sequentially",
+        "Heat completion requires all segments to be finished",
+        "Station lead can progress to next heat or replenish",
+        "Workflow provides clear guidance and status updates"
+      ],
+      "files_to_modify": [
+        "client/src/components/StationLeadView.tsx",
+        "client/src/components/SegmentTimer.tsx",
+        "server/routes.ts"
+      ]
+    },
+    {
+      "id": "8",
+      "title": "Integration Testing and Validation",
+      "description": "Test complete tournament flow with all timing and station management features",
+      "requirements": [
+        "Test complete tournament flow from start to finish",
+        "Validate staggered timing works correctly",
+        "Test station replenishment system",
+        "Verify judge assignments and scoring",
+        "Test bracket progression and winner advancement"
+      ],
+      "test_criteria": [
+        "Complete tournament can run from start to finish",
+        "Staggered timing works correctly for all stations",
+        "Station replenishment system works as expected",
+        "Judge assignments and scoring function properly",
+        "Bracket progression and winner advancement work correctly"
+      ],
+      "files_to_modify": [
+        "All tournament-related files",
+        "Test files and validation scripts"
+      ]
+    }
+  ],
+  "execution_order": [
+    "1", "2", "3", "4", "5", "6", "7", "8"
+  ],
+  "dependencies": {
+    "1": [],
+    "2": ["1"],
+    "3": ["1", "2"],
+    "4": [],
+    "5": ["4"],
+    "6": ["1", "5"],
+    "7": ["1", "2", "3", "6"],
+    "8": ["1", "2", "3", "4", "5", "6", "7"]
+  },
+  "success_criteria": [
+    "Station leads can effectively manage timers and heat progression",
+    "Staggered timing works correctly with proper countdowns",
+    "Station replenishment system allows Station A lead to populate next round",
+    "Exactly 9 judges are properly assigned (3 per station)",
+    "Brackets are accurately split into 3 groups for stations A, B, C",
+    "Each heat has 3 official timed segments working correctly",
+    "Complete tournament flow works from start to finish"
+  ]
+}

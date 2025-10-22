@@ -23,6 +23,7 @@ interface SegmentTimerProps {
 function SegmentTimer({ startTime, durationMinutes, isPaused = false, onComplete }: SegmentTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState(durationMinutes * 60);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
+  const [warningsShown, setWarningsShown] = useState({ oneMinute: false, thirtySeconds: false });
 
   useEffect(() => {
     if (isPaused) {
@@ -49,6 +50,16 @@ function SegmentTimer({ startTime, durationMinutes, isPaused = false, onComplete
       const remaining = Math.max(0, (durationMinutes * 60) - elapsed);
       setTimeRemaining(remaining);
 
+      // Show warnings at 1 minute and 30 seconds
+      if (remaining === 60 && !warningsShown.oneMinute) {
+        setWarningsShown(prev => ({ ...prev, oneMinute: true }));
+        // You could add a toast notification here
+      }
+      if (remaining === 30 && !warningsShown.thirtySeconds) {
+        setWarningsShown(prev => ({ ...prev, thirtySeconds: true }));
+        // You could add a toast notification here
+      }
+
       if (remaining === 0 && onComplete) {
         onComplete();
         clearInterval(interval);
@@ -69,12 +80,32 @@ function SegmentTimer({ startTime, durationMinutes, isPaused = false, onComplete
 
   return (
     <div className="text-center space-y-4">
+      {/* Warning Messages */}
+      {timeRemaining === 60 && warningsShown.oneMinute && (
+        <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3">
+          <div className="text-yellow-800 dark:text-yellow-200 font-semibold">
+            ⚠️ 1 MINUTE WARNING
+          </div>
+        </div>
+      )}
+      
+      {timeRemaining === 30 && warningsShown.thirtySeconds && (
+        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+          <div className="text-red-800 dark:text-red-200 font-semibold">
+            🚨 30 SECONDS WARNING
+          </div>
+        </div>
+      )}
+
       {/* Wave Timer Container */}
       <div className="relative h-40 bg-black rounded-lg overflow-hidden">
         {/* Time Display Overlay */}
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <div 
-            className={`text-7xl font-bold font-mono ${timeRemaining < 60 ? "text-red-500" : "text-white"}`}
+            className={`text-7xl font-bold font-mono transition-colors duration-500 ${
+              timeRemaining < 30 ? "text-red-500 animate-pulse" : 
+              timeRemaining < 60 ? "text-red-500" : "text-white"
+            }`}
             data-testid="text-segment-timer"
           >
             {formatTime(timeRemaining)}
@@ -86,7 +117,7 @@ function SegmentTimer({ startTime, durationMinutes, isPaused = false, onComplete
           className="absolute bottom-0 left-0 w-full transition-all duration-1000 ease-linear overflow-hidden"
           style={{ 
             height: `${remainingProgress}%`,
-            background: timeRemaining < 60 ? '#DC2626' : '#8B5A3C',
+            background: timeRemaining < 30 ? '#DC2626' : timeRemaining < 60 ? '#F59E0B' : '#8B5A3C',
             opacity: Math.max(0.6, remainingProgress / 100)
           }}
         >
@@ -107,7 +138,7 @@ function SegmentTimer({ startTime, durationMinutes, isPaused = false, onComplete
       </div>
       
       {timeRemaining === 0 && (
-        <Badge variant="destructive" className="text-sm">
+        <Badge variant="destructive" className="text-sm animate-pulse">
           TIME'S UP!
         </Badge>
       )}
@@ -253,6 +284,25 @@ export default function StationLeadView() {
     }
   });
 
+  const populateNextRoundMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/populate-next-round`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to populate next round');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stations'] });
+      toast({
+        title: "Next Round Populated",
+        description: `Next round of competitors has been assigned to all stations.`,
+      });
+    }
+  });
+
   const handleStartSegment = (segmentId: number) => {
     startSegmentMutation.mutate(segmentId);
   };
@@ -267,6 +317,10 @@ export default function StationLeadView() {
 
   const handleCompleteMatch = (matchId: number) => {
     completeMatchMutation.mutate(matchId);
+  };
+
+  const handlePopulateNextRound = () => {
+    populateNextRoundMutation.mutate();
   };
 
   const selectedStationData = stations.find(s => s.id === selectedStation);
@@ -405,6 +459,8 @@ export default function StationLeadView() {
                     <li>End the segment when time expires or both competitors finish early</li>
                     <li>Ensure judges have received all items before ending the segment</li>
                     <li>Maintain a fair and organized competition environment</li>
+                    <li>Coordinate with other stations for timing coordination</li>
+                    <li>Verify all 3 segments (Dial-in, Cappuccino, Espresso) are completed</li>
                   </ul>
                 </AlertDescription>
               </Alert>
@@ -479,6 +535,67 @@ export default function StationLeadView() {
                   <Play className="h-5 w-5 mr-2" />
                   Start Heat
                 </Button>
+              )}
+
+              {/* Workflow Status Indicator */}
+              {currentMatch.status === 'RUNNING' && (
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                  <div className="text-sm font-medium text-center">Heat Progress</div>
+                  <div className="flex justify-between items-center">
+                    {segments.map((segment, index) => {
+                      const isCompleted = segment.status === 'ENDED';
+                      const isCurrent = segment.status === 'RUNNING';
+                      const isPending = segment.status === 'IDLE';
+                      
+                      return (
+                        <div key={segment.id} className="flex flex-col items-center space-y-1">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                            isCompleted ? 'bg-green-500 text-white' :
+                            isCurrent ? 'bg-primary text-primary-foreground' :
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div className="text-xs text-center">
+                            <div className="font-medium">{segment.segment.replace('_', ' ')}</div>
+                            <div className={`text-xs ${
+                              isCompleted ? 'text-green-600' :
+                              isCurrent ? 'text-primary' :
+                              'text-muted-foreground'
+                            }`}>
+                              {isCompleted ? '✓ Done' : isCurrent ? '● Active' : '○ Pending'}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Next Segment Button */}
+              {currentMatch.status === 'RUNNING' && !allSegmentsEnded && (
+                <div className="space-y-2">
+                  {(() => {
+                    const nextSegment = segments.find(s => s.status === 'IDLE');
+                    if (nextSegment) {
+                      return (
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="w-full"
+                          onClick={() => handleStartSegment(nextSegment.id)}
+                          disabled={startSegmentMutation.isPending}
+                          data-testid="button-start-next-segment"
+                        >
+                          <Play className="h-5 w-5 mr-2" />
+                          Start {nextSegment.segment.replace('_', ' ')} Segment
+                        </Button>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
               )}
 
               {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
@@ -590,6 +707,36 @@ export default function StationLeadView() {
             })}
           </div>
         </>
+      )}
+
+      {/* Station A Lead Controls - Populate Next Round */}
+      {selectedStationData?.name === 'A' && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Users className="h-5 w-5" />
+              Station A Lead Controls
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                As Station A lead, you can populate the next round of competitors across all stations.
+              </p>
+              <Button
+                variant="default"
+                size="lg"
+                className="w-full"
+                onClick={handlePopulateNextRound}
+                disabled={populateNextRoundMutation.isPending}
+                data-testid="button-populate-next-round"
+              >
+                <Users className="h-5 w-5 mr-2" />
+                {populateNextRoundMutation.isPending ? "Populating..." : "Populate Next Round"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {!currentMatch && selectedStationData && (

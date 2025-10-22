@@ -12,6 +12,7 @@ import TimerPanel from "@/components/TimerPanel";
 import AdminTournamentSetup from "@/components/AdminTournamentSetup";
 import StationLeadView from "@/components/StationLeadView";
 import HeatCard from "@/components/HeatCard";
+import HeatsView from "@/components/HeatsView";
 import StationPage from "@/pages/StationPage";
 import NotFound from "@/pages/not-found";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -91,15 +92,7 @@ function AdminView() {
         </TabsContent>
 
         <TabsContent value="heats" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockHeats.map((heat) => (
-              <HeatCard
-                key={heat.heatNumber}
-                {...heat}
-                onClick={() => console.log(`Heat ${heat.heatNumber} clicked`)}
-              />
-            ))}
-          </div>
+          <HeatsView />
         </TabsContent>
 
         <TabsContent value="rules" className="mt-6">
