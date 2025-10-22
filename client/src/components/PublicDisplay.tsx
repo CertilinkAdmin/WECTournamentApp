@@ -172,7 +172,7 @@ export default function PublicDisplay() {
 
   return (
     <div className="public-display">
-      <style jsx>{`
+      <style>{`
         .public-display {
           min-height: 100vh;
           background: oklch(0.145 0 0);
