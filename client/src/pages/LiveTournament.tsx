@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Users, MapPin, Clock, Eye, Settings } from 'lucide-react';
+import { Trophy, Users, MapPin, Clock, Eye, Settings, Hammer } from 'lucide-react';
 import TournamentBracket from '@/components/TournamentBracket';
 import WEC25BracketDisplay from '@/components/WEC25BracketDisplay';
 import StationsManagement from '@/components/StationsManagement';
@@ -20,6 +20,11 @@ export default function LiveTournament() {
   });
   
   const currentTournament = tournaments[0];
+
+  const generateWec25 = async () => {
+    if (!currentTournament?.id) return;
+    await fetch(`/api/tournaments/${currentTournament.id}/generate-wec25`, { method: 'POST' });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,6 +120,12 @@ export default function LiveTournament() {
           </TabsContent>
 
           <TabsContent value="wec25" className="mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">WEC25 Bracket</h3>
+              <button onClick={generateWec25} className="inline-flex items-center px-3 py-2 rounded bg-primary text-primary-foreground text-sm">
+                <Hammer className="h-4 w-4 mr-2" /> Generate WEC25 Bracket
+              </button>
+            </div>
             <WEC25BracketDisplay />
           </TabsContent>
 

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { Server as SocketIOServer } from "socket.io";
 import { BracketGenerator } from "./bracketGenerator";
+import { WEC25_COMPETITORS, WEC25_ROUND1 } from "./wec25";
 import { 
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
@@ -152,6 +153,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const matches = await storage.getTournamentMatches(tournamentId);
       io.to(`tournament:${tournamentId}`).emit("bracket:generated", matches);
       
+      res.json({ success: true, matchesCreated: matches.length });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Generate exact WEC25 bracket (Round 1 fixed as per spec)
+  app.post("/api/tournaments/:id/generate-wec25", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+
+      // Ensure stations exist
+      const stations = await storage.getAllStations();
+      const stationA = stations.find(s => s.name === 'A');
+      const stationB = stations.find(s => s.name === 'B');
+      const stationC = stations.find(s => s.name === 'C');
+      if (!stationA || !stationB || !stationC) {
+        return res.status(400).json({ error: "Stations A, B, C must exist" });
+      }
+
+      // Create users for competitors if missing and add as participants
+      const existingUsers = await storage.getAllUsers();
+      const nameToUserId = new Map<string, number>();
+
+      for (const comp of WEC25_COMPETITORS) {
+        let user = existingUsers.find(u => u.name === comp.name);
+        if (!user) {
+          user = await storage.createUser({ name: comp.name, email: comp.email, role: 'BARISTA' });
+        }
+        nameToUserId.set(comp.name, user.id);
+      }
+
+      // Add participants if not present, assign seeds by heat order
+      const existingParticipants = await storage.getTournamentParticipants(tournamentId);
+      let seedCounter = 1;
+      for (const spec of WEC25_ROUND1) {
+        const names = [spec.competitor1, spec.competitor2].filter(n => n !== 'BUY') as string[];
+        for (const name of names) {
+          const userId = nameToUserId.get(name)!;
+          const already = existingParticipants.find(p => p.userId === userId);
+          if (!already) {
+            await storage.addParticipant({ tournamentId, userId, seed: seedCounter++ });
+          }
+        }
+      }
+
+      // Refresh participants list (baristas only)
+      const participants = await storage.getTournamentParticipants(tournamentId);
+
+      // Clear any existing matches for this tournament before generating
+      // Optional: implement storage.clearTournamentMatches if available; fallback to continue creating
+
+      // Create Round 1 matches exactly as per WEC25 spec
+      const now = new Date();
+      await storage.updateStation(stationA.id, { nextAvailableAt: now, status: 'AVAILABLE' });
+      await storage.updateStation(stationB.id, { nextAvailableAt: new Date(now.getTime() + 10 * 60 * 1000), status: 'AVAILABLE' });
+      await storage.updateStation(stationC.id, { nextAvailableAt: new Date(now.getTime() + 20 * 60 * 1000), status: 'AVAILABLE' });
+
+      for (const spec of WEC25_ROUND1) {
+        const station = spec.station === 'A' ? stationA : spec.station === 'B' ? stationB : stationC;
+        const competitor1Id = spec.competitor1 === 'BUY' ? null : nameToUserId.get(spec.competitor1) || null;
+        const competitor2Id = spec.competitor2 === 'BUY' ? null : nameToUserId.get(spec.competitor2) || null;
+
+        if (competitor1Id && !competitor2Id) {
+          // Bye: auto-win
+          await storage.createMatch({
+            tournamentId,
+            round: 1,
+            heatNumber: spec.heatNumber,
+            stationId: null,
+            competitor1Id,
+            competitor2Id: null,
+            status: 'DONE',
+            winnerId: competitor1Id,
+            startTime: new Date(),
+            endTime: new Date()
+          });
+          continue;
+        }
+
+        await storage.createMatch({
+          tournamentId,
+          round: 1,
+          heatNumber: spec.heatNumber,
+          stationId: station.id,
+          competitor1Id: competitor1Id!,
+          competitor2Id: competitor2Id!,
+          status: 'PENDING',
+          startTime: station.nextAvailableAt
+        });
+      }
+
+      const matches = await storage.getTournamentMatches(tournamentId);
+      io.to(`tournament:${tournamentId}`).emit("bracket:generated", matches);
       res.json({ success: true, matchesCreated: matches.length });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
