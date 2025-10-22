@@ -8,10 +8,11 @@ import TournamentBracket from '@/components/TournamentBracket';
 import WEC25BracketDisplay from '@/components/WEC25BracketDisplay';
 import StationsManagement from '@/components/StationsManagement';
 import PublicDisplay from '@/components/PublicDisplay';
+import BracketPrintout from '@/components/BracketPrintout';
 import type { Tournament } from '@shared/schema';
 
 export default function LiveTournament() {
-  const [activeView, setActiveView] = useState<'bracket' | 'stations' | 'public' | 'wec25'>('bracket');
+  const [activeView, setActiveView] = useState<'bracket' | 'stations' | 'public' | 'wec25' | 'printout'>('bracket');
 
   // Fetch current tournament
   const { data: tournaments = [] } = useQuery<Tournament[]>({
@@ -48,7 +49,7 @@ export default function LiveTournament() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
         <Tabs value={activeView} onValueChange={(value) => setActiveView(value as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="bracket" className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
               <span className="hidden sm:inline">Live Bracket</span>
@@ -68,6 +69,11 @@ export default function LiveTournament() {
               <Trophy className="h-4 w-4" />
               <span className="hidden sm:inline">WEC25 Display</span>
               <span className="sm:hidden">WEC25</span>
+            </TabsTrigger>
+            <TabsTrigger value="printout" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Print Bracket</span>
+              <span className="sm:hidden">Print</span>
             </TabsTrigger>
           </TabsList>
 
@@ -110,6 +116,10 @@ export default function LiveTournament() {
 
           <TabsContent value="wec25" className="mt-6">
             <WEC25BracketDisplay />
+          </TabsContent>
+
+          <TabsContent value="printout" className="mt-6">
+            <BracketPrintout />
           </TabsContent>
         </Tabs>
       </div>
