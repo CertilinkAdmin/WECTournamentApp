@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Play, Eye, Trophy, Users, MapPin } from 'lucide-react';
+import { Settings, Play, Eye, Trophy, Users, MapPin, ExternalLink } from 'lucide-react';
 
 export default function TournamentNavigation() {
   const [location] = useLocation();
@@ -38,6 +38,14 @@ export default function TournamentNavigation() {
     }
   ];
 
+  const extraActions = [
+    {
+      path: '/competitor/register',
+      label: 'Register Barista',
+      icon: ExternalLink,
+    }
+  ];
+
   const isActive = (path: string) => {
     if (path === '/') return location === '/';
     return location.startsWith(path);
@@ -69,6 +77,17 @@ export default function TournamentNavigation() {
                   variant={active ? "default" : "ghost"}
                   className={`${active ? '' : 'hover:bg-muted'}`}
                 >
+                  <Link href={item.path}>
+                    <Icon className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">{item.label}</span>
+                  </Link>
+                </Button>
+              );
+            })}
+            {extraActions.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Button key={item.path} asChild variant="outline">
                   <Link href={item.path}>
                     <Icon className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">{item.label}</span>

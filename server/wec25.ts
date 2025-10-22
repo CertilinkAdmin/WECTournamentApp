@@ -55,3 +55,38 @@ export const WEC25_ROUND1: Round1Spec[] = [
   { heatNumber: 16, station: 'A', competitor1: 'Engi Pan', competitor2: 'Gary Au' },
 ];
 
+// Subsequent rounds reference winners from previous heats using codes like "H17"
+export type RoundRefSpec = {
+  heatNumber: number;
+  station: 'A' | 'B' | 'C';
+  ref1: string; // e.g., H1, H17
+  ref2: string; // e.g., H2, H18
+};
+
+export const WEC25_ROUND2: RoundRefSpec[] = [
+  { heatNumber: 17, station: 'B', ref1: 'H1',  ref2: 'H2'  },
+  { heatNumber: 18, station: 'C', ref1: 'H3',  ref2: 'H4'  },
+  { heatNumber: 19, station: 'A', ref1: 'H5',  ref2: 'H6'  },
+  { heatNumber: 20, station: 'B', ref1: 'H7',  ref2: 'H8'  },
+  { heatNumber: 21, station: 'C', ref1: 'H9',  ref2: 'H10' },
+  { heatNumber: 22, station: 'A', ref1: 'H11', ref2: 'H12' },
+  { heatNumber: 23, station: 'B', ref1: 'H13', ref2: 'H14' },
+  { heatNumber: 24, station: 'C', ref1: 'H15', ref2: 'H16' },
+];
+
+export const WEC25_ROUND3: RoundRefSpec[] = [
+  { heatNumber: 25, station: 'A', ref1: 'H17', ref2: 'H18' },
+  { heatNumber: 26, station: 'B', ref1: 'H19', ref2: 'H20' },
+  { heatNumber: 27, station: 'C', ref1: 'H21', ref2: 'H22' },
+  { heatNumber: 28, station: 'A', ref1: 'H23', ref2: 'H24' },
+];
+
+export const WEC25_ROUND4: RoundRefSpec[] = [
+  { heatNumber: 29, station: 'B', ref1: 'H25', ref2: 'H26' },
+  { heatNumber: 30, station: 'C', ref1: 'H27', ref2: 'H28' },
+];
+
+export const WEC25_FINAL: RoundRefSpec[] = [
+  { heatNumber: 31, station: 'A', ref1: 'H29', ref2: 'H30' },
+];
+

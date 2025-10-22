@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Users, CheckCircle, ArrowRight, Loader2, Trophy } from 'lucide-react';
+import { Users, CheckCircle, ArrowRight, Loader2, Trophy, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'wouter';
 import type { User, TournamentParticipant } from '@shared/schema';
 
 interface BaristaUploadProps {
@@ -103,10 +104,33 @@ export default function BaristaUpload({ tournamentId, onBaristasComplete }: Bari
         </CardHeader>
         <CardContent>
           {registeredBaristas.length === 0 ? (
-            <div className="text-center p-6 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No baristas registered yet.</p>
-              <p className="text-sm">Add baristas to start the tournament setup.</p>
+            <div className="text-center p-6">
+              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No Baristas Registered</h3>
+              <p className="text-muted-foreground mb-4">
+                Register baristas using the WEC Competitor Registration form, then add them to the tournament.
+              </p>
+              <div className="space-y-3">
+                <Button asChild className="w-full">
+                  <Link href="/competitor/register">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Register New Barista
+                  </Link>
+                </Button>
+                <Button onClick={handleAddAllBaristas} disabled={addAllBaristasMutation.isPending} variant="outline" className="w-full">
+                  {addAllBaristasMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Adding Baristas...
+                    </>
+                  ) : (
+                    <>
+                      <Users className="h-4 w-4 mr-2" />
+                      Add All Available Baristas
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
