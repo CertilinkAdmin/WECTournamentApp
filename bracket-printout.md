@@ -107,3 +107,4 @@ open http://localhost:3000/public
 ```
 
 Your tournament system is ready! Just add participants and generate the bracket to see your complete tournament bracket printout! 🏆
+
