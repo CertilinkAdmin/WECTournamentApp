@@ -139,5 +139,3 @@ The tournament system now has a clear separation between:
 - **Public Display** (Spectator Experience)
 
 Each section is focused, optimized, and serves its specific purpose in the tournament workflow!
-
-

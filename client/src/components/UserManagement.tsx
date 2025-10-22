@@ -10,9 +10,8 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { User, Users, UserPlus, Search, Filter, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { User, Users, UserPlus, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Link } from 'wouter';
 
 interface User {
   id: number;
@@ -177,16 +176,10 @@ export default function UserManagement() {
             </CardHeader>
             <CardContent>
               {baristas.length === 0 ? (
-              <div className="text-center p-6">
-                <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No Baristas Found</h3>
-                <p className="text-muted-foreground mb-4">Register baristas using the WEC Competitor Registration form.</p>
-                <Button asChild>
-                  <Link href="/competitor/register">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Register New Barista
-                  </Link>
-                </Button>
+              <div className="text-center p-6 text-muted-foreground">
+                <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No baristas found.</p>
+                <p className="text-sm">Baristas are competitors in the tournament. No limit on number of baristas.</p>
               </div>
               ) : (
                 <div className="space-y-2">

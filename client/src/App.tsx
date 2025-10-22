@@ -17,7 +17,6 @@ import StationPage from "@/pages/StationPage";
 import LiveTournament from "@/pages/LiveTournament";
 import PublicDisplay from "@/components/PublicDisplay";
 import TournamentNavigation from "@/components/TournamentNavigation";
-import RegisterBarista from "@/pages/RegisterBarista";
 import NotFound from "@/pages/not-found";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, FileText, Trophy, Settings } from "lucide-react";
@@ -183,12 +182,6 @@ function Router() {
       </Route>
       <Route path="/public">
         <PublicDisplay />
-      </Route>
-      <Route path="/competitor/register">
-        <div className="min-h-screen bg-background">
-          <TournamentNavigation />
-          <RegisterBarista />
-        </div>
       </Route>
       <Route path="/station/:stationId">
         {(params) => (

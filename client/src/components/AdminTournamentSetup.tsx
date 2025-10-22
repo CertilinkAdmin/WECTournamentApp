@@ -147,7 +147,7 @@ export default function AdminTournamentSetup() {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            userId: Number(competitor.id),
+            userId: parseInt(competitor.id),
             seed: index + 1
           })
         })
@@ -218,7 +218,7 @@ export default function AdminTournamentSetup() {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            userId: Number(competitor.id),
+            userId: parseInt(competitor.id),
             seed: index + 1
           })
         })
@@ -656,7 +656,7 @@ export default function AdminTournamentSetup() {
               Set up the timing for each segment of the competition.
             </p>
             
-            {currentTournamentId && <SegmentTimeConfig tournamentId={currentTournamentId} />}
+            <SegmentTimeConfig tournamentId={currentTournamentId} />
             
             <div className="flex flex-col sm:flex-row gap-2">
               <Button 
