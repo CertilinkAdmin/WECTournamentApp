@@ -11,7 +11,9 @@ import UserManagement from "./UserManagement";
 import BaristaUpload from "./BaristaUpload";
 import JudgeAssignment from "./JudgeAssignment";
 import StationsManagement from "./StationsManagement";
-import { Plus, Users, Trophy, MapPin, Shuffle, Loader2, Clock, Trash2, AlertTriangle, HelpCircle } from "lucide-react";
+import BracketBuilder from "./BracketBuilder";
+import WEC25Bracket from "./WEC25Bracket";
+import { Plus, Users, Trophy, MapPin, Shuffle, Loader2, Clock, Trash2, AlertTriangle, HelpCircle, Play, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -34,7 +36,7 @@ export default function AdminTournamentSetup() {
     judges: []
   });
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'setup' | 'baristas' | 'judges' | 'stations' | 'segments' | 'seeds' | 'bracket' | 'view'>('setup');
+  const [currentStep, setCurrentStep] = useState<'setup' | 'baristas' | 'judges' | 'stations' | 'segments' | 'seeds' | 'bracket' | 'wec25' | 'view'>('setup');
   const [baristasComplete, setBaristasComplete] = useState(false);
   const [judgesComplete, setJudgesComplete] = useState(false);
 
@@ -988,7 +990,7 @@ export default function AdminTournamentSetup() {
           </Card>
 
       <Tabs defaultValue="competitors" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-auto">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-8 h-auto">
           <TabsTrigger value="users" data-testid="tab-users" className="flex-col sm:flex-row h-auto py-2">
             <Users className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
             <span className="text-xs sm:text-sm">Users</span>
@@ -1018,6 +1020,10 @@ export default function AdminTournamentSetup() {
           <TabsTrigger value="bracket" data-testid="tab-bracket" className="flex-col sm:flex-row h-auto py-2">
             <Trophy className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
             <span className="text-xs sm:text-sm">Bracket</span>
+          </TabsTrigger>
+          <TabsTrigger value="wec25" data-testid="tab-wec25" className="flex-col sm:flex-row h-auto py-2">
+            <Trophy className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+            <span className="text-xs sm:text-sm">WEC25</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1270,32 +1276,69 @@ export default function AdminTournamentSetup() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="bracket" className="mt-6">
+          <BracketBuilder 
+            tournamentId={currentTournamentId}
+            onBracketGenerated={() => {
+              toast({
+                title: "Bracket Generated",
+                description: "Tournament bracket has been created successfully.",
+              });
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="wec25" className="mt-6">
+          <WEC25Bracket 
+            tournamentId={currentTournamentId}
+            onBracketGenerated={() => {
+              toast({
+                title: "WEC25 Bracket Generated",
+                description: "WEC25 tournament bracket has been created successfully.",
+              });
+            }}
+          />
+        </TabsContent>
+
         <TabsContent value="stations" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Station Configuration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {["A", "B", "C"].map((station) => (
-                  <div
-                    key={station}
-                    className="flex items-center justify-between p-4 bg-muted rounded-md"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl font-heading font-bold">Station {station}</div>
-                      <Badge variant="secondary">Available</Badge>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      Configure
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <StationsManagement />
         </TabsContent>
       </Tabs>
+
+      {/* Tournament Ready Actions */}
+      {currentTournamentId && (
+        <Card className="mt-8 bg-green-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <Trophy className="h-6 w-6" />
+              Tournament Ready!
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <p className="text-green-700 mb-4">
+                  Your tournament is set up and ready to begin. Use the live tournament view to manage the active tournament.
+                </p>
+                <div className="flex gap-2">
+                  <Button asChild className="bg-green-600 hover:bg-green-700">
+                    <a href="/live">
+                      <Play className="h-4 w-4 mr-2" />
+                      Go to Live Tournament
+                    </a>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <a href="/public" target="_blank">
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Public Display
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
         </>
       )}
     </div>

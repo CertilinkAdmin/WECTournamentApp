@@ -14,7 +14,9 @@ import StationLeadView from "@/components/StationLeadView";
 import HeatCard from "@/components/HeatCard";
 import HeatsView from "@/components/HeatsView";
 import StationPage from "@/pages/StationPage";
+import LiveTournament from "@/pages/LiveTournament";
 import PublicDisplay from "@/components/PublicDisplay";
+import TournamentNavigation from "@/components/TournamentNavigation";
 import NotFound from "@/pages/not-found";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, FileText, Trophy, Settings } from "lucide-react";
@@ -172,6 +174,12 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/live">
+        <div className="min-h-screen bg-background">
+          <TournamentNavigation />
+          <LiveTournament />
+        </div>
+      </Route>
       <Route path="/public">
         <PublicDisplay />
       </Route>
@@ -192,6 +200,7 @@ function Router() {
       </Route>
       <Route path="/">
         <div className="min-h-screen bg-background">
+          <TournamentNavigation />
           <Header 
             currentRole={currentRole} 
             onRoleChange={setCurrentRole}
