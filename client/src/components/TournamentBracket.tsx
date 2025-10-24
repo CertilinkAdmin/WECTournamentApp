@@ -261,38 +261,56 @@ export default function TournamentBracket() {
   const renderHeat = (heat: BracketHeat, isSmall = false) => (
     <Card 
       key={heat.heatNumber} 
-      className={`hover-elevate ${isSmall ? "p-2" : "p-3"} ${
-        heat.status === 'RUNNING' ? 'ring-2 ring-blue-500' : 
-        heat.status === 'DONE' ? 'ring-2 ring-green-500' : ''
+      className={`min-h-[120px] transition-all duration-200 ${
+        heat.status === 'RUNNING' ? 'ring-2 ring-blue-500 bg-blue-50' : 
+        heat.status === 'DONE' ? 'ring-2 ring-green-500 bg-green-50' : 
+        'hover:shadow-lg'
       }`}
       data-testid={`bracket-heat-${heat.heatNumber}`}
     >
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <span className={`${isSmall ? "text-lg" : "text-xl"} font-heading font-bold`}>
-            {heat.heatNumber}
-          </span>
-          <Badge className={`${stationColors[heat.station]} text-white text-xs`}>
-            {heat.station}
-          </Badge>
-          {heat.status && (
-            <Badge variant={heat.status === 'RUNNING' ? 'default' : heat.status === 'DONE' ? 'secondary' : 'outline'} className="text-xs">
-              {heat.status}
+      <div className="p-4 h-full flex flex-col justify-center">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            <span className="text-lg font-bold">Heat {heat.heatNumber}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className={`${stationColors[heat.station]} text-white text-sm font-medium`}>
+              Station {heat.station}
             </Badge>
-          )}
-        </div>
-        <div className="space-y-1">
-          <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor1 ? "font-bold text-green-600" : ""}`}>
-            {heat.competitor1Name || heat.competitor1 || "—"}
-          </div>
-          <div className={`${isSmall ? "text-xs" : "text-sm"} text-muted-foreground`}>vs</div>
-          <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor2 ? "font-bold text-green-600" : ""}`}>
-            {heat.competitor2Name || heat.competitor2 || "—"}
+            {heat.status && (
+              <Badge variant={heat.status === 'RUNNING' ? 'default' : heat.status === 'DONE' ? 'secondary' : 'outline'} className="text-xs">
+                {heat.status}
+              </Badge>
+            )}
           </div>
         </div>
+        
+        <div className="space-y-2">
+          <div className={`p-2 rounded-md border ${
+            heat.competitor1Name === 'BYE' || heat.competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-white'
+          } ${heat.winner === heat.competitor1 ? 'ring-2 ring-green-400' : ''}`}>
+            <div className="font-medium text-sm">
+              {heat.competitor1Name || heat.competitor1 || "—"}
+            </div>
+          </div>
+          
+          <div className="text-center text-muted-foreground font-bold">VS</div>
+          
+          <div className={`p-2 rounded-md border ${
+            heat.competitor2Name === 'BYE' || heat.competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-white'
+          } ${heat.winner === heat.competitor2 ? 'ring-2 ring-green-400' : ''}`}>
+            <div className="font-medium text-sm">
+              {heat.competitor2Name || heat.competitor2 || "—"}
+            </div>
+          </div>
+        </div>
+        
         {heat.winnerName && (
-          <div className="text-xs text-green-600 font-medium pt-1 border-t">
-            Winner: {heat.winnerName}
+          <div className="mt-3 text-center">
+            <Badge className="bg-green-500 text-white text-xs font-bold">
+              Winner: {heat.winnerName}
+            </Badge>
           </div>
         )}
       </div>
