@@ -15,6 +15,7 @@ import HeatCard from "@/components/HeatCard";
 import HeatsView from "@/components/HeatsView";
 import StationPage from "@/pages/StationPage";
 import LiveTournament from "@/pages/LiveTournament";
+import HeatCarousel from "@/pages/HeatCarousel";
 import PublicDisplay from "@/components/PublicDisplay";
 import TournamentNavigation from "@/components/TournamentNavigation";
 import NotFound from "@/pages/not-found";
@@ -182,6 +183,9 @@ function Router() {
       </Route>
       <Route path="/public">
         <PublicDisplay />
+      </Route>
+      <Route path="/carousel">
+        <HeatCarousel />
       </Route>
       <Route path="/station/:stationId">
         {(params) => (

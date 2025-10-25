@@ -2,17 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Users, Trophy, MapPin, Timer } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Clock, Users, Trophy, MapPin, Timer, Coffee, Award } from 'lucide-react';
 import type { Match, User, Station, HeatSegment } from '@shared/schema';
 
-interface CompetitorCardProps {
-  competitor: User | null;
-  isWinner?: boolean;
+interface JudgeScorecardProps {
+  judgeName: string;
   stationName: string;
   isActive?: boolean;
+  heatNumber?: number;
+  leftCompetitor?: string;
+  rightCompetitor?: string;
+  leftCupCode?: string;
+  rightCupCode?: string;
+  visualLatteArt?: 'left' | 'right';
+  sensoryBeverage?: 'Espresso' | 'Cappuccino';
+  taste?: 'left' | 'right';
+  tactile?: 'left' | 'right';
+  flavour?: 'left' | 'right';
+  overall?: 'left' | 'right';
 }
 
-function CompetitorCard({ competitor, isWinner, stationName, isActive }: CompetitorCardProps) {
+function JudgeScorecard({ 
+  judgeName, 
+  stationName, 
+  isActive, 
+  heatNumber,
+  leftCompetitor,
+  rightCompetitor,
+  leftCupCode,
+  rightCupCode,
+  visualLatteArt,
+  sensoryBeverage,
+  taste,
+  tactile,
+  flavour,
+  overall
+}: JudgeScorecardProps) {
   const cardId = stationName === 'A' ? '↖️' : stationName === 'B' ? '🎨' : '💡';
   
   return (
@@ -34,15 +60,103 @@ function CompetitorCard({ competitor, isWinner, stationName, isActive }: Competi
           <div className="scrollbar-glass">
             {isActive ? 'LIVE' : 'STANDBY'}
           </div>
-          <p className="title">{competitor?.name || 'TBD'}</p>
+          <p className="title">{judgeName}</p>
+          {heatNumber && (
+            <div className="heat-info">
+              Heat {heatNumber}
+            </div>
+          )}
         </div>
 
         <hr className="divider" />
 
         <div className="content-bottom">
-          <p className="description">
-            {isWinner ? 'Winner' : competitor ? 'Competitor' : 'Awaiting competitor'}
-          </p>
+          <div className="judge-details">
+            {leftCompetitor && rightCompetitor && (
+              <div className="competitors-info">
+                <div className="competitor">
+                  <span className="cup-code">{leftCupCode}</span>
+                  <span className="name">{leftCompetitor}</span>
+                </div>
+                <div className="vs">VS</div>
+                <div className="competitor">
+                  <span className="name">{rightCompetitor}</span>
+                  <span className="cup-code">{rightCupCode}</span>
+                </div>
+              </div>
+            )}
+            
+            {sensoryBeverage && (
+              <div className="sensory-beverage">
+                <Award className="h-4 w-4" />
+                <span>{sensoryBeverage}</span>
+              </div>
+            )}
+
+            <div className="scoring-categories">
+              {visualLatteArt && (
+                <div className="score-category">
+                  <Coffee className="h-4 w-4" />
+                  <span>Visual/Latte Art</span>
+                  <div className="score-selection">
+                    <Checkbox checked={visualLatteArt === 'left'} readOnly />
+                    <span>Left</span>
+                    <Checkbox checked={visualLatteArt === 'right'} readOnly />
+                    <span>Right</span>
+                  </div>
+                </div>
+              )}
+
+              {taste && (
+                <div className="score-category">
+                  <Trophy className="h-4 w-4" />
+                  <span>Taste</span>
+                  <div className="score-selection">
+                    <Checkbox checked={taste === 'left'} readOnly />
+                    <span>Left</span>
+                    <Checkbox checked={taste === 'right'} readOnly />
+                    <span>Right</span>
+                  </div>
+                </div>
+              )}
+
+              {tactile && (
+                <div className="score-category">
+                  <span>Tactile</span>
+                  <div className="score-selection">
+                    <Checkbox checked={tactile === 'left'} readOnly />
+                    <span>Left</span>
+                    <Checkbox checked={tactile === 'right'} readOnly />
+                    <span>Right</span>
+                  </div>
+                </div>
+              )}
+
+              {flavour && (
+                <div className="score-category">
+                  <span>Flavour</span>
+                  <div className="score-selection">
+                    <Checkbox checked={flavour === 'left'} readOnly />
+                    <span>Left</span>
+                    <Checkbox checked={flavour === 'right'} readOnly />
+                    <span>Right</span>
+                  </div>
+                </div>
+              )}
+
+              {overall && (
+                <div className="score-category overall">
+                  <span>Overall (5 pts)</span>
+                  <div className="score-selection">
+                    <Checkbox checked={overall === 'left'} readOnly />
+                    <span>Left</span>
+                    <Checkbox checked={overall === 'right'} readOnly />
+                    <span>Right</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -82,6 +196,436 @@ function StationDisplay({ station, currentMatch, users, segments }: StationDispl
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Real judge data from WEC25 heats
+  const getJudgeDataForHeat = (heatNumber?: number) => {
+    const judgeDataMap: Record<number, any[]> = {
+      19: [
+        {
+          name: "Shinsaku",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "left" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "G2",
+          rightCupCode: "W8",
+        },
+        {
+          name: "Tess",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "G2",
+          rightCupCode: "W8",
+        },
+        {
+          name: "Junior",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "G2",
+          rightCupCode: "W8",
+        }
+      ],
+      21: [
+        {
+          name: "Michalis",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "Q5",
+          rightCupCode: "B1",
+        },
+        {
+          name: "Ali",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "left" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "Q5",
+          rightCupCode: "B1",
+        },
+        {
+          name: "Jasper",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "left" as const,
+          overall: "right" as const,
+          leftCupCode: "B1",
+          rightCupCode: "Q5",
+        }
+      ],
+      22: [
+        {
+          name: "Shinsaku",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "T8",
+          rightCupCode: "J7",
+        },
+        {
+          name: "Tess",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "J7",
+          rightCupCode: "T8",
+        },
+        {
+          name: "Junior",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "J7",
+          rightCupCode: "T8",
+        }
+      ],
+      23: [
+        {
+          name: "Shinsaku",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "E9",
+          rightCupCode: "V2",
+        },
+        {
+          name: "Tess",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "E9",
+          rightCupCode: "V2",
+        },
+        {
+          name: "Junior",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "left" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "V2",
+          rightCupCode: "E9",
+        }
+      ],
+      24: [
+        {
+          name: "Michalis",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "right" as const,
+          tactile: "left" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "M1",
+          rightCupCode: "E6",
+        },
+        {
+          name: "Ali",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "M1",
+          rightCupCode: "E3",
+        },
+        {
+          name: "Jasper",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "E3",
+          rightCupCode: "M1",
+        }
+      ],
+      25: [
+        {
+          name: "Shinsaku",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "left" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "A7",
+          rightCupCode: "F3",
+        },
+        {
+          name: "Tess",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "A7",
+          rightCupCode: "F3",
+        },
+        {
+          name: "Junior",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "A7",
+          rightCupCode: "F3",
+        }
+      ],
+      26: [
+        {
+          name: "Michalis",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "right" as const,
+          tactile: "left" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "K5",
+          rightCupCode: "J1",
+        },
+        {
+          name: "Korn",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "K5",
+          rightCupCode: "J1",
+        },
+        {
+          name: "Junior",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "left" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "K5",
+          rightCupCode: "J1",
+        }
+      ],
+      27: [
+        {
+          name: "Shinsaku",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "left" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "P3",
+          rightCupCode: "M9",
+        },
+        {
+          name: "Korn",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "K5",
+          rightCupCode: "J1",
+        },
+        {
+          name: "Junior",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "left" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "K5",
+          rightCupCode: "J1",
+        }
+      ],
+      28: [
+        {
+          name: "Michalis",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "left" as const,
+          overall: "right" as const,
+          leftCupCode: "G8",
+          rightCupCode: "F4",
+        },
+        {
+          name: "Tess",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "G8",
+          rightCupCode: "F4",
+        },
+        {
+          name: "Junior",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "left" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "F4",
+          rightCupCode: "G8",
+        }
+      ],
+      29: [
+        {
+          name: "Shinsaku",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "left" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "L2",
+          rightCupCode: "Z7",
+        },
+        {
+          name: "Korn",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "Z7",
+          rightCupCode: "L2",
+        },
+        {
+          name: "Boss",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "left" as const,
+          overall: "right" as const,
+          leftCupCode: "Z7",
+          rightCupCode: "L2",
+        }
+      ],
+      30: [
+        {
+          name: "Shinsaku",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "left" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "N4",
+          rightCupCode: "K6",
+        },
+        {
+          name: "Korn",
+          visualLatteArt: "left" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "N4",
+          rightCupCode: "K6",
+        },
+        {
+          name: "Boss",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "N4",
+          rightCupCode: "K6",
+        }
+      ],
+      31: [
+        {
+          name: "Shinsaku",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Cappuccino" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "right" as const,
+          overall: "right" as const,
+          leftCupCode: "22",
+          rightCupCode: "99",
+        },
+        {
+          name: "Korn",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "left" as const,
+          flavour: "left" as const,
+          overall: "left" as const,
+          leftCupCode: "22",
+          rightCupCode: "99",
+        },
+        {
+          name: "Boss",
+          visualLatteArt: "right" as const,
+          sensoryBeverage: "Espresso" as const,
+          taste: "right" as const,
+          tactile: "right" as const,
+          flavour: "left" as const,
+          overall: "right" as const,
+          leftCupCode: "99",
+          rightCupCode: "22",
+        }
+      ]
+    };
+
+    return judgeDataMap[heatNumber || 19] || judgeDataMap[19];
+  };
+
+  const mockJudges = getJudgeDataForHeat(currentMatch?.heatNumber);
+
   return (
     <div className="station-display">
       <div className="station-header">
@@ -107,19 +651,26 @@ function StationDisplay({ station, currentMatch, users, segments }: StationDispl
         )}
       </div>
 
-      <div className="competitors-container">
-        <CompetitorCard
-          competitor={competitor1}
-          isWinner={currentMatch?.winnerId === currentMatch?.competitor1Id}
-          stationName={station.name}
-          isActive={isActive}
-        />
-        <CompetitorCard
-          competitor={competitor2}
-          isWinner={currentMatch?.winnerId === currentMatch?.competitor2Id}
-          stationName={station.name}
-          isActive={isActive}
-        />
+      <div className="judges-container">
+        {mockJudges.map((judge, index) => (
+          <JudgeScorecard
+            key={index}
+            judgeName={judge.name}
+            stationName={station.name}
+            isActive={isActive}
+            heatNumber={currentMatch?.heatNumber}
+            leftCompetitor={competitor1?.name}
+            rightCompetitor={competitor2?.name}
+            leftCupCode={judge.leftCupCode}
+            rightCupCode={judge.rightCupCode}
+            visualLatteArt={judge.visualLatteArt}
+            sensoryBeverage={judge.sensoryBeverage}
+            taste={judge.taste}
+            tactile={judge.tactile}
+            flavour={judge.flavour}
+            overall={judge.overall}
+          />
+        ))}
       </div>
     </div>
   );
@@ -240,10 +791,11 @@ export default function PublicDisplay() {
           color: #ff6b6b;
         }
 
-        .competitors-container {
+        .judges-container {
           display: flex;
           gap: 1rem;
           justify-content: center;
+          flex-wrap: wrap;
         }
 
         /* Card Styles */
@@ -503,6 +1055,92 @@ export default function PublicDisplay() {
             black,
             transparent
           );
+        }
+
+        .heat-info {
+          font-size: 0.9em;
+          opacity: 0.7;
+          margin-top: 0.5em;
+        }
+
+        .judge-details {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .competitors-info {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .competitor {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .cup-code {
+          font-size: 0.8em;
+          opacity: 0.7;
+          font-weight: bold;
+        }
+
+        .name {
+          font-size: 0.9em;
+          font-weight: 500;
+        }
+
+        .vs {
+          font-size: 0.8em;
+          font-weight: bold;
+          opacity: 0.6;
+        }
+
+        .sensory-beverage {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.9em;
+          opacity: 0.8;
+          margin-bottom: 0.5rem;
+        }
+
+        .scoring-categories {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .score-category {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.5rem;
+          font-size: 0.8em;
+          padding: 0.25rem 0;
+        }
+
+        .score-category.overall {
+          font-weight: bold;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          padding-top: 0.5rem;
+          margin-top: 0.5rem;
+        }
+
+        .score-selection {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .score-selection span {
+          font-size: 0.7em;
+          opacity: 0.8;
         }
       `}</style>
 
