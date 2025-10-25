@@ -9,11 +9,14 @@ interface BracketHeatProps {
   station: string;
   competitor1: string;
   competitor2: string;
+  winner?: string;
+  score1?: number;
+  score2?: number;
   isWinner?: boolean;
   isFinal?: boolean;
 }
 
-function BracketHeat({ heatNumber, station, competitor1, competitor2, isWinner = false, isFinal = false }: BracketHeatProps) {
+function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, score1, score2, isWinner = false, isFinal = false }: BracketHeatProps) {
   const getStationColor = (station: string) => {
     switch (station) {
       case 'A': return 'bg-primary text-white';
@@ -37,20 +40,42 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, isWinner =
         </div>
         
         <div className="space-y-2">
-          <div className={`p-2 rounded-md border ${competitor1 === 'BUY' ? 'bg-gray-100 text-gray-500' : 'bg-white'} ${isWinner && competitor1 !== 'BUY' ? 'ring-2 ring-green-400' : ''}`}>
-            <div className="font-medium text-sm">
-              {competitor1 === 'BUY' ? 'BYE' : competitor1}
+          <div className={`p-2 rounded-md border ${competitor1 === 'BUY' ? 'bg-gray-100 text-gray-500' : 'bg-white'} ${winner === competitor1 ? 'ring-2 ring-green-400' : ''}`}>
+            <div className="flex justify-between items-center">
+              <div className="font-medium text-sm">
+                {competitor1 === 'BUY' ? 'BYE' : competitor1}
+              </div>
+              {score1 !== undefined && (
+                <div className="text-sm font-bold text-primary">
+                  {score1}
+                </div>
+              )}
             </div>
           </div>
           
           <div className="text-center text-muted-foreground font-bold">VS</div>
           
-          <div className={`p-2 rounded-md border ${competitor2 === 'BUY' ? 'bg-gray-100 text-gray-500' : 'bg-white'} ${isWinner && competitor2 !== 'BUY' ? 'ring-2 ring-green-400' : ''}`}>
-            <div className="font-medium text-sm">
-              {competitor2 === 'BUY' ? 'BYE' : competitor2}
+          <div className={`p-2 rounded-md border ${competitor2 === 'BUY' ? 'bg-gray-100 text-gray-500' : 'bg-white'} ${winner === competitor2 ? 'ring-2 ring-green-400' : ''}`}>
+            <div className="flex justify-between items-center">
+              <div className="font-medium text-sm">
+                {competitor2 === 'BUY' ? 'BYE' : competitor2}
+              </div>
+              {score2 !== undefined && (
+                <div className="text-sm font-bold text-primary">
+                  {score2}
+                </div>
+              )}
             </div>
           </div>
         </div>
+        
+        {winner && (
+          <div className="mt-3 text-center">
+            <Badge className="bg-green-500 text-white text-xs font-bold">
+              Winner: {winner}
+            </Badge>
+          </div>
+        )}
         
         {isFinal && (
           <div className="mt-3 text-center">
@@ -131,6 +156,9 @@ export default function WEC25BracketDisplay() {
                     station={heat.station}
                     competitor1={heat.competitor1}
                     competitor2={heat.competitor2}
+                    winner={heat.winner}
+                    score1={heat.score1}
+                    score2={heat.score2}
                   />
                 ))}
               </div>
@@ -151,6 +179,9 @@ export default function WEC25BracketDisplay() {
                     station={heat.station}
                     competitor1={heat.competitor1}
                     competitor2={heat.competitor2}
+                    winner={heat.winner}
+                    score1={heat.score1}
+                    score2={heat.score2}
                   />
                 ))}
               </div>
@@ -171,6 +202,9 @@ export default function WEC25BracketDisplay() {
                     station={heat.station}
                     competitor1={heat.competitor1}
                     competitor2={heat.competitor2}
+                    winner={heat.winner}
+                    score1={heat.score1}
+                    score2={heat.score2}
                   />
                 ))}
               </div>
@@ -191,6 +225,9 @@ export default function WEC25BracketDisplay() {
                     station={heat.station}
                     competitor1={heat.competitor1}
                     competitor2={heat.competitor2}
+                    winner={heat.winner}
+                    score1={heat.score1}
+                    score2={heat.score2}
                   />
                 ))}
               </div>
@@ -211,6 +248,9 @@ export default function WEC25BracketDisplay() {
                     station={heat.station}
                     competitor1={heat.competitor1}
                     competitor2={heat.competitor2}
+                    winner={heat.winner}
+                    score1={heat.score1}
+                    score2={heat.score2}
                     isFinal={true}
                   />
                 ))}

@@ -28,52 +28,52 @@ export const WEC25_COMPETITORS = [
 ];
 
 export const WEC25_BRACKET_POSITIONS = [
-  // Round 1 - Heats 1-16
-  { heatNumber: 1, station: "A", competitor1: "Penny Chalkiadaki", competitor2: "BUY" },
-  { heatNumber: 2, station: "B", competitor1: "Erlend Wessel-Berg", competitor2: "BUY" },
-  { heatNumber: 3, station: "C", competitor1: "Felix Ouma", competitor2: "BUY" },
-  { heatNumber: 4, station: "A", competitor1: "Aga Muhammed", competitor2: "BUY" },
-  { heatNumber: 5, station: "B", competitor1: "Julian Teo", competitor2: "BUY" },
-  { heatNumber: 6, station: "C", competitor1: "Artur Kosteniuk", competitor2: "BUY" },
-  { heatNumber: 7, station: "A", competitor1: "Hojat Mousavi", competitor2: "BUY" },
-  { heatNumber: 8, station: "B", competitor1: "Sebastian Hernandez", competitor2: "BUY" },
-  { heatNumber: 9, station: "C", competitor1: "Faiz Nordin", competitor2: "Cristian Fernández" },
-  { heatNumber: 10, station: "A", competitor1: "Christos Sotiros", competitor2: "Daniele Ricci" },
-  { heatNumber: 11, station: "B", competitor1: "Cristian Fernández", competitor2: "Daniele Ricci" },
-  { heatNumber: 12, station: "C", competitor1: "Stevo Kühn", competitor2: "Edwin Tascon" },
-  { heatNumber: 13, station: "A", competitor1: "Shlyakov Kirill", competitor2: "Anja Fürst" },
-  { heatNumber: 14, station: "B", competitor1: "Carlos Medina", competitor2: "Jae Kim" },
-  { heatNumber: 15, station: "C", competitor1: "Bill Nguyen", competitor2: "Chris Rodriguez" },
-  { heatNumber: 16, station: "A", competitor1: "Engi Pan", competitor2: "Gary Au" },
+  // Round 1 - Heats 1-16 (All heats before 12 were byes - 33 points each)
+  { heatNumber: 1, station: "A", competitor1: "Penny Chalkiadaki", competitor2: "BUY", winner: "Penny Chalkiadaki", score1: 33, score2: 0 },
+  { heatNumber: 2, station: "B", competitor1: "Erlend Wessel-Berg", competitor2: "BUY", winner: "Erlend Wessel-Berg", score1: 33, score2: 0 },
+  { heatNumber: 3, station: "C", competitor1: "Felix Ouma", competitor2: "BUY", winner: "Felix Ouma", score1: 33, score2: 0 },
+  { heatNumber: 4, station: "A", competitor1: "Aga Muhammed", competitor2: "BUY", winner: "Aga Muhammed", score1: 33, score2: 0 },
+  { heatNumber: 5, station: "B", competitor1: "Julian Teo", competitor2: "BUY", winner: "Julian Teo", score1: 33, score2: 0 },
+  { heatNumber: 6, station: "C", competitor1: "Artur Kosteniuk", competitor2: "BUY", winner: "Artur Kosteniuk", score1: 33, score2: 0 },
+  { heatNumber: 7, station: "A", competitor1: "Hojat Mousavi", competitor2: "BUY", winner: "Hojat Mousavi", score1: 33, score2: 0 },
+  { heatNumber: 8, station: "B", competitor1: "Sebastian Hernandez", competitor2: "BUY", winner: "Sebastian Hernandez", score1: 33, score2: 0 },
+  { heatNumber: 9, station: "C", competitor1: "Faiz Nordin", competitor2: "BUY", winner: "Faiz Nordin", score1: 33, score2: 0 },
+  { heatNumber: 10, station: "A", competitor1: "Christos Sotiros", competitor2: "BUY", winner: "Christos Sotiros", score1: 33, score2: 0 },
+  { heatNumber: 11, station: "B", competitor1: "Daniele Ricci", competitor2: "BUY", winner: "Daniele Ricci", score1: 33, score2: 0 },
+  { heatNumber: 12, station: "C", competitor1: "Stevo Kühn", competitor2: "Edwin Tascon", winner: "Stevo Kühn", score1: 0, score2: 0 },
+  { heatNumber: 13, station: "A", competitor1: "Shlyakov Kirill", competitor2: "Anja Fürst", winner: "Shlyakov Kirill", score1: 0, score2: 0 },
+  { heatNumber: 14, station: "B", competitor1: "Carlos Medina", competitor2: "Jae Kim", winner: "Jae Kim", score1: 0, score2: 0 },
+  { heatNumber: 15, station: "C", competitor1: "Bill Nguyen", competitor2: "BUY", winner: "Bill Nguyen", score1: 33, score2: 0 },
+  { heatNumber: 16, station: "A", competitor1: "Engi Pan", competitor2: "BUY", winner: "Engi Pan", score1: 33, score2: 0 },
 ];
 
 export const WEC25_ROUND2_POSITIONS = [
-  // Round 2 - Heats 17-24
-  { heatNumber: 17, station: "B", competitor1: "H1", competitor2: "H2" }, // Penny vs Erlend
-  { heatNumber: 18, station: "C", competitor1: "H3", competitor2: "H4" }, // Felix vs Aga
-  { heatNumber: 19, station: "A", competitor1: "H5", competitor2: "H6" }, // Julian vs Artur
-  { heatNumber: 20, station: "B", competitor1: "H7", competitor2: "H8" }, // Hojat vs Sebastian
-  { heatNumber: 21, station: "C", competitor1: "H9", competitor2: "H10" }, // Faiz/Cristian vs Christos/Daniele
-  { heatNumber: 22, station: "A", competitor1: "H11", competitor2: "H12" }, // Cristian/Daniele vs Stevo/Edwin
-  { heatNumber: 23, station: "B", competitor1: "H13", competitor2: "H14" }, // Kirill/Anja vs Carlos/Jae
-  { heatNumber: 24, station: "C", competitor1: "H15", competitor2: "H16" }, // Bill/Chris vs Engi/Gary
+  // Round 2 - Heats 17-24 (with actual results from bracket)
+  { heatNumber: 17, station: "B", competitor1: "Penny Chalkiadaki", competitor2: "Erlend Wessel-Berg", winner: "Penny Chalkiadaki", score1: 0, score2: 0 },
+  { heatNumber: 18, station: "C", competitor1: "Felix Ouma", competitor2: "Aga Muhammed", winner: "Aga Muhammed", score1: 0, score2: 0 },
+  { heatNumber: 19, station: "A", competitor1: "Julian Teo", competitor2: "Artur Kosteniuk", winner: "Artur Kosteniuk", score1: 0, score2: 0 },
+  { heatNumber: 20, station: "B", competitor1: "Hojat Mousavi", competitor2: "Sebastian Hernandez", winner: "Hojat Mousavi", score1: 0, score2: 0 },
+  { heatNumber: 21, station: "C", competitor1: "Faiz Nordin", competitor2: "Christos Sotiros", winner: "Christos Sotiros", score1: 0, score2: 0 },
+  { heatNumber: 22, station: "A", competitor1: "Daniele Ricci", competitor2: "Stevo Kühn", winner: "Stevo Kühn", score1: 0, score2: 0 },
+  { heatNumber: 23, station: "B", competitor1: "Shlyakov Kirill", competitor2: "Jae Kim", winner: "Jae Kim", score1: 0, score2: 0 },
+  { heatNumber: 24, station: "C", competitor1: "Bill Nguyen", competitor2: "Engi Pan", winner: "Engi Pan", score1: 0, score2: 0 },
 ];
 
 export const WEC25_ROUND3_POSITIONS = [
-  // Round 3 - Heats 25-28
-  { heatNumber: 25, station: "A", competitor1: "H17", competitor2: "H18" },
-  { heatNumber: 26, station: "B", competitor1: "H19", competitor2: "H20" },
-  { heatNumber: 27, station: "C", competitor1: "H21", competitor2: "H22" },
-  { heatNumber: 28, station: "A", competitor1: "H23", competitor2: "H24" },
+  // Round 3 - Heats 25-28 (with actual results from bracket)
+  { heatNumber: 25, station: "A", competitor1: "Penny Chalkiadaki", competitor2: "Aga Muhammed", winner: "Aga Muhammed", score1: 0, score2: 0 },
+  { heatNumber: 26, station: "B", competitor1: "Artur Kosteniuk", competitor2: "Hojat Mousavi", winner: "Artur Kosteniuk", score1: 0, score2: 0 },
+  { heatNumber: 27, station: "C", competitor1: "Christos Sotiros", competitor2: "Stevo Kühn", winner: "Christos Sotiros", score1: 0, score2: 0 },
+  { heatNumber: 28, station: "A", competitor1: "Jae Kim", competitor2: "Engi Pan", winner: "Jae Kim", score1: 0, score2: 0 },
 ];
 
 export const WEC25_ROUND4_POSITIONS = [
-  // Round 4 - Heats 29-30
-  { heatNumber: 29, station: "B", competitor1: "H25", competitor2: "H26" },
-  { heatNumber: 30, station: "C", competitor1: "H27", competitor2: "H28" },
+  // Round 4 - Heats 29-30 (with actual results from bracket)
+  { heatNumber: 29, station: "B", competitor1: "Aga Muhammed", competitor2: "Artur Kosteniuk", winner: "Aga Muhammed", score1: 0, score2: 0 },
+  { heatNumber: 30, station: "C", competitor1: "Christos Sotiros", competitor2: "Jae Kim", winner: "Jae Kim", score1: 0, score2: 0 },
 ];
 
 export const WEC25_FINAL_POSITION = [
-  // Final - Heat 31
-  { heatNumber: 31, station: "A", competitor1: "H29", competitor2: "H30" },
+  // Final - Heat 31 (CHAMPION: Aga Muhammed)
+  { heatNumber: 31, station: "A", competitor1: "Aga Muhammed", competitor2: "Jae Kim", winner: "Aga Muhammed", score1: 0, score2: 0 },
 ];
