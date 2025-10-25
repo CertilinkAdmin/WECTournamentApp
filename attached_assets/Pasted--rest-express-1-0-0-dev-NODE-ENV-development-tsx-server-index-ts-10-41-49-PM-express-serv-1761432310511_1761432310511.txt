@@ -1,0 +1,35 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+10:41:49 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+10:41:57 PM [express] GET /api/tournaments 304 in 131ms :: [{"id":1,"name":"World Espresso Championsh…
+10:41:57 PM [express] GET /api/users 304 in 111ms :: []
+10:41:57 PM [express] GET /api/tournaments/1/matches 304 in 25ms :: []
+10:41:57 PM [express] GET /api/tournaments/1/participants 200 in 51ms :: []
+10:42:10 PM [express] GET /api/tournaments/1/matches 304 in 102ms :: []
+10:42:10 PM [express] GET /api/stations 304 in 98ms :: [{"id":1,"name":"A","location":null,"status":"…
+10:43:13 PM [vite] Internal server error: Failed to resolve import "./pages/results/ResultsLayout" from "client/src/App.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/runner/workspace/client/src/App.tsx:7:26
+  20 |  import AdminDashboard from "./pages/admin/AdminDashboard";
+  21 |  import LiveLayout from "./pages/live/LiveLayout";
+  22 |  import ResultsLayout from "./pages/results/ResultsLayout";
+     |                             ^
+  23 |  import "./App.css";
+  24 |  const App = () => {
+      at TransformPluginContext._formatError (/home/runner/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49258:41)
+      at TransformPluginContext.error (/home/runner/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49253:16)
+      at normalizeUrl (/home/runner/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64306:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at async <anonymous> (/home/runner/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64438:39)
+      at async Promise.all (index 8)
+      at async TransformPluginContext.transform (/home/runner/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64365:7)
+      at async PluginContainer.transform (/home/runner/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49099:18)
+      at async loadAndTransform (/home/runner/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:51977:27)
+      at async viteTransformMiddleware (/home/runner/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:62105:24)
