@@ -8,6 +8,7 @@ import LiveLayout from './pages/live/LiveLayout';
 import ResultsLayout from './pages/results/ResultsLayout';
 import WEC2025Results from './pages/results/WEC2025Results';
 import TournamentBracketResults from './pages/results/TournamentBracketResults';
+import LiveBracket from './pages/live/LiveBracket';
 import JudgeScorecardsResults from './pages/results/JudgeScorecardsResults';
 import HeatResults from './pages/results/HeatResults';
 import HeatCarouselDemo from './pages/results/HeatCarouselDemo';
@@ -35,7 +36,7 @@ const App: React.FC = () => {
           {/* Live Tournament Routes */}
           <Route path="/live" element={<LiveLayout />}>
             <Route index element={<div>Live Overview</div>} />
-            <Route path="bracket" element={<div>Live Bracket</div>} />
+            <Route path="bracket" element={<LiveBracket />} />
             <Route path="heats" element={<div>Current Heats</div>} />
             <Route path="leaderboard" element={<div>Live Leaderboard</div>} />
             <Route path="stations" element={<div>Stations</div>} />

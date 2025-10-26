@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Trophy, Medal, Award, Star, Coffee, Zap, Maximize2 } from 'lucide-react';
-import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from './WEC25BracketData';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { DEMO_ROUND1, DEMO_ROUND2, DEMO_ROUND3, DEMO_SEMIFINALS, DEMO_FINAL } from './Demo24BracketData';
+
+interface TrueTournamentBracketProps {
+  mode?: 'live' | 'results';
+}
 
 interface BracketMatch {
   heatNumber: number;
@@ -22,46 +27,155 @@ interface BracketRound {
   matches: BracketMatch[];
 }
 
-const TrueTournamentBracket = () => {
+interface Tournament {
+  id: number;
+  name: string;
+  status: string;
+}
+
+interface Match {
+  id: number;
+  tournamentId: number;
+  round: number;
+  heatNumber: number;
+  stationId: number;
+  status: string;
+  competitor1Id: number | null;
+  competitor2Id: number | null;
+  winnerId: number | null;
+}
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+}
+
+interface HeatScore {
+  id: number;
+  matchId: number;
+  judgeId: number;
+  competitorId: number;
+  totalScore: number;
+}
+
+const TrueTournamentBracket = ({ mode = 'results' }: TrueTournamentBracketProps) => {
   const [animatedMatches, setAnimatedMatches] = useState<Set<number>>(new Set());
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedHeat, setSelectedHeat] = useState<BracketMatch | null>(null);
 
-  // Organize data into rounds
-  const rounds: BracketRound[] = [
-    {
-      title: "Round 1",
-      matches: WEC25_BRACKET_POSITIONS
-    },
-    {
-      title: "Round 2", 
-      matches: WEC25_ROUND2_POSITIONS
-    },
-    {
-      title: "Round 3",
-      matches: WEC25_ROUND3_POSITIONS
-    },
-    {
-      title: "Semi-Finals",
-      matches: WEC25_ROUND4_POSITIONS
-    },
-    {
-      title: "Final",
-      matches: [WEC25_FINAL_POSITION]
+  // Only fetch tournament data in live mode
+  const shouldFetchLiveData = mode === 'live';
+
+  // Fetch active tournaments
+  const { data: tournaments } = useQuery<Tournament[]>({
+    queryKey: ['/api/tournaments'],
+    enabled: shouldFetchLiveData,
+  });
+
+  // Find the most recent active tournament (only in live mode)
+  const activeTournament = shouldFetchLiveData 
+    ? tournaments?.find(t => t.status === 'ACTIVE' || t.status === 'IN_PROGRESS') || tournaments?.[0]
+    : null;
+
+  // Fetch matches for active tournament (only in live mode)
+  const { data: matches } = useQuery<Match[]>({
+    queryKey: activeTournament ? ['/api/tournaments', activeTournament.id, 'matches'] : ['no-tournament'],
+    enabled: shouldFetchLiveData && !!activeTournament,
+  });
+
+  // Fetch users to map IDs to names (only in live mode)
+  const { data: users } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    enabled: shouldFetchLiveData,
+  });
+
+  const getUserName = (userId: number | null): string => {
+    if (!userId) return 'BYE';
+    const user = users?.find(u => u.id === userId);
+    return user?.username || 'Unknown';
+  };
+
+  const transformMatchToBracket = (match: Match): BracketMatch => {
+    const competitor1 = getUserName(match.competitor1Id);
+    const competitor2 = getUserName(match.competitor2Id);
+    const winner = match.winnerId ? getUserName(match.winnerId) : (competitor1 !== 'BYE' ? competitor1 : competitor2);
+
+    return {
+      heatNumber: match.heatNumber,
+      station: match.stationId ? String.fromCharCode(64 + match.stationId) : 'A',
+      competitor1,
+      competitor2,
+      winner,
+      score1: 0,
+      score2: 0,
+      leftCupCode: `H${match.heatNumber}-L`,
+      rightCupCode: `H${match.heatNumber}-R`,
+    };
+  };
+
+  const getRoundTitle = (roundNum: number, totalRounds: number): string => {
+    if (roundNum === totalRounds) return 'Final';
+    if (roundNum === totalRounds - 1) return 'Semi-Finals';
+    return `Round ${roundNum}`;
+  };
+
+  // Organize matches into rounds
+  const buildRoundsFromMatches = (): BracketRound[] => {
+    if (!matches || matches.length === 0) {
+      return [];
     }
+
+    const roundGroups = new Map<number, Match[]>();
+    matches.forEach(match => {
+      if (!roundGroups.has(match.round)) {
+        roundGroups.set(match.round, []);
+      }
+      roundGroups.get(match.round)!.push(match);
+    });
+
+    const sortedRounds = Array.from(roundGroups.keys()).sort((a, b) => a - b);
+    const totalRounds = sortedRounds.length;
+
+    return sortedRounds.map(roundNum => ({
+      title: getRoundTitle(roundNum, totalRounds),
+      matches: roundGroups.get(roundNum)!
+        .sort((a, b) => a.heatNumber - b.heatNumber)
+        .map(transformMatchToBracket),
+    }));
+  };
+
+  // Historical WEC25 Milano data (for results mode)
+  const wec25HistoricalRounds: BracketRound[] = [
+    { title: "Round 1", matches: DEMO_ROUND1 },
+    { title: "Round 2", matches: DEMO_ROUND2 },
+    { title: "Round 3", matches: DEMO_ROUND3 },
+    { title: "Semi-Finals", matches: DEMO_SEMIFINALS },
+    { title: "Final", matches: [DEMO_FINAL] },
   ];
+
+  // Determine which data to show
+  const rounds = mode === 'live' && activeTournament && matches && matches.length > 0
+    ? buildRoundsFromMatches()
+    : wec25HistoricalRounds;
+
+  const totalHeats = rounds.flatMap(r => r.matches).length;
+  const finalWinner = rounds[rounds.length - 1]?.matches[0]?.winner || 'TBD';
 
   // Animate matches on load
   useEffect(() => {
     setIsLoaded(true);
+    setAnimatedMatches(new Set());
+    
     const allMatches = rounds.flatMap(round => round.matches);
     
     allMatches.forEach((match, index) => {
       setTimeout(() => {
-        setAnimatedMatches(prev => new Set([...prev, match.heatNumber]));
+        setAnimatedMatches(prev => new Set([...Array.from(prev), match.heatNumber]));
       }, index * 50);
     });
-  }, []);
+  }, [rounds]);
 
   const getMedalIcon = (roundTitle: string, isWinner: boolean) => {
     if (!isWinner) return null;
@@ -86,7 +200,7 @@ const TrueTournamentBracket = () => {
   };
 
   const getInitials = (name: string) => {
-    if (!name || name === 'BYE') return 'BYE';
+    if (!name || name === 'BYE' || name === 'Unknown' || name === 'TBD') return name;
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 3);
   };
 
@@ -96,7 +210,7 @@ const TrueTournamentBracket = () => {
         <div className="text-center mb-6">
           <h1 className="text-3xl md:text-4xl font-black mb-3 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-600 bg-clip-text text-transparent" 
               style={{ fontFamily: 'Orbitron, monospace', letterSpacing: '2px' }}>
-            WEC 2025 MILANO
+            {mode === 'live' && activeTournament ? activeTournament.name.toUpperCase() : 'WEC 2025 MILANO'}
           </h1>
           <h2 className="text-lg md:text-xl font-semibold mb-3 text-amber-100" 
               style={{ fontFamily: 'Exo 2, sans-serif', letterSpacing: '1px' }}>
@@ -105,15 +219,15 @@ const TrueTournamentBracket = () => {
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs md:text-sm text-amber-200">
             <div className="flex items-center gap-2 px-2 py-1 bg-amber-900/20 rounded-lg border border-amber-600/30">
               <Coffee className="h-3 w-3 text-amber-400" />
-              <span className="font-semibold">31 HEATS</span>
+              <span className="font-semibold">{totalHeats} HEATS</span>
             </div>
             <div className="flex items-center gap-2 px-2 py-1 bg-amber-900/20 rounded-lg border border-yellow-400/30">
               <Trophy className="h-3 w-3 text-yellow-400" />
-              <span className="font-semibold">AGA MUHAMMED</span>
+              <span className="font-semibold">{finalWinner.toUpperCase()}</span>
             </div>
             <div className="flex items-center gap-2 px-2 py-1 bg-amber-900/20 rounded-lg border border-amber-500/30">
               <Star className="h-3 w-3 text-amber-400" />
-              <span className="font-semibold">MILAN</span>
+              <span className="font-semibold">{mode === 'live' && activeTournament ? 'LIVE' : mode === 'live' ? 'NO TOURNAMENT' : 'RESULTS'}</span>
             </div>
           </div>
           <p className="text-xs text-amber-300 mt-2">Click any heat to expand details</p>

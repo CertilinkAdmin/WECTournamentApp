@@ -53,6 +53,18 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Recent Changes
 
+### Complete Color Scheme Unification (October 26, 2025)
+- Unified all colors across landing page and tournament bracket to cinnamon orange and cream palette
+- Replaced all legacy teal (rgba(0,212,255)) and brown (rgba(139,69,19)) colors with orange (rgba(255,107,53))
+- Updated color variables:
+  - Primary: #ff6b35 (cinnamon orange)
+  - Accent: Cream (#F5F5DC)
+  - All gradients, shadows, and hover states use consistent orange spectrum
+- Hidden white text (title and description) underneath energy circles on landing page for cleaner design
+- Flag gradients and winner text styles updated to accent-dark for proper contrast
+- Verified zero instances of legacy colors remain in codebase
+- Visual harmony achieved between landing page branding and bracket experience
+
 ### Compact Tournament Bracket with Click-to-Expand (October 26, 2025)
 - Redesigned tournament bracket to show condensed view fitting entire bracket on screen
 - Each heat shows:
@@ -213,10 +225,11 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Color Palette
 
-Matching World Espresso Championships branding:
-- Primary: #8B5A3C (brown)
-- Accent: Cream/beige tones
+Unified cinnamon orange and cream palette:
+- Primary: #ff6b35 (cinnamon orange, rgba(255,107,53))
+- Accent: #F5F5DC (cream)
 - Background: Clean white with subtle warm tints
+- All gradients, shadows, and hover effects use consistent orange spectrum
 
 ### Station Lead View (October 21, 2025)
 - Created complete Station Lead interface with:
