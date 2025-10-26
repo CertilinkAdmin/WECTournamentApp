@@ -53,6 +53,40 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Recent Changes
 
+### Compact Tournament Bracket with Click-to-Expand (October 26, 2025)
+- Redesigned tournament bracket to show condensed view fitting entire bracket on screen
+- Each heat shows:
+  - Heat number and station badge
+  - Competitor initials (3-letter abbreviations)
+  - Match scores with winner highlighting
+  - Click-to-expand icon
+- Click any heat to open detailed dialog showing:
+  - Full competitor names
+  - Cup codes
+  - Complete scores and winner badges
+  - Match metadata (heat number, station, final score)
+- Responsive design with mobile-optimized sizing
+- Animations for bracket loading and winner highlighting
+- Championship match gets special gold styling
+- Error handling for missing competitor data
+
+### Mobile Optimization Utilities (October 26, 2025)
+- Created comprehensive mobile CSS utilities in `client/src/styles/mobile.css`
+- Touch-friendly opt-in classes (avoiding global overrides):
+  - `.mobile-touch-button` - 44px minimum tap targets
+  - `.sm-mobile-compact-button` - Compact sizing for small devices
+  - `.touch-target` - General 44x44px touch target helper
+- Mobile-specific responsive utilities:
+  - Spacing: `.mobile-p-2`, `.mobile-px-2`, `.mobile-gap-2`
+  - Typography: `.mobile-text-sm`, `.mobile-text-xs`
+  - Layout: `.mobile-stack`, `.mobile-full`, `.mobile-grid-1`
+  - Visibility: `.hidden-mobile`, `.mobile-only`
+- Safe area support for iOS notched devices
+- Prevent double-tap zoom and improved tap highlighting
+- Mobile-friendly dialogs and sticky headers
+- Landscape orientation optimizations
+- All utilities respect shadcn component sizing system
+
 ### Add All Baristas & Power-of-2 Validation (October 21, 2025)
 - Implemented "Add All Baristas" button that auto-populates tournament with test baristas
 - Button adds up to 16 baristas with sequential seeds (1, 2, 3, ...)
