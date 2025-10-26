@@ -9,6 +9,7 @@ import { Trophy, Users, Shuffle, Save, RotateCcw, Loader2, MapPin } from 'lucide
 import { useToast } from '@/hooks/use-toast';
 import DraggableCompetitor from './DraggableCompetitor';
 import DroppableBracketPosition from './DroppableBracketPosition';
+import HeatJudgesDisplay from './HeatJudgesDisplay';
 import { WEC25_COMPETITORS, WEC25_BRACKET_POSITIONS } from './WEC25BracketData';
 import type { User, Match, Station } from '@shared/schema';
 
@@ -29,6 +30,7 @@ export default function WEC25Bracket({ tournamentId, onBracketGenerated }: WEC25
   const [activeCompetitor, setActiveCompetitor] = useState<User | null>(null);
   const [bracketPositions, setBracketPositions] = useState<BracketPosition[]>([]);
   const [selectedCompetitors, setSelectedCompetitors] = useState<User[]>([]);
+  const [expandedHeats, setExpandedHeats] = useState<Set<number>>(new Set());
 
   // Fetch tournaments to get current one
   const { data: tournaments = [] } = useQuery<any[]>({
@@ -177,6 +179,18 @@ export default function WEC25Bracket({ tournamentId, onBracketGenerated }: WEC25
 
   const handleSaveBracket = () => {
     generateBracketMutation.mutate();
+  };
+
+  const toggleHeatExpansion = (heatNumber: number) => {
+    setExpandedHeats(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(heatNumber)) {
+        newSet.delete(heatNumber);
+      } else {
+        newSet.add(heatNumber);
+      }
+      return newSet;
+    });
   };
 
   const getUnassignedCompetitors = () => {
@@ -341,6 +355,40 @@ export default function WEC25Bracket({ tournamentId, onBracketGenerated }: WEC25
           </CardContent>
         </Card>
       </div>
+
+      {/* Heat Judges Display */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Heat Judges & Scorecards
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {bracketPositions.map(position => {
+              const heatData = WEC25_BRACKET_POSITIONS.find(h => h.heatNumber === position.heatNumber);
+              return (
+                <HeatJudgesDisplay
+                  key={position.heatNumber}
+                  heatNumber={position.heatNumber}
+                  station={position.station}
+                  leftCompetitor={position.competitor1?.name || heatData?.competitor1 || "TBD"}
+                  rightCompetitor={position.competitor2?.name || heatData?.competitor2 || "TBD"}
+                  leftCupCode={heatData?.leftCupCode}
+                  rightCupCode={heatData?.rightCupCode}
+                  leftScore={heatData?.score1}
+                  rightScore={heatData?.score2}
+                  winner={heatData?.winner}
+                  judges={heatData?.judges}
+                  isExpanded={expandedHeats.has(position.heatNumber)}
+                  onToggle={() => toggleHeatExpansion(position.heatNumber)}
+                />
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Status */}
       {stats.filled > 0 && (

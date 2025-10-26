@@ -1,12 +1,13 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import ThemeToggle from '../../components/ThemeToggle';
 import './ResultsLayout.css';
 
 const ResultsLayout: React.FC = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/results', label: 'Results Home', icon: '🏆' },
+    { path: '/results', label: 'WEC 2025 Results', icon: '🏆' },
     { path: '/results/bracket', label: 'Tournament Bracket', icon: '📊' },
     { path: '/results/leaderboard', label: 'Final Standings', icon: '🥇' },
     { path: '/results/champion', label: 'Champion', icon: '👑' },
@@ -21,9 +22,12 @@ const ResultsLayout: React.FC = () => {
             <span className="logo-icon">🏆</span>
             <span className="logo-text">WEC 2025 Milano Results</span>
           </Link>
-          <div className="results-status">
-            <div className="status-indicator completed"></div>
-            <span className="status-text">COMPLETED</span>
+          <div className="flex items-center gap-4">
+            <div className="results-status">
+              <div className="status-indicator completed"></div>
+              <span className="status-text">COMPLETED</span>
+            </div>
+            <ThemeToggle />
           </div>
         </div>
       </header>

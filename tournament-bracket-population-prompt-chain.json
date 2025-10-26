@@ -1,0 +1,51 @@
+{
+  "prompt_chain": [
+    {
+      "step": 1,
+      "title": "Analyze Bracket Image Data",
+      "description": "Extract all competitor names, match numbers, stations, and bracket progression from the tournament bracket image",
+      "test_criteria": "All competitor names and match positions are correctly identified and documented",
+      "implementation_notes": "Focus on exact names, heat numbers, station assignments, and bracket flow"
+    },
+    {
+      "step": 2,
+      "title": "Update WEC25 Data Structure",
+      "description": "Update WEC25BracketData.tsx with the exact competitor names and positions from the bracket image",
+      "test_criteria": "WEC25_COMPETITORS array contains all competitors with correct names and IDs",
+      "implementation_notes": "Ensure all 22 competitors are included with proper data structure"
+    },
+    {
+      "step": 3,
+      "title": "Verify Bracket Structure",
+      "description": "Verify the bracket structure matches the image with correct heat numbers, stations, and progression",
+      "test_criteria": "All heats have correct station assignments and competitor positions match the image",
+      "implementation_notes": "Check Round 1 (Heats 1-16), Round 2 (Heats 17-24), Round 3 (Heats 25-28), Round 4 (Heats 29-30), and Final (Heat 31)"
+    },
+    {
+      "step": 4,
+      "title": "Test Bracket Population",
+      "description": "Test that the bracket populates correctly with all competitors in their proper positions",
+      "test_criteria": "Bracket displays all competitors in correct positions with proper station colors",
+      "implementation_notes": "Verify drag-and-drop functionality and visual representation"
+    },
+    {
+      "step": 5,
+      "title": "Implement Bracket Display",
+      "description": "Ensure the bracket display component shows all matches with proper styling and station colors",
+      "test_criteria": "Bracket is visually accurate with proper station colors (A=Primary, B=Chart-3, C=Chart-1)",
+      "implementation_notes": "Focus on visual accuracy and user experience"
+    }
+  ],
+  "tdd_approach": {
+    "test_first": "Write tests for each bracket position and competitor assignment",
+    "implementation": "Implement bracket data structure and display logic",
+    "verification": "Verify all matches display correctly with proper station colors"
+  },
+  "success_criteria": {
+    "all_competitors_loaded": "All 22 competitors from the image are loaded into the bracket",
+    "correct_positions": "All competitors are in their exact positions as shown in the image",
+    "proper_stations": "Station assignments match the image (A, B, C with correct colors)",
+    "bracket_progression": "Bracket flow from Round 1 to Final matches the image structure",
+    "visual_accuracy": "Bracket display is visually accurate and matches the provided image"
+  }
+}

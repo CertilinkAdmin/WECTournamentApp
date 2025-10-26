@@ -1,13 +1,25 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import EnergyCard from '../components/EnergyCard';
 import './LandingPage.css';
 
 const LandingPage: React.FC = () => {
   return (
     <div className="landing-page">
-      {/* Background Image */}
+      {/* Background Video */}
       <div className="landing-background">
-        <img src="/eespresso.png" alt="WEC 2025 Milano Background" className="background-image" />
+        <video 
+          className="background-video" 
+          autoPlay 
+          muted 
+          loop 
+          playsInline
+          poster="/eespresso.png"
+        >
+          <source src="/freecompress-coffeetransition (3).mp4" type="video/mp4" />
+          {/* Fallback image if video doesn't load */}
+          <img src="/eespresso.png" alt="WEC 2025 Milano Background" className="background-image" />
+        </video>
         <div className="background-overlay"></div>
       </div>
       
@@ -21,47 +33,45 @@ const LandingPage: React.FC = () => {
       
       <main className="main-options">
         <div className="options-grid three-columns">
-          {/* Admin/TournamentBuilder - Left Column */}
-          <div className="column-section left-column">
-            <Link to="/admin" className="landing-button admin-button">
-              <div className="button-icon">🏗️</div>
-              <div className="button-content">
-                <h2 className="button-title">Admin/TournamentBuilder</h2>
-                <p className="button-description">
-                  Create and manage tournaments, competitors, judges, and stations
-                </p>
-              </div>
-              <div className="button-arrow">→</div>
-            </Link>
-          </div>
+                  {/* Admin/TournamentBuilder - Left Column */}
+                  <div className="column-section left-column">
+                    <EnergyCard
+                      to="/admin"
+                      icon="🏗️"
+                      title="Admin/TournamentBuilder"
+                      description="Create and manage tournaments, competitors, judges, and stations"
+                      className="admin-button"
+                      containerId="adminCardContainer"
+                      canvasId="admin-energy-canvas"
+                    />
+                  </div>
 
           {/* Live Tournament - Center Column (Featured) */}
           <div className="column-section center-column">
-            <Link to="/live" className="landing-button live-button featured">
-              <div className="button-icon">📺</div>
-              <div className="live-badge">LIVE</div>
-              <div className="button-content">
-                <h2 className="button-title">Live Tournament</h2>
-                <p className="button-description">
-                  Real-time tournament monitoring and live score updates
-                </p>
-              </div>
-              <div className="button-arrow">→</div>
-            </Link>
+            <EnergyCard
+              to="/live"
+              icon="📺"
+              title="Live Tournament"
+              description="Real-time tournament monitoring and live score updates"
+              className="live-button featured"
+              featured={true}
+              liveBadge={true}
+              containerId="liveCardContainer"
+              canvasId="live-energy-canvas"
+            />
           </div>
 
           {/* WEC 2025 Milano Results - Right Column */}
           <div className="column-section right-column">
-            <Link to="/results" className="landing-button results-button">
-              <div className="button-icon">🏆</div>
-              <div className="button-content">
-                <h2 className="button-title">WEC 2025 Milano Results</h2>
-                <p className="button-description">
-                  View complete tournament results, scores, and champion details
-                </p>
-              </div>
-              <div className="button-arrow">→</div>
-            </Link>
+            <EnergyCard
+              to="/results"
+              icon="🏆"
+              title="WEC 2025 Milano Results"
+              description="View complete tournament results, scores, and champion details"
+              className="results-button"
+              containerId="resultsCardContainer"
+              canvasId="results-energy-canvas"
+            />
           </div>
         </div>
       </main>

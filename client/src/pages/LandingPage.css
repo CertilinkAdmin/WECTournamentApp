@@ -5,7 +5,7 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Background Image */
+/* Background Video */
 .landing-background {
   position: absolute;
   top: 0;
@@ -13,6 +13,20 @@
   width: 100%;
   height: 100%;
   z-index: 1;
+  overflow: hidden;
+}
+
+.background-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  min-height: 100%;
+  filter: brightness(0.8) contrast(1.1);
 }
 
 .background-image {
@@ -20,6 +34,9 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .background-overlay {
@@ -28,7 +45,12 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(139, 69, 19, 0.3) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(139, 69, 19, 0.3) 100%
+  );
   z-index: 2;
 }
 
@@ -101,76 +123,282 @@
   position: relative;
 }
 
+/* Card Container */
+.card-container {
+  position: relative;
+  width: 360px;
+  height: 360px;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+/* Energy Canvas */
+#admin-energy-canvas,
+#live-energy-canvas,
+#results-energy-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* Overlay Image - Removed */
+
+/* WEC3D Image Styles */
+.wec3d-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: none;
+  width: 280px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wec3d-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
+}
+
+/* Analog Clock Styles */
+.analog-clock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Large Analog Clock for Live Card */
+.analog-clock-large {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.analog-clock-large .analog-clock {
+  position: relative;
+  top: 0;
+  left: 0;
+  transform: none;
+}
+
+.analog-clock .clock {
+  min-height: 120px;
+  min-width: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.8);
+  background-image: url("https://imvpn22.github.io/analog-clock/clock.png");
+  background-position: center center;
+  background-size: cover;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 -8px 8px rgba(255, 255, 255, 0.1),
+    inset 0 -8px 8px rgba(255, 255, 255, 0.1), 
+    0 8px 8px rgba(0, 0, 0, 0.3),
+    inset 0 8px 8px rgba(0, 0, 0, 0.3);
+  transition: all ease 0.2s;
+}
+
+/* Large clock for live card */
+.analog-clock-large .analog-clock .clock {
+  min-height: 180px;
+  min-width: 180px;
+}
+
+.analog-clock .clock:before {
+  content: "";
+  height: 0.5rem;
+  width: 0.5rem;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.8);
+  position: absolute;
+  border-radius: 50%;
+  z-index: 1000;
+  transition: all ease 0.2s;
+}
+
+.analog-clock .hour,
+.analog-clock .min,
+.analog-clock .sec {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.analog-clock .hour {
+  height: 60px;
+  width: 60px;
+}
+
+.analog-clock .hour:before {
+  content: "";
+  position: absolute;
+  height: 50%;
+  width: 3px;
+  background-color: #fff;
+  border-radius: 3px;
+}
+
+.analog-clock .min {
+  height: 80px;
+  width: 80px;
+}
+
+.analog-clock .min:before {
+  content: "";
+  height: 50%;
+  width: 2px;
+  background-color: #fff;
+  border-radius: 2px;
+}
+
+.analog-clock .sec {
+  height: 90px;
+  width: 90px;
+}
+
+.analog-clock .sec:before {
+  content: "";
+  height: 60%;
+  width: 1px;
+  background-color: #f00;
+  border-radius: 1px;
+}
+
+/* Larger hands for large clock */
+.analog-clock-large .analog-clock .hour {
+  height: 90px;
+  width: 90px;
+}
+
+.analog-clock-large .analog-clock .hour:before {
+  width: 4px;
+}
+
+.analog-clock-large .analog-clock .min {
+  height: 120px;
+  width: 120px;
+}
+
+.analog-clock-large .analog-clock .min:before {
+  width: 3px;
+}
+
+.analog-clock-large .analog-clock .sec {
+  height: 135px;
+  width: 135px;
+}
+
+.analog-clock-large .analog-clock .sec:before {
+  width: 2px;
+}
+
 /* Landing Buttons */
 .landing-button {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  max-width: 300px;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
+  width: 300px;
+  height: 300px;
+  background: rgba(100, 50, 20, 0.20);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 190, 120, 0.10);
+  border-radius: 50% !important;
   padding: 2rem;
   text-decoration: none;
-  color: white;
+  color: #E5E7EB;
   transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
+  z-index: 1;
+  overflow: visible;
+  transform-style: preserve-3d;
+  aspect-ratio: 1;
+  min-width: 300px;
+  min-height: 300px;
+  max-width: 300px;
+  max-height: 300px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3), 0 0 0 1px rgba(255, 190, 120, 0.10) inset;
 }
 
-.landing-button::before {
-  content: '';
+/* Text positioning below the overlay */
+.button-content {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 142, 83, 0.1));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.landing-button:hover::before {
-  opacity: 1;
-}
-
-.landing-button:hover {
-  transform: translateY(-8px);
-  border-color: rgba(255, 107, 53, 0.5);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-/* Button Icons */
-.button-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  position: relative;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  margin-top: 1rem;
   z-index: 2;
 }
 
-/* Button Content */
+/* Button icon positioning */
+.button-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.landing-button:hover {
+  transform: translateY(-8px) scale(1.05);
+}
+
+.landing-button:hover .button-content {
+  transform: translateX(-50%) translateY(-8px);
+}
+
+/* Button Content - positioned below overlay */
 .button-content {
   text-align: center;
-  position: relative;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 1rem;
   z-index: 2;
 }
 
 .button-title {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.3rem 0;
   color: white;
+  text-align: center;
 }
 
 .button-description {
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.8);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .button-arrow {
@@ -189,19 +417,19 @@
 
 /* Featured Live Button */
 .landing-button.featured {
-  background: rgba(52, 152, 219, 0.2);
-  border-color: rgba(52, 152, 219, 0.4);
+  background: rgba(52, 152, 219, 0.1);
+  border-color: rgba(52, 152, 219, 0.2);
   transform: scale(1.05);
 }
 
 .landing-button.featured::before {
-  background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(41, 128, 185, 0.2));
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(41, 128, 185, 0.1));
 }
 
 .landing-button.featured:hover {
   transform: scale(1.08) translateY(-8px);
   border-color: #3498db;
-  box-shadow: 0 25px 50px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 25px 50px rgba(52, 152, 219, 0.2);
 }
 
 .live-badge {

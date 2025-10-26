@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { Server as SocketIOServer } from "socket.io";
 import { BracketGenerator } from "./bracketGenerator";
+import tournamentRoutes from "./routes/tournament";
 import { 
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
@@ -22,6 +23,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Store io instance for use in routes
   app.set("io", io);
+
+  // Tournament routes are handled below in the existing routes
 
   // WebSocket connection handling
   io.on("connection", (socket: any) => {
@@ -77,11 +80,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/tournaments/:id", async (req, res) => {
-    const tournament = await storage.getTournament(parseInt(req.params.id));
-    if (!tournament) {
-      return res.status(404).json({ error: "Tournament not found" });
+    try {
+      console.log('Fetching tournament with ID:', req.params.id);
+      const tournament = await storage.getTournament(parseInt(req.params.id));
+      console.log('Tournament result:', tournament);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+      res.json(tournament);
+    } catch (error) {
+      console.error('Error in getTournament:', error);
+      res.status(500).json({ error: "Internal server error", details: error.message });
     }
-    res.json(tournament);
   });
 
   app.patch("/api/tournaments/:id", async (req, res) => {
