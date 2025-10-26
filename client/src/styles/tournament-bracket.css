@@ -6,24 +6,24 @@
 /* Import modern fonts */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700&display=swap');
 
-/* Variables - Brand Colors */
+/* Variables - Brand Colors - Matching Landing Page Cinnamon Orange & Cream */
 :root {
-  --bracket-primary: #8B4513;
-  --bracket-secondary: #A0522D;
-  --bracket-accent: #8B4513;
-  --bracket-accent-light: #CD853F;
-  --bracket-accent-dark: #654321;
+  --bracket-primary: #ff6b35;
+  --bracket-secondary: #ff8c61;
+  --bracket-accent: #ff6b35;
+  --bracket-accent-light: #ffbe78;
+  --bracket-accent-dark: #d95a2b;
   --bracket-winner: #ffd700;
-  --bracket-border: #8B4513;
+  --bracket-border: #ff6b35;
   --bracket-bg: #1a1a1a;
-  --bracket-shadow: rgba(139, 69, 19, 0.4);
-  --bracket-glow: #8B4513;
+  --bracket-shadow: rgba(255, 107, 53, 0.4);
+  --bracket-glow: #ff6b35;
   --bracket-text: #F5F5DC;
-  --bracket-text-muted: #D2B48C;
-  --bracket-surface: linear-gradient(145deg, #2d2d2d, #1a1a1a);
-  --bracket-glass: rgba(245, 245, 220, 0.1);
-  --bracket-reflection: rgba(245, 245, 220, 0.2);
-  --bracket-brand-orange: #8B4513;
+  --bracket-text-muted: #FFDAB9;
+  --bracket-surface: linear-gradient(145deg, rgba(139, 69, 19, 0.2), rgba(0, 0, 0, 0.9));
+  --bracket-glass: rgba(255, 190, 120, 0.1);
+  --bracket-reflection: rgba(255, 190, 120, 0.2);
+  --bracket-brand-orange: #ff6b35;
   --bracket-brand-cream: #F5F5DC;
 }
 
@@ -55,9 +55,9 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg, 
-    rgba(139, 69, 19, 0.1) 0%, 
+    rgba(255, 107, 53, 0.15) 0%, 
     transparent 50%, 
-    rgba(255, 215, 0, 0.05) 100%);
+    rgba(255, 190, 120, 0.1) 100%);
   border-radius: 20px;
   pointer-events: none;
 }
@@ -110,14 +110,14 @@
   margin-bottom: 1rem;
   padding: 0.6rem 1.2rem;
   background: linear-gradient(145deg, 
-    rgba(139, 69, 19, 0.15) 0%, 
-    rgba(139, 69, 19, 0.08) 50%, 
-    rgba(139, 69, 19, 0.15) 100%);
-  border: 1px solid rgba(139, 69, 19, 0.4);
+    rgba(255, 107, 53, 0.2) 0%, 
+    rgba(255, 107, 53, 0.12) 50%, 
+    rgba(255, 107, 53, 0.2) 100%);
+  border: 1px solid rgba(255, 107, 53, 0.5);
   border-radius: 10px;
   box-shadow: 
-    0 4px 16px rgba(139, 69, 19, 0.3),
-    inset 0 1px 0 rgba(245, 245, 220, 0.2);
+    0 4px 16px rgba(255, 107, 53, 0.3),
+    inset 0 1px 0 rgba(255, 190, 120, 0.2);
   text-transform: uppercase;
   letter-spacing: 1px;
   position: relative;
@@ -918,8 +918,8 @@
   font-weight: 700;
   text-align: center;
   padding: 0.4rem 0.6rem;
-  background: rgba(139, 69, 19, 0.15);
-  border: 1px solid rgba(139, 69, 19, 0.3);
+  background: rgba(255, 107, 53, 0.2);
+  border: 1px solid rgba(255, 107, 53, 0.4);
   border-radius: 6px;
   color: var(--bracket-brand-cream);
   text-transform: uppercase;
@@ -937,7 +937,7 @@
 
 .bracket-match-compact {
   background: var(--bracket-surface);
-  border: 1px solid rgba(139, 69, 19, 0.3);
+  border: 1px solid rgba(255, 107, 53, 0.3);
   border-radius: 8px;
   padding: 0.5rem;
   cursor: pointer;
@@ -950,7 +950,7 @@
 
 .bracket-match-compact:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
   border-color: var(--bracket-accent);
 }
 
@@ -966,7 +966,7 @@
   gap: 0.25rem;
   justify-content: space-between;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid rgba(139, 69, 19, 0.2);
+  border-bottom: 1px solid rgba(255, 107, 53, 0.3);
 }
 
 .heat-number-compact {

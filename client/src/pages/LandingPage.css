@@ -461,16 +461,18 @@
   font-size: 1rem;
   font-weight: 600;
   margin: 0 0 0.3rem 0;
-  color: white;
+  color: transparent;
   text-align: center;
+  display: none;
 }
 
 .button-description {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: transparent;
   margin: 0;
   line-height: 1.2;
   text-align: center;
+  display: none;
 }
 
 .button-arrow {
