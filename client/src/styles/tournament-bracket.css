@@ -20,7 +20,7 @@
   --bracket-glow: #ff6b35;
   --bracket-text: #F5F5DC;
   --bracket-text-muted: #FFDAB9;
-  --bracket-surface: linear-gradient(145deg, rgba(139, 69, 19, 0.2), rgba(0, 0, 0, 0.9));
+  --bracket-surface: linear-gradient(145deg, rgba(255, 107, 53, 0.2), rgba(0, 0, 0, 0.9));
   --bracket-glass: rgba(255, 190, 120, 0.1);
   --bracket-reflection: rgba(255, 190, 120, 0.2);
   --bracket-brand-orange: #ff6b35;
@@ -274,7 +274,7 @@
   width: 100%;
   background: var(--bracket-surface);
   padding: 1em;
-  border: 1px solid rgba(139, 69, 19, 0.3);
+  border: 1px solid rgba(255, 107, 53, 0.3);
   border-radius: 10px;
   box-shadow: 
     0 4px 16px rgba(0, 0, 0, 0.2),
@@ -297,7 +297,7 @@
   height: 100%;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(139, 69, 19, 0.15), 
+    rgba(255, 107, 53, 0.15), 
     transparent);
   transition: left 0.6s ease;
 }
@@ -312,7 +312,7 @@
   background: linear-gradient(135deg, 
     rgba(245, 245, 220, 0.05) 0%, 
     transparent 50%, 
-    rgba(139, 69, 19, 0.05) 100%);
+    rgba(255, 107, 53, 0.05) 100%);
   border-radius: 10px;
   pointer-events: none;
 }
@@ -324,8 +324,8 @@
 .tournament-bracket__match:hover {
   transform: translateY(-2px) scale(1.01);
   box-shadow: 
-    0 8px 24px rgba(139, 69, 19, 0.3),
-    0 0 0 1px rgba(139, 69, 19, 0.5),
+    0 8px 24px rgba(255, 107, 53, 0.3),
+    0 0 0 1px rgba(255, 107, 53, 0.5),
     inset 0 1px 0 rgba(245, 245, 220, 0.2);
   border-color: var(--bracket-accent);
 }
@@ -333,8 +333,8 @@
 .tournament-bracket__match:focus {
   border-color: var(--bracket-accent);
   box-shadow: 
-    0 0 0 2px rgba(139, 69, 19, 0.4),
-    0 6px 20px rgba(139, 69, 19, 0.2);
+    0 0 0 2px rgba(255, 107, 53, 0.4),
+    0 6px 20px rgba(255, 107, 53, 0.2);
 }
 
 @media (max-width: 24em) {
@@ -412,15 +412,15 @@
   padding: 1rem 1.5rem;
   text-align: center;
   background: linear-gradient(145deg, 
-    rgba(0, 212, 255, 0.1) 0%, 
-    rgba(0, 212, 255, 0.05) 100%);
-  border: 1px solid rgba(0, 212, 255, 0.3);
+    rgba(255, 107, 53, 0.1) 0%, 
+    rgba(255, 107, 53, 0.05) 100%);
+  border: 1px solid rgba(255, 107, 53, 0.3);
   border-radius: 12px;
   margin-bottom: 1.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   box-shadow: 
-    0 4px 16px rgba(0, 212, 255, 0.1),
+    0 4px 16px rgba(255, 107, 53, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
@@ -478,7 +478,7 @@
   color: var(--bracket-text);
   font-weight: 700;
   text-transform: uppercase;
-  border: 1px solid rgba(0, 212, 255, 0.3);
+  border: 1px solid rgba(255, 107, 53, 0.3);
   border-radius: 12px;
   background: var(--bracket-surface);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -501,7 +501,7 @@
   height: 100%;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(0, 212, 255, 0.2), 
+    rgba(255, 107, 53, 0.2), 
     transparent);
   transition: left 0.6s ease;
 }
@@ -512,12 +512,12 @@
 
 .tournament-bracket__code:hover {
   background: linear-gradient(145deg, 
-    rgba(0, 212, 255, 0.1) 0%, 
-    rgba(0, 212, 255, 0.05) 100%);
+    rgba(255, 107, 53, 0.1) 0%, 
+    rgba(255, 107, 53, 0.05) 100%);
   border-color: var(--bracket-accent);
   transform: scale(1.05);
   box-shadow: 
-    0 8px 24px rgba(0, 212, 255, 0.2),
+    0 8px 24px rgba(255, 107, 53, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -525,7 +525,7 @@
   font-family: 'Orbitron', monospace;
   background: linear-gradient(145deg, 
     var(--bracket-accent) 0%, 
-    #0099cc 100%);
+    var(--bracket-accent-dark) 100%);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -534,7 +534,7 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   box-shadow: 
-    0 4px 12px rgba(0, 212, 255, 0.3),
+    0 4px 12px rgba(255, 107, 53, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
@@ -578,7 +578,7 @@
   font-family: 'Orbitron', monospace;
   display: inline-block;
   padding: 0.75rem 1.5rem;
-  border: 1px solid rgba(0, 212, 255, 0.3);
+  border: 1px solid rgba(255, 107, 53, 0.3);
   font-size: 1.2rem;
   font-weight: 800;
   background: var(--bracket-surface);
@@ -604,7 +604,7 @@
   height: 100%;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(0, 212, 255, 0.2), 
+    rgba(255, 107, 53, 0.2), 
     transparent);
   transition: left 0.6s ease;
 }
@@ -615,12 +615,12 @@
 
 .tournament-bracket__number:hover {
   background: linear-gradient(145deg, 
-    rgba(0, 212, 255, 0.1) 0%, 
-    rgba(0, 212, 255, 0.05) 100%);
+    rgba(255, 107, 53, 0.1) 0%, 
+    rgba(255, 107, 53, 0.05) 100%);
   border-color: var(--bracket-accent);
   transform: scale(1.05);
   box-shadow: 
-    0 8px 24px rgba(0, 212, 255, 0.2),
+    0 8px 24px rgba(255, 107, 53, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -734,10 +734,10 @@
 
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(139, 69, 19, 0.3);
+    box-shadow: 0 0 5px rgba(255, 107, 53, 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(139, 69, 19, 0.6), 0 0 30px rgba(139, 69, 19, 0.4);
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.6), 0 0 30px rgba(255, 107, 53, 0.4);
   }
 }
 
@@ -760,7 +760,7 @@
 /* Enhanced winner effects */
 .tournament-bracket__team--winner .tournament-bracket__code {
   background: linear-gradient(135deg, #FFD700, #FFA500);
-  color: #8B4513;
+  color: var(--bracket-accent-dark);
   font-weight: 700;
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
   animation: pulse 2s infinite;
@@ -769,7 +769,7 @@
 .tournament-bracket__team--winner .tournament-bracket__number {
   background: linear-gradient(135deg, #FFD700, #FFA500);
   border-color: #FF8C00;
-  color: #8B4513;
+  color: var(--bracket-accent-dark);
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
   animation: pulse 2s infinite;
 }
@@ -1102,6 +1102,6 @@
   .tournament-bracket__team--winner .tournament-bracket__code,
   .tournament-bracket__team--winner .tournament-bracket__number {
     background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #8B4513;
+    color: var(--bracket-accent-dark);
   }
 }
