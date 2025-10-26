@@ -53,6 +53,16 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Recent Changes
 
+### Live vs Results Bracket Modes (October 26, 2025)
+- Implemented dual-mode TrueTournamentBracket component supporting both 'live' and 'results' modes
+- `/live/bracket`: Fetches active tournament data from API in real-time (admin-configured via bracket builder)
+- `/results/bracket`: Displays historical WEC 2025 Milano results with 24-person demo bracket
+- Created Demo24BracketData.tsx with 5 rounds (23 heats) featuring realistic competitor names
+- Smart data fetching: Live mode only queries API when enabled, Results mode uses static historical data
+- Visual indicators: "LIVE" badge for active tournaments, "RESULTS" badge for historical data, "NO TOURNAMENT" when no active tournament exists
+- Proper component architecture with LiveBracket.tsx and TournamentBracketResults.tsx wrappers
+- Efficient React Query usage with conditional enablement to avoid unnecessary API calls
+
 ### Complete Color Scheme Unification (October 26, 2025)
 - Unified all colors across landing page and tournament bracket to cinnamon orange and cream palette
 - Replaced all legacy teal (rgba(0,212,255)) and brown (rgba(139,69,19)) colors with orange (rgba(255,107,53))
