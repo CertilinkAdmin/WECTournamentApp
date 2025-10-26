@@ -87,23 +87,23 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
         ctx.arc(centerX, centerY, 150, 0, Math.PI * 2);
         ctx.clip();
         
-        // Make all overlays completely transparent
+        // Make all overlays completely transparent (invisible)
         for (let i = 0; i < 3; i++) {
           const baseRadius = 100 + i * 20;
           const pulseRadius = baseRadius + Math.sin(time * 1.2 + i * 0.3) * 3;
-          const alpha = 0.05 - i * 0.01; // Very low alpha for complete transparency
+          const alpha = -0.05; // Completely transparent
           
           ctx.beginPath();
           ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
           
-          // Create very subtle gradient
+          // Create completely transparent gradient
           const gradient = ctx.createRadialGradient(
             centerX, centerY, pulseRadius - 20, 
             centerX, centerY, pulseRadius + 20
           );
           gradient.addColorStop(0, `rgba(255, 100, 0, ${alpha})`);
-          gradient.addColorStop(0.5, `rgba(255, 150, 50, ${alpha * 0.5})`);
-          gradient.addColorStop(1, `rgba(255, 200, 100, 0)`);
+          gradient.addColorStop(0.5, `rgba(255, 150, 50, ${alpha})`);
+          gradient.addColorStop(1, `rgba(255, 200, 100, ${alpha})`);
           
           ctx.fillStyle = gradient;
           ctx.fill();
@@ -129,11 +129,11 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
         to={to} 
         className={`landing-button card ${className}`}
         data-tilt 
-        data-tilt-max="10" 
+        data-tilt-max="15" 
         data-tilt-speed="400" 
-        data-tilt-perspective="1000" 
+        data-tilt-perspective="1050" 
         data-tilt-glare 
-        data-tilt-max-glare="0.2"
+        data-tilt-max-glare="0.1"
       >
         {/* For outer cards, show WEC3D.png image instead of icon */}
         {!isLiveCard && (

@@ -220,6 +220,8 @@
   pointer-events: none;
   border-radius: 50%;
   overflow: hidden;
+  opacity: 0; /* Completely transparent */
+  visibility: hidden; /* Hide completely */
 }
 
 /* Overlay Image - Removed */
@@ -232,8 +234,8 @@
   transform: translate(-50%, -50%);
   z-index: 3;
   pointer-events: none;
-  width: 280px;
-  height: 280px;
+  width: 320px;
+  height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;
