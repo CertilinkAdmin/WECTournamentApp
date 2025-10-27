@@ -547,6 +547,76 @@
   box-shadow: 0 20px 40px rgba(241, 196, 15, 0.2);
 }
 
+/* Desktop Navigation */
+.desktop-navigation {
+  position: relative;
+  z-index: 3;
+  padding: 2rem 0;
+  display: none; /* Hidden on mobile */
+}
+
+@media (min-width: 769px) {
+  .desktop-navigation {
+    display: block; /* Show on desktop */
+  }
+}
+
+.desktop-nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4rem;
+}
+
+.desktop-nav-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+  padding: 1rem;
+  border-radius: 12px;
+  min-width: 120px;
+}
+
+.desktop-nav-button:hover {
+  transform: translateY(-4px);
+  color: #ff6b35;
+}
+
+.nav-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.nav-label {
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
+}
+
+.desktop-nav-button.bracket-builder:hover .nav-label {
+  color: #ff6b35;
+  text-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+}
+
+.desktop-nav-button.live-tournament:hover .nav-label {
+  color: #3498db;
+  text-shadow: 0 2px 8px rgba(52, 152, 219, 0.4);
+}
+
+.desktop-nav-button.wec-milan:hover .nav-label {
+  color: #f1c40f;
+  text-shadow: 0 2px 8px rgba(241, 196, 15, 0.4);
+}
+
 /* Landing Footer */
 .landing-footer {
   position: relative;
