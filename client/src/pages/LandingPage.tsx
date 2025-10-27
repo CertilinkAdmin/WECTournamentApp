@@ -92,6 +92,24 @@ const LandingPage: React.FC = () => {
         </div>
       </main>
 
+      {/* Desktop Navigation - Only visible on desktop */}
+      <section className="desktop-navigation">
+        <div className="desktop-nav-container">
+          <Link to="/admin" className="desktop-nav-button bracket-builder">
+            <span className="nav-icon">🏗️</span>
+            <span className="nav-label">Bracket Builder</span>
+          </Link>
+          <Link to="/live" className="desktop-nav-button live-tournament">
+            <span className="nav-icon">📺</span>
+            <span className="nav-label">Live Tournament</span>
+          </Link>
+          <Link to="/results" className="desktop-nav-button wec-milan">
+            <span className="nav-icon">🏆</span>
+            <span className="nav-label">WEC Milan 2025</span>
+          </Link>
+        </div>
+      </section>
+
       <footer className="landing-footer">
         <div className="footer-content">
           <p className="footer-text">World Espresso Championships 2025 Milano</p>
