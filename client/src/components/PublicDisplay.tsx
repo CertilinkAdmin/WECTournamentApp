@@ -23,10 +23,10 @@ interface JudgeScorecardProps {
   overall?: 'left' | 'right';
 }
 
-function JudgeScorecard({ 
-  judgeName, 
-  stationName, 
-  isActive, 
+function JudgeScorecard({
+  judgeName,
+  stationName,
+  isActive,
   heatNumber,
   leftCompetitor,
   rightCompetitor,
@@ -40,7 +40,7 @@ function JudgeScorecard({
   overall
 }: JudgeScorecardProps) {
   const cardId = stationName === 'A' ? '↖️' : stationName === 'B' ? '🎨' : '💡';
-  
+
   return (
     <div className="card-container" data-card={cardId}>
       <div className="inner-container">
@@ -85,7 +85,7 @@ function JudgeScorecard({
                 </div>
               </div>
             )}
-            
+
             {sensoryBeverage && (
               <div className="sensory-beverage">
                 <Award className="h-4 w-4" />
@@ -173,10 +173,10 @@ interface StationDisplayProps {
 function StationDisplay({ station, currentMatch, users, segments }: StationDisplayProps) {
   const competitor1 = currentMatch?.competitor1Id ? users.find(u => u.id === currentMatch.competitor1Id) : null;
   const competitor2 = currentMatch?.competitor2Id ? users.find(u => u.id === currentMatch.competitor2Id) : null;
-  
+
   const currentSegment = segments.find(s => s.status === 'RUNNING');
   const isActive = currentMatch?.status === 'RUNNING';
-  
+
   const getSegmentDisplay = () => {
     if (!currentSegment) return 'READY';
     return currentSegment.segment.replace('_', ' ');
@@ -184,15 +184,15 @@ function StationDisplay({ station, currentMatch, users, segments }: StationDispl
 
   const getTimeRemaining = () => {
     if (!currentSegment || !currentSegment.startTime) return '00:00';
-    
+
     const startTime = new Date(currentSegment.startTime).getTime();
     const now = Date.now();
     const elapsed = Math.floor((now - startTime) / 1000);
     const remaining = Math.max(0, currentSegment.plannedMinutes * 60 - elapsed);
-    
+
     const minutes = Math.floor(remaining / 60);
     const seconds = remaining % 60;
-    
+
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
@@ -636,7 +636,7 @@ function StationDisplay({ station, currentMatch, users, segments }: StationDispl
             {isActive ? 'LIVE' : 'STANDBY'}
           </Badge>
         </div>
-        
+
         {isActive && (
           <div className="timer-display">
             <div className="current-segment">
@@ -681,7 +681,7 @@ export default function PublicDisplay() {
   const { data: tournaments = [] } = useQuery<any[]>({
     queryKey: ['/api/tournaments'],
   });
-  
+
   const currentTournamentId = tournaments[0]?.id || 1;
 
   // Fetch all matches for the tournament
@@ -800,9 +800,14 @@ export default function PublicDisplay() {
 
         /* Card Styles */
         .card-container {
+          position: relative;
+          width: 280px;
+          height: 380px;
+          margin: 10px;
+          transform-style: preserve-3d;
+          perspective: 1000px;
           padding: 2px;
           border-radius: 1.5em;
-          position: relative;
           background: linear-gradient(
               -30deg,
               var(--gradient-color),
@@ -845,19 +850,30 @@ export default function PublicDisplay() {
 
         .inner-container {
           position: relative;
+          width: 100%;
+          height: 100%;
+          transform-style: preserve-3d;
         }
 
         .border-outer {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(45deg, #D2691E, #ff6b35, #FF8C69);
+          border-radius: 15px;
+          padding: 3px;
           border: 2px solid oklch(from var(--electric-border-color) l c h / 0.5);
-          border-radius: 1.5em;
-          padding-right: .15em;
-          padding-bottom: .15em;
         }
 
         .main-card {
-          width: 22rem;
-          aspect-ratio: 7 / 10;
-          border-radius: 1.5em;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, #F5F5DC 0%, #FAEBD7 50%, #FFF8DC 100%);
+          border-radius: 12px;
+          position: relative;
+          overflow: hidden;
           border: 2px solid var(--electric-border-color);
           margin-top: -4px;
           margin-left: -4px;
@@ -865,8 +881,16 @@ export default function PublicDisplay() {
         }
 
         .glow-layer-1 {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          right: 2px;
+          bottom: 2px;
+          background: linear-gradient(45deg, rgba(255, 107, 53, 0.3), rgba(210, 105, 30, 0.2));
+          border-radius: 12px;
+          filter: blur(8px);
+          z-index: -1;
           border: 2px solid oklch(from var(--electric-border-color) l c h / 0.6);
-          border-radius: 24px;
           width: 100%;
           height: 100%;
           position: absolute;
@@ -878,6 +902,15 @@ export default function PublicDisplay() {
         }
 
         .glow-layer-2 {
+          position: absolute;
+          top: 4px;
+          left: 4px;
+          right: 4px;
+          bottom: 4px;
+          background: linear-gradient(45deg, rgba(210, 105, 30, 0.4), rgba(255, 107, 53, 0.3));
+          border-radius: 10px;
+          filter: blur(12px);
+          z-index: -2;
           border: 2px solid var(--electric-light-color);
           border-radius: 24px;
           width: 100%;
@@ -983,15 +1016,18 @@ export default function PublicDisplay() {
         }
 
         .scrollbar-glass {
-          background: radial-gradient(
-              47.2% 50% at 50.39% 88.37%,
-              rgba(255, 255, 255, 0.12) 0%,
-              rgba(255, 255, 255, 0) 100%
-            ),
-            rgba(255, 255, 255, 0.04);
+          background: linear-gradient(135deg, rgba(255, 107, 53, 0.8), rgba(210, 105, 30, 0.6));
+          color: #F5F5DC;
+          padding: 0.3rem 0.8rem;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          text-align: center;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(245, 245, 220, 0.3);
+          text-shadow: 1px 1px 2px rgba(139, 69, 19, 0.5);
           position: relative;
           transition: background 0.3s ease;
-          border-radius: 14px;
           width: fit-content;
           height: fit-content;
           padding: .5em 1em;
@@ -1033,9 +1069,12 @@ export default function PublicDisplay() {
         }
 
         .title {
-          font-size: 2.25em;
-          font-weight: 500;
-          margin-top: auto;
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: #8B4513;
+          text-align: center;
+          margin: 0.5rem 0;
+          text-shadow: 1px 1px 2px rgba(210, 105, 30, 0.3);
         }
 
         .description {
@@ -1085,9 +1124,10 @@ export default function PublicDisplay() {
         }
 
         .cup-code {
-          font-size: 0.8em;
-          opacity: 0.7;
-          font-weight: bold;
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #8B4513;
+          text-shadow: 1px 1px 1px rgba(210, 105, 30, 0.3);
         }
 
         .name {
@@ -1141,6 +1181,63 @@ export default function PublicDisplay() {
         .score-selection span {
           font-size: 0.7em;
           opacity: 0.8;
+        }
+
+        .cup-display {
+          display: flex;
+          justify-content: space-between;
+          margin: 0.5rem 0;
+          gap: 0.5rem;
+        }
+
+        .cup-item {
+          flex: 1;
+          text-align: center;
+          background: linear-gradient(135deg, rgba(245, 245, 220, 0.8), rgba(250, 235, 215, 0.6));
+          border-radius: 8px;
+          padding: 0.5rem;
+          border: 1px solid rgba(210, 105, 30, 0.4);
+        }
+
+        .cup-label {
+          font-size: 0.7rem;
+          color: #A0522D;
+          margin-top: 0.2rem;
+        }
+
+        .category-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.4rem 0.6rem;
+          margin: 0.3rem 0;
+          background: linear-gradient(135deg, rgba(245, 245, 220, 0.4), rgba(250, 235, 215, 0.3));
+          border-radius: 6px;
+          border: 1px solid rgba(210, 105, 30, 0.3);
+        }
+
+        .category-name {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #8B4513;
+          text-shadow: 1px 1px 1px rgba(210, 105, 30, 0.2);
+        }
+
+        .category-winner {
+          font-size: 0.8rem;
+          font-weight: 700;
+          padding: 0.2rem 0.5rem;
+          border-radius: 12px;
+          color: #F5F5DC;
+          text-shadow: 1px 1px 2px rgba(139, 69, 19, 0.6);
+        }
+
+        .winner-left {
+          background: linear-gradient(135deg, #D2691E, #ff6b35);
+        }
+
+        .winner-right {
+          background: linear-gradient(135deg, #ff6b35, #FF8C69);
         }
       `}</style>
 
@@ -1206,7 +1303,7 @@ export default function PublicDisplay() {
         {stations.map(station => {
           const currentMatch = getCurrentMatchForStation(station.id);
           const segments = currentMatch ? getSegmentsForMatch(currentMatch.id) : [];
-          
+
           return (
             <StationDisplay
               key={station.id}
@@ -1221,4 +1318,3 @@ export default function PublicDisplay() {
     </div>
   );
 }
-
