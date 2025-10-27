@@ -113,11 +113,6 @@ const LandingPage: React.FC = () => {
       <footer className="landing-footer">
         <div className="footer-content">
           <p className="footer-text">World Espresso Championships 2025 Milano</p>
-          <div className="footer-links">
-            <a href="/results" className="footer-link">Results</a>
-            <a href="/live" className="footer-link">Live</a>
-            <a href="/admin" className="footer-link">Admin</a>
-          </div>
         </div>
       </footer>
     </div>
