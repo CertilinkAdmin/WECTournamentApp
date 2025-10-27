@@ -54,8 +54,8 @@ const LandingPage: React.FC = () => {
                     <EnergyCard
                       to="/admin"
                       icon="🏗️"
-                      title="Admin/TournamentBuilder"
-                      description="Create and manage tournaments, competitors, judges, and stations"
+                      title="Bracket Builder"
+                      description="Create tournament brackets and manage competitions"
                       className="admin-button"
                       containerId="adminCardContainer"
                       canvasId="admin-energy-canvas"
@@ -67,8 +67,8 @@ const LandingPage: React.FC = () => {
             <EnergyCard
               to="/live"
               icon="📺"
-              title="Live Tournament"
-              description="Real-time tournament monitoring and live score updates"
+              title="Live Tour"
+              description="Real-time tournament monitoring and live updates"
               className="live-button featured"
               featured={true}
               liveBadge={true}
@@ -82,8 +82,8 @@ const LandingPage: React.FC = () => {
             <EnergyCard
               to="/results"
               icon="🏆"
-              title="WEC 2025 Milano Results"
-              description="View complete tournament results, scores, and champion details"
+              title="Competition Recap"
+              description="View complete tournament results and champion details"
               className="results-button"
               containerId="resultsCardContainer"
               canvasId="results-energy-canvas"
