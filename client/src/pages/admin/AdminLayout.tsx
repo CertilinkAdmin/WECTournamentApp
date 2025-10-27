@@ -6,6 +6,7 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
 
   const navItems = [
+    { path: '/', label: 'Home', icon: '🏠' },
     { path: '/admin', label: 'Dashboard', icon: '📊' },
     { path: '/admin/tournaments', label: 'Tournaments', icon: '🏆' },
     { path: '/admin/competitors', label: 'Competitors', icon: '👥' },

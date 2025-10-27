@@ -6,6 +6,7 @@ const LiveLayout: React.FC = () => {
   const location = useLocation();
 
   const navItems = [
+    { path: '/', label: 'Home', icon: '🏠' },
     { path: '/live', label: 'Live Overview', icon: '📺' },
     { path: '/live/bracket', label: 'Bracket', icon: '🏆' },
     { path: '/live/heats', label: 'Current Heats', icon: '⚡' },

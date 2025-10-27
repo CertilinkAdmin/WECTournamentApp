@@ -7,6 +7,7 @@ const ResultsLayout: React.FC = () => {
   const location = useLocation();
 
   const navItems = [
+    { path: '/', label: 'Home', icon: '🏠' },
     { path: '/results', label: 'WEC 2025 Results', icon: '🏆' },
     { path: '/results/bracket', label: 'Tournament Bracket', icon: '📊' },
     { path: '/results/leaderboard', label: 'Final Standings', icon: '🥇' },
