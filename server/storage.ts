@@ -2,6 +2,7 @@ import { db } from "./db";
 import { 
   users, tournaments, tournamentParticipants, tournamentRoundTimes,
   stations, matches, heatSegments, heatJudges, heatScores,
+  judgeDetailedScores,
   type User, type InsertUser,
   type Tournament, type InsertTournament,
   type TournamentParticipant, type InsertTournamentParticipant,
@@ -10,7 +11,8 @@ import {
   type Match, type InsertMatch,
   type HeatSegment, type InsertHeatSegment,
   type HeatJudge, type InsertHeatJudge,
-  type HeatScore, type InsertHeatScore
+  type HeatScore, type InsertHeatScore,
+  type JudgeDetailedScore, type InsertJudgeDetailedScore
 } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 
@@ -57,6 +59,11 @@ export interface IStorage {
   // Heat Scores
   submitScore(score: InsertHeatScore): Promise<HeatScore>;
   getMatchScores(matchId: number): Promise<HeatScore[]>;
+
+  // Detailed Judge Scores
+  submitDetailedScore(score: InsertJudgeDetailedScore): Promise<JudgeDetailedScore>;
+  submitBatchDetailedScores(scores: InsertJudgeDetailedScore[]): Promise<JudgeDetailedScore[]>;
+  getMatchDetailedScores(matchId: number): Promise<JudgeDetailedScore[]>;
 
   // Tournament Round Times
   setRoundTimes(times: InsertTournamentRoundTime): Promise<TournamentRoundTime>;
@@ -231,6 +238,24 @@ export class DatabaseStorage implements IStorage {
       .where(eq(heatScores.matchId, matchId));
   }
 
+  // Detailed Judge Scores
+  async submitDetailedScore(score: InsertJudgeDetailedScore): Promise<JudgeDetailedScore> {
+    const result = await db.insert(judgeDetailedScores).values(score).returning();
+    return result[0];
+  }
+
+  async submitBatchDetailedScores(scores: InsertJudgeDetailedScore[]): Promise<JudgeDetailedScore[]> {
+    if (scores.length === 0) return [];
+    const result = await db.insert(judgeDetailedScores).values(scores).returning();
+    return result;
+  }
+
+  async getMatchDetailedScores(matchId: number): Promise<JudgeDetailedScore[]> {
+    return await db.select()
+      .from(judgeDetailedScores)
+      .where(eq(judgeDetailedScores.matchId, matchId));
+  }
+
   // Tournament Round Times
   async setRoundTimes(times: InsertTournamentRoundTime): Promise<TournamentRoundTime> {
     const result = await db.insert(tournamentRoundTimes).values(times).returning();
@@ -263,6 +288,7 @@ export class DatabaseStorage implements IStorage {
     if (matchIds.length > 0) {
       // Delete scores, judges, and segments for all matches using inArray
       await db.delete(heatScores).where(inArray(heatScores.matchId, matchIds));
+      await db.delete(judgeDetailedScores).where(inArray(judgeDetailedScores.matchId, matchIds));
       await db.delete(heatJudges).where(inArray(heatJudges.matchId, matchIds));
       await db.delete(heatSegments).where(inArray(heatSegments.matchId, matchIds));
     }

@@ -1,0 +1,253 @@
+**HEAT 21**
+
+Judge Name: Michalis
+
+Visual/Latte Art (3 points): right cup
+
+Sensory Beverage: Cappuccino
+
+Taste (1 point): right cup
+
+Tactile (1 point): right cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: Q5
+
+Right Cup Code: B1
+
+Judge Name: Ali
+
+Visual/Latte Art (3 points): right cup
+
+Sensory Beverage: Espresso
+
+Taste (1 point): right cup
+
+Tactile (1 point): left cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: Q5
+
+Right Cup Code: B1
+
+Judge Name: Jasper
+
+Visual/Latte Art (3 points): right cup
+
+Sensory Beverage: Espresso
+
+Taste (1 point): right cup
+
+Tactile (1 point): right cup
+
+Flavour (1 point): left cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: B1
+
+Right Cup Code: Q5
+
+Q5 = Faiz: 8 points
+
+B1 = Christos: 25 points
+
+Winner: Christos
+
+______________________________
+
+**HEAT 22**
+
+Judge Name: Shinsaku
+
+Visual/Latte Art (3 points): right cup
+
+Sensory Beverage: Cappuccino
+
+Taste (1 point): right cup
+
+Tactile (1 point): right cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: T8
+
+Right Cup Code: J7
+
+Judge Name: Tess
+
+Visual/Latte Art (3 points): right cup
+
+Sensory Beverage: Espresso
+
+Taste (1 point): right cup
+
+Tactile (1 point): right cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: J7
+
+Right Cup Code: T8
+
+Judge Name: Junior
+
+Visual/Latte Art (3 points): left cup
+
+Sensory Beverage: Espresso
+
+Taste (1 point): right cup
+
+Tactile (1 point): right cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: J7
+
+Right Cup Code: T8
+
+T8 = Stevo: 19 points 
+
+J7 = Danielle: 14 points
+
+Winner: Stevo
+
+______________________________
+
+**HEAT 23**
+
+Judge Name: Shinsaku
+
+Visual/Latte Art (3 points): right cup
+
+Sensory Beverage: Cappuccino
+
+Taste (1 point): right cup
+
+Tactile (1 point): right cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: E9
+
+Right Cup Code: V2
+
+Judge Name: Tess
+
+Visual/Latte Art (3 points): left cup
+
+Sensory Beverage: Espresso
+
+Taste (1 point): right cup
+
+Tactile (1 point): right cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: E9
+
+Right Cup Code: V2
+
+Judge Name: Junior
+
+Visual/Latte Art (3 points): left cup
+
+Sensory Beverage: Espresso
+
+Taste (1 point): left cup
+
+Tactile (1 point): left cup
+
+Flavour (1 point): left cup
+
+Overall (5 points): left cup
+
+Left Cup Code/Competitor: V2
+
+Right Cup Code: E9
+
+E9 = Kirill: 6 points 
+
+V2 = Jae: 27 points
+
+Winner: Jae
+
+______________________________
+
+**HEAT 24**
+
+Judge Name: Michalis
+
+Visual/Latte Art (3 points): right cup
+
+Sensory Beverage: Cappuccino
+
+Taste (1 point): right cup
+
+Tactile (1 point): left cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: M1
+
+Right Cup Code: E6
+
+Judge Name: Ali
+
+Visual/Latte Art (3 points): right cup
+
+Sensory Beverage: Espresso
+
+Taste (1 point): right cup
+
+Tactile (1 point): right cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: M1
+
+Right Cup Code: E3
+
+Judge Name: Jasper
+
+Visual/Latte Art (3 points): right cup
+
+Sensory Beverage: Espresso
+
+Taste (1 point): right cup
+
+Tactile (1 point): right cup
+
+Flavour (1 point): right cup
+
+Overall (5 points): right cup
+
+Left Cup Code/Competitor: E3
+
+Right Cup Code: M1
+
+M1 = Bill: 9 points 
+
+E3 = Engi: 24 points
+
+Winner: Engi

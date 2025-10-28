@@ -133,7 +133,7 @@ export const insertHeatJudgeSchema = createInsertSchema(heatJudges).omit({ id: t
 export type InsertHeatJudge = z.infer<typeof insertHeatJudgeSchema>;
 export type HeatJudge = typeof heatJudges.$inferSelect;
 
-// Heat Scores
+// Heat Scores (Simple aggregated scores)
 export const heatScores = pgTable("heat_scores", {
   id: serial("id").primaryKey(),
   matchId: integer("match_id").notNull().references(() => matches.id),
@@ -148,3 +148,38 @@ export const heatScores = pgTable("heat_scores", {
 export const insertHeatScoreSchema = createInsertSchema(heatScores).omit({ id: true, submittedAt: true });
 export type InsertHeatScore = z.infer<typeof insertHeatScoreSchema>;
 export type HeatScore = typeof heatScores.$inferSelect;
+
+// Detailed Judge Scorecards (cup-based scoring)
+export const judgeDetailedScores = pgTable("judge_detailed_scores", {
+  id: serial("id").primaryKey(),
+  matchId: integer("match_id").notNull().references(() => matches.id),
+  judgeName: text("judge_name").notNull(),
+  
+  // Cup codes
+  leftCupCode: text("left_cup_code").notNull(),
+  rightCupCode: text("right_cup_code").notNull(),
+  
+  // Sensory beverage type for this judge
+  sensoryBeverage: text("sensory_beverage").notNull(), // 'Cappuccino' or 'Espresso'
+  
+  // Visual/Latte Art (3 points) - which cup won
+  visualLatteArt: text("visual_latte_art").notNull(), // 'left' or 'right'
+  
+  // Taste (1 point) - which cup won
+  taste: text("taste").notNull(), // 'left' or 'right'
+  
+  // Tactile (1 point) - which cup won
+  tactile: text("tactile").notNull(), // 'left' or 'right'
+  
+  // Flavour (1 point) - which cup won
+  flavour: text("flavour").notNull(), // 'left' or 'right'
+  
+  // Overall (5 points) - which cup won
+  overall: text("overall").notNull(), // 'left' or 'right'
+  
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+});
+
+export const insertJudgeDetailedScoreSchema = createInsertSchema(judgeDetailedScores).omit({ id: true, submittedAt: true });
+export type InsertJudgeDetailedScore = z.infer<typeof insertJudgeDetailedScoreSchema>;
+export type JudgeDetailedScore = typeof judgeDetailedScores.$inferSelect;

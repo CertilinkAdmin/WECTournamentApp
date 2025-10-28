@@ -436,6 +436,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(scores);
   });
 
+  // Detailed judge scores
+  app.post("/api/detailed-scores", async (req, res) => {
+    try {
+      const { insertJudgeDetailedScoreSchema } = await import("@shared/schema");
+      const scoreData = insertJudgeDetailedScoreSchema.parse(req.body);
+      const score = await storage.submitDetailedScore(scoreData);
+      
+      // Get match to emit to correct tournament room
+      const match = await storage.getMatch(score.matchId);
+      if (match) {
+        io.to(`tournament:${match.tournamentId}`).emit("detailed-score:submitted", score);
+      }
+      
+      res.json(score);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Batch submit detailed scores
+  app.post("/api/detailed-scores/batch", async (req, res) => {
+    try {
+      const { insertJudgeDetailedScoreSchema } = await import("@shared/schema");
+      const z = await import("zod");
+      const batchSchema = z.z.array(insertJudgeDetailedScoreSchema);
+      const scoresData = batchSchema.parse(req.body);
+      const scores = await storage.submitBatchDetailedScores(scoresData);
+      
+      // Emit to tournament room if match exists
+      if (scores.length > 0) {
+        const match = await storage.getMatch(scores[0].matchId);
+        if (match) {
+          io.to(`tournament:${match.tournamentId}`).emit("detailed-scores:batch-submitted", scores);
+        }
+      }
+      
+      res.json(scores);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/matches/:id/detailed-scores", async (req, res) => {
+    const scores = await storage.getMatchDetailedScores(parseInt(req.params.id));
+    res.json(scores);
+  });
+
   // ===== TOURNAMENT MODE MANAGEMENT =====
   // Get tournament mode status
   app.get("/api/tournament-mode/:tournamentId/status", async (req, res) => {
