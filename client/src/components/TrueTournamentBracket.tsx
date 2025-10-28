@@ -17,8 +17,8 @@ interface BracketMatch {
   winner: string;
   score1: number;
   score2: number;
-  leftCupCode: string;
-  rightCupCode: string;
+  leftCupCode?: string;
+  rightCupCode?: string;
 }
 
 interface BracketRound {
@@ -37,7 +37,7 @@ const TrueTournamentBracket = ({ mode = 'results' }: TrueTournamentBracketProps)
     { title: "Round 2", matches: WEC25_ROUND2_POSITIONS },
     { title: "Round 3", matches: WEC25_ROUND3_POSITIONS },
     { title: "Semi-Finals", matches: WEC25_ROUND4_POSITIONS },
-    { title: "Final", matches: [WEC25_FINAL_POSITION] },
+    { title: "Final", matches: WEC25_FINAL_POSITION },
   ];
 
   const rounds = wec25Rounds;
