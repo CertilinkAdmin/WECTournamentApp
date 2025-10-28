@@ -35,37 +35,37 @@
 
   --sidebar-border: 40 12% 90%;
 
-  --sidebar-primary: 25 45% 40%;
+  --sidebar-primary: 17 59% 38%;
 
-  --sidebar-primary-foreground: 40 25% 98%;
+  --sidebar-primary-foreground: 40 44% 76%;
 
-  --sidebar-accent: 40 30% 90%;
+  --sidebar-accent: 40 44% 76%;
 
-  --sidebar-accent-foreground: 25 40% 25%;
+  --sidebar-accent-foreground: 17 59% 25%;
 
-  --sidebar-ring: 25 45% 40%;
+  --sidebar-ring: 17 59% 38%;
 
   --popover: 40 22% 94%;
 
-  --popover-foreground: 25 35% 15%;
+  --popover-foreground: 17 40% 20%;
 
   --popover-border: 40 15% 88%;
 
-  --primary: 25 45% 40%;
+  --primary: 17 59% 38%;
 
-  --primary-foreground: 40 25% 98%;
+  --primary-foreground: 40 44% 76%;
 
   --secondary: 40 18% 88%;
 
-  --secondary-foreground: 25 40% 25%;
+  --secondary-foreground: 17 40% 25%;
 
   --muted: 40 15% 91%;
 
-  --muted-foreground: 25 20% 45%;
+  --muted-foreground: 17 20% 45%;
 
-  --accent: 25 20% 85%;
+  --accent: 40 44% 76%;
 
-  --accent-foreground: 25 50% 25%;
+  --accent-foreground: 17 50% 25%;
 
   --destructive: 0 70% 50%;
 
@@ -79,7 +79,7 @@
   --chart-4: 30deg 86.54% 20.39%;
   --chart-5: 14.55deg 30.28% 21.37%;
 
-  --font-sans: Open Sans, sans-serif;
+  --font-sans: 'Lexend', 'Open Sans', sans-serif;
   --font-serif: 'Ubuntu Mono', monospace;
   --font-mono: Menlo, monospace;
   --radius: .5rem; /* 8px */
@@ -153,25 +153,25 @@
 
   --sidebar-border: 25 12% 22%;
 
-  --sidebar-primary: 25 45% 40%;
+  --sidebar-primary: 17 59% 38%;
 
-  --sidebar-primary-foreground: 40 25% 98%;
+  --sidebar-primary-foreground: 40 44% 76%;
 
-  --sidebar-accent: 25 18% 24%;
+  --sidebar-accent: 17 30% 24%;
 
-  --sidebar-accent-foreground: 40 20% 90%;
+  --sidebar-accent-foreground: 40 44% 90%;
 
-  --sidebar-ring: 25 45% 40%;
+  --sidebar-ring: 17 59% 38%;
 
-  --popover: 25 12% 20%;
+  --popover: 17 20% 20%;
 
-  --popover-foreground: 40 10% 95%;
+  --popover-foreground: 40 44% 95%;
 
-  --popover-border: 25 10% 26%;
+  --popover-border: 17 15% 26%;
 
-  --primary: 25 45% 40%;
+  --primary: 17 59% 38%;
 
-  --primary-foreground: 40 25% 98%;
+  --primary-foreground: 40 44% 76%;
 
   --secondary: 25 15% 26%;
 

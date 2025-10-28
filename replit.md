@@ -53,6 +53,16 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Recent Changes
 
+### WEC Brand Guidelines Implementation (October 28, 2025)
+- Implemented official WEC brand colors from wireframe.md
+- Updated primary color from orange `#ff6b35` to Cinnamon Brown `#994D27`
+- Updated accent color to Light Sand `#DECCA7`
+- Changed typography to Lexend font family (WEC official brand font)
+- Replaced all Orbitron/Exo font references with Lexend throughout CSS
+- Updated both light and dark mode color variables in index.css
+- Consistent brand application across tournament bracket, admin, live, and results sections
+- Maintained separate entry roles (Admin, Station Lead, Judge, Barista, Public Viewer)
+
 ### Live vs Results Bracket Modes (October 26, 2025)
 - Implemented dual-mode TrueTournamentBracket component supporting both 'live' and 'results' modes
 - `/live/bracket`: Fetches active tournament data from API in real-time (admin-configured via bracket builder)
@@ -235,11 +245,16 @@ This is a companion app to worldespressochampionship.app that manages ABC (Aerop
 
 ## Color Palette
 
-Unified cinnamon orange and cream palette:
-- Primary: #ff6b35 (cinnamon orange, rgba(255,107,53))
-- Accent: #F5F5DC (cream)
-- Background: Clean white with subtle warm tints
-- All gradients, shadows, and hover effects use consistent orange spectrum
+WEC Official Brand Guidelines:
+- **Primary - Cinnamon Brown**: `#994D27` (RGB: 153/77/39, HSL: 17° 59% 38%)
+- **Accent - Light Sand**: `#DECCA7` (RGB: 222/204/167, HSL: 40° 44% 76%)
+- **Secondary Colors**:
+  - Golden: `#C48D49` (winner accents)
+  - Light Brown: `#BDA088` (muted text)
+  - Dark Olive: `#3E3F24`
+  - Deep Blue: `#214966`
+- **Typography**: Lexend (primary), Proxima Nova (fallback)
+- All UI elements use consistent WEC brand colors across admin, live, and results sections
 
 ### Station Lead View (October 21, 2025)
 - Created complete Station Lead interface with:
