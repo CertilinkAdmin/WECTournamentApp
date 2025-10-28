@@ -79,9 +79,33 @@
   --chart-4: 30deg 86.54% 20.39%;
   --chart-5: 14.55deg 30.28% 21.37%;
 
-  --font-sans: 'Lexend', 'Open Sans', sans-serif;
-  --font-serif: 'Ubuntu Mono', monospace;
-  --font-mono: Menlo, monospace;
+  /* WEC Brand Colors */
+  --brand-cinnamon-brown: #994D27;
+  --brand-light-sand: #DECCA7;
+  --brand-forest-green: #3E3F24;
+  --brand-golden-brown: #C48D49;
+  --brand-navy-blue: #214966;
+  --brand-taupe: #BDA088;
+
+  /* Coffee-themed Palette */
+  --espresso-darkest: #1A0F0A;
+  --espresso-dark: #2D1B12;
+  --espresso-medium: #994D27;
+  --espresso-light: #B85A2F;
+  --espresso-cream: #DECCA7;
+  --espresso-foam: #F5F0E8;
+
+  /* Accent Colors */
+  --accent-caramel: hsl(30 60% 65%);
+  --accent-honey: hsl(45 80% 70%);
+  --accent-vanilla: hsl(50 40% 85%);
+  --accent-cinnamon: hsl(20 60% 60%);
+  --accent-nutmeg: hsl(25 50% 55%);
+
+  --font-sans: 'Inter', 'Open Sans', sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-montserrat: 'Montserrat', sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, monospace;
   --radius: .5rem; /* 8px */
   --shadow-2xs: 0px 2px 0px 0px hsl(25 15% 30% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(25 15% 30% / 0.00);
@@ -135,17 +159,18 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 25 15% 12%;
+  /* WEC Dark Theme - Cinnamon Brown Dominant */
+  --background: 17 59% 38%;  /* #994D27 - Cinnamon Brown */
 
-  --foreground: 40 10% 95%;
+  --foreground: 0 0% 100%;  /* White text */
 
-  --border: 25 10% 22%;
+  --border: 17 50% 45%;  /* #B85A2F - Lighter Cinnamon */
 
-  --card: 25 12% 18%;
+  --card: 20 36% 10%;  /* #1A0F0A - Dark cards */
 
-  --card-foreground: 40 10% 95%;
+  --card-foreground: 40 44% 76%;  /* #DECCA7 - Light Sand text */
 
-  --card-border: 25 10% 24%;
+  --card-border: 17 40% 20%;
 
   --sidebar: 25 14% 16%;
 
@@ -169,21 +194,21 @@
 
   --popover-border: 17 15% 26%;
 
-  --primary: 17 59% 38%;
+  --primary: 40 44% 76%;  /* #DECCA7 - Light Sand for primary actions in dark */
 
-  --primary-foreground: 40 44% 76%;
+  --primary-foreground: 17 59% 38%;  /* #994D27 - Cinnamon Brown text */
 
-  --secondary: 25 15% 26%;
+  --secondary: 17 45% 30%;  /* #7A3D1F - Darker Cinnamon Brown */
 
-  --secondary-foreground: 40 15% 92%;
+  --secondary-foreground: 0 0% 100%;  /* White */
 
-  --muted: 25 12% 24%;
+  --muted: 20 30% 18%;
 
-  --muted-foreground: 40 8% 70%;
+  --muted-foreground: 40 30% 65%;
 
-  --accent: 38 18% 26%;
+  --accent: 17 45% 30%;
 
-  --accent-foreground: 38 20% 88%;
+  --accent-foreground: 40 44% 90%;
 
   --destructive: 0 70% 50%;
 
@@ -367,5 +392,202 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+}
+
+/* ========== WEC BRAND UTILITIES ========== */
+
+/* Brand Typography */
+@layer utilities {
+  .montserrat-title {
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  /* Brand Gradients */
+  .bg-brand-gradient {
+    background: linear-gradient(135deg, #994D27, #DECCA7);
+  }
+
+  .bg-espresso-gradient {
+    background: linear-gradient(135deg, #1A0F0A, #DECCA7);
+  }
+
+  /* Brand Shadows */
+  .shadow-brand {
+    box-shadow: 0 4px 6px -1px rgba(153, 77, 39, 0.2), 
+                0 2px 4px -2px rgba(153, 77, 39, 0.2);
+  }
+
+  .shadow-espresso {
+    box-shadow: 0 4px 6px -1px rgba(153, 77, 39, 0.2), 
+                0 2px 4px -2px rgba(153, 77, 39, 0.2);
+  }
+
+  .dark .shadow-brand,
+  .dark .shadow-espresso {
+    box-shadow: 0 4px 6px -1px rgba(153, 77, 39, 0.3), 
+                0 2px 4px -2px rgba(153, 77, 39, 0.3);
+  }
+
+  /* Brand Colors */
+  .bg-cinnamon-brown { background-color: var(--brand-cinnamon-brown); }
+  .text-cinnamon-brown { color: var(--brand-cinnamon-brown); }
+  .border-cinnamon-brown { border-color: var(--brand-cinnamon-brown); }
+}
+
+/* ========== THEME TRANSITIONS ========== */
+
+@layer utilities {
+  .theme-transition {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .theme-transition-fast {
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .theme-transition-slow {
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .theme-changing {
+    animation: theme-fade 0.2s ease-out;
+  }
+
+  @keyframes theme-fade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+}
+
+/* ========== ANIMATION UTILITIES ========== */
+
+@layer utilities {
+  /* Hover Animations */
+  .hover-lift {
+    @apply transition-transform duration-200;
+  }
+
+  .hover-lift:hover {
+    @apply transform scale-105;
+  }
+
+  .hover-glow {
+    @apply transition-shadow duration-200;
+  }
+
+  .hover-glow:hover {
+    box-shadow: 0 10px 15px -3px rgba(153, 77, 39, 0.25),
+                0 4px 6px -4px rgba(153, 77, 39, 0.25);
+  }
+
+  /* Loading States */
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { 
+      opacity: 0; 
+      transform: translateY(10px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+}
+
+/* ========== RESPONSIVE UTILITIES ========== */
+
+@layer utilities {
+  /* Responsive Container */
+  .responsive-container {
+    @apply w-full mx-auto px-4;
+    max-width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .responsive-container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+      max-width: 95%;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .responsive-container {
+      max-width: 90%;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .responsive-container {
+      max-width: 85%;
+    }
+  }
+
+  /* Mobile-First Grid */
+  .responsive-grid {
+    @apply grid grid-cols-1 gap-4;
+    @apply sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4;
+    @apply xl:grid-cols-5 2xl:grid-cols-6;
+  }
+
+  /* Responsive Typography */
+  .responsive-heading-xl {
+    @apply text-2xl font-bold leading-tight;
+  }
+
+  @media (min-width: 768px) {
+    .responsive-heading-xl {
+      font-size: 1.875rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .responsive-heading-xl {
+      font-size: 2.25rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .responsive-heading-xl {
+      font-size: 3rem;
+    }
+  }
+}
+
+/* ========== LAYOUT UTILITIES ========== */
+
+@layer utilities {
+  /* Content Spacing */
+  .content-with-anchored-footer {
+    min-height: calc(100vh - 80px);
+  }
+
+  /* Aspect Ratios */
+  .aspect-golden {
+    aspect-ratio: 1.618;
+  }
+
+  .aspect-coffee-cup {
+    aspect-ratio: 3/4;
+  }
+
+  /* Theme-aware backgrounds */
+  .bg-theme-surface {
+    @apply bg-background dark:bg-card;
+  }
+
+  .text-theme-primary {
+    @apply text-foreground dark:text-card-foreground;
   }
 }
