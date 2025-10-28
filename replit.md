@@ -55,6 +55,48 @@ The design strictly adheres to the WEC Official Brand Guidelines.
 
 ## Recent Changes
 
+### Results Input System for Judge Scorecards (October 28, 2025)
+**Comprehensive system for inputting and managing judge scorecards:**
+
+Database Schema Enhancement:
+- Added `judgeDetailedScores` table for cup-based scoring
+- Stores individual scoring categories: Visual/Latte Art (3pts), Taste (1pt), Tactile (1pt), Flavour (1pt), Overall (5pts)
+- Tracks which cup (left/right) won each category
+- Fields: matchId, judgeName, leftCupCode, rightCupCode, sensoryBeverage, category winners
+
+Storage Layer & API:
+- Added `submitDetailedScore`, `submitBatchDetailedScores`, `getMatchDetailedScores` methods
+- API endpoints: POST `/api/detailed-scores`, POST `/api/detailed-scores/batch`, GET `/api/matches/:id/detailed-scores`
+- Real-time WebSocket events for score submissions
+- Batch submission support for efficient data entry
+
+HeatResultsInput Component:
+- Dynamic multi-judge scorecard entry form
+- Cup code inputs with validation (3-character limit, uppercase conversion)
+- Sensory beverage selection (Cappuccino/Espresso)
+- Button toggles for each scoring category
+- Real-time score calculation and winner determination
+- Visual winner indicators with trophy badge
+- Comprehensive validation before submission
+
+ResultsInputPage (Admin):
+- Tournament and heat selection dropdowns
+- Integration with HeatResultsInput component
+- Success/error toast notifications
+- Automatic query invalidation after submission
+- Available at `/admin/results-input` route
+
+Scoring Logic:
+- Aggregates points across all judges based on cup category wins
+- Automatically calculates total points per cup code
+- Determines match winner based on highest total
+
+Verification:
+- All components reviewed and approved by architect
+- Schema design validated for cup-based scoring
+- API follows best practices with proper error handling
+- Ready for testing with tournament data
+
 ### CSS Alignment with css_md_wec.md (October 28, 2025)
 **Complete alignment with WEC Official CSS & Style Guide:**
 
