@@ -56,7 +56,7 @@ const TrueTournamentBracket = ({ mode = 'results' }: TrueTournamentBracketProps)
         setAnimatedMatches(prev => new Set([...Array.from(prev), match.heatNumber]));
       }, index * 50);
     });
-  }, [rounds]);
+  }, []); // Run only on mount - rounds is static demo data
 
   const getMedalIcon = (roundTitle: string, isWinner: boolean) => {
     if (!isWinner) return null;
