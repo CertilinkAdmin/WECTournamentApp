@@ -3,28 +3,28 @@
  * Sleek, Reflective, Professional Design
  */
 
-/* Import modern fonts */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700&display=swap');
+/* Import WEC Brand Font - Lexend */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
 
-/* Variables - Brand Colors - Matching Landing Page Cinnamon Orange & Cream */
+/* Variables - WEC Brand Colors - Cinnamon Brown & Light Sand */
 :root {
-  --bracket-primary: #ff6b35;
-  --bracket-secondary: #ff8c61;
-  --bracket-accent: #ff6b35;
-  --bracket-accent-light: #ffbe78;
-  --bracket-accent-dark: #d95a2b;
-  --bracket-winner: #ffd700;
-  --bracket-border: #ff6b35;
+  --bracket-primary: #994D27;
+  --bracket-secondary: #BDA088;
+  --bracket-accent: #C48D49;
+  --bracket-accent-light: #DECCA7;
+  --bracket-accent-dark: #804020;
+  --bracket-winner: #C48D49;
+  --bracket-border: #994D27;
   --bracket-bg: #1a1a1a;
-  --bracket-shadow: rgba(255, 107, 53, 0.4);
-  --bracket-glow: #ff6b35;
-  --bracket-text: #F5F5DC;
-  --bracket-text-muted: #FFDAB9;
-  --bracket-surface: linear-gradient(145deg, rgba(255, 107, 53, 0.2), rgba(0, 0, 0, 0.9));
-  --bracket-glass: rgba(255, 190, 120, 0.1);
-  --bracket-reflection: rgba(255, 190, 120, 0.2);
-  --bracket-brand-orange: #ff6b35;
-  --bracket-brand-cream: #F5F5DC;
+  --bracket-shadow: rgba(153, 77, 39, 0.4);
+  --bracket-glow: #994D27;
+  --bracket-text: #DECCA7;
+  --bracket-text-muted: #BDA088;
+  --bracket-surface: linear-gradient(145deg, rgba(153, 77, 39, 0.2), rgba(0, 0, 0, 0.9));
+  --bracket-glass: rgba(222, 204, 167, 0.1);
+  --bracket-reflection: rgba(222, 204, 167, 0.2);
+  --bracket-brand-brown: #994D27;
+  --bracket-brand-sand: #DECCA7;
 }
 
 /* General Rules */
@@ -103,7 +103,7 @@
 
 .tournament-bracket__round-title {
   color: var(--bracket-brand-cream);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   text-align: center;
@@ -405,7 +405,7 @@
 }
 
 .tournament-bracket__caption {
-  font-family: 'Exo 2', sans-serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.9rem;
   color: var(--bracket-text);
   font-weight: 600;
@@ -473,7 +473,7 @@
 }
 
 .tournament-bracket__code {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Lexend', sans-serif;
   padding: 0.75rem 1.5rem;
   color: var(--bracket-text);
   font-weight: 700;
@@ -522,7 +522,7 @@
 }
 
 .tournament-bracket__flag {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Lexend', sans-serif;
   background: linear-gradient(145deg, 
     var(--bracket-accent) 0%, 
     var(--bracket-accent-dark) 100%);
@@ -575,7 +575,7 @@
 }
 
 .tournament-bracket__number {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Lexend', sans-serif;
   display: inline-block;
   padding: 0.75rem 1.5rem;
   border: 1px solid rgba(255, 107, 53, 0.3);
@@ -913,7 +913,7 @@
 }
 
 .bracket-round-title-compact {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.75rem;
   font-weight: 700;
   text-align: center;
@@ -970,7 +970,7 @@
 }
 
 .heat-number-compact {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--bracket-accent);
@@ -978,7 +978,7 @@
 }
 
 .station-badge-compact {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Lexend', sans-serif;
   font-weight: 600;
 }
 
@@ -1006,7 +1006,7 @@
 }
 
 .initials-compact {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--bracket-text);
@@ -1018,7 +1018,7 @@
 }
 
 .score-compact {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--bracket-text-muted);
