@@ -55,9 +55,9 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg, 
-    rgba(255, 107, 53, 0.15) 0%, 
+    rgba(153, 77, 39, 0.15) 0%, 
     transparent 50%, 
-    rgba(255, 190, 120, 0.1) 100%);
+    rgba(222, 204, 167, 0.1) 100%);
   border-radius: 20px;
   pointer-events: none;
 }
@@ -102,7 +102,7 @@
 }
 
 .tournament-bracket__round-title {
-  color: var(--bracket-brand-cream);
+  color: var(--bracket-text);
   font-family: 'Lexend', sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
@@ -110,14 +110,14 @@
   margin-bottom: 1rem;
   padding: 0.6rem 1.2rem;
   background: linear-gradient(145deg, 
-    rgba(255, 107, 53, 0.2) 0%, 
-    rgba(255, 107, 53, 0.12) 50%, 
-    rgba(255, 107, 53, 0.2) 100%);
-  border: 1px solid rgba(255, 107, 53, 0.5);
+    rgba(153, 77, 39, 0.2) 0%, 
+    rgba(153, 77, 39, 0.12) 50%, 
+    rgba(153, 77, 39, 0.2) 100%);
+  border: 1px solid rgba(153, 77, 39, 0.5);
   border-radius: 10px;
   box-shadow: 
-    0 4px 16px rgba(255, 107, 53, 0.3),
-    inset 0 1px 0 rgba(255, 190, 120, 0.2);
+    0 4px 16px rgba(153, 77, 39, 0.3),
+    inset 0 1px 0 rgba(222, 204, 167, 0.2);
   text-transform: uppercase;
   letter-spacing: 1px;
   position: relative;
@@ -274,7 +274,7 @@
   width: 100%;
   background: var(--bracket-surface);
   padding: 1em;
-  border: 1px solid rgba(255, 107, 53, 0.3);
+  border: 1px solid rgba(153, 77, 39, 0.3);
   border-radius: 10px;
   box-shadow: 
     0 4px 16px rgba(0, 0, 0, 0.2),
@@ -297,7 +297,7 @@
   height: 100%;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(255, 107, 53, 0.15), 
+    rgba(153, 77, 39, 0.15), 
     transparent);
   transition: left 0.6s ease;
 }
@@ -312,7 +312,7 @@
   background: linear-gradient(135deg, 
     rgba(245, 245, 220, 0.05) 0%, 
     transparent 50%, 
-    rgba(255, 107, 53, 0.05) 100%);
+    rgba(153, 77, 39, 0.05) 100%);
   border-radius: 10px;
   pointer-events: none;
 }
@@ -324,8 +324,8 @@
 .tournament-bracket__match:hover {
   transform: translateY(-2px) scale(1.01);
   box-shadow: 
-    0 8px 24px rgba(255, 107, 53, 0.3),
-    0 0 0 1px rgba(255, 107, 53, 0.5),
+    0 8px 24px rgba(153, 77, 39, 0.3),
+    0 0 0 1px rgba(153, 77, 39, 0.5),
     inset 0 1px 0 rgba(245, 245, 220, 0.2);
   border-color: var(--bracket-accent);
 }
@@ -333,8 +333,8 @@
 .tournament-bracket__match:focus {
   border-color: var(--bracket-accent);
   box-shadow: 
-    0 0 0 2px rgba(255, 107, 53, 0.4),
-    0 6px 20px rgba(255, 107, 53, 0.2);
+    0 0 0 2px rgba(153, 77, 39, 0.4),
+    0 6px 20px rgba(153, 77, 39, 0.2);
 }
 
 @media (max-width: 24em) {
@@ -412,15 +412,15 @@
   padding: 1rem 1.5rem;
   text-align: center;
   background: linear-gradient(145deg, 
-    rgba(255, 107, 53, 0.1) 0%, 
-    rgba(255, 107, 53, 0.05) 100%);
-  border: 1px solid rgba(255, 107, 53, 0.3);
+    rgba(153, 77, 39, 0.1) 0%, 
+    rgba(153, 77, 39, 0.05) 100%);
+  border: 1px solid rgba(153, 77, 39, 0.3);
   border-radius: 12px;
   margin-bottom: 1.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   box-shadow: 
-    0 4px 16px rgba(255, 107, 53, 0.1),
+    0 4px 16px rgba(153, 77, 39, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
@@ -478,7 +478,7 @@
   color: var(--bracket-text);
   font-weight: 700;
   text-transform: uppercase;
-  border: 1px solid rgba(255, 107, 53, 0.3);
+  border: 1px solid rgba(153, 77, 39, 0.3);
   border-radius: 12px;
   background: var(--bracket-surface);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -501,7 +501,7 @@
   height: 100%;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(255, 107, 53, 0.2), 
+    rgba(153, 77, 39, 0.2), 
     transparent);
   transition: left 0.6s ease;
 }
@@ -512,12 +512,12 @@
 
 .tournament-bracket__code:hover {
   background: linear-gradient(145deg, 
-    rgba(255, 107, 53, 0.1) 0%, 
-    rgba(255, 107, 53, 0.05) 100%);
+    rgba(153, 77, 39, 0.1) 0%, 
+    rgba(153, 77, 39, 0.05) 100%);
   border-color: var(--bracket-accent);
   transform: scale(1.05);
   box-shadow: 
-    0 8px 24px rgba(255, 107, 53, 0.2),
+    0 8px 24px rgba(153, 77, 39, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -534,7 +534,7 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   box-shadow: 
-    0 4px 12px rgba(255, 107, 53, 0.3),
+    0 4px 12px rgba(153, 77, 39, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
@@ -578,7 +578,7 @@
   font-family: 'Lexend', sans-serif;
   display: inline-block;
   padding: 0.75rem 1.5rem;
-  border: 1px solid rgba(255, 107, 53, 0.3);
+  border: 1px solid rgba(153, 77, 39, 0.3);
   font-size: 1.2rem;
   font-weight: 800;
   background: var(--bracket-surface);
@@ -604,7 +604,7 @@
   height: 100%;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(255, 107, 53, 0.2), 
+    rgba(153, 77, 39, 0.2), 
     transparent);
   transition: left 0.6s ease;
 }
@@ -615,12 +615,12 @@
 
 .tournament-bracket__number:hover {
   background: linear-gradient(145deg, 
-    rgba(255, 107, 53, 0.1) 0%, 
-    rgba(255, 107, 53, 0.05) 100%);
+    rgba(153, 77, 39, 0.1) 0%, 
+    rgba(153, 77, 39, 0.05) 100%);
   border-color: var(--bracket-accent);
   transform: scale(1.05);
   box-shadow: 
-    0 8px 24px rgba(255, 107, 53, 0.2),
+    0 8px 24px rgba(153, 77, 39, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -734,10 +734,10 @@
 
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(255, 107, 53, 0.3);
+    box-shadow: 0 0 5px rgba(153, 77, 39, 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 107, 53, 0.6), 0 0 30px rgba(255, 107, 53, 0.4);
+    box-shadow: 0 0 20px rgba(153, 77, 39, 0.6), 0 0 30px rgba(153, 77, 39, 0.4);
   }
 }
 
@@ -918,10 +918,10 @@
   font-weight: 700;
   text-align: center;
   padding: 0.4rem 0.6rem;
-  background: rgba(255, 107, 53, 0.2);
-  border: 1px solid rgba(255, 107, 53, 0.4);
+  background: rgba(153, 77, 39, 0.2);
+  border: 1px solid rgba(153, 77, 39, 0.4);
   border-radius: 6px;
-  color: var(--bracket-brand-cream);
+  color: var(--bracket-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
@@ -937,7 +937,7 @@
 
 .bracket-match-compact {
   background: var(--bracket-surface);
-  border: 1px solid rgba(255, 107, 53, 0.3);
+  border: 1px solid rgba(153, 77, 39, 0.3);
   border-radius: 8px;
   padding: 0.5rem;
   cursor: pointer;
@@ -950,7 +950,7 @@
 
 .bracket-match-compact:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 4px 12px rgba(153, 77, 39, 0.4);
   border-color: var(--bracket-accent);
 }
 
@@ -966,7 +966,7 @@
   gap: 0.25rem;
   justify-content: space-between;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+  border-bottom: 1px solid rgba(153, 77, 39, 0.3);
 }
 
 .heat-number-compact {
