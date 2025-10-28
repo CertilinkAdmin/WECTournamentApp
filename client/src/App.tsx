@@ -12,6 +12,7 @@ import LiveBracket from './pages/live/LiveBracket';
 import JudgeScorecardsResults from './pages/results/JudgeScorecardsResults';
 import HeatResults from './pages/results/HeatResults';
 import HeatCarouselDemo from './pages/results/HeatCarouselDemo';
+import ResultsInputPage from './pages/admin/ResultsInputPage';
 import './App.css';
 
 const App: React.FC = () => {
@@ -29,6 +30,7 @@ const App: React.FC = () => {
             <Route path="tournaments" element={<div>Tournaments</div>} />
             <Route path="competitors" element={<div>Competitors</div>} />
             <Route path="judges" element={<div>Judges</div>} />
+            <Route path="results-input" element={<ResultsInputPage />} />
             <Route path="stations" element={<div>Stations</div>} />
             <Route path="settings" element={<div>Settings</div>} />
           </Route>

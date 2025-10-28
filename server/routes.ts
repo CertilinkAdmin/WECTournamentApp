@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Tournament not found" });
       }
       res.json(tournament);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in getTournament:', error);
       res.status(500).json({ error: "Internal server error", details: error.message });
     }
@@ -591,9 +591,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate that all required segments exist for this match
-      const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+      const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'] as const;
       const existingSegments = segments.map(s => s.segment);
-      const missingSegments = requiredSegments.filter(seg => !existingSegments.includes(seg));
+      const missingSegments = requiredSegments.filter(seg => !existingSegments.includes(seg as any));
       
       if (missingSegments.length > 0) {
         return res.status(400).json({ 
@@ -681,11 +681,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const matchId = parseInt(req.params.id);
       
       const segments = await storage.getMatchSegments(matchId);
-      const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+      const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'] as const;
       const existingSegments = segments.map(s => s.segment);
       
-      const missingSegments = requiredSegments.filter(seg => !existingSegments.includes(seg));
-      const extraSegments = existingSegments.filter(seg => !requiredSegments.includes(seg));
+      const missingSegments = requiredSegments.filter(seg => !existingSegments.includes(seg as any));
+      const extraSegments = existingSegments.filter(seg => !requiredSegments.includes(seg as any));
       
       const isValid = missingSegments.length === 0 && extraSegments.length === 0;
       
