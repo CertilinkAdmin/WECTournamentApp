@@ -52,3 +52,49 @@ The design strictly adheres to the WEC Official Brand Guidelines.
 - **Backend**: Express.js.
 - **Database**: Neon PostgreSQL (cloud-hosted) with Drizzle ORM.
 - **Real-time Communication**: Socket.io.
+
+## Recent Changes
+
+### Mobile Optimization (October 28, 2025)
+**Complete mobile-first responsive design implementation:**
+
+Tournament Bracket Component:
+- Responsive typography with Tailwind breakpoints (text-2xl sm:text-3xl md:text-4xl)
+- Touch-friendly tap targets with 44x44px minimum size
+- Horizontal scrolling with smooth momentum scrolling on mobile
+- Mobile-optimized spacing and padding (px-2 sm:px-4 md:px-6)
+- Truncated text with proper overflow handling for long names
+- Flexible icon sizing for different screen sizes
+- Changed "Click" to "Tap" for better mobile UX
+
+Heat Detail Dialog:
+- Responsive sizing (w-[95vw] on mobile, full width on desktop)
+- Maximum height with vertical scrolling (max-h-[90vh])
+- Responsive padding and spacing throughout
+- Scalable typography for all text elements
+- Better gap management with responsive values
+- Text truncation for competitor names
+- Mobile-friendly score displays
+
+CSS Enhancements:
+- Mobile breakpoints at 768px and 480px
+- Touch feedback with webkit-tap-highlight styling
+- Active state scaling for visual feedback (scale 0.98)
+- Touch action manipulation for better scroll performance
+- Responsive font sizes and padding adjustments
+- Minimum width constraints for bracket columns
+
+Mobile Utilities:
+- iOS safe area support for notched devices (env() padding)
+- Touch-target utility class (44x44px minimum)
+- Smooth scrolling behavior with momentum
+- Touch feedback animations
+- Hide scrollbar utility while maintaining functionality
+- Better tap highlight colors
+
+Verification:
+- All touch targets meet 44px minimum guideline
+- Horizontal scrolling works smoothly on mobile
+- Dialog properly sized for small screens
+- Safe area support functional on iOS devices
+- No layout shifts or overflow issues
