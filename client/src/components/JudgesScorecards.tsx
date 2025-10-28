@@ -750,6 +750,186 @@ const HEAT_DATA: HeatData[] = [
     winner: "Jae Kim"
   },
   {
+    heatNumber: 21,
+    judges: [
+      {
+        judgeName: "Michalis",
+        visualLatteArt: "right",
+        sensoryBeverage: "Cappuccino",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "Q5",
+        rightCupCode: "B1"
+      },
+      {
+        judgeName: "Ali",
+        visualLatteArt: "right",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "left",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "Q5",
+        rightCupCode: "B1"
+      },
+      {
+        judgeName: "Jasper",
+        visualLatteArt: "right",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "right",
+        flavour: "left",
+        overall: "right",
+        leftCupCode: "B1",
+        rightCupCode: "Q5"
+      }
+    ],
+    leftCompetitor: "Faiz Nordin",
+    rightCompetitor: "Christos Sotiros",
+    leftCupCode: "Q5",
+    rightCupCode: "B1",
+    leftScore: 8,
+    rightScore: 25,
+    winner: "Christos Sotiros"
+  },
+  {
+    heatNumber: 22,
+    judges: [
+      {
+        judgeName: "Shinsaku",
+        visualLatteArt: "right",
+        sensoryBeverage: "Cappuccino",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "T8",
+        rightCupCode: "J7"
+      },
+      {
+        judgeName: "Tess",
+        visualLatteArt: "right",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "J7",
+        rightCupCode: "T8"
+      },
+      {
+        judgeName: "Junior",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "J7",
+        rightCupCode: "T8"
+      }
+    ],
+    leftCompetitor: "Stevo Kühn",
+    rightCompetitor: "Daniele Ricci",
+    leftCupCode: "T8",
+    rightCupCode: "J7",
+    leftScore: 19,
+    rightScore: 14,
+    winner: "Stevo Kühn"
+  },
+  {
+    heatNumber: 23,
+    judges: [
+      {
+        judgeName: "Shinsaku",
+        visualLatteArt: "right",
+        sensoryBeverage: "Cappuccino",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "E9",
+        rightCupCode: "V2"
+      },
+      {
+        judgeName: "Tess",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "E9",
+        rightCupCode: "V2"
+      },
+      {
+        judgeName: "Junior",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "V2",
+        rightCupCode: "E9"
+      }
+    ],
+    leftCompetitor: "Shlyakov Kirill",
+    rightCompetitor: "Jae Kim",
+    leftCupCode: "E9",
+    rightCupCode: "V2",
+    leftScore: 6,
+    rightScore: 27,
+    winner: "Jae Kim"
+  },
+  {
+    heatNumber: 24,
+    judges: [
+      {
+        judgeName: "Michalis",
+        visualLatteArt: "right",
+        sensoryBeverage: "Cappuccino",
+        taste: "right",
+        tactile: "left",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "M1",
+        rightCupCode: "E6"
+      },
+      {
+        judgeName: "Ali",
+        visualLatteArt: "right",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "M1",
+        rightCupCode: "E3"
+      },
+      {
+        judgeName: "Jasper",
+        visualLatteArt: "right",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "E3",
+        rightCupCode: "M1"
+      }
+    ],
+    leftCompetitor: "Bill",
+    rightCompetitor: "Engi",
+    leftCupCode: "M1",
+    rightCupCode: "E3",
+    leftScore: 9,
+    rightScore: 24,
+    winner: "Engi"
+  },
+  {
     heatNumber: 31,
     judges: [
       {
