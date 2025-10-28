@@ -55,6 +55,41 @@ The design strictly adheres to the WEC Official Brand Guidelines.
 
 ## Recent Changes
 
+### CSS Alignment with css_md_wec.md (October 28, 2025)
+**Complete alignment with WEC Official CSS & Style Guide:**
+
+Typography System:
+- Updated to Inter/Open Sans (sans-serif), Playfair Display (serif), Montserrat (brand), JetBrains Mono (monospace)
+- Added .montserrat-title utility class for brand typography
+- All fonts imported via Google Fonts
+
+Color System Overhaul:
+- Light Theme: Soft sand background (#F5F0E8), Cinnamon Brown primary (#994D27), Light Sand secondary (#DECCA7)
+- Dark Theme: Cinnamon Brown dominant background (#994D27), white foreground, dark cards (#1A0F0A) with Light Sand text
+- Exact border token (220 13% 91% = #E5E7EB) for neutral cool-gray borders
+- All functional colors added (success, warning, info) with proper contrast ratios
+- All contrast ratios verified to meet WCAG AA standards (>4.5:1)
+
+Brand Variables:
+- 6 WEC brand colors: Cinnamon Brown, Light Sand, Forest Green, Golden Brown, Navy Blue, Taupe
+- 6 Coffee-themed palette: espresso-darkest, dark, medium, light, cream, foam
+- 5 Accent colors: caramel, honey, vanilla, cinnamon, nutmeg
+
+Utility Classes Added:
+- Brand gradients (.bg-brand-gradient, .bg-espresso-gradient)
+- Brand shadows (.shadow-brand, .shadow-espresso with dark mode variants)
+- Brand color utilities (.bg-cinnamon-brown, .text-cinnamon-brown, .border-cinnamon-brown)
+- Theme transitions (.theme-transition, .theme-transition-fast, .theme-transition-slow, .theme-changing)
+- Animation utilities (.hover-lift, .hover-glow, .animate-pulse-slow, .animate-fade-in)
+- Responsive utilities (.responsive-container, .responsive-grid, .responsive-heading-xl)
+- Layout utilities (.content-with-anchored-footer, .aspect-golden, .aspect-coffee-cup, .bg-theme-surface, .text-theme-primary)
+
+Verification:
+- 100% alignment with css_md_wec.md specification confirmed
+- All color tokens match documented values exactly
+- Accessibility verified (WCAG AA compliance)
+- No missing or incorrect tokens
+
 ### Mobile Optimization (October 28, 2025)
 **Complete mobile-first responsive design implementation:**
 
