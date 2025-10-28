@@ -13,7 +13,7 @@ interface JudgeScoreEntry {
   judgeName: string;
   leftCupCode: string;
   rightCupCode: string;
-  sensoryBeverage: "Cappuccino" | "Espresso";
+  sensoryBeverage: string;
   visualLatteArt: "left" | "right";
   taste: "left" | "right";
   tactile: "left" | "right";
@@ -223,7 +223,7 @@ export default function HeatResultsInput({ matchId, heatNumber, onSubmit }: Heat
                   <Label htmlFor={`sensory-beverage-${index}`}>Sensory Beverage</Label>
                   <Select
                     value={judge.sensoryBeverage}
-                    onValueChange={(value: "Cappuccino" | "Espresso") =>
+                    onValueChange={(value: string) =>
                       updateJudge(index, "sensoryBeverage", value)
                     }
                   >
