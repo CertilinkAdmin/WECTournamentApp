@@ -1,5 +1,31 @@
 /* Mobile Optimization Utilities */
 
+/* iOS Safe Area Support */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
 /* Touch-friendly tap targets - minimum 44x44px */
 .touch-target {
   min-height: 44px;
@@ -7,6 +33,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  touch-action: manipulation;
 }
 
 /* Prevent text selection on UI elements */
@@ -21,6 +49,21 @@
 .mobile-scroll {
   -webkit-overflow-scrolling: touch;
   overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+/* Better touch feedback */
+.touch-feedback {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-feedback:active {
+  opacity: 0.7;
+  transform: scale(0.98);
+  transition: transform 0.1s ease-out, opacity 0.1s ease-out;
 }
 
 /* Hide scrollbar but keep functionality */

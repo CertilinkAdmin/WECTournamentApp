@@ -87,39 +87,39 @@ const TrueTournamentBracket = ({ mode = 'results' }: TrueTournamentBracketProps)
 
   return (
     <>
-      <div className="tournament-bracket-container-compact">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl md:text-4xl font-black mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent" 
-              style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '2px' }}>
+      <div className="tournament-bracket-container-compact px-2 sm:px-4 md:px-6">
+        <div className="text-center mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black mb-2 sm:mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent" 
+              style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '1px' }}>
             WEC 2025 MILANO
           </h1>
-          <h2 className="text-lg md:text-xl font-semibold mb-3 text-accent" 
-              style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '1px' }}>
+          <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 text-accent" 
+              style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '0.5px' }}>
             TOURNAMENT BRACKET
           </h2>
-          <div className="flex flex-wrap items-center justify-center gap-3 text-xs md:text-sm text-accent">
-            <div className="flex items-center gap-2 px-2 py-1 bg-primary/10 rounded-lg border border-primary/30">
-              <Coffee className="h-3 w-3 text-accent" />
-              <span className="font-semibold">{totalHeats} HEATS</span>
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm text-accent px-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/30 touch-target">
+              <Coffee className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent flex-shrink-0" />
+              <span className="font-semibold whitespace-nowrap">{totalHeats} HEATS</span>
             </div>
-            <div className="flex items-center gap-2 px-2 py-1 bg-primary/10 rounded-lg border border-accent/40">
-              <Trophy className="h-3 w-3 text-accent" />
-              <span className="font-semibold">{finalWinner.toUpperCase()}</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-primary/10 rounded-lg border border-accent/40 touch-target">
+              <Trophy className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent flex-shrink-0" />
+              <span className="font-semibold whitespace-nowrap truncate max-w-[120px] sm:max-w-none">{finalWinner.toUpperCase()}</span>
             </div>
-            <div className="flex items-center gap-2 px-2 py-1 bg-primary/10 rounded-lg border border-primary/30">
-              <Star className="h-3 w-3 text-accent" />
-              <span className="font-semibold">RESULTS</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/30 touch-target">
+              <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent flex-shrink-0" />
+              <span className="font-semibold whitespace-nowrap">RESULTS</span>
             </div>
           </div>
-          <p className="text-xs text-accent/80 mt-2">Click any heat to expand details</p>
+          <p className="text-xs sm:text-sm text-accent/80 mt-2 px-2">Tap any heat to view details</p>
         </div>
         
-        <div className="tournament-bracket-compact">
+        <div className="tournament-bracket-compact overflow-x-auto hide-scrollbar mobile-scroll pb-4">
           {rounds.map((round) => (
-            <div key={round.title} className="bracket-round-compact">
-              <h3 className="bracket-round-title-compact flex items-center justify-center gap-1.5">
+            <div key={round.title} className="bracket-round-compact min-w-[140px] sm:min-w-[160px]">
+              <h3 className="bracket-round-title-compact flex items-center justify-center gap-1 sm:gap-1.5 px-2">
                 {getSpecialIcon(round.title)}
-                <span className="text-xs md:text-sm">{round.title}</span>
+                <span className="text-xs sm:text-sm whitespace-nowrap">{round.title}</span>
               </h3>
               <div className="bracket-matches-compact">
                 {round.matches.map((match) => (
@@ -155,32 +155,32 @@ const TrueTournamentBracket = ({ mode = 'results' }: TrueTournamentBracketProps)
         </div>
       </div>
 
-      {/* Expanded Heat Dialog */}
+      {/* Expanded Heat Dialog - Mobile Optimized */}
       <Dialog open={!!selectedHeat} onOpenChange={() => setSelectedHeat(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 text-2xl">
-              <Trophy className="h-6 w-6 text-accent" />
-              Heat {selectedHeat?.heatNumber} - Station {selectedHeat?.station}
+            <DialogTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl md:text-2xl">
+              <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-accent flex-shrink-0" />
+              <span className="truncate">Heat {selectedHeat?.heatNumber} - Station {selectedHeat?.station}</span>
             </DialogTitle>
           </DialogHeader>
           
           {selectedHeat && (
-            <div className="space-y-6 py-4">
+            <div className="space-y-4 sm:space-y-6 py-2 sm:py-4">
               {/* Competitor 1 */}
-              <Card className={`p-6 ${selectedHeat.winner === selectedHeat.competitor1 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : ''}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-2">{selectedHeat.competitor1}</h3>
-                    <div className="flex items-center gap-2">
+              <Card className={`p-4 sm:p-6 ${selectedHeat.winner === selectedHeat.competitor1 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : ''}`} data-testid={`competitor-${selectedHeat.competitor1}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2 truncate">{selectedHeat.competitor1}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">{selectedHeat.leftCupCode}</Badge>
                       {selectedHeat.winner === selectedHeat.competitor1 && (
-                        <Badge className="bg-accent text-primary">Winner</Badge>
+                        <Badge className="bg-accent text-primary text-xs">Winner</Badge>
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className={`text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor1 ? 'text-accent' : 'text-muted-foreground'}`}>
+                  <div className="text-right flex-shrink-0">
+                    <div className={`text-3xl sm:text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor1 ? 'text-accent' : 'text-muted-foreground'}`}>
                       {selectedHeat.score1}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">Points</div>
@@ -190,25 +190,25 @@ const TrueTournamentBracket = ({ mode = 'results' }: TrueTournamentBracketProps)
 
               {/* VS Divider */}
               <div className="flex items-center justify-center">
-                <div className="bg-primary text-primary-foreground px-4 py-2 rounded-full font-bold">
+                <div className="bg-primary text-primary-foreground px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-sm sm:text-base">
                   VS
                 </div>
               </div>
 
               {/* Competitor 2 */}
-              <Card className={`p-6 ${selectedHeat.winner === selectedHeat.competitor2 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : ''}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-2">{selectedHeat.competitor2}</h3>
-                    <div className="flex items-center gap-2">
+              <Card className={`p-4 sm:p-6 ${selectedHeat.winner === selectedHeat.competitor2 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : ''}`} data-testid={`competitor-${selectedHeat.competitor2}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2 truncate">{selectedHeat.competitor2}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">{selectedHeat.rightCupCode}</Badge>
                       {selectedHeat.winner === selectedHeat.competitor2 && (
-                        <Badge className="bg-accent text-primary">Winner</Badge>
+                        <Badge className="bg-accent text-primary text-xs">Winner</Badge>
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className={`text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor2 ? 'text-accent' : 'text-muted-foreground'}`}>
+                  <div className="text-right flex-shrink-0">
+                    <div className={`text-3xl sm:text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor2 ? 'text-accent' : 'text-muted-foreground'}`}>
                       {selectedHeat.score2}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">Points</div>
@@ -217,23 +217,23 @@ const TrueTournamentBracket = ({ mode = 'results' }: TrueTournamentBracketProps)
               </Card>
 
               {/* Match Info */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
                   <div>
                     <div className="text-muted-foreground text-xs mb-1">Heat Number</div>
-                    <div className="font-semibold">{selectedHeat.heatNumber}</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedHeat.heatNumber}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground text-xs mb-1">Station</div>
-                    <div className="font-semibold">{selectedHeat.station}</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedHeat.station}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground text-xs mb-1">Final Score</div>
-                    <div className="font-semibold">{selectedHeat.score1} - {selectedHeat.score2}</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedHeat.score1} - {selectedHeat.score2}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground text-xs mb-1">Winner</div>
-                    <div className="font-semibold text-accent">{selectedHeat.winner}</div>
+                    <div className="font-semibold text-accent text-sm sm:text-base truncate">{selectedHeat.winner}</div>
                   </div>
                 </div>
               </div>

@@ -1040,24 +1040,39 @@
   padding: 0.1rem 0;
 }
 
-/* Mobile Responsive */
+/* Mobile Responsive Optimizations */
 @media (max-width: 768px) {
+  .tournament-bracket-container-compact {
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+
   .tournament-bracket-compact {
     gap: 0.4rem;
+    padding: 0.75rem 0;
   }
 
   .bracket-round-compact {
-    min-width: 120px;
+    min-width: 130px;
   }
 
   .bracket-round-title-compact {
     font-size: 0.65rem;
-    padding: 0.3rem 0.4rem;
+    padding: 0.35rem 0.5rem;
+    letter-spacing: 0.3px;
   }
 
   .bracket-match-compact {
     padding: 0.4rem;
-    min-height: 60px;
+    /* Touch-friendly tap targets */
+    min-height: 65px;
+    /* Better tap feedback on mobile */
+    -webkit-tap-highlight-color: rgba(153, 77, 39, 0.2);
+    touch-action: manipulation;
+  }
+
+  .bracket-match-compact:active {
+    transform: scale(0.98);
   }
 
   .heat-number-compact {
@@ -1070,6 +1085,30 @@
 
   .score-compact {
     font-size: 0.7rem;
+  }
+
+  .vs-compact {
+    font-size: 0.55rem;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  .tournament-bracket-container-compact {
+    padding: 0.5rem;
+  }
+
+  .bracket-round-compact {
+    min-width: 120px;
+  }
+
+  .bracket-match-compact {
+    padding: 0.35rem;
+    min-height: 60px;
+  }
+
+  .initials-compact {
+    font-size: 0.6rem;
   }
 }
 
