@@ -388,7 +388,7 @@ const HeatCardCarousel: React.FC<HeatCardCarouselProps> = ({
                     </div>
                   </>
                 ) : (
-                  <div className="no-judges-message">
+                  <div className="no-judges-message" data-testid="text-no-judge-scorecards">
                     <Users className="h-12 w-12 text-gray-400 mb-2" />
                     <p className="text-gray-500 text-sm">No judge scorecards available for this heat</p>
                   </div>

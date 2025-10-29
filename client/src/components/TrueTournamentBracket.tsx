@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Medal, Award, Star, Coffee, Zap, Maximize2 } from 'lucide-react';
+import { Trophy, Medal, Award, Star, Coffee, Zap, Maximize2, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -7,6 +7,18 @@ import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS
 
 interface TrueTournamentBracketProps {
   mode?: 'live' | 'results';
+}
+
+interface Judge {
+  judgeName: string;
+  visualLatteArt: 'left' | 'right';
+  sensoryBeverage: 'Espresso' | 'Cappuccino';
+  taste: 'left' | 'right';
+  tactile: 'left' | 'right';
+  flavour: 'left' | 'right';
+  overall: 'left' | 'right';
+  leftCupCode: string;
+  rightCupCode: string;
 }
 
 interface BracketMatch {
@@ -19,6 +31,7 @@ interface BracketMatch {
   score2: number;
   leftCupCode?: string;
   rightCupCode?: string;
+  judges?: Judge[];
 }
 
 interface BracketRound {
@@ -236,6 +249,34 @@ const TrueTournamentBracket = ({ mode = 'results' }: TrueTournamentBracketProps)
                     <div className="font-semibold text-accent text-sm sm:text-base truncate">{selectedHeat.winner}</div>
                   </div>
                 </div>
+              </div>
+
+              {/* Judges Section */}
+              <div className="border-t pt-4">
+                {selectedHeat.judges && selectedHeat.judges.length > 0 ? (
+                  <div>
+                    <h4 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2">
+                      <Users className="h-4 w-4 text-accent" />
+                      Judges
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedHeat.judges.map((judge, idx) => (
+                        <Badge 
+                          key={idx} 
+                          className="bg-primary text-primary-foreground px-3 py-1.5 text-xs sm:text-sm"
+                          data-testid={`judge-${judge.judgeName}`}
+                        >
+                          {judge.judgeName}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-6 text-center" data-testid="text-no-judge-scorecards">
+                    <Users className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                    <p className="text-sm text-muted-foreground">No judge scorecards available for this heat</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
