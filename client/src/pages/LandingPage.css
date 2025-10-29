@@ -125,11 +125,13 @@
   justify-content: center;
   min-height: 60vh;
   padding: 2rem;
+  width: 100%;
 }
 
 .single-circle-container .card-container {
   max-width: 500px;
   width: 100%;
+  margin: 0 auto;
 }
 
 /* WEC Logo Overlay on Clock */
@@ -143,10 +145,12 @@
 }
 
 .wec-logo-image {
-  width: 280px;
+  width: 320px;
   height: auto;
   opacity: 0.5;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  display: block;
+  margin: 0 auto;
 }
 
 .column-section {
@@ -159,8 +163,8 @@
 /* Card Container */
 .card-container {
   position: relative;
-  width: 360px;
-  height: 360px;
+  width: 400px;
+  height: 400px;
   transform-style: preserve-3d;
   perspective: 1000px;
   display: flex;
