@@ -55,6 +55,18 @@ export default function SensoryEvaluationCard({
     return value === position ? "5" : "";
   };
 
+  const getJudgeSubtotal = (judge: JudgeScore, position: "left" | "right") => {
+    if (!judge.taste && !judge.tactile && !judge.flavour && !judge.overall) return "";
+    
+    let total = 0;
+    if (judge.taste === position) total += 1;
+    if (judge.tactile === position) total += 1;
+    if (judge.flavour === position) total += 1;
+    if (judge.overall === position) total += 5;
+    
+    return total > 0 ? total : "";
+  };
+
   return (
     <Card className="w-full" data-testid="card-sensory-evaluation">
       <CardHeader className="bg-cinnamon-brown/10 pb-3">
@@ -63,200 +75,250 @@ export default function SensoryEvaluationCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {/* Mobile-optimized table */}
-        <div className="overflow-x-auto">
-          <div className="min-w-full">
-            {/* Judges Header Row - Stacks on mobile */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 p-3 sm:p-2 bg-slate-100 dark:bg-slate-800 border-b">
-              {displayJudges.map((judge, idx) => (
-                <div key={idx} className="text-center">
-                  <div className="font-semibold text-xs sm:text-sm text-foreground">
-                    {judge.sensoryBeverage}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Judge: {judge.judgeName}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Judge Columns - LEFT/RIGHT headers */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 border-b">
-              {displayJudges.map((_, idx) => (
-                <div key={idx} className="grid grid-cols-2 text-center text-xs font-medium p-2 bg-slate-50 dark:bg-slate-900">
-                  <div className="border-r">LEFT</div>
-                  <div>RIGHT</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Taste Row (1 point) */}
-            <div className="border-b">
-              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] items-center">
-                <div className="text-xs sm:text-sm font-medium p-2 sm:p-3 bg-slate-50 dark:bg-slate-900 sm:border-r">
+        {/* Desktop View - Table Layout */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              {/* Judges Header Row */}
+              <tr className="bg-slate-100 dark:bg-slate-800 border-b">
+                <th className="p-2 text-xs font-medium text-left w-32"></th>
+                {displayJudges.map((judge, idx) => (
+                  <th key={idx} className="p-2 text-center border-l" colSpan={2}>
+                    <div className="font-semibold text-xs sm:text-sm text-foreground">
+                      {judge.sensoryBeverage}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Judge: {judge.judgeName}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+              {/* LEFT/RIGHT Headers */}
+              <tr className="border-b">
+                <th className="p-2 bg-slate-50 dark:bg-slate-900"></th>
+                {displayJudges.map((_, idx) => (
+                  <th key={idx} className="p-2 text-center text-xs font-medium bg-slate-50 dark:bg-slate-900 border-l" colSpan={2}>
+                    <div className="grid grid-cols-2 gap-2">
+                      <span className="border-r pr-2">LEFT</span>
+                      <span>RIGHT</span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {/* Taste Row */}
+              <tr className="border-b">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-slate-900">
                   Taste (1 point)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3">
-                  {displayJudges.map((judge, idx) => (
-                    <div key={idx} className="grid grid-cols-2 border-b sm:border-b-0 sm:border-r last:border-r-0">
-                      <div className="text-center p-2 sm:p-3 text-sm font-semibold text-primary border-r">
-                        {getCellValue(judge.taste, "left")}
-                      </div>
-                      <div className="text-center p-2 sm:p-3 text-sm font-semibold text-primary">
-                        {getCellValue(judge.taste, "right")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Tactile Row (1 point) */}
-            <div className="border-b">
-              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] items-center">
-                <div className="text-xs sm:text-sm font-medium p-2 sm:p-3 bg-slate-50 dark:bg-slate-900 sm:border-r">
+                </td>
+                {displayJudges.map((judge, idx) => [
+                  <td key={`taste-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary border-l border-r">
+                    {getCellValue(judge.taste, "left")}
+                  </td>,
+                  <td key={`taste-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary">
+                    {getCellValue(judge.taste, "right")}
+                  </td>
+                ])}
+              </tr>
+              {/* Tactile Row */}
+              <tr className="border-b">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-slate-900">
                   Tactile (1 point)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3">
-                  {displayJudges.map((judge, idx) => (
-                    <div key={idx} className="grid grid-cols-2 border-b sm:border-b-0 sm:border-r last:border-r-0">
-                      <div className="text-center p-2 sm:p-3 text-sm font-semibold text-primary border-r">
-                        {getCellValue(judge.tactile, "left")}
-                      </div>
-                      <div className="text-center p-2 sm:p-3 text-sm font-semibold text-primary">
-                        {getCellValue(judge.tactile, "right")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Flavour Row (1 point) */}
-            <div className="border-b">
-              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] items-center">
-                <div className="text-xs sm:text-sm font-medium p-2 sm:p-3 bg-slate-50 dark:bg-slate-900 sm:border-r">
+                </td>
+                {displayJudges.map((judge, idx) => [
+                  <td key={`tactile-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary border-l border-r">
+                    {getCellValue(judge.tactile, "left")}
+                  </td>,
+                  <td key={`tactile-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary">
+                    {getCellValue(judge.tactile, "right")}
+                  </td>
+                ])}
+              </tr>
+              {/* Flavour Row */}
+              <tr className="border-b">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-slate-900">
                   Flavour (1 point)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3">
-                  {displayJudges.map((judge, idx) => (
-                    <div key={idx} className="grid grid-cols-2 border-b sm:border-b-0 sm:border-r last:border-r-0">
-                      <div className="text-center p-2 sm:p-3 text-sm font-semibold text-primary border-r">
-                        {getCellValue(judge.flavour, "left")}
-                      </div>
-                      <div className="text-center p-2 sm:p-3 text-sm font-semibold text-primary">
-                        {getCellValue(judge.flavour, "right")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Overall Row (5 points) */}
-            <div className="border-b">
-              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] items-center">
-                <div className="text-xs sm:text-sm font-medium p-2 sm:p-3 bg-slate-50 dark:bg-slate-900 sm:border-r">
+                </td>
+                {displayJudges.map((judge, idx) => [
+                  <td key={`flavour-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary border-l border-r">
+                    {getCellValue(judge.flavour, "left")}
+                  </td>,
+                  <td key={`flavour-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary">
+                    {getCellValue(judge.flavour, "right")}
+                  </td>
+                ])}
+              </tr>
+              {/* Overall Row */}
+              <tr className="border-b">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-slate-900">
                   Overall (5 points)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3">
-                  {displayJudges.map((judge, idx) => (
-                    <div key={idx} className="grid grid-cols-2 border-b sm:border-b-0 sm:border-r last:border-r-0">
-                      <div className="text-center p-2 sm:p-3 text-sm font-semibold text-primary border-r">
-                        {getOverallCellValue(judge.overall, "left")}
-                      </div>
-                      <div className="text-center p-2 sm:p-3 text-sm font-semibold text-primary">
-                        {getOverallCellValue(judge.overall, "right")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Sensory Subtotal Row */}
-            <div className="border-b bg-amber-50 dark:bg-amber-950">
-              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] items-center">
-                <div className="text-xs sm:text-sm font-bold p-2 sm:p-3 sm:border-r">
+                </td>
+                {displayJudges.map((judge, idx) => [
+                  <td key={`overall-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary border-l border-r">
+                    {getOverallCellValue(judge.overall, "left")}
+                  </td>,
+                  <td key={`overall-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary">
+                    {getOverallCellValue(judge.overall, "right")}
+                  </td>
+                ])}
+              </tr>
+              {/* Sensory Subtotal Row */}
+              <tr className="border-b bg-amber-50 dark:bg-amber-950">
+                <td className="p-3 text-xs sm:text-sm font-bold">
                   Sensory Subtotal (B)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3">
-                  {displayJudges.map((judge, idx) => (
-                    <div key={idx} className="grid grid-cols-2 border-b sm:border-b-0 sm:border-r last:border-r-0">
-                      <div className="text-center p-2 sm:p-3 text-sm font-bold text-foreground border-r">
-                        {judges.length > 0 && judges[idx] ? (
-                          calculateSubtotal("left") > 0 ? 
-                          ((judges[idx].taste === "left" ? 1 : 0) +
-                           (judges[idx].tactile === "left" ? 1 : 0) +
-                           (judges[idx].flavour === "left" ? 1 : 0) +
-                           (judges[idx].overall === "left" ? 5 : 0)) : ""
-                        ) : ""}
-                      </div>
-                      <div className="text-center p-2 sm:p-3 text-sm font-bold text-foreground">
-                        {judges.length > 0 && judges[idx] ? (
-                          calculateSubtotal("right") > 0 ?
-                          ((judges[idx].taste === "right" ? 1 : 0) +
-                           (judges[idx].tactile === "right" ? 1 : 0) +
-                           (judges[idx].flavour === "right" ? 1 : 0) +
-                           (judges[idx].overall === "right" ? 5 : 0)) : ""
-                        ) : ""}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Cup Code Row */}
-            <div className="bg-slate-100 dark:bg-slate-800">
-              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] items-center">
-                <div className="text-xs sm:text-sm font-bold p-2 sm:p-3 sm:border-r">
+                </td>
+                {displayJudges.map((judge, idx) => [
+                  <td key={`subtotal-left-${idx}`} className="p-3 text-center text-sm font-bold text-foreground border-l border-r">
+                    {getJudgeSubtotal(judge, "left")}
+                  </td>,
+                  <td key={`subtotal-right-${idx}`} className="p-3 text-center text-sm font-bold text-foreground">
+                    {getJudgeSubtotal(judge, "right")}
+                  </td>
+                ])}
+              </tr>
+              {/* Cup Code Row */}
+              <tr className="bg-slate-100 dark:bg-slate-800">
+                <td className="p-3 text-xs sm:text-sm font-bold">
                   Cup Code
+                </td>
+                {displayJudges.map((judge, idx) => [
+                  <td key={`cup-left-${idx}`} className="p-3 text-center border-l border-r">
+                    <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-left-cup-${idx}`}>
+                      {judge.leftCupCode}
+                    </Badge>
+                  </td>,
+                  <td key={`cup-right-${idx}`} className="p-3 text-center">
+                    <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-right-cup-${idx}`}>
+                      {judge.rightCupCode}
+                    </Badge>
+                  </td>
+                ])}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile View - Card-based Layout */}
+        <div className="md:hidden">
+          {displayJudges.map((judge, judgeIdx) => (
+            <div key={judgeIdx} className="border-b last:border-b-0">
+              {/* Judge Header */}
+              <div className="p-3 bg-slate-100 dark:bg-slate-800 border-b">
+                <div className="font-semibold text-sm text-foreground">
+                  {judge.sensoryBeverage}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3">
-                  {displayJudges.map((judge, idx) => (
-                    <div key={idx} className="grid grid-cols-2 border-b sm:border-b-0 sm:border-r last:border-r-0">
-                      <div className="text-center p-2 sm:p-3 border-r">
-                        <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-left-cup-${idx}`}>
-                          {judge.leftCupCode}
-                        </Badge>
-                      </div>
-                      <div className="text-center p-2 sm:p-3">
-                        <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-right-cup-${idx}`}>
-                          {judge.rightCupCode}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-xs text-muted-foreground">
+                  Judge: {judge.judgeName}
+                </div>
+              </div>
+
+              {/* Score Table for this Judge */}
+              <div className="p-3 space-y-2">
+                {/* Headers */}
+                <div className="grid grid-cols-3 gap-2 pb-2 border-b">
+                  <div className="text-xs font-medium text-muted-foreground"></div>
+                  <div className="text-xs font-medium text-center">LEFT</div>
+                  <div className="text-xs font-medium text-center">RIGHT</div>
+                </div>
+
+                {/* Taste */}
+                <div className="grid grid-cols-3 gap-2 items-center">
+                  <div className="text-xs font-medium">Taste (1)</div>
+                  <div className="text-center text-sm font-semibold text-primary">
+                    {getCellValue(judge.taste, "left")}
+                  </div>
+                  <div className="text-center text-sm font-semibold text-primary">
+                    {getCellValue(judge.taste, "right")}
+                  </div>
+                </div>
+
+                {/* Tactile */}
+                <div className="grid grid-cols-3 gap-2 items-center">
+                  <div className="text-xs font-medium">Tactile (1)</div>
+                  <div className="text-center text-sm font-semibold text-primary">
+                    {getCellValue(judge.tactile, "left")}
+                  </div>
+                  <div className="text-center text-sm font-semibold text-primary">
+                    {getCellValue(judge.tactile, "right")}
+                  </div>
+                </div>
+
+                {/* Flavour */}
+                <div className="grid grid-cols-3 gap-2 items-center">
+                  <div className="text-xs font-medium">Flavour (1)</div>
+                  <div className="text-center text-sm font-semibold text-primary">
+                    {getCellValue(judge.flavour, "left")}
+                  </div>
+                  <div className="text-center text-sm font-semibold text-primary">
+                    {getCellValue(judge.flavour, "right")}
+                  </div>
+                </div>
+
+                {/* Overall */}
+                <div className="grid grid-cols-3 gap-2 items-center">
+                  <div className="text-xs font-medium">Overall (5)</div>
+                  <div className="text-center text-sm font-semibold text-primary">
+                    {getOverallCellValue(judge.overall, "left")}
+                  </div>
+                  <div className="text-center text-sm font-semibold text-primary">
+                    {getOverallCellValue(judge.overall, "right")}
+                  </div>
+                </div>
+
+                {/* Subtotal */}
+                <div className="grid grid-cols-3 gap-2 items-center pt-2 border-t bg-amber-50 dark:bg-amber-950 -mx-3 px-3 py-2">
+                  <div className="text-xs font-bold">Subtotal</div>
+                  <div className="text-center text-sm font-bold text-foreground">
+                    {getJudgeSubtotal(judge, "left")}
+                  </div>
+                  <div className="text-center text-sm font-bold text-foreground">
+                    {getJudgeSubtotal(judge, "right")}
+                  </div>
+                </div>
+
+                {/* Cup Codes */}
+                <div className="grid grid-cols-3 gap-2 items-center pt-2 border-t bg-slate-100 dark:bg-slate-800 -mx-3 px-3 py-2">
+                  <div className="text-xs font-bold">Cup Code</div>
+                  <div className="text-center">
+                    <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-left-cup-${judgeIdx}`}>
+                      {judge.leftCupCode}
+                    </Badge>
+                  </div>
+                  <div className="text-center">
+                    <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-right-cup-${judgeIdx}`}>
+                      {judge.rightCupCode}
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </div>
+          ))}
+        </div>
 
-            {/* Total Score Summary */}
-            {judges.length > 0 && (
-              <div className="p-4 bg-cinnamon-brown/5 border-t-2 border-cinnamon-brown">
-                <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-                  <div className="text-center">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      {leftCompetitor}
-                    </div>
-                    <div className="text-2xl font-bold text-cinnamon-brown" data-testid="text-left-total">
-                      {leftSubtotal}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      {rightCompetitor}
-                    </div>
-                    <div className="text-2xl font-bold text-cinnamon-brown" data-testid="text-right-total">
-                      {rightSubtotal}
-                    </div>
-                  </div>
+        {/* Total Score Summary - Shared between mobile and desktop */}
+        {judges.length > 0 && (
+          <div className="p-4 bg-cinnamon-brown/5 border-t-2 border-cinnamon-brown">
+            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground mb-1">
+                  {leftCompetitor}
+                </div>
+                <div className="text-2xl font-bold text-cinnamon-brown" data-testid="text-left-total">
+                  {leftSubtotal}
                 </div>
               </div>
-            )}
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground mb-1">
+                  {rightCompetitor}
+                </div>
+                <div className="text-2xl font-bold text-cinnamon-brown" data-testid="text-right-total">
+                  {rightSubtotal}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
