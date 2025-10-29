@@ -131,6 +131,52 @@
   width: 100%;
 }
 
+/* Desktop centering adjustments so the clock is perfectly centered */
+@media (min-width: 1024px) {
+  .landing-header {
+    padding-bottom: 1rem;
+  }
+
+  .single-circle-container {
+    min-height: calc(100vh - 220px); /* header + footer approx */
+  }
+
+  .main-options {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Enlarge the live card and clock on desktop */
+  .single-circle-container .card-container {
+    width: 520px;
+    height: 520px;
+  }
+
+  .landing-button.single-circle {
+    width: 520px;
+    height: 520px;
+    min-width: 520px;
+    min-height: 520px;
+    max-width: 520px;
+    max-height: 520px;
+  }
+
+  .analog-clock-large {
+    width: 520px;
+    height: 520px;
+  }
+
+  .analog-clock-large .analog-clock .clock {
+    min-width: 460px;
+    min-height: 460px;
+  }
+
+  .wec-logo-image {
+    width: 380px;
+  }
+}
+
 .single-circle-container .card-container {
   max-width: 500px;
   width: 100%;
@@ -174,6 +220,44 @@
   height: 400px;
   margin: 0 auto;
   /* Removed flexbox properties that can interfere with absolute positioning */
+}
+
+/* Navigation bar */
+.landing-nav {
+  position: relative;
+  z-index: 3;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
+}
+
+.landing-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.landing-nav a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease;
+  font-weight: 600;
+}
+
+.landing-nav a:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.landing-nav a[aria-current="page"] {
+  background: linear-gradient(135deg, #ff6b35, #ff8e53);
+  color: white;
 }
 
 /* Energy Canvas */

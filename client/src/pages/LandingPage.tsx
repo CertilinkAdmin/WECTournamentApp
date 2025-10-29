@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import EnergyCard from '../components/EnergyCard';
 import './LandingPage.css';
 
@@ -30,6 +31,19 @@ const LandingPage: React.FC = () => {
           <div className="year-badge">WEC 2025 Milano</div>
         </div>
       </header>
+      <nav className="landing-nav" aria-label="Primary Navigation">
+        <div className="landing-nav-inner">
+          <NavLink to="/live" end>
+            Live
+          </NavLink>
+          <NavLink to="/results" end>
+            Results
+          </NavLink>
+          <NavLink to="/admin" end>
+            Admin
+          </NavLink>
+        </div>
+      </nav>
       
       <main className="main-options">
         <div className="single-circle-container">

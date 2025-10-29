@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trophy, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X } from 'lucide-react';
 import CompetitorScorecard from '@/components/CompetitorScorecard';
 import SensoryEvaluationCard from '@/components/SensoryEvaluationCard';
 
@@ -258,13 +258,14 @@ const WEC2025Results = () => {
           <button
             onClick={handlePrevious}
             disabled={currentSegment === 0}
+            aria-label="Previous"
             data-testid="button-previous-segment"
-            className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-2 bg-white/90 hover:bg-white border-2 border-cinnamon-brown/30 hover:border-cinnamon-brown rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-0 bg-transparent border-0 rounded-lg transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <img 
-              src="arrow_l.png" 
+              src="/icons/arrow_l.png" 
               alt="Previous" 
-              className="w-full h-full object-contain filter hover:brightness-110"
+              className="block w-full h-full object-contain"
             />
           </button>
           
@@ -280,13 +281,14 @@ const WEC2025Results = () => {
           <button
             onClick={handleNext}
             disabled={currentSegment === totalSegments - 1}
+            aria-label="Next"
             data-testid="button-next-segment"
-            className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-2 bg-white/90 hover:bg-white border-2 border-cinnamon-brown/30 hover:border-cinnamon-brown rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-0 bg-transparent border-0 rounded-lg transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <img 
-              src="arrow_r.png" 
+              src="/icons/arrow_r.png" 
               alt="Next" 
-              className="w-full h-full object-contain filter hover:brightness-110"
+              className="block w-full h-full object-contain"
             />
           </button>
         </div>
