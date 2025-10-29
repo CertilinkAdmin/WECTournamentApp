@@ -27,16 +27,21 @@ export default function LiveTournament() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Trophy className="h-6 w-6 text-primary" />
+              <img 
+                src="/TROPHY.png" 
+                alt="WEC Trophy" 
+                className="h-12 w-12 object-contain"
+                data-testid="img-trophy"
+              />
               <div>
-                <h2 className="text-xl font-bold">Live Tournament</h2>
-                <p className="text-sm text-muted-foreground">
+                <h2 className="text-xl font-bold" data-testid="text-live-tournament-title">Live Tournament</h2>
+                <p className="text-sm text-muted-foreground" data-testid="text-tournament-info">
                   {currentTournament?.name || 'World Espresso Championships'} - Round {currentTournament?.currentRound || 1}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-green-600 border-green-600">
+              <Badge variant="outline" className="text-green-600 border-green-600" data-testid="badge-live">
                 <Eye className="h-4 w-4 mr-1" />
                 LIVE
               </Badge>

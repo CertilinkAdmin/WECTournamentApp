@@ -86,8 +86,23 @@ const WEC2025Results = () => {
     try {
       setLoading(true);
       
-      // Fetch actual tournament data from API (Tournament ID 7: WEC 2025 Milano)
-      const response = await fetch('/api/tournaments/7');
+      // Fetch all tournaments and find WEC 2025 Milano by name
+      const tournamentsResponse = await fetch('/api/tournaments');
+      if (!tournamentsResponse.ok) {
+        throw new Error('Failed to fetch tournaments');
+      }
+      
+      const tournaments = await tournamentsResponse.json();
+      const wec2025 = tournaments.find((t: any) => 
+        t.name === 'World Espresso Championships 2025 Milano'
+      );
+      
+      if (!wec2025) {
+        throw new Error('WEC 2025 Milano tournament not found');
+      }
+      
+      // Now fetch the full tournament data by ID
+      const response = await fetch(`/api/tournaments/${wec2025.id}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch tournament data');
