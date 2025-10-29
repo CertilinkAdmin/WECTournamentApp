@@ -353,34 +353,40 @@ const WEC2025Results = () => {
       <div className="max-w-md mx-auto">
         {/* Carousel Navigation Header */}
         <div className="mb-6 flex items-center justify-between gap-4">
-          <Button
-            variant="outline"
+          <button
             onClick={handlePrevious}
             disabled={currentSegment === 0}
             data-testid="button-previous-segment"
-            className="flex-shrink-0 h-12 w-12 md:h-10 md:w-10 text-cinnamon-brown border-cinnamon-brown/30"
+            className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-2 bg-white/90 hover:bg-white border-2 border-cinnamon-brown/30 hover:border-cinnamon-brown rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
           >
-            <ChevronLeft className="h-6 w-6 md:h-5 md:w-5" />
-          </Button>
+            <img 
+              src="/arrow_l.png" 
+              alt="Previous" 
+              className="w-full h-full object-contain filter hover:brightness-110"
+            />
+          </button>
           
-          <div className="text-center flex-1">
-            <p className="text-sm font-medium text-foreground">
+          <div className="text-center flex-1 bg-cinnamon-brown/10 rounded-lg py-3 px-4 border border-cinnamon-brown/20">
+            <p className="text-sm font-bold text-cinnamon-brown">
               Heats {startIndex + 1}-{Math.min(endIndex, sortedMatches.length)} of {sortedMatches.length}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-cinnamon-brown/70 font-medium">
               Segment {currentSegment + 1} of {totalSegments}
             </p>
           </div>
           
-          <Button
-            variant="outline"
+          <button
             onClick={handleNext}
             disabled={currentSegment === totalSegments - 1}
             data-testid="button-next-segment"
-            className="flex-shrink-0 h-12 w-12 md:h-10 md:w-10 text-cinnamon-brown border-cinnamon-brown/30"
+            className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-2 bg-white/90 hover:bg-white border-2 border-cinnamon-brown/30 hover:border-cinnamon-brown rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
           >
-            <ChevronRight className="h-6 w-6 md:h-5 md:w-5" />
-          </Button>
+            <img 
+              src="/arrow_r.png" 
+              alt="Next" 
+              className="w-full h-full object-contain filter hover:brightness-110"
+            />
+          </button>
         </div>
 
         {/* Tournament Heats - 3-Stack Carousel */}
