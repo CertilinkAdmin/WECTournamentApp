@@ -179,6 +179,26 @@ export class BracketGenerator {
             endTime: new Date()
           });
           
+          // Create perfect scores for bye (33 points total)
+          // 3 judges x 11 points each (3 visual + 1 taste + 1 tactile + 1 flavour + 5 overall)
+          const judgeNames = ['Judge 1', 'Judge 2', 'Judge 3'];
+          const sensoryBeverages = ['Cappuccino', 'Espresso', 'Espresso'];
+          
+          for (let i = 0; i < 3; i++) {
+            await storage.submitDetailedScore({
+              matchId: match.id,
+              judgeName: judgeNames[i],
+              leftCupCode: 'BYE',
+              rightCupCode: '—',
+              sensoryBeverage: sensoryBeverages[i],
+              visualLatteArt: 'left',
+              taste: 'left',
+              tactile: 'left',
+              flavour: 'left',
+              overall: 'left'
+            });
+          }
+          
           heatNumber++;
           continue;
         }

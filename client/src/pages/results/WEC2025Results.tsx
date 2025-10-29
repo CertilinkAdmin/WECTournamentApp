@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Trophy, Calendar, Users, Award, X } from 'lucide-react';
+import CompetitorScorecard from '@/components/CompetitorScorecard';
+import SensoryEvaluationCard from '@/components/SensoryEvaluationCard';
 
 interface Tournament {
   id: number;
@@ -47,11 +49,25 @@ interface Score {
   judgeName: string;
 }
 
+interface JudgeDetailedScore {
+  matchId: number;
+  judgeName: string;
+  leftCupCode: string;
+  rightCupCode: string;
+  sensoryBeverage: string;
+  visualLatteArt: "left" | "right";
+  taste: "left" | "right";
+  tactile: "left" | "right";
+  flavour: "left" | "right";
+  overall: "left" | "right";
+}
+
 interface TournamentData {
   tournament: Tournament;
   participants: Participant[];
   matches: Match[];
   scores: Score[];
+  detailedScores: JudgeDetailedScore[];
 }
 
 const WEC2025Results = () => {
@@ -116,6 +132,16 @@ const WEC2025Results = () => {
           { matchId: 1, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 5, judgeName: "Korn" },
           { matchId: 2, judgeId: 1, competitorId: 1, segment: "DIAL_IN", score: 19, judgeName: "Shinsaku" },
           { matchId: 2, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 14, judgeName: "Korn" }
+        ],
+        detailedScores: [
+          // Match 1 - Heat 12
+          { matchId: 1, judgeName: "Jasper", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 1, judgeName: "Korn", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 1, judgeName: "Michelle", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "right", overall: "left" },
+          // Match 2 - Final Heat 31
+          { matchId: 2, judgeName: "Shinsaku", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "right", flavour: "left", overall: "left" },
+          { matchId: 2, judgeName: "Korn", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 2, judgeName: "Jasper", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "right", overall: "right" }
         ]
       };
       setTournamentData(mockData);
@@ -148,6 +174,15 @@ const WEC2025Results = () => {
       const judgeScore = scores.find(s => s.judgeId === judgeId);
       return judgeScore?.judgeName || 'Unknown Judge';
     });
+  };
+
+  const getDetailedScoresForHeat = (matchId: number) => {
+    if (!tournamentData?.detailedScores) return [];
+    return tournamentData.detailedScores.filter(score => score.matchId === matchId);
+  };
+
+  const isByeMatch = (match: Match) => {
+    return !match.competitor2Id || match.competitor2Name === null;
   };
 
   if (loading) {
