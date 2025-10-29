@@ -142,6 +142,15 @@
   background: #0f0f0f;
 }
 
+.results-content-full {
+  flex: 1;
+  padding: 2rem;
+  background: #0f0f0f;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .results-sidebar {

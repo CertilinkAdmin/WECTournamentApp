@@ -1,20 +1,9 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import ThemeToggle from '../../components/ThemeToggle';
 import './ResultsLayout.css';
 
 const ResultsLayout: React.FC = () => {
-  const location = useLocation();
-
-  const navItems = [
-    { path: '/', label: 'Home', icon: '🏠' },
-    { path: '/results', label: 'WEC 2025 Results', icon: '🏆' },
-    { path: '/results/bracket', label: 'Tournament Bracket', icon: '📊' },
-    { path: '/results/leaderboard', label: 'Final Standings', icon: '🥇' },
-    { path: '/results/champion', label: 'Champion', icon: '👑' },
-    { path: '/results/judges', label: 'Judge Scores', icon: '⚖️' }
-  ];
-
   return (
     <div className="results-layout">
       <header className="results-header">
@@ -33,32 +22,9 @@ const ResultsLayout: React.FC = () => {
         </div>
       </header>
 
-      <div className="results-main">
-        <nav className="results-sidebar">
-          <div className="sidebar-header">
-            <h3>Tournament Results</h3>
-            <p>WEC 2025 Milano Championship</p>
-          </div>
-          
-          <ul className="sidebar-nav">
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <Link 
-                  to={item.path} 
-                  className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-                >
-                  <span className="nav-icon">{item.icon}</span>
-                  <span className="nav-label">{item.label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <main className="results-content">
-          <Outlet />
-        </main>
-      </div>
+      <main className="results-content-full">
+        <Outlet />
+      </main>
     </div>
   );
 };
