@@ -394,71 +394,43 @@ const WEC2025Results = () => {
           
           {selectedHeat && (
             <div className="space-y-6">
-              {/* Competitors */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className={selectedHeat.winnerId === selectedHeat.competitor1Id ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">{selectedHeat.competitor1Name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="text-3xl font-bold text-golden">
-                      {getTotalScore(selectedHeat.id, selectedHeat.competitor1Id)}
-                    </div>
-                    <div className="space-y-2">
-                      {getCompetitorScores(selectedHeat.id, selectedHeat.competitor1Id).map((score, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-2 bg-muted rounded-md"
-                        >
-                          <span className="text-sm text-muted-foreground">{score.judgeName}</span>
-                          <span className="font-semibold">{score.score}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className={selectedHeat.winnerId === selectedHeat.competitor2Id ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">{selectedHeat.competitor2Name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="text-3xl font-bold text-golden">
-                      {getTotalScore(selectedHeat.id, selectedHeat.competitor2Id)}
-                    </div>
-                    <div className="space-y-2">
-                      {getCompetitorScores(selectedHeat.id, selectedHeat.competitor2Id).map((score, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-2 bg-muted rounded-md"
-                        >
-                          <span className="text-sm text-muted-foreground">{score.judgeName}</span>
-                          <span className="font-semibold">{score.score}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Sensory Evaluation Card - Overview */}
+              <SensoryEvaluationCard
+                judges={getDetailedScoresForHeat(selectedHeat.id).map(score => ({
+                  judgeName: score.judgeName,
+                  sensoryBeverage: score.sensoryBeverage,
+                  leftCupCode: score.leftCupCode,
+                  rightCupCode: score.rightCupCode,
+                  taste: score.taste,
+                  tactile: score.tactile,
+                  flavour: score.flavour,
+                  overall: score.overall
+                }))}
+                leftCompetitor={selectedHeat.competitor1Name}
+                rightCompetitor={selectedHeat.competitor2Name || "—"}
+              />
               
-              {/* Judges */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Judges
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {getJudgesForHeat(selectedHeat.id).map((judge, index) => (
-                      <Badge key={index} variant="secondary">
-                        {judge}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Individual Competitor Scorecards */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-cinnamon-brown">Individual Competitor Scorecards</h3>
+                
+                <CompetitorScorecard
+                  competitorName={selectedHeat.competitor1Name}
+                  position="left"
+                  judges={getDetailedScoresForHeat(selectedHeat.id)}
+                  isWinner={selectedHeat.winnerId === selectedHeat.competitor1Id}
+                  isBye={isByeMatch(selectedHeat)}
+                />
+                
+                {!isByeMatch(selectedHeat) && (
+                  <CompetitorScorecard
+                    competitorName={selectedHeat.competitor2Name}
+                    position="right"
+                    judges={getDetailedScoresForHeat(selectedHeat.id)}
+                    isWinner={selectedHeat.winnerId === selectedHeat.competitor2Id}
+                  />
+                )}
+              </div>
             </div>
           )}
         </DialogContent>

@@ -181,13 +181,31 @@ export class BracketGenerator {
           
           // Create perfect scores for bye (33 points total)
           // 3 judges x 11 points each (3 visual + 1 taste + 1 tactile + 1 flavour + 5 overall)
+          
+          // Create 3 dummy judge users for bye matches
           const judgeNames = ['Judge 1', 'Judge 2', 'Judge 3'];
           const sensoryBeverages = ['Cappuccino', 'Espresso', 'Espresso'];
           
+          // Get or create judge users
+          const judges: { id: number; name: string }[] = [];
+          for (const judgeName of judgeNames) {
+            let judge = await storage.getUserByEmail(`${judgeName.toLowerCase().replace(' ', '.')}@system.bye`);
+            if (!judge) {
+              judge = await storage.createUser({
+                name: judgeName,
+                email: `${judgeName.toLowerCase().replace(' ', '.')}@system.bye`,
+                role: 'JUDGE'
+              });
+            }
+            judges.push(judge);
+          }
+          
+          // Create detailed scores and aggregate scores for each judge
           for (let i = 0; i < 3; i++) {
+            // Detailed score (for sensory evaluation card)
             await storage.submitDetailedScore({
               matchId: match.id,
-              judgeName: judgeNames[i],
+              judgeName: judges[i].name,
               leftCupCode: 'BYE',
               rightCupCode: '—',
               sensoryBeverage: sensoryBeverages[i],
@@ -196,6 +214,16 @@ export class BracketGenerator {
               tactile: 'left',
               flavour: 'left',
               overall: 'left'
+            });
+            
+            // Aggregate score (11 points per judge for bye)
+            await storage.submitScore({
+              matchId: match.id,
+              judgeId: judges[i].id,
+              competitorId: competitor1.userId,
+              segment: 'DIAL_IN',
+              score: 11,
+              notes: 'Automatic bye advancement - perfect score'
             });
           }
           
