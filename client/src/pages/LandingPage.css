@@ -118,6 +118,37 @@
   min-height: 500px;
 }
 
+/* Single Circle Layout */
+.single-circle-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+
+.single-circle-container .card-container {
+  max-width: 500px;
+  width: 100%;
+}
+
+/* WEC Logo Overlay on Clock */
+.wec-logo-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.wec-logo-image {
+  width: 180px;
+  height: auto;
+  opacity: 0.95;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
 .column-section {
   display: flex;
   align-items: center;

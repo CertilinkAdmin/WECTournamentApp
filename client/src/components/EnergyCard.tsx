@@ -11,6 +11,7 @@ interface EnergyCardProps {
   className?: string;
   featured?: boolean;
   liveBadge?: boolean;
+  showWecLogo?: boolean;
   containerId: string;
   canvasId: string;
 }
@@ -23,6 +24,7 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
   className = '',
   featured = false,
   liveBadge = false,
+  showWecLogo = false,
   containerId,
   canvasId
 }) => {
@@ -151,6 +153,16 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
             <div className="live-badge">LIVE</div>
             <div className="analog-clock-large">
               <AnalogClock />
+              {/* Overlay WEC logo on clock when showWecLogo is true */}
+              {showWecLogo && (
+                <div className="wec-logo-overlay">
+                  <img 
+                    src="/weclogotanwht.png" 
+                    alt="WEC Logo" 
+                    className="wec-logo-image"
+                  />
+                </div>
+              )}
             </div>
           </>
         )}
