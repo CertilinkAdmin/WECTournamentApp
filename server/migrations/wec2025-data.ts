@@ -27,6 +27,7 @@ const WEC_2025_DATA = {
   },
   
   competitors: [
+    // Competition competitors (Heats 12-31)
     { name: "Stevo", code: "M7", seed: 1 },
     { name: "Edwin", code: "K9", seed: 2 },
     { name: "Kirill", code: "F5", seed: 3 },
@@ -45,21 +46,18 @@ const WEC_2025_DATA = {
     { name: "Hojat", code: "K5", seed: 16 },
     { name: "Bill", code: "M1", seed: 17 },
     { name: "Engi", code: "E3", seed: 18 },
-    { name: "Hojat2", code: "K5", seed: 19 }, // Different name to avoid email conflict
-    { name: "Aga2", code: "F3", seed: 20 }, // Different name to avoid email conflict
-    { name: "Engi2", code: "G8", seed: 21 }, // Different name to avoid email conflict
-    { name: "Jae2", code: "F4", seed: 22 }, // Different name to avoid email conflict
-    { name: "Aga3", code: "L2", seed: 23 }, // Different name to avoid email conflict
-    { name: "Artur2", code: "Z7", seed: 24 }, // Different name to avoid email conflict
-    { name: "Christos2", code: "N4", seed: 25 }, // Different name to avoid email conflict
-    { name: "Jae3", code: "K6", seed: 26 }, // Different name to avoid email conflict
-    { name: "Aga4", code: "99", seed: 27 }, // Different name to avoid email conflict
-    { name: "Jae4", code: "22", seed: 28 }, // Different name to avoid email conflict
-    // BYE competitors (received 33 points)
-    { name: "Christos3", code: "BYE1", seed: 29 },
-    { name: "Daniele", code: "BYE2", seed: 30 },
-    { name: "Bill2", code: "BYE3", seed: 31 },
-    { name: "Engi3", code: "BYE4", seed: 32 }
+    // BYE competitors from Round 1 (Heats 1-11)
+    { name: "Ronny Chalhoub", code: "BYE1", seed: 19 },
+    { name: "David Yescas-Berg", code: "BYE2", seed: 20 },
+    { name: "Keita Osawa", code: "BYE3", seed: 21 },
+    { name: "Alge Mohamed", code: "BYE4", seed: 22 },
+    { name: "Julian Yip", code: "BYE5", seed: 23 },
+    { name: "Artur Kusnierz", code: "BYE6", seed: 24 },
+    { name: "Hojat Mousavi", code: "BYE7", seed: 25 },
+    { name: "Sebastian Hernandez", code: "BYE8", seed: 26 },
+    { name: "Fraz Nurdin", code: "BYE9", seed: 27 },
+    { name: "Christie Sidikat", code: "BYE10", seed: 28 },
+    { name: "Danielle Misa", code: "BYE11", seed: 29 }
   ],
 
   judges: [
@@ -74,18 +72,18 @@ const WEC_2025_DATA = {
   ],
 
   heats: [
-    // BYE heats (heats 1-11) - competitors received 33 points
-    { heatNumber: 1, round: 1, competitor1: "Christos", competitor2: "BYE", winner: "Christos", points1: 33, points2: 0 },
-    { heatNumber: 2, round: 1, competitor1: "Daniele", competitor2: "BYE", winner: "Daniele", points1: 33, points2: 0 },
-    { heatNumber: 3, round: 1, competitor1: "Bill", competitor2: "BYE", winner: "Bill", points1: 33, points2: 0 },
-    { heatNumber: 4, round: 1, competitor1: "Engi", competitor2: "BYE", winner: "Engi", points1: 33, points2: 0 },
-    { heatNumber: 5, round: 1, competitor1: "Stevo", competitor2: "BYE", winner: "Stevo", points1: 33, points2: 0 },
-    { heatNumber: 6, round: 1, competitor1: "Edwin", competitor2: "BYE", winner: "Edwin", points1: 33, points2: 0 },
-    { heatNumber: 7, round: 1, competitor1: "Kirill", competitor2: "BYE", winner: "Kirill", points1: 33, points2: 0 },
-    { heatNumber: 8, round: 1, competitor1: "Anja", competitor2: "BYE", winner: "Anja", points1: 33, points2: 0 },
-    { heatNumber: 9, round: 1, competitor1: "Jae", competitor2: "BYE", winner: "Jae", points1: 33, points2: 0 },
-    { heatNumber: 10, round: 1, competitor1: "Carlos", competitor2: "BYE", winner: "Carlos", points1: 33, points2: 0 },
-    { heatNumber: 11, round: 1, competitor1: "Penny", competitor2: "BYE", winner: "Penny", points1: 33, points2: 0 },
+    // BYE heats (heats 1-11) - competitors received 33 points (Round 1)
+    { heatNumber: 1, round: 1, competitor1: "Ronny Chalhoub", competitor2: "BYE", winner: "Ronny Chalhoub", points1: 33, points2: 0 },
+    { heatNumber: 2, round: 1, competitor1: "David Yescas-Berg", competitor2: "BYE", winner: "David Yescas-Berg", points1: 33, points2: 0 },
+    { heatNumber: 3, round: 1, competitor1: "Keita Osawa", competitor2: "BYE", winner: "Keita Osawa", points1: 33, points2: 0 },
+    { heatNumber: 4, round: 1, competitor1: "Alge Mohamed", competitor2: "BYE", winner: "Alge Mohamed", points1: 33, points2: 0 },
+    { heatNumber: 5, round: 1, competitor1: "Julian Yip", competitor2: "BYE", winner: "Julian Yip", points1: 33, points2: 0 },
+    { heatNumber: 6, round: 1, competitor1: "Artur Kusnierz", competitor2: "BYE", winner: "Artur Kusnierz", points1: 33, points2: 0 },
+    { heatNumber: 7, round: 1, competitor1: "Hojat Mousavi", competitor2: "BYE", winner: "Hojat Mousavi", points1: 33, points2: 0 },
+    { heatNumber: 8, round: 1, competitor1: "Sebastian Hernandez", competitor2: "BYE", winner: "Sebastian Hernandez", points1: 33, points2: 0 },
+    { heatNumber: 9, round: 1, competitor1: "Fraz Nurdin", competitor2: "BYE", winner: "Fraz Nurdin", points1: 33, points2: 0 },
+    { heatNumber: 10, round: 1, competitor1: "Christie Sidikat", competitor2: "BYE", winner: "Christie Sidikat", points1: 33, points2: 0 },
+    { heatNumber: 11, round: 1, competitor1: "Danielle Misa", competitor2: "BYE", winner: "Danielle Misa", points1: 33, points2: 0 },
     
     // Actual heats with judge scores
     { 
