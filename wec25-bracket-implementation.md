@@ -7,14 +7,14 @@ I've successfully implemented the WEC25 tournament bracket with the exact compet
 ### 🎯 **WEC25 Competitors (22 Total):**
 
 #### **Round 1 Competitors:**
-1. **Penny Chalkiadaki** - Heat 1, Station A vs BUY
-2. **Erlend Wessel-Berg** - Heat 2, Station B vs BUY  
-3. **Felix Ouma** - Heat 3, Station C vs BUY
-4. **Aga Muhammed** - Heat 4, Station A vs BUY
-5. **Julian Teo** - Heat 5, Station B vs BUY
-6. **Artur Kosteniuk** - Heat 6, Station C vs BUY
-7. **Hojat Mousavi** - Heat 7, Station A vs BUY
-8. **Sebastian Hernandez** - Heat 8, Station B vs BUY
+1. **Penny Chalkiadaki** - Heat 1, Station A vs BYE
+2. **Erlend Wessel-Berg** - Heat 2, Station B vs BYE  
+3. **Felix Ouma** - Heat 3, Station C vs BYE
+4. **Aga Muhammed** - Heat 4, Station A vs BYE
+5. **Julian Teo** - Heat 5, Station B vs BYE
+6. **Artur Kosteniuk** - Heat 6, Station C vs BYE
+7. **Hojat Mousavi** - Heat 7, Station A vs BYE
+8. **Sebastian Hernandez** - Heat 8, Station B vs BYE
 9. **Faiz Nordin** - Heat 9, Station C vs Cristian Fernández
 10. **Cristian Fernández** - Heat 9, Station C vs Faiz Nordin
 11. **Christos Sotiros** - Heat 10, Station A vs Daniele Ricci
@@ -59,7 +59,7 @@ I've successfully implemented the WEC25 tournament bracket with the exact compet
 #### **1. Exact WEC25 Data:**
 - ✅ **All 22 Competitors**: Exact names from WEC25 bracket
 - ✅ **Correct Positions**: Matches exact heat and station assignments
-- ✅ **Bye Handling**: Proper BUY entries for first-round byes
+- ✅ **Bye Handling**: Proper BYE entries for first-round byes
 - ✅ **Station Distribution**: Accurate station assignments (A, B, C)
 
 #### **2. Drag & Drop Interface:**
