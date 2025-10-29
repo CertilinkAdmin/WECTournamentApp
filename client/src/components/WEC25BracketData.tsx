@@ -49,9 +49,9 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 7, 
     station: "A", 
-    competitor1: "BUY", 
-    competitor2: "BUY", 
-    winner: "BUY", 
+    competitor1: "BYE", 
+    competitor2: "BYE", 
+    winner: "BYE", 
     score1: 0, 
     score2: 0 
   },
@@ -59,7 +59,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     heatNumber: 8, 
     station: "B", 
     competitor1: "Sebastian Hernandez", 
-    competitor2: "BUY", 
+    competitor2: "BYE", 
     winner: "Sebastian Hernandez", 
     score1: 0, 
     score2: 0 
@@ -68,7 +68,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     heatNumber: 9, 
     station: "C", 
     competitor1: "Faiz Nordin", 
-    competitor2: "BUY", 
+    competitor2: "BYE", 
     winner: "Faiz Nordin", 
     score1: 0, 
     score2: 0 
@@ -77,7 +77,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     heatNumber: 10, 
     station: "A", 
     competitor1: "Christos Sotiros", 
-    competitor2: "BUY", 
+    competitor2: "BYE", 
     winner: "Christos Sotiros", 
     score1: 0, 
     score2: 0 
@@ -85,7 +85,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 11, 
     station: "B", 
-    competitor1: "BUY", 
+    competitor1: "BYE", 
     competitor2: "Daniele Ricci", 
     winner: "Daniele Ricci", 
     score1: 0, 
@@ -233,7 +233,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     heatNumber: 15, 
     station: "C", 
     competitor1: "Bill Nguyen", 
-    competitor2: "BUY", 
+    competitor2: "BYE", 
     winner: "Bill Nguyen", 
     score1: 0, 
     score2: 0 
@@ -242,7 +242,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     heatNumber: 16, 
     station: "A", 
     competitor1: "Engi Pan", 
-    competitor2: "BUY", 
+    competitor2: "BYE", 
     winner: "Engi Pan", 
     score1: 0, 
     score2: 0 
