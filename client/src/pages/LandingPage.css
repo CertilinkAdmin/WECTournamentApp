@@ -143,7 +143,7 @@
 }
 
 .wec-logo-image {
-  width: 180px;
+  width: 280px;
   height: auto;
   opacity: 0.95;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
@@ -234,6 +234,7 @@
   top: 0;
   left: 0;
   transform: none;
+  animation: clockIlluminate 3s ease-in-out infinite;
 }
 
 .analog-clock .clock {
@@ -255,10 +256,29 @@
   transition: all ease 0.2s;
 }
 
-/* Large clock for live card */
+/* Large clock for live card - INCREASED SIZE */
 .analog-clock-large .analog-clock .clock {
-  min-height: 180px;
-  min-width: 180px;
+  min-height: 350px;
+  min-width: 350px;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 0 20px rgba(255, 255, 255, 0.3),
+    0 0 40px rgba(255, 190, 120, 0.4),
+    0 0 60px rgba(255, 107, 53, 0.3),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes clockIlluminate {
+  0%, 100% {
+    filter: drop-shadow(0 0 15px rgba(255, 190, 120, 0.6))
+            drop-shadow(0 0 30px rgba(255, 107, 53, 0.4))
+            drop-shadow(0 0 45px rgba(255, 107, 53, 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 25px rgba(255, 190, 120, 0.8))
+            drop-shadow(0 0 45px rgba(255, 107, 53, 0.6))
+            drop-shadow(0 0 65px rgba(255, 107, 53, 0.4));
+  }
 }
 
 .analog-clock .clock:before {
@@ -322,32 +342,38 @@
   border-radius: 1px;
 }
 
-/* Larger hands for large clock */
+/* Larger hands for large clock - SCALED UP */
 .analog-clock-large .analog-clock .hour {
-  height: 90px;
-  width: 90px;
+  height: 175px;
+  width: 175px;
 }
 
 .analog-clock-large .analog-clock .hour:before {
-  width: 4px;
+  width: 6px;
 }
 
 .analog-clock-large .analog-clock .min {
-  height: 120px;
-  width: 120px;
+  height: 235px;
+  width: 235px;
 }
 
 .analog-clock-large .analog-clock .min:before {
-  width: 3px;
+  width: 5px;
 }
 
 .analog-clock-large .analog-clock .sec {
-  height: 135px;
-  width: 135px;
+  height: 265px;
+  width: 265px;
 }
 
 .analog-clock-large .analog-clock .sec:before {
-  width: 2px;
+  width: 3px;
+}
+
+/* Larger center dot for large clock */
+.analog-clock-large .analog-clock .clock:before {
+  height: 1rem;
+  width: 1rem;
 }
 
 /* Landing Buttons */
@@ -358,10 +384,10 @@
   justify-content: center;
   width: 300px;
   height: 300px;
-  background: rgba(100, 50, 20, 0.20);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 190, 120, 0.10);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
   border-radius: 50% !important;
   padding: 2rem;
   text-decoration: none;
@@ -376,7 +402,15 @@
   min-height: 300px;
   max-width: 300px;
   max-height: 300px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3), 0 0 0 1px rgba(255, 190, 120, 0.10) inset;
+  box-shadow: none;
+}
+
+/* Hide background circle for single-circle (live card) */
+.landing-button.single-circle {
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  box-shadow: none;
 }
 
 /* Text positioning below the overlay */
