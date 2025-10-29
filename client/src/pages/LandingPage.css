@@ -145,6 +145,9 @@
   transform: translate(-50%, -50%);
   z-index: 8;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wec-logo-image {
@@ -153,6 +156,8 @@
   opacity: 0.5;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
   display: block;
+  margin: 0;
+  padding: 0;
 }
 
 .column-section {
@@ -167,12 +172,8 @@
   position: relative;
   width: 400px;
   height: 400px;
-  transform-style: preserve-3d;
-  perspective: 1000px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   margin: 0 auto;
+  /* Removed flexbox properties that can interfere with absolute positioning */
 }
 
 /* Energy Canvas */
@@ -223,6 +224,9 @@
   transform: translate(-50%, -50%);
   z-index: 3;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Large Analog Clock for Live Card */
@@ -241,11 +245,12 @@
 }
 
 .analog-clock-large .analog-clock {
-  position: relative;
-  top: 0;
-  left: 0;
+  position: static;
   transform: none;
   animation: clockIlluminate 3s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .analog-clock .clock {
