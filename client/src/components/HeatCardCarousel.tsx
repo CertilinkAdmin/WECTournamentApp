@@ -125,121 +125,111 @@ const HeatCardCarousel: React.FC<HeatCardCarouselProps> = ({
     setSelectedCompetitor(null);
   };
 
+  const currentItem = items[currentIndex];
+  const isCurrentHeat = currentItem?.type === 'heat';
+  
+  // Get total number of heat items (exclude heat info card)
+  const totalHeats = items.filter(item => item.type === 'competitor').length;
+  const currentHeatIndex = isCurrentHeat ? 0 : currentIndex;
+
   return (
     <div className="heat-carousel-container">
-      <div className="heat-carousel-slide">
-        {items.map((item, index) => {
-          const isActive = index === currentIndex;
-          const isHeat = item.type === 'heat';
-          const isCompetitor = item.type === 'competitor';
+      {/* Horizontal Heat Navigation Card */}
+      {isCurrentHeat && currentItem && (
+        <div className="heat-navigation-card" onClick={() => openModal(currentItem.data)}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={(e) => { e.stopPropagation(); prevSlide(); }}
+            className="heat-nav-btn prev"
+            data-testid="button-heat-previous"
+          >
+            <span className="nav-arrow">←</span>
+            <span className="nav-text">Previous</span>
+          </Button>
 
-          return (
-            <div
-              key={item.id}
-              className={`heat-carousel-item ${isActive ? 'active' : ''} ${isHeat ? 'heat-item' : 'competitor-item'}`}
-              style={{
-                backgroundImage: getBackgroundImage(item.type, item.data),
-                zIndex: isActive ? 10 : 5 - Math.abs(index - currentIndex)
-              }}
-              onClick={() => isHeat && openModal(item.data)}
-            >
-              <div className="heat-carousel-content">
-                {isHeat ? (
-                  // Heat Information Card
-                  <div className="heat-info">
-                    <div className="heat-header">
-                      <div className="heat-number">Heat {item.data.heatNumber}</div>
-                      <Badge className={`${getStationColor(item.data.station)} text-white`}>
-                        Station {item.data.station}
-                      </Badge>
-                    </div>
+          <div className="heat-navigation-content">
+            <div className="heat-navigation-title" data-testid="text-heat-number">
+              Heat {currentItem.data.heatNumber}
+            </div>
+            <div className="heat-navigation-subtitle" data-testid="text-heat-total">
+              of {totalHeats}
+            </div>
+            <div className="heat-navigation-matchup" data-testid="text-heat-matchup">
+              {competitors.length >= 2 ? `${competitors[0].name} vs ${competitors[1].name}` : 'BYE vs BYE'}
+            </div>
+          </div>
 
-                    <div className="heat-details">
-                      <div className="heat-round">{item.data.round}</div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={(e) => { e.stopPropagation(); nextSlide(); }}
+            className="heat-nav-btn next"
+            data-testid="button-heat-next"
+          >
+            <span className="nav-text">Next</span>
+            <span className="nav-arrow">→</span>
+          </Button>
+        </div>
+      )}
 
-                      {item.data.winner && (
-                        <div className="heat-winner">
-                          <Trophy className="h-6 w-6 text-yellow-400" />
-                          <span>Winner: {item.data.winner}</span>
-                        </div>
-                      )}
+      {/* Competitor Cards */}
+      {!isCurrentHeat && currentItem && (
+        <div className="competitor-display-card">
+          <div className="competitor-card-content"
+               style={{ backgroundImage: getBackgroundImage('competitor', currentItem.data) }}>
+            <div className="competitor-info">
+              <div className="competitor-header">
+                {currentItem.data.isWinner && (
+                  <Badge className="bg-yellow-500 text-black mb-2">
+                    <Trophy className="h-3 w-3 mr-1" />
+                    Winner
+                  </Badge>
+                )}
+                <div className="competitor-name">{currentItem.data.name}</div>
+              </div>
 
-                      {item.data.leftScore !== undefined && item.data.rightScore !== undefined && (
-                        <div className="heat-scores">
-                          <div className="score-item">
-                            <span className="cup-code">{item.data.leftCupCode}</span>
-                            <span className="score">{item.data.leftScore}</span>
-                          </div>
-                          <div className="vs">VS</div>
-                          <div className="score-item">
-                            <span className="score">{item.data.rightScore}</span>
-                            <span className="cup-code">{item.data.rightCupCode}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {item.data.judges && item.data.judges.length > 0 && (
-                        <div className="heat-judges">
-                          <Users className="h-4 w-4" />
-                          <span>{item.data.judges.length} Judges</span>
-                        </div>
-                      )}
-                    </div>
+              <div className="competitor-details">
+                {currentItem.data.cupCode && (
+                  <div className="cup-code-display">
+                    <Coffee className="h-4 w-4" />
+                    <span>Cup: {currentItem.data.cupCode}</span>
                   </div>
-                ) : (
-                  // Competitor Card
-                  <div className="competitor-info">
-                    <div className="competitor-header">
-                      {item.data.isWinner && (
-                        <Badge className="bg-yellow-500 text-black mb-2">
-                          <Trophy className="h-3 w-3 mr-1" />
-                          Winner
-                        </Badge>
-                      )}
-                      <div className="competitor-name">{item.data.name}</div>
-                    </div>
+                )}
 
-                    <div className="competitor-details">
-                      {item.data.cupCode && (
-                        <div className="cup-code-display">
-                          <Coffee className="h-4 w-4" />
-                          <span>Cup: {item.data.cupCode}</span>
-                        </div>
-                      )}
-
-                      {item.data.score !== undefined && (
-                        <div className="competitor-score">
-                          <Award className="h-4 w-4" />
-                          <span>Score: {item.data.score}</span>
-                        </div>
-                      )}
-                    </div>
+                {currentItem.data.score !== undefined && (
+                  <div className="competitor-score">
+                    <Award className="h-4 w-4" />
+                    <span>Score: {currentItem.data.score}</span>
                   </div>
                 )}
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      <div className="heat-carousel-buttons">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={prevSlide}
-          className="carousel-btn prev-btn"
-        >
-          ◁
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={nextSlide}
-          className="carousel-btn next-btn"
-        >
-          ▷
-        </Button>
-      </div>
+          {/* Navigation buttons for competitor view */}
+          <div className="competitor-nav-buttons">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={prevSlide}
+              className="carousel-btn prev-btn"
+              data-testid="button-competitor-previous"
+            >
+              ◁
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={nextSlide}
+              className="carousel-btn next-btn"
+              data-testid="button-competitor-next"
+            >
+              ▷
+            </Button>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && selectedHeat && (
         <div className="heat-modal-overlay" onClick={closeModal}>
