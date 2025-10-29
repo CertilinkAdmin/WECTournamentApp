@@ -85,174 +85,61 @@ const WEC2025Results = () => {
   const fetchTournamentData = async () => {
     try {
       setLoading(true);
-      // For now, use mock data since the API has issues
-      const mockData: TournamentData = {
+      
+      // Fetch actual tournament data from API (Tournament ID 4: WEC 2025 Milano)
+      const response = await fetch('/api/tournaments/4');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch tournament data');
+      }
+      
+      const data = await response.json();
+      
+      // Transform the data to match our interface
+      const transformedData: TournamentData = {
         tournament: {
-          id: 4,
-          name: "World Espresso Championships 2025 Milano",
-          status: "COMPLETED",
-          startDate: "2025-01-15T08:00:00.000Z",
-          endDate: "2025-01-17T18:00:00.000Z",
-          totalRounds: 5,
-          currentRound: 5
+          id: data.tournament.id,
+          name: data.tournament.name,
+          status: data.tournament.status,
+          startDate: data.tournament.startDate,
+          endDate: data.tournament.endDate,
+          totalRounds: data.tournament.totalRounds,
+          currentRound: data.tournament.currentRound
         },
-        participants: [
-          { id: 1, seed: 1, finalRank: 1, userId: 1, name: "Aga", email: "aga@wec2025.com" },
-          { id: 2, seed: 2, finalRank: 2, userId: 2, name: "Jae", email: "jae@wec2025.com" },
-          { id: 3, seed: 3, finalRank: 3, userId: 3, name: "Stevo", email: "stevo@wec2025.com" }
-        ],
-        matches: [
-          {
-            id: 1,
-            round: 1,
-            heatNumber: 1,
-            status: "DONE",
-            startTime: "2025-01-15T08:00:00.000Z",
-            endTime: "2025-01-15T08:15:00.000Z",
-            competitor1Id: 1,
-            competitor2Id: 2,
-            winnerId: 1,
-            competitor1Name: "Alice",
-            competitor2Name: "Bob"
-          },
-          {
-            id: 2,
-            round: 1,
-            heatNumber: 2,
-            status: "DONE",
-            startTime: "2025-01-15T08:20:00.000Z",
-            endTime: "2025-01-15T08:35:00.000Z",
-            competitor1Id: 3,
-            competitor2Id: 4,
-            winnerId: 3,
-            competitor1Name: "Charlie",
-            competitor2Name: "Diana"
-          },
-          {
-            id: 3,
-            round: 1,
-            heatNumber: 3,
-            status: "DONE",
-            startTime: "2025-01-15T08:40:00.000Z",
-            endTime: "2025-01-15T08:55:00.000Z",
-            competitor1Id: 5,
-            competitor2Id: 6,
-            winnerId: 5,
-            competitor1Name: "Emma",
-            competitor2Name: "Frank"
-          },
-          {
-            id: 4,
-            round: 1,
-            heatNumber: 4,
-            status: "DONE",
-            startTime: "2025-01-15T09:00:00.000Z",
-            endTime: "2025-01-15T09:15:00.000Z",
-            competitor1Id: 7,
-            competitor2Id: 8,
-            winnerId: 7,
-            competitor1Name: "Grace",
-            competitor2Name: "Henry"
-          },
-          {
-            id: 5,
-            round: 1,
-            heatNumber: 5,
-            status: "DONE",
-            startTime: "2025-01-15T09:20:00.000Z",
-            endTime: "2025-01-15T09:35:00.000Z",
-            competitor1Id: 9,
-            competitor2Id: 10,
-            winnerId: 9,
-            competitor1Name: "Ivan",
-            competitor2Name: "Julia"
-          },
-          {
-            id: 6,
-            round: 2,
-            heatNumber: 12,
-            status: "DONE",
-            startTime: "2025-01-15T10:00:00.000Z",
-            endTime: "2025-01-15T10:15:00.000Z",
-            competitor1Id: 1,
-            competitor2Id: 2,
-            winnerId: 1,
-            competitor1Name: "Stevo",
-            competitor2Name: "Edwin"
-          },
-          {
-            id: 7,
-            round: 5,
-            heatNumber: 31,
-            status: "DONE",
-            startTime: "2025-01-17T16:00:00.000Z",
-            endTime: "2025-01-17T16:15:00.000Z",
-            competitor1Id: 1,
-            competitor2Id: 2,
-            winnerId: 1,
-            competitor1Name: "Aga",
-            competitor2Name: "Jae"
-          }
-        ],
-        scores: [
-          { matchId: 1, judgeId: 1, competitorId: 1, segment: "DIAL_IN", score: 10, judgeName: "Jasper" },
-          { matchId: 1, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 8, judgeName: "Korn" },
-          { matchId: 1, judgeId: 3, competitorId: 1, segment: "DIAL_IN", score: 9, judgeName: "Michelle" },
-          { matchId: 2, judgeId: 1, competitorId: 3, segment: "DIAL_IN", score: 11, judgeName: "Jasper" },
-          { matchId: 2, judgeId: 2, competitorId: 4, segment: "DIAL_IN", score: 7, judgeName: "Korn" },
-          { matchId: 2, judgeId: 3, competitorId: 3, segment: "DIAL_IN", score: 10, judgeName: "Michelle" },
-          { matchId: 3, judgeId: 1, competitorId: 5, segment: "DIAL_IN", score: 9, judgeName: "Jasper" },
-          { matchId: 3, judgeId: 2, competitorId: 6, segment: "DIAL_IN", score: 6, judgeName: "Korn" },
-          { matchId: 3, judgeId: 3, competitorId: 5, segment: "DIAL_IN", score: 8, judgeName: "Michelle" },
-          { matchId: 4, judgeId: 1, competitorId: 7, segment: "DIAL_IN", score: 10, judgeName: "Jasper" },
-          { matchId: 4, judgeId: 2, competitorId: 8, segment: "DIAL_IN", score: 5, judgeName: "Korn" },
-          { matchId: 4, judgeId: 3, competitorId: 7, segment: "DIAL_IN", score: 11, judgeName: "Michelle" },
-          { matchId: 5, judgeId: 1, competitorId: 9, segment: "DIAL_IN", score: 9, judgeName: "Jasper" },
-          { matchId: 5, judgeId: 2, competitorId: 10, segment: "DIAL_IN", score: 7, judgeName: "Korn" },
-          { matchId: 5, judgeId: 3, competitorId: 9, segment: "DIAL_IN", score: 10, judgeName: "Michelle" },
-          { matchId: 6, judgeId: 1, competitorId: 1, segment: "DIAL_IN", score: 28, judgeName: "Jasper" },
-          { matchId: 6, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 5, judgeName: "Korn" },
-          { matchId: 7, judgeId: 1, competitorId: 1, segment: "DIAL_IN", score: 19, judgeName: "Shinsaku" },
-          { matchId: 7, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 14, judgeName: "Korn" }
-        ],
-        detailedScores: [
-          // Match 1 - Heat 1
-          { matchId: 1, judgeName: "Jasper", leftCupCode: "A01", rightCupCode: "B01", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 1, judgeName: "Korn", leftCupCode: "A01", rightCupCode: "B01", sensoryBeverage: "Espresso", visualLatteArt: "right", taste: "left", tactile: "right", flavour: "left", overall: "left" },
-          { matchId: 1, judgeName: "Michelle", leftCupCode: "A01", rightCupCode: "B01", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          // Match 2 - Heat 2
-          { matchId: 2, judgeName: "Jasper", leftCupCode: "A02", rightCupCode: "B02", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 2, judgeName: "Korn", leftCupCode: "A02", rightCupCode: "B02", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 2, judgeName: "Michelle", leftCupCode: "A02", rightCupCode: "B02", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          // Match 3 - Heat 3
-          { matchId: 3, judgeName: "Jasper", leftCupCode: "A03", rightCupCode: "B03", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 3, judgeName: "Korn", leftCupCode: "A03", rightCupCode: "B03", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "right", flavour: "right", overall: "left" },
-          { matchId: 3, judgeName: "Michelle", leftCupCode: "A03", rightCupCode: "B03", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          // Match 4 - Heat 4
-          { matchId: 4, judgeName: "Jasper", leftCupCode: "A04", rightCupCode: "B04", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 4, judgeName: "Korn", leftCupCode: "A04", rightCupCode: "B04", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 4, judgeName: "Michelle", leftCupCode: "A04", rightCupCode: "B04", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          // Match 5 - Heat 5
-          { matchId: 5, judgeName: "Jasper", leftCupCode: "A05", rightCupCode: "B05", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 5, judgeName: "Korn", leftCupCode: "A05", rightCupCode: "B05", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "right", overall: "left" },
-          { matchId: 5, judgeName: "Michelle", leftCupCode: "A05", rightCupCode: "B05", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          // Match 6 - Heat 12
-          { matchId: 6, judgeName: "Jasper", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 6, judgeName: "Korn", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 6, judgeName: "Michelle", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "right", overall: "left" },
-          // Match 7 - Final Heat 31
-          { matchId: 7, judgeName: "Shinsaku", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "right", flavour: "left", overall: "left" },
-          { matchId: 7, judgeName: "Korn", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 7, judgeName: "Jasper", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "right", overall: "right" }
-        ]
+        participants: data.participants.map((p: any) => ({
+          id: p.id,
+          seed: p.seed,
+          finalRank: p.finalRank,
+          userId: p.userId,
+          name: p.name || '',
+          email: p.email || ''
+        })),
+        matches: data.matches.map((m: any) => ({
+          id: m.id,
+          round: m.round,
+          heatNumber: m.heatNumber,
+          status: m.status,
+          startTime: m.startTime,
+          endTime: m.endTime,
+          competitor1Id: m.competitor1Id,
+          competitor2Id: m.competitor2Id,
+          winnerId: m.winnerId,
+          competitor1Name: m.competitor1Name || '',
+          competitor2Name: m.competitor2Name || ''
+        })),
+        scores: data.scores || [],
+        detailedScores: data.detailedScores || []
       };
-      setTournamentData(mockData);
+      
+      setTournamentData(transformedData);
+      setLoading(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
+      console.error('Error fetching tournament data:', err);
+      setError('Failed to load tournament data');
       setLoading(false);
     }
   };
+
 
   const getHeatScores = (matchId: number) => {
     if (!tournamentData?.scores) return [];

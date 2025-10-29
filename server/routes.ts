@@ -81,13 +81,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tournaments/:id", async (req, res) => {
     try {
-      console.log('Fetching tournament with ID:', req.params.id);
-      const tournament = await storage.getTournament(parseInt(req.params.id));
-      console.log('Tournament result:', tournament);
+      const tournamentId = parseInt(req.params.id);
+      console.log('Fetching tournament with ID:', tournamentId);
+      
+      const tournament = await storage.getTournament(tournamentId);
       if (!tournament) {
         return res.status(404).json({ error: "Tournament not found" });
       }
-      res.json(tournament);
+      
+      // Get participants with user info
+      const participants = await storage.getTournamentParticipants(tournamentId);
+      const allUsers = await storage.getAllUsers();
+      const participantsWithInfo = participants.map((p) => {
+        const user = allUsers.find(u => u.id === p.userId);
+        return {
+          id: p.id,
+          seed: p.seed,
+          finalRank: p.finalRank,
+          userId: p.userId,
+          name: user?.name || '',
+          email: user?.email || ''
+        };
+      });
+      
+      // Get matches with competitor names
+      const matches = await storage.getTournamentMatches(tournamentId);
+      const matchesWithNames = matches.map((m) => {
+        let competitor1Name = '';
+        let competitor2Name = '';
+        
+        if (m.competitor1Id) {
+          const comp1 = allUsers.find(u => u.id === m.competitor1Id);
+          competitor1Name = comp1?.name || '';
+        }
+        
+        if (m.competitor2Id) {
+          const comp2 = allUsers.find(u => u.id === m.competitor2Id);
+          competitor2Name = comp2?.name || '';
+        }
+        
+        return {
+          ...m,
+          competitor1Name,
+          competitor2Name
+        };
+      });
+      
+      // Get scores with judge names for all matches
+      const scoresPromises = matches.map(m => storage.getMatchScores(m.id));
+      const scoresArrays = await Promise.all(scoresPromises);
+      const allMatchScores = scoresArrays.flat();
+      const scoresWithJudgeNames = allMatchScores.map((s) => {
+        const judge = allUsers.find(u => u.id === s.judgeId);
+        return {
+          ...s,
+          judgeName: judge?.name || 'Unknown Judge'
+        };
+      });
+      
+      // Get detailed scores for all matches
+      const detailedScoresPromises = matches.map(m => storage.getMatchDetailedScores(m.id));
+      const detailedScoresArrays = await Promise.all(detailedScoresPromises);
+      const detailedScoresForTournament = detailedScoresArrays.flat();
+      
+      res.json({
+        tournament,
+        participants: participantsWithInfo,
+        matches: matchesWithNames,
+        scores: scoresWithJudgeNames,
+        detailedScores: detailedScoresForTournament
+      });
     } catch (error: any) {
       console.error('Error in getTournament:', error);
       res.status(500).json({ error: "Internal server error", details: error.message });

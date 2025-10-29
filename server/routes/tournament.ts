@@ -8,6 +8,7 @@ import {
   matches, 
   heatJudges, 
   heatScores,
+  judgeDetailedScores,
   users 
 } from '../../shared/schema';
 
@@ -29,28 +30,85 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Tournament not found' });
     }
 
-    // Get participants
-    const participants = await db
-      .select()
+    // Get participants with user info
+    const participantsData = await db
+      .select({
+        id: tournamentParticipants.id,
+        seed: tournamentParticipants.seed,
+        finalRank: tournamentParticipants.finalRank,
+        userId: tournamentParticipants.userId,
+        name: users.name,
+        email: users.email
+      })
       .from(tournamentParticipants)
+      .leftJoin(users, eq(tournamentParticipants.userId, users.id))
       .where(eq(tournamentParticipants.tournamentId, tournamentId));
 
-    // Get matches
+    // Get matches with competitor names
     const matchesData = await db
       .select()
       .from(matches)
       .where(eq(matches.tournamentId, tournamentId));
+    
+    // Fetch competitor names for each match
+    const matchesWithNames = await Promise.all(
+      matchesData.map(async (match) => {
+        let competitor1Name = '';
+        let competitor2Name = '';
+        
+        if (match.competitor1Id) {
+          const comp1 = await db.select({ name: users.name })
+            .from(users)
+            .where(eq(users.id, match.competitor1Id))
+            .limit(1);
+          competitor1Name = comp1[0]?.name || '';
+        }
+        
+        if (match.competitor2Id) {
+          const comp2 = await db.select({ name: users.name })
+            .from(users)
+            .where(eq(users.id, match.competitor2Id))
+            .limit(1);
+          competitor2Name = comp2[0]?.name || '';
+        }
+        
+        return {
+          ...match,
+          competitor1Name,
+          competitor2Name
+        };
+      })
+    );
 
-    // Get scores
-    const scoresData = await db
-      .select()
-      .from(heatScores);
+    // Get scores for this tournament's matches
+    const matchIds = matchesData.map(m => m.id);
+    const scoresData = matchIds.length > 0
+      ? await db
+          .select({
+            matchId: heatScores.matchId,
+            judgeId: heatScores.judgeId,
+            competitorId: heatScores.competitorId,
+            segment: heatScores.segment,
+            score: heatScores.score,
+            judgeName: users.name
+          })
+          .from(heatScores)
+          .leftJoin(users, eq(heatScores.judgeId, users.id))
+      : [];
+
+    // Get detailed scores for this tournament's matches  
+    const detailedScoresData = matchIds.length > 0
+      ? await db
+          .select()
+          .from(judgeDetailedScores)
+      : [];
 
     res.json({
       tournament: tournament[0],
-      participants: participants || [],
-      matches: matchesData || [],
-      scores: scoresData || []
+      participants: participantsData || [],
+      matches: matchesWithNames || [],
+      scores: scoresData || [],
+      detailedScores: detailedScoresData || []
     });
 
   } catch (error) {
