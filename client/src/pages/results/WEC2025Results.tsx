@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trophy, X } from 'lucide-react';
+import { Trophy, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import CompetitorScorecard from '@/components/CompetitorScorecard';
 import SensoryEvaluationCard from '@/components/SensoryEvaluationCard';
 
@@ -75,6 +75,8 @@ const WEC2025Results = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedHeat, setSelectedHeat] = useState<Match | null>(null);
+  const [currentSegment, setCurrentSegment] = useState(0);
+  const HEATS_PER_SEGMENT = 3;
 
   useEffect(() => {
     fetchTournamentData();
@@ -102,6 +104,71 @@ const WEC2025Results = () => {
         matches: [
           {
             id: 1,
+            round: 1,
+            heatNumber: 1,
+            status: "DONE",
+            startTime: "2025-01-15T08:00:00.000Z",
+            endTime: "2025-01-15T08:15:00.000Z",
+            competitor1Id: 1,
+            competitor2Id: 2,
+            winnerId: 1,
+            competitor1Name: "Alice",
+            competitor2Name: "Bob"
+          },
+          {
+            id: 2,
+            round: 1,
+            heatNumber: 2,
+            status: "DONE",
+            startTime: "2025-01-15T08:20:00.000Z",
+            endTime: "2025-01-15T08:35:00.000Z",
+            competitor1Id: 3,
+            competitor2Id: 4,
+            winnerId: 3,
+            competitor1Name: "Charlie",
+            competitor2Name: "Diana"
+          },
+          {
+            id: 3,
+            round: 1,
+            heatNumber: 3,
+            status: "DONE",
+            startTime: "2025-01-15T08:40:00.000Z",
+            endTime: "2025-01-15T08:55:00.000Z",
+            competitor1Id: 5,
+            competitor2Id: 6,
+            winnerId: 5,
+            competitor1Name: "Emma",
+            competitor2Name: "Frank"
+          },
+          {
+            id: 4,
+            round: 1,
+            heatNumber: 4,
+            status: "DONE",
+            startTime: "2025-01-15T09:00:00.000Z",
+            endTime: "2025-01-15T09:15:00.000Z",
+            competitor1Id: 7,
+            competitor2Id: 8,
+            winnerId: 7,
+            competitor1Name: "Grace",
+            competitor2Name: "Henry"
+          },
+          {
+            id: 5,
+            round: 1,
+            heatNumber: 5,
+            status: "DONE",
+            startTime: "2025-01-15T09:20:00.000Z",
+            endTime: "2025-01-15T09:35:00.000Z",
+            competitor1Id: 9,
+            competitor2Id: 10,
+            winnerId: 9,
+            competitor1Name: "Ivan",
+            competitor2Name: "Julia"
+          },
+          {
+            id: 6,
             round: 2,
             heatNumber: 12,
             status: "DONE",
@@ -114,7 +181,7 @@ const WEC2025Results = () => {
             competitor2Name: "Edwin"
           },
           {
-            id: 2,
+            id: 7,
             round: 5,
             heatNumber: 31,
             status: "DONE",
@@ -128,20 +195,55 @@ const WEC2025Results = () => {
           }
         ],
         scores: [
-          { matchId: 1, judgeId: 1, competitorId: 1, segment: "DIAL_IN", score: 28, judgeName: "Jasper" },
-          { matchId: 1, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 5, judgeName: "Korn" },
-          { matchId: 2, judgeId: 1, competitorId: 1, segment: "DIAL_IN", score: 19, judgeName: "Shinsaku" },
-          { matchId: 2, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 14, judgeName: "Korn" }
+          { matchId: 1, judgeId: 1, competitorId: 1, segment: "DIAL_IN", score: 10, judgeName: "Jasper" },
+          { matchId: 1, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 8, judgeName: "Korn" },
+          { matchId: 1, judgeId: 3, competitorId: 1, segment: "DIAL_IN", score: 9, judgeName: "Michelle" },
+          { matchId: 2, judgeId: 1, competitorId: 3, segment: "DIAL_IN", score: 11, judgeName: "Jasper" },
+          { matchId: 2, judgeId: 2, competitorId: 4, segment: "DIAL_IN", score: 7, judgeName: "Korn" },
+          { matchId: 2, judgeId: 3, competitorId: 3, segment: "DIAL_IN", score: 10, judgeName: "Michelle" },
+          { matchId: 3, judgeId: 1, competitorId: 5, segment: "DIAL_IN", score: 9, judgeName: "Jasper" },
+          { matchId: 3, judgeId: 2, competitorId: 6, segment: "DIAL_IN", score: 6, judgeName: "Korn" },
+          { matchId: 3, judgeId: 3, competitorId: 5, segment: "DIAL_IN", score: 8, judgeName: "Michelle" },
+          { matchId: 4, judgeId: 1, competitorId: 7, segment: "DIAL_IN", score: 10, judgeName: "Jasper" },
+          { matchId: 4, judgeId: 2, competitorId: 8, segment: "DIAL_IN", score: 5, judgeName: "Korn" },
+          { matchId: 4, judgeId: 3, competitorId: 7, segment: "DIAL_IN", score: 11, judgeName: "Michelle" },
+          { matchId: 5, judgeId: 1, competitorId: 9, segment: "DIAL_IN", score: 9, judgeName: "Jasper" },
+          { matchId: 5, judgeId: 2, competitorId: 10, segment: "DIAL_IN", score: 7, judgeName: "Korn" },
+          { matchId: 5, judgeId: 3, competitorId: 9, segment: "DIAL_IN", score: 10, judgeName: "Michelle" },
+          { matchId: 6, judgeId: 1, competitorId: 1, segment: "DIAL_IN", score: 28, judgeName: "Jasper" },
+          { matchId: 6, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 5, judgeName: "Korn" },
+          { matchId: 7, judgeId: 1, competitorId: 1, segment: "DIAL_IN", score: 19, judgeName: "Shinsaku" },
+          { matchId: 7, judgeId: 2, competitorId: 2, segment: "DIAL_IN", score: 14, judgeName: "Korn" }
         ],
         detailedScores: [
-          // Match 1 - Heat 12
-          { matchId: 1, judgeName: "Jasper", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 1, judgeName: "Korn", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 1, judgeName: "Michelle", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "right", overall: "left" },
-          // Match 2 - Final Heat 31
-          { matchId: 2, judgeName: "Shinsaku", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "right", flavour: "left", overall: "left" },
-          { matchId: 2, judgeName: "Korn", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
-          { matchId: 2, judgeName: "Jasper", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "right", overall: "right" }
+          // Match 1 - Heat 1
+          { matchId: 1, judgeName: "Jasper", leftCupCode: "A01", rightCupCode: "B01", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 1, judgeName: "Korn", leftCupCode: "A01", rightCupCode: "B01", sensoryBeverage: "Espresso", visualLatteArt: "right", taste: "left", tactile: "right", flavour: "left", overall: "left" },
+          { matchId: 1, judgeName: "Michelle", leftCupCode: "A01", rightCupCode: "B01", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          // Match 2 - Heat 2
+          { matchId: 2, judgeName: "Jasper", leftCupCode: "A02", rightCupCode: "B02", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 2, judgeName: "Korn", leftCupCode: "A02", rightCupCode: "B02", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 2, judgeName: "Michelle", leftCupCode: "A02", rightCupCode: "B02", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          // Match 3 - Heat 3
+          { matchId: 3, judgeName: "Jasper", leftCupCode: "A03", rightCupCode: "B03", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 3, judgeName: "Korn", leftCupCode: "A03", rightCupCode: "B03", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "right", flavour: "right", overall: "left" },
+          { matchId: 3, judgeName: "Michelle", leftCupCode: "A03", rightCupCode: "B03", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          // Match 4 - Heat 4
+          { matchId: 4, judgeName: "Jasper", leftCupCode: "A04", rightCupCode: "B04", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 4, judgeName: "Korn", leftCupCode: "A04", rightCupCode: "B04", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 4, judgeName: "Michelle", leftCupCode: "A04", rightCupCode: "B04", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          // Match 5 - Heat 5
+          { matchId: 5, judgeName: "Jasper", leftCupCode: "A05", rightCupCode: "B05", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 5, judgeName: "Korn", leftCupCode: "A05", rightCupCode: "B05", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "right", overall: "left" },
+          { matchId: 5, judgeName: "Michelle", leftCupCode: "A05", rightCupCode: "B05", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          // Match 6 - Heat 12
+          { matchId: 6, judgeName: "Jasper", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 6, judgeName: "Korn", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 6, judgeName: "Michelle", leftCupCode: "A12", rightCupCode: "B34", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "right", overall: "left" },
+          // Match 7 - Final Heat 31
+          { matchId: 7, judgeName: "Shinsaku", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Cappuccino", visualLatteArt: "left", taste: "left", tactile: "right", flavour: "left", overall: "left" },
+          { matchId: 7, judgeName: "Korn", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "left", tactile: "left", flavour: "left", overall: "left" },
+          { matchId: 7, judgeName: "Jasper", leftCupCode: "C56", rightCupCode: "D78", sensoryBeverage: "Espresso", visualLatteArt: "left", taste: "right", tactile: "left", flavour: "right", overall: "right" }
         ]
       };
       setTournamentData(mockData);
@@ -227,15 +329,66 @@ const WEC2025Results = () => {
     );
   }
 
+  // Sort matches by heat number
+  const sortedMatches = tournamentData?.matches
+    ? [...tournamentData.matches].sort((a, b) => a.heatNumber - b.heatNumber)
+    : [];
+
+  // Calculate pagination
+  const totalSegments = Math.ceil(sortedMatches.length / HEATS_PER_SEGMENT);
+  const startIndex = currentSegment * HEATS_PER_SEGMENT;
+  const endIndex = startIndex + HEATS_PER_SEGMENT;
+  const currentHeats = sortedMatches.slice(startIndex, endIndex);
+
+  const handlePrevious = () => {
+    setCurrentSegment(prev => Math.max(0, prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentSegment(prev => Math.min(totalSegments - 1, prev + 1));
+  };
+
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Tournament Heats - Direct Grid Display */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tournamentData.matches && tournamentData.matches.length > 0 ? (
-            tournamentData.matches
-              .sort((a, b) => a.round - b.round || a.heatNumber - b.heatNumber)
-              .map(match => (
+      <div className="max-w-md mx-auto">
+        {/* Carousel Navigation Header */}
+        <div className="mb-4 flex items-center justify-between">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handlePrevious}
+            disabled={currentSegment === 0}
+            data-testid="button-previous-segment"
+            className="text-cinnamon-brown"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Heats {startIndex + 1}-{Math.min(endIndex, sortedMatches.length)} of {sortedMatches.length}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Segment {currentSegment + 1} of {totalSegments}
+            </p>
+          </div>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleNext}
+            disabled={currentSegment === totalSegments - 1}
+            data-testid="button-next-segment"
+            className="text-cinnamon-brown"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Tournament Heats - 3-Stack Carousel */}
+        <div className="space-y-4">
+          {currentHeats && currentHeats.length > 0 ? (
+            currentHeats.map(match => (
                 <Card
                   key={match.id}
                   className="cursor-pointer hover-elevate active-elevate-2 transition-all"
