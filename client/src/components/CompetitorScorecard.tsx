@@ -118,7 +118,7 @@ export default function CompetitorScorecard({
               ))}
               <tr className="border-t-2 font-bold">
                 <td colSpan={8} className="p-3 text-right">TOTAL SCORE:</td>
-                <td className="p-3 text-center text-lg bg-amber-100 dark:bg-amber-900" data-testid="text-competitor-total">
+                <td className="p-3 text-center text-lg bg-amber-100 dark:bg-amber-900" data-testid={`text-competitor-total-${position}`}>
                   {totalScore}
                 </td>
               </tr>
@@ -174,7 +174,7 @@ export default function CompetitorScorecard({
           
           <div className="flex justify-between items-center p-3 bg-amber-100 dark:bg-amber-900 rounded-md border-2 border-amber-200 dark:border-amber-800">
             <span className="font-bold">TOTAL SCORE:</span>
-            <Badge className="text-lg bg-cinnamon-brown" data-testid="text-competitor-total-mobile">
+            <Badge className="text-lg bg-cinnamon-brown" data-testid={`text-competitor-total-mobile-${position}`}>
               {totalScore}
             </Badge>
           </div>
