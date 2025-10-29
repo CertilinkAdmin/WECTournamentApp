@@ -40,10 +40,10 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, sc
         </div>
         
         <div className="space-y-3">
-          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor1 === 'BUY' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor1 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
+          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor1 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
             <div className="flex justify-between items-center">
               <div className="font-semibold text-base text-slate-800">
-                {competitor1 === 'BUY' ? 'BYE' : competitor1}
+                {competitor1}
               </div>
               {score1 !== undefined && (
                 <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
@@ -55,10 +55,10 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, sc
           
           <div className="text-center text-slate-600 font-bold text-sm tracking-wider">VS</div>
           
-          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor2 === 'BUY' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor2 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
+          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor2 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
             <div className="flex justify-between items-center">
               <div className="font-semibold text-base text-slate-800">
-                {competitor2 === 'BUY' ? 'BYE' : competitor2}
+                {competitor2}
               </div>
               {score2 !== undefined && (
                 <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
