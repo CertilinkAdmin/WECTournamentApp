@@ -1,24 +1,21 @@
 .results-layout {
   min-height: 100vh;
-  background: #0f0f0f;
-  color: white;
-  display: flex;
-  flex-direction: column;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 .results-header {
-  background: #1a1a1a;
-  border-bottom: 1px solid #333;
-  padding: 1rem 0;
+  background: hsl(var(--card));
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .results-header-content {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
 }
 
 .results-logo {
@@ -26,9 +23,12 @@
   align-items: center;
   gap: 0.75rem;
   text-decoration: none;
-  color: white;
-  font-weight: 600;
-  font-size: 1.25rem;
+  color: inherit;
+  transition: opacity 0.3s ease;
+}
+
+.results-logo:hover {
+  opacity: 0.8;
 }
 
 .logo-icon {
@@ -36,13 +36,15 @@
 }
 
 .logo-text {
-  color: #f1c40f;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: hsl(var(--chart-4));
 }
 
 .results-status {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .status-indicator {
@@ -52,15 +54,15 @@
 }
 
 .status-indicator.completed {
-  background: #2ecc71;
-  box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+  background: hsl(var(--chart-2));
 }
 
 .status-text {
-  font-weight: 600;
-  color: #2ecc71;
   font-size: 0.9rem;
-  letter-spacing: 1px;
+  font-weight: 600;
+  color: hsl(var(--chart-2));
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .results-main {
@@ -143,12 +145,8 @@
 }
 
 .results-content-full {
-  flex: 1;
-  padding: 2rem;
-  background: #0f0f0f;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
+  padding: 0;
+  min-height: calc(100vh - 80px);
 }
 
 /* Responsive Design */
@@ -156,7 +154,7 @@
   .results-sidebar {
     width: 240px;
   }
-  
+
   .results-content {
     padding: 1.5rem;
   }
@@ -166,12 +164,12 @@
   .results-main {
     flex-direction: column;
   }
-  
+
   .results-sidebar {
     width: 100%;
     padding: 1rem 0;
   }
-  
+
   .sidebar-nav {
     display: flex;
     overflow-x: auto;
@@ -179,23 +177,23 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none; /* Firefox */
   }
-  
+
   .sidebar-nav::-webkit-scrollbar {
     display: none; /* Hide scrollbar for Chrome, Safari and Opera */
   }
-  
+
   .nav-item {
     white-space: nowrap;
     padding: 0.75rem 1rem;
     border-left: none;
     border-bottom: 3px solid transparent;
   }
-  
+
   .nav-item.active {
     border-left: none;
     border-bottom-color: #f1c40f;
   }
-  
+
   .nav-item:hover {
     border-left: none;
     border-bottom-color: #f1c40f;
