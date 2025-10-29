@@ -1,26 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import EnergyCard from '../components/EnergyCard';
+import MobileMenu from '../components/MobileMenu';
 import './LandingPage.css';
 
 const LandingPage: React.FC = () => {
   return (
     <div className="landing-page">
-      {/* Mobile Navigation Bar */}
-      <nav className="mobile-nav">
-        <Link to="/admin" className="mobile-nav-link" data-testid="link-mobile-admin">
-          <span className="mobile-nav-icon">🏗️</span>
-          <span className="mobile-nav-text">Admin</span>
-        </Link>
-        <Link to="/live" className="mobile-nav-link mobile-nav-link-featured" data-testid="link-mobile-live">
-          <span className="mobile-nav-icon">📺</span>
-          <span className="mobile-nav-text">Live</span>
-        </Link>
-        <Link to="/results" className="mobile-nav-link" data-testid="link-mobile-results">
-          <span className="mobile-nav-icon">🏆</span>
-          <span className="mobile-nav-text">Results</span>
-        </Link>
-      </nav>
+      {/* Mobile Hamburger Menu */}
+      <MobileMenu />
 
       {/* Background Video */}
       <div className="landing-background">

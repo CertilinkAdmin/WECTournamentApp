@@ -5,77 +5,7 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Mobile Navigation Bar */
-.mobile-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  display: none;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 190, 120, 0.2);
-  padding: 0.5rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
-
-.mobile-nav-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  padding: 0.75rem 0.5rem;
-  text-decoration: none;
-  color: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  gap: 0.25rem;
-}
-
-.mobile-nav-link:hover,
-.mobile-nav-link:active {
-  background: rgba(255, 107, 53, 0.2);
-  color: #ff6b35;
-  transform: scale(1.05);
-}
-
-.mobile-nav-link-featured {
-  background: rgba(52, 152, 219, 0.15);
-  border: 1px solid rgba(52, 152, 219, 0.3);
-}
-
-.mobile-nav-link-featured:hover,
-.mobile-nav-link-featured:active {
-  background: rgba(52, 152, 219, 0.3);
-  color: #3498db;
-}
-
-.mobile-nav-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-}
-
-.mobile-nav-text {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-/* Show mobile nav on mobile devices */
-@media (max-width: 768px) {
-  .mobile-nav {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-  }
-
-  .landing-header {
-    padding-top: 5rem;
-  }
-}
+/* Mobile Navigation removed - now using hamburger menu */
 
 /* Background Video */
 .landing-background {

@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, Coffee, Award, Trophy } from 'lucide-react';
+import SensoryEvaluationCard from './SensoryEvaluationCard';
 
 interface JudgeScore {
   judgeName: string;
@@ -201,34 +202,14 @@ export default function HeatJudgesDisplay({
           </div>
         )}
 
-        {/* Judges Scorecards */}
-        {isExpanded && hasJudges && (
-          <div className="space-y-4">
-            <div className="border-t pt-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Judge Scorecards
-              </h3>
-              <div className="space-y-4">
-                {judges.map((judge, index) => (
-                  <JudgeScorecard 
-                    key={`${heatNumber}-judge-${index}`} 
-                    judge={judge} 
-                    heatNumber={heatNumber} 
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* No Judges Message */}
-        {!hasJudges && (
-          <div className="text-center p-6 text-gray-500">
-            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No judge scorecards available for this heat</p>
-          </div>
-        )}
+        {/* Sensory Evaluation - Always Show */}
+        <div className="mt-4">
+          <SensoryEvaluationCard 
+            judges={judges}
+            leftCompetitor={leftCompetitor}
+            rightCompetitor={rightCompetitor}
+          />
+        </div>
       </CardContent>
     </Card>
   );
