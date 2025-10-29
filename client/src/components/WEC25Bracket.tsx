@@ -59,9 +59,9 @@ export default function WEC25Bracket({ tournamentId, onBracketGenerated }: WEC25
       const positions: BracketPosition[] = [];
       
       WEC25_BRACKET_POSITIONS.forEach(pos => {
-        const competitor1 = pos.competitor1 === "BUY" ? null : 
+        const competitor1 = pos.competitor1 === "BYE" ? null : 
           wec25Users.find(u => u.name === pos.competitor1) || null;
-        const competitor2 = pos.competitor2 === "BUY" ? null : 
+        const competitor2 = pos.competitor2 === "BYE" ? null : 
           wec25Users.find(u => u.name === pos.competitor2) || null;
         
         positions.push({
@@ -157,9 +157,9 @@ export default function WEC25Bracket({ tournamentId, onBracketGenerated }: WEC25
     const positions: BracketPosition[] = [];
     
     WEC25_BRACKET_POSITIONS.forEach(pos => {
-      const competitor1 = pos.competitor1 === "BUY" ? null : 
+      const competitor1 = pos.competitor1 === "BYE" ? null : 
         wec25Users.find(u => u.name === pos.competitor1) || null;
-      const competitor2 = pos.competitor2 === "BUY" ? null : 
+      const competitor2 = pos.competitor2 === "BYE" ? null : 
         wec25Users.find(u => u.name === pos.competitor2) || null;
       
       positions.push({
