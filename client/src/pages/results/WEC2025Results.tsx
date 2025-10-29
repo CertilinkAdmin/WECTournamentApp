@@ -360,7 +360,7 @@ const WEC2025Results = () => {
             className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-2 bg-white/90 hover:bg-white border-2 border-cinnamon-brown/30 hover:border-cinnamon-brown rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
           >
             <img 
-              src="/arrow_l.png" 
+              src="arrow_l.png" 
               alt="Previous" 
               className="w-full h-full object-contain filter hover:brightness-110"
             />
@@ -382,7 +382,7 @@ const WEC2025Results = () => {
             className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-2 bg-white/90 hover:bg-white border-2 border-cinnamon-brown/30 hover:border-cinnamon-brown rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
           >
             <img 
-              src="/arrow_r.png" 
+              src="arrow_r.png" 
               alt="Next" 
               className="w-full h-full object-contain filter hover:brightness-110"
             />
