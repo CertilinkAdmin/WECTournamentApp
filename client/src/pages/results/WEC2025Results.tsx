@@ -352,20 +352,19 @@ const WEC2025Results = () => {
     <div className="min-h-screen p-4 md:p-6 lg:p-8">
       <div className="max-w-md mx-auto">
         {/* Carousel Navigation Header */}
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between gap-4">
           <Button
             variant="outline"
-            size="icon"
             onClick={handlePrevious}
             disabled={currentSegment === 0}
             data-testid="button-previous-segment"
-            className="text-cinnamon-brown"
+            className="flex-shrink-0 h-12 w-12 md:h-10 md:w-10 text-cinnamon-brown border-cinnamon-brown/30"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-6 w-6 md:h-5 md:w-5" />
           </Button>
           
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">
+          <div className="text-center flex-1">
+            <p className="text-sm font-medium text-foreground">
               Heats {startIndex + 1}-{Math.min(endIndex, sortedMatches.length)} of {sortedMatches.length}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -375,13 +374,12 @@ const WEC2025Results = () => {
           
           <Button
             variant="outline"
-            size="icon"
             onClick={handleNext}
             disabled={currentSegment === totalSegments - 1}
             data-testid="button-next-segment"
-            className="text-cinnamon-brown"
+            className="flex-shrink-0 h-12 w-12 md:h-10 md:w-10 text-cinnamon-brown border-cinnamon-brown/30"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-6 w-6 md:h-5 md:w-5" />
           </Button>
         </div>
 
