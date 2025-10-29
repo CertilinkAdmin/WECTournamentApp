@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import './WEC2025Results.css';
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Trophy, Calendar, Users, Award, X } from 'lucide-react';
 
 interface Tournament {
   id: number;
@@ -50,7 +54,7 @@ interface TournamentData {
   scores: Score[];
 }
 
-const WEC2025Results: React.FC = () => {
+const WEC2025Results = () => {
   const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -139,7 +143,7 @@ const WEC2025Results: React.FC = () => {
 
   const getJudgesForHeat = (matchId: number) => {
     const scores = getHeatScores(matchId);
-    const judgeIds = [...new Set(scores.map(score => score.judgeId))];
+    const judgeIds = Array.from(new Set(scores.map(score => score.judgeId)));
     return judgeIds.map(judgeId => {
       const judgeScore = scores.find(s => s.judgeId === judgeId);
       return judgeScore?.judgeName || 'Unknown Judge';
@@ -148,153 +152,282 @@ const WEC2025Results: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="results-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading WEC 2025 Milano Results...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4" data-testid="loading-results">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading WEC 2025 Milano Results...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="results-error">
-        <h2>Error Loading Results</h2>
-        <p>{error}</p>
-        <button onClick={fetchTournamentData}>Retry</button>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error Loading Results</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">{error}</p>
+            <Button onClick={fetchTournamentData} data-testid="button-retry">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!tournamentData) {
     return (
-      <div className="results-error">
-        <h2>No Tournament Data Found</h2>
-        <p>Unable to load tournament results.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>No Tournament Data Found</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Unable to load tournament results.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="wec2025-results">
-      <header className="results-header">
-        <h1>🏆 {tournamentData?.tournament?.name || 'WEC 2025 Milano'}</h1>
-        <div className="tournament-info">
-          <span className="status-badge completed">COMPLETED</span>
-          <span className="date-range">
-            {tournamentData?.tournament?.startDate ? new Date(tournamentData.tournament.startDate).toLocaleDateString() : ''} - 
-            {tournamentData?.tournament?.endDate ? new Date(tournamentData.tournament.endDate).toLocaleDateString() : ''}
-          </span>
-        </div>
-      </header>
-
-      <div className="results-content">
-        {/* Champion Section */}
-        <section className="champion-section">
-          <h2>🥇 Champion</h2>
-          <div className="champion-card">
-            {tournamentData?.participants
-              ?.filter(p => p.finalRank === 1)
-              ?.map(champion => (
-                <div key={champion.id} className="champion-info">
-                  <div className="champion-name">{champion.name}</div>
-                  <div className="champion-seed">Seed #{champion.seed}</div>
-                </div>
-              ))}
+    <div className="min-h-screen p-4 md:p-6 lg:p-8">
+      {/* Header Card */}
+      <Card className="mb-6 bg-gradient-to-br from-cinnamon-brown/10 to-golden/10 border-cinnamon-brown/20">
+        <CardHeader className="text-center pb-4">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Trophy className="h-8 w-8 text-golden" />
+            <CardTitle className="text-2xl md:text-3xl lg:text-4xl bg-gradient-to-br from-golden to-cinnamon-brown bg-clip-text text-transparent">
+              {tournamentData.tournament.name}
+            </CardTitle>
           </div>
-        </section>
-
-        {/* Heats Section */}
-        <section className="heats-section">
-          <h2>⚔️ Tournament Heats</h2>
-          <div className="heats-grid">
-            {tournamentData?.matches && tournamentData.matches.length > 0 ? (
-              tournamentData.matches
-                .sort((a, b) => a.round - b.round || a.heatNumber - b.heatNumber)
-                .map(match => (
-                  <div key={match.id} className="heat-card" onClick={() => setSelectedHeat(match)}>
-                    <div className="heat-header">
-                      <span className="heat-number">Heat {match.heatNumber}</span>
-                      <span className="round-badge">Round {match.round}</span>
-                    </div>
-                    
-                    <div className="competitors">
-                      <div className={`competitor ${match.winnerId === match.competitor1Id ? 'winner' : ''}`}>
-                        <span className="name">{match.competitor1Name}</span>
-                        <span className="score">{getTotalScore(match.id, match.competitor1Id)}</span>
-                      </div>
-                      <div className="vs">vs</div>
-                      <div className={`competitor ${match.winnerId === match.competitor2Id ? 'winner' : ''}`}>
-                        <span className="name">{match.competitor2Name}</span>
-                        <span className="score">{getTotalScore(match.id, match.competitor2Id)}</span>
-                      </div>
-                    </div>
-
-                    <div className="heat-status">
-                      <span className={`status ${match.status.toLowerCase()}`}>{match.status}</span>
-                    </div>
-                  </div>
-                ))
-            ) : (
-              <div className="no-matches">No tournament matches found.</div>
-            )}
-          </div>
-        </section>
-
-        {/* Heat Details Modal */}
-        {selectedHeat && (
-          <div className="heat-modal-overlay" onClick={() => setSelectedHeat(null)}>
-            <div className="heat-modal" onClick={e => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>Heat {selectedHeat.heatNumber} - Round {selectedHeat.round}</h3>
-                <button className="close-button" onClick={() => setSelectedHeat(null)}>×</button>
-              </div>
-              
-              <div className="modal-content">
-                <div className="heat-details">
-                  <div className="competitor-details">
-                    <div className="competitor">
-                      <h4>{selectedHeat.competitor1Name}</h4>
-                      <div className="total-score">Total: {getTotalScore(selectedHeat.id, selectedHeat.competitor1Id)}</div>
-                      <div className="judge-scores">
-                        {getCompetitorScores(selectedHeat.id, selectedHeat.competitor1Id).map((score, index) => (
-                          <div key={index} className="judge-score">
-                            <span className="judge-name">{score.judgeName}</span>
-                            <span className="score-value">{score.score}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="vs-divider">VS</div>
-                    
-                    <div className="competitor">
-                      <h4>{selectedHeat.competitor2Name}</h4>
-                      <div className="total-score">Total: {getTotalScore(selectedHeat.id, selectedHeat.competitor2Id)}</div>
-                      <div className="judge-scores">
-                        {getCompetitorScores(selectedHeat.id, selectedHeat.competitor2Id).map((score, index) => (
-                          <div key={index} className="judge-score">
-                            <span className="judge-name">{score.judgeName}</span>
-                            <span className="score-value">{score.score}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="judges-list">
-                    <h4>Judges</h4>
-                    <div className="judges">
-                      {getJudgesForHeat(selectedHeat.id).map((judge, index) => (
-                        <span key={index} className="judge-badge">{judge}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+            <Badge className="bg-green-500/20 text-green-600 border-green-500/30" data-testid="badge-tournament-status">
+              COMPLETED
+            </Badge>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>
+                {new Date(tournamentData.tournament.startDate).toLocaleDateString()} - 
+                {new Date(tournamentData.tournament.endDate).toLocaleDateString()}
+              </span>
             </div>
           </div>
-        )}
+        </CardHeader>
+      </Card>
+
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Champion Section */}
+        <Card className="border-golden/30 bg-gradient-to-br from-golden/5 to-cinnamon-brown/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-golden">
+              <Award className="h-6 w-6" />
+              Champion
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tournamentData.participants
+              .filter(p => p.finalRank === 1)
+              .map(champion => (
+                <div key={champion.id} className="text-center py-4" data-testid="champion-card">
+                  <div className="text-3xl md:text-4xl font-bold text-golden mb-2">
+                    {champion.name}
+                  </div>
+                  <div className="text-muted-foreground">
+                    Seed #{champion.seed}
+                  </div>
+                </div>
+              ))}
+          </CardContent>
+        </Card>
+
+        {/* Tournament Heats */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-cinnamon-brown">
+              <Trophy className="h-6 w-6" />
+              Tournament Heats
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tournamentData.matches && tournamentData.matches.length > 0 ? (
+                tournamentData.matches
+                  .sort((a, b) => a.round - b.round || a.heatNumber - b.heatNumber)
+                  .map(match => (
+                    <Card
+                      key={match.id}
+                      className="cursor-pointer hover-elevate active-elevate-2 transition-all"
+                      onClick={() => setSelectedHeat(match)}
+                      data-testid={`card-heat-${match.id}`}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-cinnamon-brown">
+                            Heat {match.heatNumber}
+                          </span>
+                          <Badge variant="secondary" className="text-xs">
+                            Round {match.round}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="space-y-2">
+                          <div
+                            className={`flex items-center justify-between p-2 rounded-md border ${
+                              match.winnerId === match.competitor1Id
+                                ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+                                : 'bg-muted/50 border-border'
+                            }`}
+                            data-testid={`competitor-1-${match.id}`}
+                          >
+                            <span className="text-sm font-medium truncate">
+                              {match.competitor1Name}
+                            </span>
+                            <span className="text-lg font-bold text-golden ml-2">
+                              {getTotalScore(match.id, match.competitor1Id)}
+                            </span>
+                          </div>
+                          
+                          <div className="text-center text-xs text-muted-foreground font-medium">
+                            VS
+                          </div>
+                          
+                          <div
+                            className={`flex items-center justify-between p-2 rounded-md border ${
+                              match.winnerId === match.competitor2Id
+                                ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+                                : 'bg-muted/50 border-border'
+                            }`}
+                            data-testid={`competitor-2-${match.id}`}
+                          >
+                            <span className="text-sm font-medium truncate">
+                              {match.competitor2Name}
+                            </span>
+                            <span className="text-lg font-bold text-golden ml-2">
+                              {getTotalScore(match.id, match.competitor2Id)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-center pt-2">
+                          <Badge
+                            className={
+                              match.status === 'DONE'
+                                ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400'
+                                : match.status === 'RUNNING'
+                                ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
+                                : 'bg-muted text-muted-foreground'
+                            }
+                          >
+                            {match.status}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+              ) : (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  No tournament matches found.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Heat Details Dialog */}
+      <Dialog open={!!selectedHeat} onOpenChange={(open) => { if (!open) setSelectedHeat(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span className="text-cinnamon-brown">
+                Heat {selectedHeat?.heatNumber} - Round {selectedHeat?.round}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedHeat(null)}
+                data-testid="button-close-heat-dialog"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedHeat && (
+            <div className="space-y-6">
+              {/* Competitors */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className={selectedHeat.winnerId === selectedHeat.competitor1Id ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">{selectedHeat.competitor1Name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="text-3xl font-bold text-golden">
+                      {getTotalScore(selectedHeat.id, selectedHeat.competitor1Id)}
+                    </div>
+                    <div className="space-y-2">
+                      {getCompetitorScores(selectedHeat.id, selectedHeat.competitor1Id).map((score, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-muted rounded-md"
+                        >
+                          <span className="text-sm text-muted-foreground">{score.judgeName}</span>
+                          <span className="font-semibold">{score.score}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className={selectedHeat.winnerId === selectedHeat.competitor2Id ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">{selectedHeat.competitor2Name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="text-3xl font-bold text-golden">
+                      {getTotalScore(selectedHeat.id, selectedHeat.competitor2Id)}
+                    </div>
+                    <div className="space-y-2">
+                      {getCompetitorScores(selectedHeat.id, selectedHeat.competitor2Id).map((score, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-muted rounded-md"
+                        >
+                          <span className="text-sm text-muted-foreground">{score.judgeName}</span>
+                          <span className="font-semibold">{score.score}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Judges */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Judges
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {getJudgesForHeat(selectedHeat.id).map((judge, index) => (
+                      <Badge key={index} variant="secondary">
+                        {judge}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
