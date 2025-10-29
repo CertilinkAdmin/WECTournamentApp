@@ -86,8 +86,8 @@ const WEC2025Results = () => {
     try {
       setLoading(true);
       
-      // Fetch actual tournament data from API (Tournament ID 4: WEC 2025 Milano)
-      const response = await fetch('/api/tournaments/4');
+      // Fetch actual tournament data from API (Tournament ID 7: WEC 2025 Milano)
+      const response = await fetch('/api/tournaments/7');
       
       if (!response.ok) {
         throw new Error('Failed to fetch tournament data');

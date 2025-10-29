@@ -7,6 +7,7 @@ import {
   matches, 
   heatJudges, 
   heatScores,
+  judgeDetailedScores,
   stations 
 } from '../../shared/schema';
 
@@ -399,7 +400,53 @@ async function migrateWEC2025Data() {
         endTime: new Date()
       }).returning();
 
-      // Add judges to heat
+      // Handle BYE matches - create system judges awarding 33 points
+      if (heat.competitor2 === 'BYE' && competitor1Id) {
+        const systemJudges = ['System Judge 1', 'System Judge 2', 'System Judge 3'];
+        
+        // Get or create system judge users
+        const systemJudgeIds: number[] = [];
+        for (const judgeName of systemJudges) {
+          let judgeId = userMap.get(judgeName);
+          if (!judgeId) {
+            const [judge] = await db.insert(users).values({
+              name: judgeName,
+              email: `${judgeName.toLowerCase().replace(/\s+/g, '')}@system.wec`,
+              role: 'JUDGE'
+            }).returning();
+            judgeId = judge.id;
+            userMap.set(judgeName, judgeId);
+          }
+          systemJudgeIds.push(judgeId);
+        }
+        
+        for (let i = 0; i < systemJudges.length; i++) {
+          // Create detailed score record (all points to competitor1)
+          await db.insert(judgeDetailedScores).values({
+            matchId: match.id,
+            judgeName: systemJudges[i],
+            leftCupCode: 'BYE',
+            rightCupCode: 'BYE',
+            sensoryBeverage: 'Cappuccino',
+            visualLatteArt: 'left',
+            taste: 'left',
+            tactile: 'left',
+            flavour: 'left',
+            overall: 'left'
+          });
+          
+          // Create aggregate score record (11 points per judge = 33 total)
+          await db.insert(heatScores).values({
+            matchId: match.id,
+            judgeId: systemJudgeIds[i],
+            competitorId: competitor1Id,
+            segment: 'DIAL_IN',
+            score: 11 // 3 (visual) + 1 (taste) + 1 (tactile) + 1 (flavour) + 5 (overall)
+          });
+        }
+      }
+      
+      // Handle competition heats with judge scores
       if (heat.judgeScores) {
         for (const judgeScore of heat.judgeScores) {
           const judgeId = userMap.get(judgeScore.judge);
@@ -412,7 +459,7 @@ async function migrateWEC2025Data() {
           }
         }
 
-        // Add scores
+        // Add aggregate scores
         for (const judgeScore of heat.judgeScores) {
           const judgeId = userMap.get(judgeScore.judge);
           if (judgeId && competitor1Id) {
@@ -435,6 +482,32 @@ async function migrateWEC2025Data() {
               score: judgeScore.competitor2.visual + judgeScore.competitor2.taste + judgeScore.competitor2.tactile + judgeScore.competitor2.flavour + judgeScore.competitor2.overall
             });
           }
+        }
+        
+        // Add detailed scores with cup codes
+        const comp1CupCode = heat.competitor1.substring(0, 2).toUpperCase();
+        const comp2CupCode = heat.competitor2.substring(0, 2).toUpperCase();
+        
+        for (const judgeScore of heat.judgeScores) {
+          // Determine which side won each category for detailed scoring
+          const visualWinner = judgeScore.competitor1.visual > 0 ? 'left' : 'right';
+          const tasteWinner = judgeScore.competitor1.taste > 0 ? 'left' : 'right';
+          const tactileWinner = judgeScore.competitor1.tactile > 0 ? 'left' : 'right';
+          const flavourWinner = judgeScore.competitor1.flavour > 0 ? 'left' : 'right';
+          const overallWinner = judgeScore.competitor1.overall > 0 ? 'left' : 'right';
+          
+          await db.insert(judgeDetailedScores).values({
+            matchId: match.id,
+            judgeName: judgeScore.judge,
+            leftCupCode: comp1CupCode,
+            rightCupCode: comp2CupCode,
+            sensoryBeverage: 'Cappuccino', // Default, could be mapped from data
+            visualLatteArt: visualWinner,
+            taste: tasteWinner,
+            tactile: tactileWinner,
+            flavour: flavourWinner,
+            overall: overallWinner
+          });
         }
       }
 

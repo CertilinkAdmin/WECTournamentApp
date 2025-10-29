@@ -45,51 +45,127 @@ export const WEC25_COMPETITORS = [
 ];
 
 export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
-  // Round 1 - Heats 7-16 (Based on the tournament bracket image with judges and scorecards)
+  // Round 1 - Heats 1-16 (Bye heats 1-11, competitive heats 12-16)
+  { 
+    heatNumber: 1, 
+    station: "A", 
+    competitor1: "Aga Muhammed", 
+    competitor2: "BYE", 
+    winner: "Aga Muhammed", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "99",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 2, 
+    station: "B", 
+    competitor1: "Jae Kim", 
+    competitor2: "BYE", 
+    winner: "Jae Kim", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "22",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 3, 
+    station: "C", 
+    competitor1: "Stevo Kühn", 
+    competitor2: "BYE", 
+    winner: "Stevo Kühn", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "M7",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 4, 
+    station: "A", 
+    competitor1: "Edwin Tascon", 
+    competitor2: "BYE", 
+    winner: "Edwin Tascon", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "K9",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 5, 
+    station: "B", 
+    competitor1: "Kirill Yudin", 
+    competitor2: "BYE", 
+    winner: "Kirill Yudin", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "F5",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 6, 
+    station: "C", 
+    competitor1: "Anja Manfredi", 
+    competitor2: "BYE", 
+    winner: "Anja Manfredi", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "X1",
+    rightCupCode: "BYE"
+  },
   { 
     heatNumber: 7, 
     station: "A", 
-    competitor1: "BYE", 
+    competitor1: "Jae Kim", 
     competitor2: "BYE", 
-    winner: "BYE", 
-    score1: 0, 
-    score2: 0 
+    winner: "Jae Kim", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "L4",
+    rightCupCode: "BYE"
   },
   { 
     heatNumber: 8, 
     station: "B", 
-    competitor1: "Sebastian Hernandez", 
+    competitor1: "Carlos Medina", 
     competitor2: "BYE", 
-    winner: "Sebastian Hernandez", 
-    score1: 0, 
-    score2: 0 
+    winner: "Carlos Medina", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "C6",
+    rightCupCode: "BYE"
   },
   { 
     heatNumber: 9, 
     station: "C", 
-    competitor1: "Faiz Nordin", 
+    competitor1: "Erland Oye", 
     competitor2: "BYE", 
-    winner: "Faiz Nordin", 
-    score1: 0, 
-    score2: 0 
+    winner: "Erland Oye", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "W6",
+    rightCupCode: "BYE"
   },
   { 
     heatNumber: 10, 
     station: "A", 
-    competitor1: "Christos Sotiros", 
+    competitor1: "Penny Rodriguez", 
     competitor2: "BYE", 
-    winner: "Christos Sotiros", 
-    score1: 0, 
-    score2: 0 
+    winner: "Penny Rodriguez", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "S5",
+    rightCupCode: "BYE"
   },
   { 
     heatNumber: 11, 
     station: "B", 
-    competitor1: "BYE", 
-    competitor2: "Daniele Ricci", 
-    winner: "Daniele Ricci", 
-    score1: 0, 
-    score2: 0 
+    competitor1: "Felix Irmer", 
+    competitor2: "BYE", 
+    winner: "Felix Irmer", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "V4",
+    rightCupCode: "BYE"
   },
   { 
     heatNumber: 12, 
@@ -232,20 +308,94 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 15, 
     station: "C", 
-    competitor1: "Bill Nguyen", 
-    competitor2: "BYE", 
-    winner: "Bill Nguyen", 
-    score1: 0, 
-    score2: 0 
+    competitor1: "Julian Teo", 
+    competitor2: "Felix Irmer", 
+    winner: "Felix Irmer", 
+    score1: 8, 
+    score2: 25,
+    leftCupCode: "D3",
+    rightCupCode: "R8",
+    judges: [
+      {
+        judgeName: "Michalis",
+        visualLatteArt: "right",
+        sensoryBeverage: "Cappuccino",
+        taste: "right",
+        tactile: "left",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "D3",
+        rightCupCode: "R8"
+      },
+      {
+        judgeName: "Jasper",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "left",
+        tactile: "right",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "D3",
+        rightCupCode: "R8"
+      },
+      {
+        judgeName: "Tess",
+        visualLatteArt: "right",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "D3",
+        rightCupCode: "R8"
+      }
+    ]
   },
   { 
     heatNumber: 16, 
     station: "A", 
-    competitor1: "Engi Pan", 
-    competitor2: "BYE", 
-    winner: "Engi Pan", 
-    score1: 0, 
-    score2: 0 
+    competitor1: "Danielle Ricci", 
+    competitor2: "Bill Nguyen", 
+    winner: "Bill Nguyen", 
+    score1: 12, 
+    score2: 21,
+    leftCupCode: "H7",
+    rightCupCode: "N2",
+    judges: [
+      {
+        judgeName: "Shinsaku",
+        visualLatteArt: "left",
+        sensoryBeverage: "Cappuccino",
+        taste: "left",
+        tactile: "left",
+        flavour: "right",
+        overall: "left",
+        leftCupCode: "H7",
+        rightCupCode: "N2"
+      },
+      {
+        judgeName: "Ali",
+        visualLatteArt: "right",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "H7",
+        rightCupCode: "N2"
+      },
+      {
+        judgeName: "Junior",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "H7",
+        rightCupCode: "N2"
+      }
+    ]
   },
 ];
 
@@ -392,11 +542,48 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 20, 
     station: "B", 
-    competitor1: "Hojat Mousavi", 
-    competitor2: "Sebastian Hernandez", 
-    winner: "Hojat Mousavi", 
-    score1: 0, 
-    score2: 0 
+    competitor1: "Faiz Nordin", 
+    competitor2: "Engi Pan", 
+    winner: "Engi Pan", 
+    score1: 15, 
+    score2: 18,
+    leftCupCode: "U4",
+    rightCupCode: "Y9",
+    judges: [
+      {
+        judgeName: "Michalis",
+        visualLatteArt: "left",
+        sensoryBeverage: "Cappuccino",
+        taste: "left",
+        tactile: "right",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "U4",
+        rightCupCode: "Y9"
+      },
+      {
+        judgeName: "Ali",
+        visualLatteArt: "right",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "left",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "U4",
+        rightCupCode: "Y9"
+      },
+      {
+        judgeName: "Jasper",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "U4",
+        rightCupCode: "Y9"
+      }
+    ]
   },
   { 
     heatNumber: 21, 
@@ -533,11 +720,11 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 27, 
     station: "C", 
-    competitor1: "Christos Sotiros", 
-    competitor2: "Stevo Kühn", 
-    winner: "Christos Sotiros", 
-    score1: 0, 
-    score2: 0,
+    competitor1: "Hojat Mousavi", 
+    competitor2: "Artur Kosteniuk", 
+    winner: "Artur Kosteniuk", 
+    score1: 9, 
+    score2: 24,
     leftCupCode: "P3",
     rightCupCode: "M9",
     judges: [
