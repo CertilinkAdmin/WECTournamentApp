@@ -55,6 +55,43 @@ The design strictly adheres to the WEC Official Brand Guidelines.
 
 ## Recent Changes
 
+### Mobile Navigation & Sensory Evaluation Display (October 29, 2025)
+**Enhanced mobile UX with hamburger menu and always-visible sensory evaluation:**
+
+Mobile Navigation Improvements:
+- Created `MobileMenu` component with hamburger icon (Lucide Menu/X)
+- Replaced fixed mobile nav bar that caused horizontal scroll
+- Right-side slide-in drawer with smooth transitions
+- Backdrop overlay when menu is open
+- Auto-closes on link click or overlay tap
+- Mobile-only display (md:hidden breakpoint)
+- Uses WEC brand colors (cinnamon-brown, light-sand)
+- Proper z-index layering (150 button, 145 drawer, 140 overlay)
+
+Sensory Evaluation Card:
+- Created `SensoryEvaluationCard` component matching physical scorecard layout
+- Displays SENSORY EVALUATION section for ALL heats (including byes/null data)
+- Mobile-responsive with vertical stacking on small screens
+- Shows 3 judges with LEFT/RIGHT columns for each
+- Categories: Taste (1pt), Tactile (1pt), Flavour (1pt), Overall (5pts)
+- Handles null/empty data by showing placeholder judges with "—"
+- Calculates and displays sensory subtotals per judge
+- Shows total scores for left/right competitors at bottom
+- Responsive typography (text-xs sm:text-sm) and padding (p-2 sm:p-3)
+
+HeatJudgesDisplay Updates:
+- Removed "No judge scorecards available" message
+- Sensory evaluation now ALWAYS displays for every heat
+- Removed expand/collapse behavior for judges section
+- Simplified component by directly showing SensoryEvaluationCard
+
+Verification:
+- Architect approved all mobile navigation changes
+- No horizontal scroll on landing page
+- Drawer animations smooth with proper close handlers
+- Null data handling verified with placeholder judges
+- Mobile responsiveness meets WEC standards
+
 ### Results Input System for Judge Scorecards (October 28, 2025)
 **Comprehensive system for inputting and managing judge scorecards:**
 
