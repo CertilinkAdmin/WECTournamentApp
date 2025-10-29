@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trophy, Calendar, Users, Award, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Trophy, X } from 'lucide-react';
 import CompetitorScorecard from '@/components/CompetitorScorecard';
 import SensoryEvaluationCard from '@/components/SensoryEvaluationCard';
 
@@ -229,148 +229,90 @@ const WEC2025Results = () => {
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8">
-      {/* Header Card */}
-      <Card className="mb-6 bg-gradient-to-br from-cinnamon-brown/10 to-golden/10 border-cinnamon-brown/20">
-        <CardHeader className="text-center pb-4">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <Trophy className="h-8 w-8 text-golden" />
-            <CardTitle className="text-2xl md:text-3xl lg:text-4xl bg-gradient-to-br from-golden to-cinnamon-brown bg-clip-text text-transparent">
-              {tournamentData.tournament.name}
-            </CardTitle>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
-            <Badge className="bg-green-500/20 text-green-600 border-green-500/30" data-testid="badge-tournament-status">
-              COMPLETED
-            </Badge>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>
-                {new Date(tournamentData.tournament.startDate).toLocaleDateString()} - 
-                {new Date(tournamentData.tournament.endDate).toLocaleDateString()}
-              </span>
+      <div className="max-w-7xl mx-auto">
+        {/* Tournament Heats - Direct Grid Display */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {tournamentData.matches && tournamentData.matches.length > 0 ? (
+            tournamentData.matches
+              .sort((a, b) => a.round - b.round || a.heatNumber - b.heatNumber)
+              .map(match => (
+                <Card
+                  key={match.id}
+                  className="cursor-pointer hover-elevate active-elevate-2 transition-all"
+                  onClick={() => setSelectedHeat(match)}
+                  data-testid={`card-heat-${match.id}`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-cinnamon-brown">
+                        Heat {match.heatNumber}
+                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        Round {match.round}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <div
+                        className={`flex items-center justify-between p-2 rounded-md border ${
+                          match.winnerId === match.competitor1Id
+                            ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+                            : 'bg-muted/50 border-border'
+                        }`}
+                        data-testid={`competitor-1-${match.id}`}
+                      >
+                        <span className="text-sm font-medium truncate">
+                          {match.competitor1Name}
+                        </span>
+                        <span className="text-lg font-bold text-golden ml-2">
+                          {getTotalScore(match.id, match.competitor1Id)}
+                        </span>
+                      </div>
+                      
+                      <div className="text-center text-xs text-muted-foreground font-medium">
+                        VS
+                      </div>
+                      
+                      <div
+                        className={`flex items-center justify-between p-2 rounded-md border ${
+                          match.winnerId === match.competitor2Id
+                            ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+                            : 'bg-muted/50 border-border'
+                        }`}
+                        data-testid={`competitor-2-${match.id}`}
+                      >
+                        <span className="text-sm font-medium truncate">
+                          {match.competitor2Name}
+                        </span>
+                        <span className="text-lg font-bold text-golden ml-2">
+                          {getTotalScore(match.id, match.competitor2Id)}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-center pt-2">
+                      <Badge
+                        className={
+                          match.status === 'DONE'
+                            ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400'
+                            : match.status === 'RUNNING'
+                            ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
+                            : 'bg-muted text-muted-foreground'
+                        }
+                      >
+                        {match.status}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+          ) : (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              No tournament matches found.
             </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Champion Section */}
-        <Card className="border-golden/30 bg-gradient-to-br from-golden/5 to-cinnamon-brown/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-golden">
-              <Award className="h-6 w-6" />
-              Champion
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {tournamentData.participants
-              .filter(p => p.finalRank === 1)
-              .map(champion => (
-                <div key={champion.id} className="text-center py-4" data-testid="champion-card">
-                  <div className="text-3xl md:text-4xl font-bold text-golden mb-2">
-                    {champion.name}
-                  </div>
-                  <div className="text-muted-foreground">
-                    Seed #{champion.seed}
-                  </div>
-                </div>
-              ))}
-          </CardContent>
-        </Card>
-
-        {/* Tournament Heats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-cinnamon-brown">
-              <Trophy className="h-6 w-6" />
-              Tournament Heats
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tournamentData.matches && tournamentData.matches.length > 0 ? (
-                tournamentData.matches
-                  .sort((a, b) => a.round - b.round || a.heatNumber - b.heatNumber)
-                  .map(match => (
-                    <Card
-                      key={match.id}
-                      className="cursor-pointer hover-elevate active-elevate-2 transition-all"
-                      onClick={() => setSelectedHeat(match)}
-                      data-testid={`card-heat-${match.id}`}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-cinnamon-brown">
-                            Heat {match.heatNumber}
-                          </span>
-                          <Badge variant="secondary" className="text-xs">
-                            Round {match.round}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="space-y-2">
-                          <div
-                            className={`flex items-center justify-between p-2 rounded-md border ${
-                              match.winnerId === match.competitor1Id
-                                ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
-                                : 'bg-muted/50 border-border'
-                            }`}
-                            data-testid={`competitor-1-${match.id}`}
-                          >
-                            <span className="text-sm font-medium truncate">
-                              {match.competitor1Name}
-                            </span>
-                            <span className="text-lg font-bold text-golden ml-2">
-                              {getTotalScore(match.id, match.competitor1Id)}
-                            </span>
-                          </div>
-                          
-                          <div className="text-center text-xs text-muted-foreground font-medium">
-                            VS
-                          </div>
-                          
-                          <div
-                            className={`flex items-center justify-between p-2 rounded-md border ${
-                              match.winnerId === match.competitor2Id
-                                ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
-                                : 'bg-muted/50 border-border'
-                            }`}
-                            data-testid={`competitor-2-${match.id}`}
-                          >
-                            <span className="text-sm font-medium truncate">
-                              {match.competitor2Name}
-                            </span>
-                            <span className="text-lg font-bold text-golden ml-2">
-                              {getTotalScore(match.id, match.competitor2Id)}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-center pt-2">
-                          <Badge
-                            className={
-                              match.status === 'DONE'
-                                ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400'
-                                : match.status === 'RUNNING'
-                                ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
-                                : 'bg-muted text-muted-foreground'
-                            }
-                          >
-                            {match.status}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-              ) : (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No tournament matches found.
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
 
       {/* Heat Details Dialog */}
@@ -390,6 +332,9 @@ const WEC2025Results = () => {
                 <X className="h-4 w-4" />
               </Button>
             </DialogTitle>
+            <DialogDescription>
+              View sensory evaluation scores and detailed judge-by-judge breakdowns for this heat.
+            </DialogDescription>
           </DialogHeader>
           
           {selectedHeat && (
