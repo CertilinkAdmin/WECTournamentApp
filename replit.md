@@ -55,6 +55,40 @@ The design strictly adheres to the WEC Official Brand Guidelines.
 
 ## Recent Changes
 
+### Bottom Navigation Bar & Overflow Fixes (October 29, 2025)
+**Replaced hamburger menu with fixed bottom navigation bar for mobile:**
+
+Bottom Navigation Implementation:
+- Created `BottomNav` component with fixed bottom positioning
+- Three navigation buttons: Admin (Settings), Live (Play), Results (Trophy)
+- Active route highlighting with background color change
+- Mobile-only display (md:hidden breakpoint)
+- Uses WEC brand colors (cinnamon-brown/95, light-sand/20)
+- Proper z-index (50) for layering above content
+- Safe area support for iOS notched devices
+- Hidden on landing page (pathname === '/')
+- Touch-friendly design with clear visual feedback
+
+Horizontal Scroll Prevention:
+- Added `overflow-x: hidden` to html, body, #root, .App
+- Set `max-width: 100vw` on root elements
+- Added `max-width: 100%` to all elements globally
+- Mobile body padding-bottom (4rem + safe-area-inset-bottom)
+- Hidden horizontal scrollbar in sidebar navigation (scrollbar-width: none)
+- Smooth touch scrolling (-webkit-overflow-scrolling: touch)
+
+Safe Area Utilities:
+- `.safe-area-bottom` for iOS notch padding
+- `.px-safe` for safe horizontal padding with device insets
+- Proper spacing for bottom navigation on devices with home indicators
+
+Verification:
+- All changes architect reviewed and approved
+- No horizontal scrollbar on any page
+- Bottom nav hidden on landing page
+- Active route detection working correctly
+- Smooth scrolling on mobile devices
+
 ### Mobile Navigation & Sensory Evaluation Display (October 29, 2025)
 **Enhanced mobile UX with hamburger menu and always-visible sensory evaluation:**
 
