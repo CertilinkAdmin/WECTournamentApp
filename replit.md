@@ -55,19 +55,21 @@ The design strictly adheres to the WEC Official Brand Guidelines.
 
 ## Recent Changes
 
-### Bottom Navigation Bar & Overflow Fixes (October 29, 2025)
-**Replaced hamburger menu with fixed bottom navigation bar for mobile:**
+### Dynamic Bottom Navigation System (October 29, 2025)
+**Implemented context-aware bottom navigation that changes based on current route:**
 
-Bottom Navigation Implementation:
-- Created `BottomNav` component with fixed bottom positioning
-- Three navigation buttons: Admin (Settings), Live (Play), Results (Trophy)
+Dynamic Navigation Implementation:
+- Created `BottomNav` component with route-based button sets
+- **Landing Page (`/`)**: Admin, Live, Results (main 3 routes)
+- **Results Section (`/results/*`)**: Bracket, Standings, Champion, Scores
+- **Live Section (`/live/*`)**: Bracket, Heats, Board, Stations  
+- **Admin Section (`/admin/*`)**: Dashboard, Tourneys, Athletes, Judges
 - Active route highlighting with background color change
 - Mobile-only display (md:hidden breakpoint)
 - Uses WEC brand colors (cinnamon-brown/95, light-sand/20)
 - Proper z-index (50) for layering above content
 - Safe area support for iOS notched devices
-- Hidden on landing page (pathname === '/')
-- Touch-friendly design with clear visual feedback
+- Touch-friendly design with distinct icons per section
 
 Horizontal Scroll Prevention:
 - Added `overflow-x: hidden` to html, body, #root, .App
@@ -85,9 +87,11 @@ Safe Area Utilities:
 Verification:
 - All changes architect reviewed and approved
 - No horizontal scrollbar on any page
-- Bottom nav hidden on landing page
-- Active route detection working correctly
+- E2E tests passed for all navigation routes
+- Active route detection working correctly for all sections
+- Button sets successfully switch based on current route
 - Smooth scrolling on mobile devices
+- Touch targets meet accessibility standards
 
 ### Mobile Navigation & Sensory Evaluation Display (October 29, 2025)
 **Enhanced mobile UX with hamburger menu and always-visible sensory evaluation:**
