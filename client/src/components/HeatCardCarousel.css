@@ -720,3 +720,19 @@
   letter-spacing: 0.5px;
   border: 2px solid rgba(222, 204, 167, 0.3);
 }
+
+.no-judges-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  text-align: center;
+  color: #9CA3AF;
+}
+
+.no-judges-message p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}

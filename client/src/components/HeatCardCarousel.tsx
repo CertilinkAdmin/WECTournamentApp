@@ -378,12 +378,21 @@ const HeatCardCarousel: React.FC<HeatCardCarouselProps> = ({
 
             <div className="heat-modal-footer">
               <div className="judges-section">
-                <h4>Judges</h4>
-                <div className="judges-list">
-                  {selectedHeat.judges && selectedHeat.judges.map((judge: Judge, idx: number) => (
-                    <span key={idx} className="judge-badge">{judge.judgeName}</span>
-                  ))}
-                </div>
+                {selectedHeat.judges && selectedHeat.judges.length > 0 ? (
+                  <>
+                    <h4>Judges</h4>
+                    <div className="judges-list">
+                      {selectedHeat.judges.map((judge: Judge, idx: number) => (
+                        <span key={idx} className="judge-badge">{judge.judgeName}</span>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="no-judges-message">
+                    <Users className="h-12 w-12 text-gray-400 mb-2" />
+                    <p className="text-gray-500 text-sm">No judge scorecards available for this heat</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
