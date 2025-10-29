@@ -1,14 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import EnergyCard from '../components/EnergyCard';
-import MobileMenu from '../components/MobileMenu';
 import './LandingPage.css';
 
 const LandingPage: React.FC = () => {
   return (
     <div className="landing-page">
-      {/* Mobile Hamburger Menu */}
-      <MobileMenu />
 
       {/* Background Video */}
       <div className="landing-background">

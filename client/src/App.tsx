@@ -13,6 +13,7 @@ import JudgeScorecardsResults from './pages/results/JudgeScorecardsResults';
 import HeatResults from './pages/results/HeatResults';
 import HeatCarouselDemo from './pages/results/HeatCarouselDemo';
 import ResultsInputPage from './pages/admin/ResultsInputPage';
+import BottomNav from './components/BottomNav';
 import './App.css';
 
 const App: React.FC = () => {
@@ -20,6 +21,7 @@ const App: React.FC = () => {
     <ThemeProvider>
       <Router>
         <div className="App">
+          <BottomNav />
           <Routes>
           {/* Landing Page - Entry Point */}
           <Route path="/" element={<LandingPage />} />
