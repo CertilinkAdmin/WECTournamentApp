@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { queryClient } from './lib/queryClient';
 import LandingPage from './pages/LandingPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -10,6 +12,8 @@ import WEC2025Results from './pages/results/WEC2025Results';
 import TournamentBracketResults from './pages/results/TournamentBracketResults';
 import LiveBracket from './pages/live/LiveBracket';
 import JudgeScorecardsResults from './pages/results/JudgeScorecardsResults';
+import JudgeScorecardsDetail from './pages/results/JudgeScorecardsDetail';
+import Baristas from './pages/results/Baristas';
 import HeatResults from './pages/results/HeatResults';
 import HeatCarouselDemo from './pages/results/HeatCarouselDemo';
 import ResultsInputPage from './pages/admin/ResultsInputPage';
@@ -18,8 +22,9 @@ import './App.css';
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider>
-      <Router>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Router>
         <div className="App">
           <BottomNav />
           <Routes>
@@ -53,13 +58,15 @@ const App: React.FC = () => {
             <Route path="heats/:heatId" element={<HeatResults />} />
             <Route path="heat-carousel" element={<HeatCarouselDemo />} />
             <Route path="leaderboard" element={<div>Final Leaderboard</div>} />
-            <Route path="champion" element={<div>Champion Results</div>} />
+            <Route path="baristas" element={<Baristas />} />
             <Route path="judges" element={<JudgeScorecardsResults />} />
+            <Route path="judges/:judgeName" element={<JudgeScorecardsDetail />} />
           </Route>
         </Routes>
         </div>
       </Router>
     </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 

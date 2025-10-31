@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { ButtonProps, buttonVariants } from "@/components/ui/button"
@@ -69,7 +69,7 @@ const PaginationPrevious = ({
     className={cn("gap-1 pl-2.5", className)}
     {...props}
   >
-    <ChevronLeft className="h-4 w-4" />
+    <img src="/icons/arrow_l.png" alt="Previous" className="h-4 w-4 object-contain" />
     <span>Previous</span>
   </PaginationLink>
 )
@@ -86,7 +86,7 @@ const PaginationNext = ({
     {...props}
   >
     <span>Next</span>
-    <ChevronRight className="h-4 w-4" />
+    <img src="/icons/arrow_r.png" alt="Next" className="h-4 w-4 object-contain" />
   </PaginationLink>
 )
 PaginationNext.displayName = "PaginationNext"

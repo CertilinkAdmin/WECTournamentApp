@@ -142,6 +142,7 @@
   left: 100%;
 }
 
+
 .tournament-bracket__list {
   display: flex;
   flex-direction: column;
@@ -332,9 +333,7 @@
 
 .tournament-bracket__match:focus {
   border-color: var(--bracket-accent);
-  box-shadow: 
-    0 0 0 2px rgba(153, 77, 39, 0.4),
-    0 6px 20px rgba(153, 77, 39, 0.2);
+  box-shadow: 0 6px 20px rgba(153, 77, 39, 0.2);
 }
 
 @media (max-width: 24em) {

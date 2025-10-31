@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { X } from 'lucide-react';
 import CompetitorScorecard from '@/components/CompetitorScorecard';
 import SensoryEvaluationCard from '@/components/SensoryEvaluationCard';
+import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
 
 interface Tournament {
   id: number;
@@ -150,8 +151,100 @@ const WEC2025Results = () => {
       setLoading(false);
     } catch (err) {
       console.error('Error fetching tournament data:', err);
-      setError('Failed to load tournament data');
+      // Fallback to local static bracket data so the page remains interactive
+      const fallback = buildFallbackData();
+      if (fallback) {
+        setTournamentData(fallback);
+        setError(null);
+      } else {
+        setError('Failed to load tournament data');
+      }
       setLoading(false);
+    }
+  };
+
+  // Build a minimal TournamentData from the local WEC25 data used elsewhere
+  const buildFallbackData = (): TournamentData | null => {
+    try {
+      const heats = [
+        ...WEC25_BRACKET_POSITIONS,
+        ...WEC25_ROUND2_POSITIONS,
+        ...WEC25_ROUND3_POSITIONS,
+        ...WEC25_ROUND4_POSITIONS,
+        ...WEC25_FINAL_POSITION,
+      ];
+
+      // Participants (unique names)
+      const nameSet = new Set<string>();
+      heats.forEach((h: any) => {
+        if (h.competitor1) nameSet.add(h.competitor1);
+        if (h.competitor2) nameSet.add(h.competitor2);
+        if (h.winner) nameSet.add(h.winner);
+      });
+      const participants = Array.from(nameSet).map((name, idx) => ({
+        id: idx + 1,
+        seed: idx + 1,
+        finalRank: null,
+        userId: idx + 1,
+        name,
+        email: ''
+      }));
+
+      // Helper to map a competitor name to id
+      const nameToId = new Map(participants.map(p => [p.name, p.id]));
+
+      // Matches from heats
+      const matches = heats.map((h: any, i: number) => ({
+        id: i + 1,
+        round: Math.ceil(h.heatNumber / 8) || 1,
+        heatNumber: h.heatNumber,
+        status: h.winner ? 'DONE' : 'PENDING',
+        startTime: '',
+        endTime: '',
+        competitor1Id: nameToId.get(h.competitor1) || 0,
+        competitor2Id: nameToId.get(h.competitor2) || 0,
+        winnerId: nameToId.get(h.winner) || 0,
+        competitor1Name: h.competitor1 || '',
+        competitor2Name: h.competitor2 || ''
+      }));
+
+      // Detailed scores (judge decisions) for dialog cards
+      const detailedScores = heats.flatMap((h: any) => {
+        const match = matches.find(m => m.heatNumber === h.heatNumber);
+        if (!match || !h.judges) return [] as JudgeDetailedScore[];
+        return h.judges.map((j: any) => ({
+          matchId: match.id,
+          judgeName: j.judgeName,
+          leftCupCode: j.leftCupCode,
+          rightCupCode: j.rightCupCode,
+          sensoryBeverage: j.sensoryBeverage,
+          visualLatteArt: j.visualLatteArt,
+          taste: j.taste,
+          tactile: j.tactile,
+          flavour: j.flavour,
+          overall: j.overall,
+        } as JudgeDetailedScore));
+      });
+
+      const data: TournamentData = {
+        tournament: {
+          id: 1,
+          name: 'World Espresso Championships 2025 Milano',
+          status: 'COMPLETED',
+          startDate: '',
+          endDate: '',
+          totalRounds: 1,
+          currentRound: 1,
+        },
+        participants,
+        matches,
+        scores: [],
+        detailedScores,
+      };
+      return data;
+    } catch (e) {
+      console.error('Failed to build fallback results data', e);
+      return null;
     }
   };
 
@@ -269,11 +362,11 @@ const WEC2025Results = () => {
             />
           </button>
           
-          <div className="text-center flex-1 bg-cinnamon-brown/10 rounded-lg py-3 px-4 border border-cinnamon-brown/20">
-            <p className="text-sm font-bold text-cinnamon-brown">
+          <div className="text-center flex-1 bg-gradient-to-br from-cinnamon-brown/20 to-cinnamon-brown/30 rounded-xl py-4 px-6 border-2 border-cinnamon-brown/40 shadow-lg backdrop-blur-sm">
+            <p className="text-sm font-semibold text-cinnamon-brown/90 mb-1">
               Heats {startIndex + 1}-{Math.min(endIndex, sortedMatches.length)} of {sortedMatches.length}
             </p>
-            <p className="text-xs text-cinnamon-brown/70 font-medium">
+            <p className="text-base font-bold text-white drop-shadow-sm">
               Segment {currentSegment + 1} of {totalSegments}
             </p>
           </div>

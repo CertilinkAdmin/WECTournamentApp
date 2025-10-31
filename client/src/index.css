@@ -56,6 +56,9 @@
   --primary: 17 59% 38%;  /* #994D27 - Cinnamon Brown primary */
 
   --primary-foreground: 0 0% 100%;  /* White text */
+  
+  /* Dark accent for light theme */
+  --primary-dark: 17 59% 25%;  /* #6B3419 - Darker Cinnamon Brown accent */
 
   --secondary: 40 44% 76%;  /* #DECCA7 - Light Sand secondary */
 
@@ -126,6 +129,17 @@
   --shadow-2xl: 0px 2px 0px 0px hsl(25 15% 30% / 0.00);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  
+  /* Dark accent for primary buttons in light theme */
+  .btn-primary-dark {
+    background: hsl(var(--primary-dark)) !important;
+    border-color: hsl(var(--primary-dark)) !important;
+  }
+  
+  .btn-primary-dark:hover {
+    background: hsl(from var(--primary-dark) h s calc(l - 5%)) !important;
+    border-color: hsl(from var(--primary-dark) h s calc(l - 5%)) !important;
+  }
 
   /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
 

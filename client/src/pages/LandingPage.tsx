@@ -33,7 +33,7 @@ const LandingPage: React.FC = () => {
       </header>
       <nav className="landing-nav" aria-label="Primary Navigation">
         <div className="landing-nav-inner">
-          <NavLink to="/live" end>
+          <NavLink to="/live" end className="btn-primary-dark">
             Live
           </NavLink>
           <NavLink to="/results" end>
