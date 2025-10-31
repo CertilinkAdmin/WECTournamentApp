@@ -26,9 +26,9 @@ export default function BottomNav() {
     if (pathname.startsWith('/results')) {
       return [
         { path: '/results/bracket', label: 'Bracket', icon: LayoutGrid },
-        { path: '/results/leaderboard', label: 'Standings', icon: Award },
+        { path: '/results/judges', label: 'Judges', icon: Award },
         { path: '/results/baristas', label: 'Baristas', icon: Crown },
-        { path: '/results/judges', label: 'Scores', icon: FileText },
+        { path: '/results/scorecards', label: 'Scores', icon: FileText },
       ];
     }
     

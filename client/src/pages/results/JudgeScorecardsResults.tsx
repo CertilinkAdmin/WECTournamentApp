@@ -171,7 +171,7 @@ const JudgeScorecardsResults: React.FC = () => {
                 return (
                   <button
                     key={judge}
-                    onClick={() => navigate(`/results/judges/${encodeURIComponent(judge)}`)}
+                    onClick={() => navigate(`/results/scorecards/${encodeURIComponent(judge)}`)}
                     className="text-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer border border-transparent hover:border-primary/30"
                   >
                     <div className="font-semibold text-sm text-gray-600">{judge}</div>
@@ -228,28 +228,33 @@ const JudgeScorecardsResults: React.FC = () => {
           >
             <Card className="min-h-[600px] relative border border-primary/30 bg-card">
               
-              <CardHeader className="relative z-10">
-                <CardTitle className="flex items-center justify-between">
+              <CardHeader className="relative z-10 pb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  {/* Heat Number - Prominent on left */}
                   <div className="flex items-center gap-3">
-                    <Trophy className="h-6 w-6 text-primary animate-bounce" />
-                    <span className="text-2xl font-bold text-primary">
+                    <Trophy className="h-7 w-7 text-primary animate-bounce" />
+                    <span className="text-3xl sm:text-4xl font-bold text-primary">
                       Heat {currentHeat.heatNumber}
                     </span>
-                    <Badge className={`transition-all duration-300 hover:scale-110 ${
+                  </div>
+                  
+                  {/* Station and Winner badges - Grouped on right */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <Badge className={`text-base px-4 py-2 transition-all duration-300 hover:scale-105 ${
                       currentHeat.station === 'A' ? 'bg-primary shadow-lg shadow-primary/25' :
                       currentHeat.station === 'B' ? 'bg-chart-3 shadow-lg shadow-chart-3/25' :
                       'bg-chart-1 shadow-lg shadow-chart-1/25'
                     }`}>
                       Station {currentHeat.station}
                     </Badge>
+                    {currentHeat.winner && (
+                      <Badge variant="secondary" className="text-base px-4 py-2 bg-secondary text-secondary-foreground border-2 border-primary/30 shadow-lg">
+                        <Trophy className="h-4 w-4 mr-2" />
+                        Winner: {currentHeat.winner}
+                      </Badge>
+                    )}
                   </div>
-                  {currentHeat.winner && (
-                    <Badge variant="secondary" className="bg-secondary text-secondary-foreground border border-secondary">
-                      <Trophy className="h-4 w-4 mr-1" />
-                      Winner: {currentHeat.winner}
-                    </Badge>
-                  )}
-                </CardTitle>
+                </div>
               </CardHeader>
               
               <CardContent className="relative z-10">
