@@ -47,7 +47,7 @@ export default function BottomNav() {
       return [
         { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
         { path: '/admin/tournaments', label: 'Tourneys', icon: Trophy },
-        { path: '/admin/competitors', label: 'Athletes', icon: Users },
+        { path: '/admin/competitors', label: 'Baristas', icon: Users },
         { path: '/admin/judges', label: 'Judges', icon: Gavel },
       ];
     }

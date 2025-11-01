@@ -348,8 +348,8 @@ export default function AdminTournamentSetup() {
   };
 
   // Get judges and available competitors from users
-  const judges = users.filter(u => u.role === 'JUDGE');
-  const availableCompetitors = users.filter(u => u.role === 'BARISTA');
+  const judges = users.filter(u => u.role === 'JUDGE' && u.approved);
+  const availableCompetitors = users.filter(u => u.role === 'BARISTA' && u.approved);
   
   // The API endpoint now properly filters to only return baristas (competitors)
   // So 'competitors' array already contains only baristas

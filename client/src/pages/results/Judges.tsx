@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import './Judges.css';
 
 interface User {
@@ -24,6 +25,7 @@ const FALLBACK_JUDGES = [
 ];
 
 const Judges: React.FC<JudgesProps> = () => {
+  const navigate = useNavigate();
   const [progress, setProgress] = useState(50);
   const [startX, setStartX] = useState(0);
   const [active, setActive] = useState(0);
@@ -154,10 +156,10 @@ const Judges: React.FC<JudgesProps> = () => {
     };
   }, [isDown, startX, speedWheel, speedDrag]);
 
-  const handleItemClick = (index: number) => {
-    if (judges.length === 0) return;
-    const newProgress = (index / judges.length) * 100 + 10;
-    setProgress(newProgress);
+  const handleItemClick = (index: number, judgeName: string) => {
+    // Navigate to judge detail page
+    const encodedName = encodeURIComponent(judgeName);
+    navigate(`/results/judges/${encodedName}`);
   };
 
   // Get initials for display
@@ -184,7 +186,7 @@ const Judges: React.FC<JudgesProps> = () => {
           <div
             key={`judge-${judge.id}-${index}`}
             className="carousel-item"
-            onClick={() => handleItemClick(index)}
+            onClick={() => handleItemClick(index, judge.name)}
           >
             <div className="carousel-box">
               <div className="title">{judge.name}</div>

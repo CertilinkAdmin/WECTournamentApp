@@ -19,6 +19,9 @@ import Judges from './pages/results/Judges';
 import HeatResults from './pages/results/HeatResults';
 import HeatCarouselDemo from './pages/results/HeatCarouselDemo';
 import ResultsInputPage from './pages/admin/ResultsInputPage';
+import BracketBuilder from './pages/admin/BracketBuilder';
+import ManageBaristas from './pages/admin/ManageBaristas';
+import ManageJudges from './pages/admin/ManageJudges';
 import BottomNav from './components/BottomNav';
 import './App.css';
 
@@ -37,9 +40,10 @@ const App: React.FC = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="tournaments" element={<div>Tournaments</div>} />
-            <Route path="competitors" element={<div>Competitors</div>} />
-            <Route path="judges" element={<div>Judges</div>} />
+            <Route path="competitors" element={<ManageBaristas />} />
+            <Route path="judges" element={<ManageJudges />} />
             <Route path="results-input" element={<ResultsInputPage />} />
+            <Route path="bracket-builder" element={<BracketBuilder />} />
             <Route path="stations" element={<div>Stations</div>} />
             <Route path="settings" element={<div>Settings</div>} />
           </Route>
@@ -63,6 +67,7 @@ const App: React.FC = () => {
             <Route path="baristas" element={<Baristas />} />
             <Route path="baristas/:baristaName" element={<BaristaDetail />} />
             <Route path="judges" element={<Judges />} />
+            <Route path="judges/:judgeName" element={<JudgeScorecardsDetail />} />
             <Route path="scorecards" element={<JudgeScorecardsResults />} />
             <Route path="scorecards/:judgeName" element={<JudgeScorecardsDetail />} />
           </Route>

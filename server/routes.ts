@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { Server as SocketIOServer } from "socket.io";
 import { BracketGenerator } from "./bracketGenerator";
 import tournamentRoutes from "./routes/tournament";
+import { registerBracketRoutes } from "./routes/bracket";
 import { 
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
@@ -55,6 +56,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const users = await storage.getAllUsers();
     res.json(users);
   });
+
+  app.patch("/api/users", async (req, res) => {
+    try {
+      const { id, ...updateData } = req.body;
+      if (!id) {
+        return res.status(400).json({ error: 'User id is required' });
+      }
+      const user = await storage.updateUser(id, updateData);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      res.json(user);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ===== BRACKET ROUTES =====
+  registerBracketRoutes(app);
 
   // ===== TOURNAMENT ROUTES =====
   app.post("/api/tournaments", async (req, res) => {

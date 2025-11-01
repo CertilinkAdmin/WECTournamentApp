@@ -50,7 +50,7 @@ const JudgeScorecardsDetail: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">No scorecards found for this judge.</p>
-            <Button onClick={() => navigate('/results/scorecards')}>Back to Scorecards</Button>
+            <Button onClick={() => navigate('/results/judges')}>Back to Judges</Button>
           </CardContent>
         </Card>
       </div>
@@ -64,11 +64,11 @@ const JudgeScorecardsDetail: React.FC = () => {
         <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigate('/results/scorecards')}
+              onClick={() => navigate('/results/judges')}
               className="mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Scorecards
+              Back to Judges
             </Button>
           <div className="text-center">
             <div className="flex items-center justify-center gap-4 mb-4">
