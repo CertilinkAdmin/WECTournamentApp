@@ -11,17 +11,16 @@ interface User {
 
 interface JudgesProps {}
 
-// Fallback list with real judge names (placeholder - you can update with actual judge names)
+// Fallback list with real judge names
 const FALLBACK_JUDGES = [
-  { id: 1, name: 'Judge One', rank: 1 },
-  { id: 2, name: 'Judge Two', rank: 2 },
-  { id: 3, name: 'Judge Three', rank: 3 },
-  { id: 4, name: 'Judge Four', rank: 4 },
-  { id: 5, name: 'Judge Five', rank: 5 },
-  { id: 6, name: 'Judge Six', rank: 6 },
-  { id: 7, name: 'Judge Seven', rank: 7 },
-  { id: 8, name: 'Judge Eight', rank: 8 },
-  { id: 9, name: 'Judge Nine', rank: 9 },
+  { id: 1, name: 'Jasper', rank: 1 },
+  { id: 2, name: 'Korn', rank: 2 },
+  { id: 3, name: 'Michalis', rank: 3 },
+  { id: 4, name: 'Shinsaku', rank: 4 },
+  { id: 5, name: 'Ali', rank: 5 },
+  { id: 6, name: 'Junior', rank: 6 },
+  { id: 7, name: 'Tess', rank: 7 },
+  { id: 8, name: 'Boss', rank: 8 },
 ];
 
 const Judges: React.FC<JudgesProps> = () => {
@@ -50,52 +49,18 @@ const Judges: React.FC<JudgesProps> = () => {
     },
   });
 
-  // Filter users to get only judges
+  // Always use the specified tournament judges
   const judges = useMemo(() => {
-    // Wait for loading to complete before deciding
+    // Wait for loading to complete before showing judges
     if (isLoading) {
       console.log('Still loading users...');
       return [];
     }
     
-    if (error) {
-      console.error('Error fetching users:', error);
-      return FALLBACK_JUDGES;
-    }
-    
-    if (!users || users.length === 0) {
-      console.log('No users found in database, using fallback');
-      return FALLBACK_JUDGES;
-    }
-    
-    console.log('Processing users:', users.length, 'total users');
-    
-    // Filter for judges - check for both 'JUDGE' and 'Judge' (case-insensitive check)
-    const judgeUsers = users.filter(u => {
-      const role = (u.role || '').toUpperCase();
-      const hasName = u.name && u.name.trim();
-      const isJudge = role === 'JUDGE';
-      if (isJudge && hasName) {
-        console.log('Found judge:', u.name, 'role:', u.role);
-      }
-      return isJudge && hasName;
-    });
-    
-    console.log('Total judges found:', judgeUsers.length);
-    
-    if (judgeUsers.length > 0) {
-      const mappedJudges = judgeUsers.map((judge, i) => ({
-        id: judge.id,
-        name: judge.name.trim(),
-        rank: i + 1,
-      }));
-      console.log('Mapped judges for display:', mappedJudges.map(j => j.name));
-      return mappedJudges;
-    }
-    
-    console.log('No judges found in database, using fallback');
+    // Always use the fallback judges list for the tournament
+    console.log('Using tournament judges:', FALLBACK_JUDGES.map(j => j.name));
     return FALLBACK_JUDGES;
-  }, [users, isLoading, error]);
+  }, [isLoading]);
 
   const getZindex = (array: any[], index: number) => {
     return array.map((_, i) => 

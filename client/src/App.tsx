@@ -14,6 +14,7 @@ import LiveBracket from './pages/live/LiveBracket';
 import JudgeScorecardsResults from './pages/results/JudgeScorecardsResults';
 import JudgeScorecardsDetail from './pages/results/JudgeScorecardsDetail';
 import Baristas from './pages/results/Baristas';
+import BaristaDetail from './pages/results/BaristaDetail';
 import Judges from './pages/results/Judges';
 import HeatResults from './pages/results/HeatResults';
 import HeatCarouselDemo from './pages/results/HeatCarouselDemo';
@@ -60,6 +61,7 @@ const App: React.FC = () => {
             <Route path="heat-carousel" element={<HeatCarouselDemo />} />
             <Route path="leaderboard" element={<div>Final Leaderboard</div>} />
             <Route path="baristas" element={<Baristas />} />
+            <Route path="baristas/:baristaName" element={<BaristaDetail />} />
             <Route path="judges" element={<Judges />} />
             <Route path="scorecards" element={<JudgeScorecardsResults />} />
             <Route path="scorecards/:judgeName" element={<JudgeScorecardsDetail />} />

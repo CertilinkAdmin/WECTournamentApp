@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import './Baristas.css';
 
 interface Participant {
@@ -13,21 +14,30 @@ interface Participant {
 
 interface BaristasProps {}
 
-// Fallback list with real names
+// Fallback list with tournament competitors
 const FALLBACK_BARISTAS = [
-  { id: 1, name: 'Aga Muhammed', rank: 1 },
-  { id: 2, name: 'Jae Kim', rank: 2 },
-  { id: 3, name: 'Stevo Kühn', rank: 3 },
-  { id: 4, name: 'Felix Irmer', rank: 4 },
-  { id: 5, name: 'Kirill Yudin', rank: 5 },
-  { id: 6, name: 'Penny Rodriguez', rank: 6 },
-  { id: 7, name: 'Christos Sotiros', rank: 7 },
-  { id: 8, name: 'Engi Pan', rank: 8 },
-  { id: 9, name: 'Artur Ciuro', rank: 9 },
-  { id: 10, name: 'Bill Nguyen', rank: 10 },
+  { id: 1, name: 'Aga', rank: 1 },
+  { id: 2, name: 'Anja', rank: 2 },
+  { id: 3, name: 'Artur', rank: 3 },
+  { id: 4, name: 'Bill', rank: 4 },
+  { id: 5, name: 'Carlos', rank: 5 },
+  { id: 6, name: 'Christos', rank: 6 },
+  { id: 7, name: 'Danielle', rank: 7 },
+  { id: 8, name: 'Edwin', rank: 8 },
+  { id: 9, name: 'Engi', rank: 9 },
+  { id: 10, name: 'Erland', rank: 10 },
+  { id: 11, name: 'Faiz', rank: 11 },
+  { id: 12, name: 'Felix', rank: 12 },
+  { id: 13, name: 'Hojat', rank: 13 },
+  { id: 14, name: 'Jae', rank: 14 },
+  { id: 15, name: 'Julian', rank: 15 },
+  { id: 16, name: 'Kirill', rank: 16 },
+  { id: 17, name: 'Penny', rank: 17 },
+  { id: 18, name: 'Stevo', rank: 18 },
 ];
 
 const Baristas: React.FC<BaristasProps> = () => {
+  const navigate = useNavigate();
   const [progress, setProgress] = useState(50);
   const [startX, setStartX] = useState(0);
   const [active, setActive] = useState(0);
@@ -50,18 +60,12 @@ const Baristas: React.FC<BaristasProps> = () => {
     enabled: !!currentTournament?.id,
   });
 
-  // Use participants data or fallback to WEC25 competitors
-  // Only use participants if they have names, otherwise use fallback
+  // Always use the specified tournament baristas
   const baristas = useMemo(() => {
-    if (participants.length > 0 && participants.every(p => p.name && p.name.trim())) {
-      return participants.map((p, i) => ({
-        id: p.id || i + 1,
-        name: p.name,
-        rank: p.finalRank || i + 1,
-      }));
-    }
+    // Always use the fallback baristas list for the tournament
+    console.log('Using tournament baristas:', FALLBACK_BARISTAS.map(b => b.name));
     return FALLBACK_BARISTAS;
-  }, [participants]);
+  }, []);
 
   const getZindex = (array: any[], index: number) => {
     return array.map((_, i) => 
@@ -144,9 +148,10 @@ const Baristas: React.FC<BaristasProps> = () => {
     };
   }, [isDown, startX, progress]);
 
-  const handleItemClick = (index: number) => {
-    const newProgress = (index / baristas.length) * 100 + 10;
-    setProgress(newProgress);
+  const handleItemClick = (index: number, baristaName: string) => {
+    // Navigate to barista detail page
+    const encodedName = encodeURIComponent(baristaName);
+    navigate(`/results/baristas/${encodedName}`);
   };
 
   // Get initials for display
@@ -173,7 +178,7 @@ const Baristas: React.FC<BaristasProps> = () => {
           <div
             key={barista.id}
             className="carousel-item"
-            onClick={() => handleItemClick(index)}
+            onClick={() => handleItemClick(index, barista.name)}
           >
             <div className="carousel-box">
               <div className="title">{barista.name}</div>
