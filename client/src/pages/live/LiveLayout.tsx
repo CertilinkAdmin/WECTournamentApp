@@ -46,19 +46,19 @@ const LiveLayout: React.FC = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-primary text-primary-foreground border-b border-primary-border">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
+        <div className="px-4 py-2">
+          <div className="flex items-center justify-between mb-2">
             <Link 
               to="/live" 
-              className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-md"
+              className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-1.5 rounded-md"
               data-testid="link-back-tournaments"
             >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="text-sm">Tournaments</span>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-xs">Tournaments</span>
             </Link>
             <div className="flex items-center gap-3">
               {tournament?.status === 'ACTIVE' && (
-                <Badge className="bg-green-600 text-white" data-testid="badge-live">
+                <Badge className="bg-green-600 text-white text-xs" data-testid="badge-live">
                   <div className="w-2 h-2 rounded-full bg-white animate-pulse mr-2" />
                   LIVE
                 </Badge>
@@ -71,40 +71,14 @@ const LiveLayout: React.FC = () => {
           {isLoading ? (
             <div className="h-8 bg-primary-foreground/10 rounded animate-pulse w-64" />
           ) : tournament ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pb-1">
               <Trophy className="w-6 h-6" />
               <div>
-                <h1 className="text-xl font-bold">{getShortName(tournament.name)}</h1>
+                <h1 className="text-lg font-bold">{getShortName(tournament.name)}</h1>
                 <p className="text-xs text-primary-foreground/70">{tournament.name}</p>
               </div>
             </div>
           ) : null}
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="flex gap-1 px-4 overflow-x-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-            
-            return (
-              <Link
-                key={item.path}
-                to={`/live/${tournamentId}/${item.path}`}
-                className={`
-                  flex items-center gap-2 px-4 py-3 border-b-2 transition-all whitespace-nowrap
-                  ${active 
-                    ? 'border-primary-foreground text-primary-foreground font-semibold' 
-                    : 'border-transparent text-primary-foreground/60 hover:text-primary-foreground/90'
-                  }
-                `}
-                data-testid={`link-nav-${item.path}`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
         </div>
       </header>
 
