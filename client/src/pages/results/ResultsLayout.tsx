@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useParams, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Trophy, LayoutGrid, ListOrdered, Award, Users, FileText } from 'lucide-react';
+import { Home, Trophy, LayoutGrid, ListOrdered, Award, Users, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ThemeToggle from '../../components/ThemeToggle';
 import './ResultsLayout.css';
@@ -50,38 +50,33 @@ const ResultsLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Global Header */}
       <header className="bg-secondary text-secondary-foreground border-b border-secondary-border">
-        <div className="px-4 py-2">
-          <div className="flex items-center justify-between mb-2">
-            <Link 
-              to="/live" 
-              className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-1.5 rounded-md"
-              data-testid="link-back-tournaments"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-xs">Tournaments</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-xs" data-testid="badge-completed">
-                Completed
-              </Badge>
-              <ThemeToggle />
-            </div>
-          </div>
-
-          {/* Tournament Title */}
-          {isLoading ? (
-            <div className="h-8 bg-secondary-foreground/10 rounded animate-pulse w-64" />
-          ) : tournament ? (
-            <div className="flex items-center gap-3 pb-1">
-              <Trophy className="w-6 h-6" />
-              <div>
-                <h1 className="text-lg font-bold">{getShortName(tournament.name)}</h1>
-                <p className="text-xs text-secondary-foreground/70">{tournament.name}</p>
+        <div className="px-4 py-2 flex items-center justify-between">
+          {/* Left spacer for balance */}
+          <div className="w-20"></div>
+          
+          {/* Center: WEC Logo */}
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center gap-2 text-secondary-foreground">
+              <div className="flex flex-col items-center">
+                <div className="text-lg font-bold tracking-wider">WEC</div>
+                <div className="text-[10px] opacity-70">CHAMPIONSHIPS</div>
               </div>
             </div>
-          ) : null}
+          </div>
+          
+          {/* Right: Home + Theme Toggle */}
+          <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="p-2 hover-elevate active-elevate-2 rounded-md"
+              data-testid="link-home"
+            >
+              <Home className="w-4 h-4" />
+            </Link>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 

@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Trophy, ChevronRight } from 'lucide-react';
+import { Calendar, Trophy, ChevronRight, Home } from 'lucide-react';
 import { format } from 'date-fns';
+import ThemeToggle from '../../components/ThemeToggle';
 
 interface Tournament {
   id: number;
@@ -68,14 +69,44 @@ export default function TournamentList() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground py-8 px-4">
+      {/* Global Header */}
+      <header className="bg-primary text-primary-foreground border-b border-primary-border">
+        <div className="px-4 py-2 flex items-center justify-between">
+          {/* Left spacer for balance */}
+          <div className="w-20"></div>
+          
+          {/* Center: WEC Logo */}
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center gap-2 text-primary-foreground">
+              <div className="flex flex-col items-center">
+                <div className="text-lg font-bold tracking-wider">WEC</div>
+                <div className="text-[10px] opacity-70">CHAMPIONSHIPS</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right: Home + Theme Toggle */}
+          <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="p-2 hover-elevate active-elevate-2 rounded-md"
+              data-testid="link-home"
+            >
+              <Home className="w-4 h-4" />
+            </Link>
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+      
+      {/* Page Title */}
+      <div className="bg-primary text-primary-foreground py-6 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-2">
-            <Trophy className="w-8 h-8" />
-            <h1 className="text-3xl font-bold">Tournaments</h1>
+            <Trophy className="w-6 h-6" />
+            <h1 className="text-2xl font-bold">Tournaments</h1>
           </div>
-          <p className="text-primary-foreground/80">Select a tournament to view live or completed results</p>
+          <p className="text-primary-foreground/80 text-sm">Select a tournament to view live or completed results</p>
         </div>
       </div>
 
