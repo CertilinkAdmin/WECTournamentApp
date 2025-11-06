@@ -7,7 +7,7 @@ import './LandingPage.css';
 
 const LandingPage: React.FC = () => {
   return (
-    <div className="landing-page">
+    <div className="landing-page overflow-hidden h-screen">
       {/* Global Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-primary/80 backdrop-blur-sm text-primary-foreground border-b border-primary-border/50">
         <div className="px-4 py-4 flex items-center justify-between">
@@ -48,7 +48,7 @@ const LandingPage: React.FC = () => {
         <div className="background-overlay"></div>
       </div>
       
-      <main className="main-options pt-20">
+      <main className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
         <div className="single-circle-container">
           {/* Live Tournament - Single Center Circle with Clock and WEC Logo */}
           <EnergyCard
