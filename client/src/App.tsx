@@ -7,6 +7,7 @@ import LandingPage from './pages/LandingPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import LiveLayout from './pages/live/LiveLayout';
+import TournamentList from './pages/live/TournamentList';
 import ResultsLayout from './pages/results/ResultsLayout';
 import WEC2025Results from './pages/results/WEC2025Results';
 import TournamentBracketResults from './pages/results/TournamentBracketResults';
@@ -49,13 +50,8 @@ const App: React.FC = () => {
           </Route>
 
           {/* Live Tournament Routes */}
-          <Route path="/live" element={<LiveLayout />}>
-            <Route index element={<div>Live Overview</div>} />
-            <Route path="bracket" element={<LiveBracket />} />
-            <Route path="heats" element={<div>Current Heats</div>} />
-            <Route path="leaderboard" element={<div>Live Leaderboard</div>} />
-            <Route path="stations" element={<div>Stations</div>} />
-          </Route>
+          <Route path="/live" element={<TournamentList />} />
+          <Route path="/live/:tournamentId" element={<LiveBracket />} />
 
           {/* Results Routes */}
           <Route path="/results" element={<ResultsLayout />}>

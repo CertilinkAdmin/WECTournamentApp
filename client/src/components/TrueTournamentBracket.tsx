@@ -7,6 +7,7 @@ import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS
 
 interface TrueTournamentBracketProps {
   mode?: 'live' | 'results';
+  tournamentId?: number;
 }
 
 interface Judge {
@@ -39,7 +40,7 @@ interface BracketRound {
   matches: BracketMatch[];
 }
 
-const TrueTournamentBracket = ({ mode = 'results' }: TrueTournamentBracketProps) => {
+const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamentBracketProps) => {
   const [animatedMatches, setAnimatedMatches] = useState<Set<number>>(new Set());
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedHeat, setSelectedHeat] = useState<BracketMatch | null>(null);
