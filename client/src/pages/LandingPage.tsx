@@ -47,16 +47,16 @@ const LandingPage: React.FC = () => {
         <div className="background-overlay"></div>
       </div>
       
-      <main className="absolute top-28 bottom-0 left-0 right-0 z-10">
-        <div className="flex flex-col items-center justify-start h-full pt-8">
-          {/* Text Above Clock */}
-          <div className="text-center text-primary-foreground mb-8">
-            <div className="text-3xl font-bold tracking-widest">WEC</div>
-            <div className="text-2xl font-bold tracking-widest">TOURNAMENT</div>
-            <div className="text-2xl font-bold tracking-widest">HOST</div>
-          </div>
-          
-          {/* Live Tournament - Single Center Circle with Clock and WEC Logo */}
+      <main className="absolute top-28 bottom-0 left-0 right-0 z-10 flex flex-col items-center justify-start pt-8">
+        {/* Text Above Clock */}
+        <div className="text-center text-primary-foreground mb-8">
+          <div className="text-3xl font-bold tracking-widest">WEC</div>
+          <div className="text-2xl font-bold tracking-widest">TOURNAMENT</div>
+          <div className="text-2xl font-bold tracking-widest">HOST</div>
+        </div>
+        
+        {/* Live Tournament - Single Center Circle with Clock and WEC Logo */}
+        <div className="flex justify-center w-full">
           <EnergyCard
             to="/live"
             icon="📺"
