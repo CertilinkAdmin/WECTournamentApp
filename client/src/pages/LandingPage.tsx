@@ -9,8 +9,8 @@ const LandingPage: React.FC = () => {
   return (
     <div className="landing-page">
       {/* Global Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground border-b border-primary-border">
-        <div className="px-4 py-2 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-primary/80 backdrop-blur-sm text-primary-foreground border-b border-primary-border/50">
+        <div className="px-4 py-4 flex items-center justify-between">
           {/* Left spacer for balance */}
           <div className="w-20"></div>
           
@@ -18,8 +18,8 @@ const LandingPage: React.FC = () => {
           <div className="flex-1 flex justify-center">
             <div className="flex items-center gap-2 text-primary-foreground">
               <div className="flex flex-col items-center">
-                <div className="text-lg font-bold tracking-wider">WEC</div>
-                <div className="text-[10px] opacity-70">CHAMPIONSHIPS</div>
+                <div className="text-xl font-bold tracking-wider">WEC</div>
+                <div className="text-xs opacity-80">CHAMPIONSHIPS</div>
               </div>
             </div>
           </div>
@@ -48,7 +48,7 @@ const LandingPage: React.FC = () => {
         <div className="background-overlay"></div>
       </div>
       
-      <main className="main-options pt-16">
+      <main className="main-options pt-20">
         <div className="single-circle-container">
           {/* Live Tournament - Single Center Circle with Clock and WEC Logo */}
           <EnergyCard
