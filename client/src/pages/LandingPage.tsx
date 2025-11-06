@@ -1,11 +1,35 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { Home } from 'lucide-react';
 import EnergyCard from '../components/EnergyCard';
+import ThemeToggle from '../components/ThemeToggle';
 import './LandingPage.css';
 
 const LandingPage: React.FC = () => {
   return (
     <div className="landing-page">
+      {/* Global Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground border-b border-primary-border">
+        <div className="px-4 py-2 flex items-center justify-between">
+          {/* Left spacer for balance */}
+          <div className="w-20"></div>
+          
+          {/* Center: WEC Logo */}
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center gap-2 text-primary-foreground">
+              <div className="flex flex-col items-center">
+                <div className="text-lg font-bold tracking-wider">WEC</div>
+                <div className="text-[10px] opacity-70">CHAMPIONSHIPS</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right: Theme Toggle */}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
 
       {/* Background Video */}
       <div className="landing-background">
@@ -24,28 +48,7 @@ const LandingPage: React.FC = () => {
         <div className="background-overlay"></div>
       </div>
       
-      <header className="landing-header">
-        <div className="logo-section">
-          <h1 className="main-title">World Espresso Championships</h1>
-          <p className="subtitle">Tournament Management System</p>
-          <div className="year-badge">WEC 2025 Milano</div>
-        </div>
-      </header>
-      <nav className="landing-nav" aria-label="Primary Navigation">
-        <div className="landing-nav-inner">
-          <NavLink to="/live" end className="btn-primary-dark">
-            Live
-          </NavLink>
-          <NavLink to="/results" end>
-            Results
-          </NavLink>
-          <NavLink to="/admin" end>
-            Admin
-          </NavLink>
-        </div>
-      </nav>
-      
-      <main className="main-options">
+      <main className="main-options pt-16">
         <div className="single-circle-container">
           {/* Live Tournament - Single Center Circle with Clock and WEC Logo */}
           <EnergyCard
@@ -62,12 +65,6 @@ const LandingPage: React.FC = () => {
           />
         </div>
       </main>
-
-      <footer className="landing-footer">
-        <div className="footer-content">
-          <p className="footer-text">World Espresso Championships 2025 Milano</p>
-        </div>
-      </footer>
     </div>
   );
 };
