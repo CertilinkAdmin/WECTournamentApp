@@ -29,8 +29,10 @@ export default function TournamentList() {
   });
 
   const handleTournamentClick = (tournament: Tournament) => {
-    if (tournament.status === 'ACTIVE' || tournament.status === 'COMPLETED') {
+    if (tournament.status === 'ACTIVE') {
       navigate(`/live/${tournament.id}`);
+    } else if (tournament.status === 'COMPLETED') {
+      navigate(`/results/${tournament.id}`);
     }
   };
 
@@ -73,7 +75,7 @@ export default function TournamentList() {
             <Trophy className="w-8 h-8" />
             <h1 className="text-3xl font-bold">Tournaments</h1>
           </div>
-          <p className="text-primary-foreground/80">Select a tournament to view live results</p>
+          <p className="text-primary-foreground/80">Select a tournament to view live or completed results</p>
         </div>
       </div>
 

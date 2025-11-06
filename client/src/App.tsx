@@ -60,7 +60,7 @@ const App: React.FC = () => {
           </Route>
 
           {/* Results Routes */}
-          <Route path="/results" element={<ResultsLayout />}>
+          <Route path="/results/:tournamentId" element={<ResultsLayout />}>
             <Route index element={<WEC2025Results />} />
             <Route path="bracket" element={<TournamentBracketResults />} />
             <Route path="heats/:heatId" element={<HeatResults />} />
@@ -73,6 +73,9 @@ const App: React.FC = () => {
             <Route path="scorecards" element={<JudgeScorecardsResults />} />
             <Route path="scorecards/:judgeName" element={<JudgeScorecardsDetail />} />
           </Route>
+          
+          {/* Legacy results route - redirect to WEC 2025 Milano */}
+          <Route path="/results" element={<WEC2025Results />} />
         </Routes>
         </div>
       </Router>

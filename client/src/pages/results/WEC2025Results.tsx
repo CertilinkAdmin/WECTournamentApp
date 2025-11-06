@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ interface TournamentData {
 }
 
 const WEC2025Results = () => {
+  const { tournamentId } = useParams<{ tournamentId?: string }>();
   const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,14 +82,18 @@ const WEC2025Results = () => {
   const HEATS_PER_SEGMENT = 3;
 
   useEffect(() => {
-    fetchTournamentData();
-  }, []);
+    if (tournamentId) {
+      fetchTournamentData();
+    } else {
+      // Legacy support: if no tournamentId in URL, try to find WEC 2025 Milano
+      fetchByName();
+    }
+  }, [tournamentId]);
 
-  const fetchTournamentData = async () => {
+  const fetchByName = async () => {
     try {
       setLoading(true);
       
-      // Fetch all tournaments and find WEC 2025 Milano by name
       const tournamentsResponse = await fetch('/api/tournaments');
       if (!tournamentsResponse.ok) {
         throw new Error('Failed to fetch tournaments');
@@ -102,65 +108,85 @@ const WEC2025Results = () => {
         throw new Error('WEC 2025 Milano tournament not found');
       }
       
-      // Now fetch the full tournament data by ID
       const response = await fetch(`/api/tournaments/${wec2025.id}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch tournament data');
-      }
-      
-      const data = await response.json();
-      
-      // Transform the data to match our interface
-      const transformedData: TournamentData = {
-        tournament: {
-          id: data.tournament.id,
-          name: data.tournament.name,
-          status: data.tournament.status,
-          startDate: data.tournament.startDate,
-          endDate: data.tournament.endDate,
-          totalRounds: data.tournament.totalRounds,
-          currentRound: data.tournament.currentRound
-        },
-        participants: data.participants.map((p: any) => ({
-          id: p.id,
-          seed: p.seed,
-          finalRank: p.finalRank,
-          userId: p.userId,
-          name: p.name || '',
-          email: p.email || ''
-        })),
-        matches: data.matches.map((m: any) => ({
-          id: m.id,
-          round: m.round,
-          heatNumber: m.heatNumber,
-          status: m.status,
-          startTime: m.startTime,
-          endTime: m.endTime,
-          competitor1Id: m.competitor1Id,
-          competitor2Id: m.competitor2Id,
-          winnerId: m.winnerId,
-          competitor1Name: m.competitor1Name || '',
-          competitor2Name: m.competitor2Name || ''
-        })),
-        scores: data.scores || [],
-        detailedScores: data.detailedScores || []
-      };
-      
-      setTournamentData(transformedData);
-      setLoading(false);
+      await processResponse(response);
     } catch (err) {
-      console.error('Error fetching tournament data:', err);
-      // Fallback to local static bracket data so the page remains interactive
-      const fallback = buildFallbackData();
-      if (fallback) {
-        setTournamentData(fallback);
-        setError(null);
-      } else {
-        setError('Failed to load tournament data');
-      }
-      setLoading(false);
+      handleError(err);
     }
+  };
+
+  const fetchTournamentData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch tournament data by ID from route params
+      const response = await fetch(`/api/tournaments/${tournamentId}`);
+      
+      await processResponse(response);
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const processResponse = async (response: Response) => {
+    if (!response.ok) {
+      throw new Error('Failed to fetch tournament data');
+    }
+    
+    const data = await response.json();
+    
+    // Transform the data to match our interface
+    const transformedData: TournamentData = {
+      tournament: {
+        id: data.tournament.id,
+        name: data.tournament.name,
+        status: data.tournament.status,
+        startDate: data.tournament.startDate,
+        endDate: data.tournament.endDate,
+        totalRounds: data.tournament.totalRounds,
+        currentRound: data.tournament.currentRound
+      },
+      participants: data.participants.map((p: any) => ({
+        id: p.id,
+        seed: p.seed,
+        finalRank: p.finalRank,
+        userId: p.userId,
+        name: p.name || '',
+        email: p.email || ''
+      })),
+      matches: data.matches.map((m: any) => ({
+        id: m.id,
+        round: m.round,
+        heatNumber: m.heatNumber,
+        status: m.status,
+        startTime: m.startTime,
+        endTime: m.endTime,
+        competitor1Id: m.competitor1Id,
+        competitor2Id: m.competitor2Id,
+        winnerId: m.winnerId,
+        competitor1Name: m.competitor1Name || '',
+        competitor2Name: m.competitor2Name || ''
+      })),
+      scores: data.scores || [],
+      detailedScores: data.detailedScores || []
+    };
+    
+    setTournamentData(transformedData);
+    setError(null);
+    setLoading(false);
+  };
+
+  const handleError = (err: any) => {
+    console.error('Error fetching tournament data:', err);
+    // Fallback to local static bracket data so the page remains interactive
+    const fallback = buildFallbackData();
+    if (fallback) {
+      setTournamentData(fallback);
+      setError(null);
+    } else {
+      setError('Failed to load tournament data');
+    }
+    setLoading(false);
   };
 
   // Build a minimal TournamentData from the local WEC25 data used elsewhere
