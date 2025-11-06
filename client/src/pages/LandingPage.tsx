@@ -57,20 +57,18 @@ const LandingPage: React.FC = () => {
           </div>
           
           {/* Live Tournament - Single Center Circle with Clock and WEC Logo */}
-          <div style={{ marginLeft: '10%' }}>
-            <EnergyCard
-              to="/live"
-              icon="📺"
-              title="Live Tour"
-              description="Real-time tournament monitoring and live updates"
-              className="live-button featured single-circle"
-              featured={true}
-              liveBadge={true}
-              showWecLogo={true}
-              containerId="liveCardContainer"
-              canvasId="live-energy-canvas"
-            />
-          </div>
+          <EnergyCard
+            to="/live"
+            icon="📺"
+            title="Live Tour"
+            description="Real-time tournament monitoring and live updates"
+            className="live-button featured single-circle"
+            featured={true}
+            liveBadge={true}
+            showWecLogo={true}
+            containerId="liveCardContainer"
+            canvasId="live-energy-canvas"
+          />
         </div>
       </main>
     </div>
