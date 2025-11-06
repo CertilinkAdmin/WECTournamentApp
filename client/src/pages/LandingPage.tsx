@@ -48,7 +48,7 @@ const LandingPage: React.FC = () => {
         <div className="background-overlay"></div>
       </div>
       
-      <main className="main-options" style={{ paddingTop: '8rem' }}>
+      <main className="absolute top-16 bottom-0 left-0 right-0 flex items-center justify-center">
         <div className="single-circle-container">
           {/* Live Tournament - Single Center Circle with Clock and WEC Logo */}
           <EnergyCard
