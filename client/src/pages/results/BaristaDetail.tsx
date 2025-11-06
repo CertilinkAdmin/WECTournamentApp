@@ -33,6 +33,19 @@ const CATEGORY_POINTS = {
   overall: 5,
 };
 
+const JUDGES_COUNT = 3;
+
+// Helper function to determine category result
+const getCategoryResult = (earnedPoints: number, maxPointsPerJudge: number): 'WIN' | 'LOSS' | 'TIE' => {
+  const maxPossible = maxPointsPerJudge * JUDGES_COUNT;
+  const winThreshold = maxPointsPerJudge * (JUDGES_COUNT / 2); // More than half the judges
+  
+  if (earnedPoints > winThreshold) return 'WIN';
+  if (earnedPoints === 0) return 'LOSS';
+  if (earnedPoints < winThreshold) return 'LOSS';
+  return 'TIE'; // Exactly half (rare with odd number of judges)
+};
+
 const BaristaDetail: React.FC = () => {
   const { baristaName } = useParams<{ baristaName: string }>();
   const navigate = useNavigate();
@@ -343,67 +356,74 @@ const BaristaDetail: React.FC = () => {
 
               {/* Category Scores */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold mb-4">Scores by Category</h3>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
-                    <CardContent className="pt-6">
-                      <div className="text-center">
-                        <div className="text-xs text-muted-foreground mb-2">Latte Art</div>
-                        <div className="text-3xl font-bold text-primary mb-1">
-                          {currentHeat.categoryScores.latteArt}
-                        </div>
-                        <div className="text-xs text-muted-foreground">(3 pts per win)</div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                <h3 className="text-lg font-semibold mb-4 text-center">Scores by Category</h3>
+                
+                {/* Cappuccino Section */}
+                <div className="space-y-3">
+                  <div className="bg-secondary text-secondary-foreground rounded-lg px-4 py-2 text-center font-bold text-lg" data-testid="section-cappuccino">
+                    CAPPUCCINO
+                  </div>
                   
-                  <Card className="bg-gradient-to-br from-chart-1/10 to-chart-1/5 border-chart-1/30">
-                    <CardContent className="pt-6">
-                      <div className="text-center">
-                        <div className="text-xs text-muted-foreground mb-2">Taste</div>
-                        <div className="text-3xl font-bold text-chart-1 mb-1">
-                          {currentHeat.categoryScores.taste}
-                        </div>
-                        <div className="text-xs text-muted-foreground">(1 pt per win)</div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {/* Latte Art */}
+                  <div className="bg-primary text-primary-foreground rounded-lg px-4 py-3 flex items-center justify-between" data-testid="score-latte-art">
+                    <span className="font-semibold">Latte Art:</span>
+                    <span className="font-semibold">{currentHeat.categoryScores.latteArt} / {CATEGORY_POINTS.visualLatteArt * JUDGES_COUNT} points</span>
+                    <span className="font-bold">
+                      {getCategoryResult(currentHeat.categoryScores.latteArt, CATEGORY_POINTS.visualLatteArt)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Espresso Section */}
+                <div className="space-y-3 mt-6">
+                  <div className="bg-secondary text-secondary-foreground rounded-lg px-4 py-2 text-center font-bold text-lg" data-testid="section-espresso">
+                    ESPRESSO
+                  </div>
                   
-                  <Card className="bg-gradient-to-br from-chart-2/10 to-chart-2/5 border-chart-2/30">
-                    <CardContent className="pt-6">
-                      <div className="text-center">
-                        <div className="text-xs text-muted-foreground mb-2">Tactile</div>
-                        <div className="text-3xl font-bold text-chart-2 mb-1">
-                          {currentHeat.categoryScores.tactile}
-                        </div>
-                        <div className="text-xs text-muted-foreground">(1 pt per win)</div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {/* Taste */}
+                  <div className="bg-primary text-primary-foreground rounded-lg px-4 py-3 flex items-center justify-between" data-testid="score-taste">
+                    <span className="font-semibold">Taste:</span>
+                    <span className="font-semibold">{currentHeat.categoryScores.taste} / {CATEGORY_POINTS.taste * JUDGES_COUNT} points</span>
+                    <span className="font-bold">
+                      {getCategoryResult(currentHeat.categoryScores.taste, CATEGORY_POINTS.taste)}
+                    </span>
+                  </div>
                   
-                  <Card className="bg-gradient-to-br from-chart-3/10 to-chart-3/5 border-chart-3/30">
-                    <CardContent className="pt-6">
-                      <div className="text-center">
-                        <div className="text-xs text-muted-foreground mb-2">Flavor</div>
-                        <div className="text-3xl font-bold text-chart-3 mb-1">
-                          {currentHeat.categoryScores.flavor}
-                        </div>
-                        <div className="text-xs text-muted-foreground">(1 pt per win)</div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {/* Tactile */}
+                  <div className="bg-primary text-primary-foreground rounded-lg px-4 py-3 flex items-center justify-between" data-testid="score-tactile">
+                    <span className="font-semibold">Tactile:</span>
+                    <span className="font-semibold">{currentHeat.categoryScores.tactile} / {CATEGORY_POINTS.tactile * JUDGES_COUNT} points</span>
+                    <span className="font-bold">
+                      {getCategoryResult(currentHeat.categoryScores.tactile, CATEGORY_POINTS.tactile)}
+                    </span>
+                  </div>
                   
-                  <Card className="bg-gradient-to-br from-chart-4/10 to-chart-4/5 border-chart-4/30">
-                    <CardContent className="pt-6">
-                      <div className="text-center">
-                        <div className="text-xs text-muted-foreground mb-2">Overall</div>
-                        <div className="text-3xl font-bold text-chart-4 mb-1">
-                          {currentHeat.categoryScores.overall}
-                        </div>
-                        <div className="text-xs text-muted-foreground">(5 pts per win)</div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {/* Flavour */}
+                  <div className="bg-primary text-primary-foreground rounded-lg px-4 py-3 flex items-center justify-between" data-testid="score-flavour">
+                    <span className="font-semibold">Flavour:</span>
+                    <span className="font-semibold">{currentHeat.categoryScores.flavor} / {CATEGORY_POINTS.flavour * JUDGES_COUNT} points</span>
+                    <span className="font-bold">
+                      {getCategoryResult(currentHeat.categoryScores.flavor, CATEGORY_POINTS.flavour)}
+                    </span>
+                  </div>
+                  
+                  {/* Overall */}
+                  <div className="bg-primary text-primary-foreground rounded-lg px-4 py-3 flex items-center justify-between" data-testid="score-overall">
+                    <span className="font-semibold">Overall:</span>
+                    <span className="font-semibold">{currentHeat.categoryScores.overall} / {CATEGORY_POINTS.overall * JUDGES_COUNT} points</span>
+                    <span className="font-bold">
+                      {getCategoryResult(currentHeat.categoryScores.overall, CATEGORY_POINTS.overall)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Total Score */}
+                <div className="bg-secondary text-secondary-foreground rounded-lg px-6 py-4 text-center mt-6" data-testid="total-score">
+                  <div className="text-3xl font-bold">
+                    {currentHeat.totalPoints} / 33 <span className="ml-4">
+                      {currentHeat.totalPoints > 16 ? 'WIN' : currentHeat.totalPoints === 16 ? 'TIE' : 'LOSS'}
+                    </span>
+                  </div>
                 </div>
               </div>
 

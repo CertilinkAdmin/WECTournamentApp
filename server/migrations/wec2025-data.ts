@@ -73,18 +73,18 @@ const WEC_2025_DATA = {
   ],
 
   heats: [
-    // BYE heats (heats 1-11) - competitors received 33 points (Round 1)
-    { heatNumber: 1, round: 1, competitor1: "Ronny Chalhoub", competitor2: "BYE", winner: "Ronny Chalhoub", points1: 33, points2: 0 },
-    { heatNumber: 2, round: 1, competitor1: "David Yescas-Berg", competitor2: "BYE", winner: "David Yescas-Berg", points1: 33, points2: 0 },
-    { heatNumber: 3, round: 1, competitor1: "Keita Osawa", competitor2: "BYE", winner: "Keita Osawa", points1: 33, points2: 0 },
-    { heatNumber: 4, round: 1, competitor1: "Alge Mohamed", competitor2: "BYE", winner: "Alge Mohamed", points1: 33, points2: 0 },
-    { heatNumber: 5, round: 1, competitor1: "Julian Yip", competitor2: "BYE", winner: "Julian Yip", points1: 33, points2: 0 },
-    { heatNumber: 6, round: 1, competitor1: "Artur Kusnierz", competitor2: "BYE", winner: "Artur Kusnierz", points1: 33, points2: 0 },
-    { heatNumber: 7, round: 1, competitor1: "Hojat Mousavi", competitor2: "BYE", winner: "Hojat Mousavi", points1: 33, points2: 0 },
-    { heatNumber: 8, round: 1, competitor1: "Sebastian Hernandez", competitor2: "BYE", winner: "Sebastian Hernandez", points1: 33, points2: 0 },
-    { heatNumber: 9, round: 1, competitor1: "Fraz Nurdin", competitor2: "BYE", winner: "Fraz Nurdin", points1: 33, points2: 0 },
-    { heatNumber: 10, round: 1, competitor1: "Christie Sidikat", competitor2: "BYE", winner: "Christie Sidikat", points1: 33, points2: 0 },
-    { heatNumber: 11, round: 1, competitor1: "Danielle Misa", competitor2: "BYE", winner: "Danielle Misa", points1: 33, points2: 0 },
+    // BYE heats (heats 1-11) - competitors advance without scoring (Round 1)
+    { heatNumber: 1, round: 1, competitor1: "Ronny Chalhoub", competitor2: "BYE", winner: "Ronny Chalhoub", points1: 0, points2: 0 },
+    { heatNumber: 2, round: 1, competitor1: "David Yescas-Berg", competitor2: "BYE", winner: "David Yescas-Berg", points1: 0, points2: 0 },
+    { heatNumber: 3, round: 1, competitor1: "Keita Osawa", competitor2: "BYE", winner: "Keita Osawa", points1: 0, points2: 0 },
+    { heatNumber: 4, round: 1, competitor1: "Alge Mohamed", competitor2: "BYE", winner: "Alge Mohamed", points1: 0, points2: 0 },
+    { heatNumber: 5, round: 1, competitor1: "Julian Yip", competitor2: "BYE", winner: "Julian Yip", points1: 0, points2: 0 },
+    { heatNumber: 6, round: 1, competitor1: "Artur Kusnierz", competitor2: "BYE", winner: "Artur Kusnierz", points1: 0, points2: 0 },
+    { heatNumber: 7, round: 1, competitor1: "Hojat Mousavi", competitor2: "BYE", winner: "Hojat Mousavi", points1: 0, points2: 0 },
+    { heatNumber: 8, round: 1, competitor1: "Sebastian Hernandez", competitor2: "BYE", winner: "Sebastian Hernandez", points1: 0, points2: 0 },
+    { heatNumber: 9, round: 1, competitor1: "Fraz Nurdin", competitor2: "BYE", winner: "Fraz Nurdin", points1: 0, points2: 0 },
+    { heatNumber: 10, round: 1, competitor1: "Christie Sidikat", competitor2: "BYE", winner: "Christie Sidikat", points1: 0, points2: 0 },
+    { heatNumber: 11, round: 1, competitor1: "Danielle Misa", competitor2: "BYE", winner: "Danielle Misa", points1: 0, points2: 0 },
     
     // Actual heats with judge scores
     { 
@@ -400,50 +400,10 @@ async function migrateWEC2025Data() {
         endTime: new Date()
       }).returning();
 
-      // Handle BYE matches - create system judges awarding 33 points
+      // Handle BYE matches - no scoring, just advance
       if (heat.competitor2 === 'BYE' && competitor1Id) {
-        const systemJudges = ['System Judge 1', 'System Judge 2', 'System Judge 3'];
-        
-        // Get or create system judge users
-        const systemJudgeIds: number[] = [];
-        for (const judgeName of systemJudges) {
-          let judgeId = userMap.get(judgeName);
-          if (!judgeId) {
-            const [judge] = await db.insert(users).values({
-              name: judgeName,
-              email: `${judgeName.toLowerCase().replace(/\s+/g, '')}@system.wec`,
-              role: 'JUDGE'
-            }).returning();
-            judgeId = judge.id;
-            userMap.set(judgeName, judgeId);
-          }
-          systemJudgeIds.push(judgeId);
-        }
-        
-        for (let i = 0; i < systemJudges.length; i++) {
-          // Create detailed score record (all points to competitor1)
-          await db.insert(judgeDetailedScores).values({
-            matchId: match.id,
-            judgeName: systemJudges[i],
-            leftCupCode: 'BYE',
-            rightCupCode: 'BYE',
-            sensoryBeverage: 'Cappuccino',
-            visualLatteArt: 'left',
-            taste: 'left',
-            tactile: 'left',
-            flavour: 'left',
-            overall: 'left'
-          });
-          
-          // Create aggregate score record (11 points per judge = 33 total)
-          await db.insert(heatScores).values({
-            matchId: match.id,
-            judgeId: systemJudgeIds[i],
-            competitorId: competitor1Id,
-            segment: 'DIAL_IN',
-            score: 11 // 3 (visual) + 1 (taste) + 1 (tactile) + 1 (flavour) + 5 (overall)
-          });
-        }
+        // BYE matches don't have scores - competitor advances automatically
+        console.log(`✅ BYE Heat ${heat.heatNumber} - ${heat.competitor1} advances`);
       }
       
       // Handle competition heats with judge scores
