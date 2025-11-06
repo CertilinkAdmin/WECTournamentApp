@@ -51,7 +51,13 @@ const App: React.FC = () => {
 
           {/* Live Tournament Routes */}
           <Route path="/live" element={<TournamentList />} />
-          <Route path="/live/:tournamentId" element={<LiveBracket />} />
+          <Route path="/live/:tournamentId" element={<LiveLayout />}>
+            <Route index element={<LiveBracket />} />
+            <Route path="bracket" element={<LiveBracket />} />
+            <Route path="heats" element={<div>Current Heats</div>} />
+            <Route path="leaderboard" element={<div>Live Leaderboard</div>} />
+            <Route path="stations" element={<div>Stations</div>} />
+          </Route>
 
           {/* Results Routes */}
           <Route path="/results" element={<ResultsLayout />}>
