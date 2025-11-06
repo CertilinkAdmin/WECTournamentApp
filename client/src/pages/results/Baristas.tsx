@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import './Baristas.css';
 
 interface Participant {
@@ -38,6 +38,7 @@ const FALLBACK_BARISTAS = [
 
 const Baristas: React.FC<BaristasProps> = () => {
   const navigate = useNavigate();
+  const { tournamentId } = useParams<{ tournamentId: string }>();
   const [progress, setProgress] = useState(50);
   const [startX, setStartX] = useState(0);
   const [active, setActive] = useState(0);
@@ -46,18 +47,10 @@ const Baristas: React.FC<BaristasProps> = () => {
   const speedWheel = 0.02;
   const speedDrag = -0.1;
 
-  // Fetch tournament and participants
-  const { data: tournaments = [] } = useQuery<any[]>({
-    queryKey: ['/api/tournaments'],
-  });
-
-  const currentTournament = tournaments.find((t: any) => 
-    t.name === 'World Espresso Championships 2025 Milano'
-  );
-
+  // Fetch participants for this tournament
   const { data: participants = [] } = useQuery<Participant[]>({
-    queryKey: ['/api/tournaments', currentTournament?.id, 'participants'],
-    enabled: !!currentTournament?.id,
+    queryKey: [`/api/tournaments/${tournamentId}/participants`],
+    enabled: !!tournamentId,
   });
 
   // Always use the specified tournament baristas
@@ -151,7 +144,7 @@ const Baristas: React.FC<BaristasProps> = () => {
   const handleItemClick = (index: number, baristaName: string) => {
     // Navigate to barista detail page
     const encodedName = encodeURIComponent(baristaName);
-    navigate(`/results/baristas/${encodedName}`);
+    navigate(`/results/${tournamentId}/baristas/${encodedName}`);
   };
 
   // Get initials for display

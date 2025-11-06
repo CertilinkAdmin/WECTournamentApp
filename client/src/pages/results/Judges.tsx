@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import './Judges.css';
 
 interface User {
@@ -26,6 +26,7 @@ const FALLBACK_JUDGES = [
 
 const Judges: React.FC<JudgesProps> = () => {
   const navigate = useNavigate();
+  const { tournamentId } = useParams<{ tournamentId: string }>();
   const [progress, setProgress] = useState(50);
   const [startX, setStartX] = useState(0);
   const [active, setActive] = useState(0);
@@ -34,7 +35,7 @@ const Judges: React.FC<JudgesProps> = () => {
   const speedWheel = 0.02;
   const speedDrag = -0.1;
 
-  // Fetch users and filter for judges
+  // For now, still fetch users list (judges are not tournament-specific yet)
   const { data: users = [], isLoading, error } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
@@ -49,6 +50,7 @@ const Judges: React.FC<JudgesProps> = () => {
       console.log('Fetched users:', data);
       return data;
     },
+    enabled: !!tournamentId,
   });
 
   // Always use the specified tournament judges
@@ -159,7 +161,7 @@ const Judges: React.FC<JudgesProps> = () => {
   const handleItemClick = (index: number, judgeName: string) => {
     // Navigate to judge detail page
     const encodedName = encodeURIComponent(judgeName);
-    navigate(`/results/judges/${encodedName}`);
+    navigate(`/results/${tournamentId}/judges/${encodedName}`);
   };
 
   // Get initials for display

@@ -11,6 +11,19 @@ export default function BottomNav() {
   const location = useLocation();
   const pathname = location.pathname;
   
+  // Extract tournamentId from pathname if present
+  const extractTournamentId = (path: string): string | null => {
+    const resultsMatch = path.match(/^\/results\/(\d+)/);
+    if (resultsMatch) return resultsMatch[1];
+    
+    const liveMatch = path.match(/^\/live\/(\d+)/);
+    if (liveMatch) return liveMatch[1];
+    
+    return null;
+  };
+  
+  const tournamentId = extractTournamentId(pathname);
+  
   // Determine which navigation set to display based on current route
   const getNavButtons = (): NavButton[] => {
     // Landing page - Main 3 routes
@@ -22,23 +35,23 @@ export default function BottomNav() {
       ];
     }
     
-    // Results section navigation
-    if (pathname.startsWith('/results')) {
+    // Results section navigation with tournament ID
+    if (pathname.startsWith('/results') && tournamentId) {
       return [
-        { path: '/results/bracket', label: 'Bracket', icon: LayoutGrid },
-        { path: '/results/judges', label: 'Judges', icon: Award },
-        { path: '/results/baristas', label: 'Baristas', icon: Crown },
-        { path: '/results/scorecards', label: 'Scores', icon: FileText },
+        { path: `/results/${tournamentId}/bracket`, label: 'Bracket', icon: LayoutGrid },
+        { path: `/results/${tournamentId}/baristas`, label: 'Baristas', icon: Crown },
+        { path: `/results/${tournamentId}/judges`, label: 'Judges', icon: Award },
+        { path: `/results/${tournamentId}/scorecards`, label: 'Scores', icon: FileText },
       ];
     }
     
-    // Live section navigation
-    if (pathname.startsWith('/live')) {
+    // Live section navigation with tournament ID
+    if (pathname.startsWith('/live') && tournamentId) {
       return [
-        { path: '/live/bracket', label: 'Bracket', icon: LayoutGrid },
-        { path: '/live/heats', label: 'Heats', icon: Zap },
-        { path: '/live/leaderboard', label: 'Board', icon: BarChart3 },
-        { path: '/live/stations', label: 'Stations', icon: MapPin },
+        { path: `/live/${tournamentId}/bracket`, label: 'Bracket', icon: LayoutGrid },
+        { path: `/live/${tournamentId}/heats`, label: 'Heats', icon: Zap },
+        { path: `/live/${tournamentId}/leaderboard`, label: 'Board', icon: BarChart3 },
+        { path: `/live/${tournamentId}/stations`, label: 'Stations', icon: MapPin },
       ];
     }
     
