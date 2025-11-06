@@ -35,7 +35,8 @@ const LiveLayout: React.FC = () => {
     return currentPath === path || (currentPath === tournamentId && path === 'bracket');
   };
 
-  const getShortName = (name: string): string => {
+  const getShortName = (name: string | undefined): string => {
+    if (!name) return '';
     if (name.includes('Milano')) return "WEC'25 Milano";
     if (name.includes('Panama')) return "WEC'26 Panama";
     return name.replace(' Espresso Championship', '').replace('2026 ', '');
