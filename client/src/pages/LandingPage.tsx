@@ -49,17 +49,12 @@ const LandingPage: React.FC = () => {
       
       <main className="absolute top-16 bottom-0 left-0 right-0 flex items-center justify-center z-10">
         <div className="relative" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingLeft: '10%' }}>
-          {/* Curved Text Above Clock */}
-          <svg viewBox="0 0 400 100" className="absolute" style={{ top: '-80px', left: '50%', transform: 'translateX(-50%)', width: '400px', height: '100px' }}>
-            <defs>
-              <path id="curve" d="M 50,80 Q 200,20 350,80" fill="transparent" />
-            </defs>
-            <text className="text-primary-foreground" fill="currentColor" fontSize="24" fontWeight="bold" letterSpacing="4">
-              <textPath href="#curve" startOffset="50%" textAnchor="middle">
-                WEC TOURNAMENTS
-              </textPath>
-            </text>
-          </svg>
+          {/* Text Above Clock */}
+          <div className="absolute text-center text-primary-foreground" style={{ top: '-120px' }}>
+            <div className="text-3xl font-bold tracking-widest">WEC</div>
+            <div className="text-2xl font-bold tracking-widest">TOURNAMENT</div>
+            <div className="text-2xl font-bold tracking-widest">HOST</div>
+          </div>
           
           {/* Live Tournament - Single Center Circle with Clock and WEC Logo */}
           <EnergyCard
