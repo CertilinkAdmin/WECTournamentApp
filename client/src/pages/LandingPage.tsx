@@ -24,7 +24,7 @@ const LandingPage: React.FC = () => {
           </div>
           
           {/* Right: Theme Toggle */}
-          <div className="flex items-center gap-2">
+          <div className="w-20 flex items-center justify-end gap-2">
             <ThemeToggle />
           </div>
         </div>

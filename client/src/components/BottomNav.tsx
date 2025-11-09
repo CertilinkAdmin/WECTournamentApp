@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Settings, Play, Trophy, LayoutGrid, Award, Crown, FileText, Zap, BarChart3, MapPin, LayoutDashboard, Users, Gavel } from 'lucide-react';
+import { Settings, Play, Trophy, LayoutGrid, Award, Crown, FileText, Zap, BarChart3, MapPin, LayoutDashboard, Users, Gavel, Home } from 'lucide-react';
 
 interface NavButton {
   path: string;
@@ -38,10 +38,10 @@ export default function BottomNav() {
     // Results section navigation with tournament ID
     if (pathname.startsWith('/results') && tournamentId) {
       return [
+        { path: '/', label: 'Home', icon: Home },
         { path: `/results/${tournamentId}/bracket`, label: 'Bracket', icon: LayoutGrid },
         { path: `/results/${tournamentId}/baristas`, label: 'Baristas', icon: Crown },
         { path: `/results/${tournamentId}/judges`, label: 'Judges', icon: Award },
-        { path: `/results/${tournamentId}/scorecards`, label: 'Scores', icon: FileText },
       ];
     }
     
