@@ -147,23 +147,15 @@ const EnergyCard: React.FC<EnergyCardProps> = ({
           </div>
         )}
         
-        {/* For live card, show larger clock */}
-        {isLiveCard && (
-          <>
-            <div className="analog-clock-large">
-              <AnalogClock />
-              {/* Overlay WEC logo on clock when showWecLogo is true */}
-              {showWecLogo && (
-                <div className="wec-logo-overlay">
-                  <img 
-                    src="/weclogotanwht.png" 
-                    alt="WEC Logo" 
-                    className="wec-logo-image"
-                  />
-                </div>
-              )}
-            </div>
-          </>
+        {/* For live card, show WEC logo instead of clock */}
+        {isLiveCard && showWecLogo && (
+          <div className="wec-logo-display">
+            <img 
+              src="/weclogotanwht.png" 
+              alt="WEC Logo" 
+              className="wec-logo-image-center"
+            />
+          </div>
         )}
         
         {!isLiveCard && (

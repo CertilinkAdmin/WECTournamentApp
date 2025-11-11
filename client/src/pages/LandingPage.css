@@ -190,7 +190,30 @@
   right: 0;
 }
 
-/* WEC Logo Overlay on Clock */
+/* WEC Logo Display (no clock) */
+.wec-logo-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 8;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wec-logo-image-center {
+  width: 400px;
+  height: auto;
+  opacity: 0.9;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+/* WEC Logo Overlay on Clock (legacy) */
 .wec-logo-overlay {
   position: absolute;
   top: 50%;

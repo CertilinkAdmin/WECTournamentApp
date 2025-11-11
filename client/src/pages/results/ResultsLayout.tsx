@@ -70,10 +70,11 @@ const ResultsLayout: React.FC = () => {
           <div className="flex items-center gap-2">
             <Link
               to="/"
-              className="p-2 hover-elevate active-elevate-2 rounded-md"
+              className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded-md transition-colors"
               data-testid="link-home"
             >
               <Home className="w-4 h-4" />
+              <span className="text-sm font-medium">Home</span>
             </Link>
             <ThemeToggle />
           </div>
