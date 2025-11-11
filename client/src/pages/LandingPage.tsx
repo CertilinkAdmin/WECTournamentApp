@@ -38,11 +38,13 @@ const LandingPage: React.FC = () => {
           style={{
             position: 'absolute',
             top: 0,
-            left: '10%',
+            left: 0,
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center right',
+            objectPosition: 'center center',
+            transform: 'scale(1.5)',
+            transformOrigin: 'center center',
             zIndex: 1
           }}
         />
