@@ -1,7 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home } from 'lucide-react';
-import EnergyCard from '../components/EnergyCard';
 import ThemeToggle from '../components/ThemeToggle';
 import './LandingPage.css';
 
@@ -50,27 +49,11 @@ const LandingPage: React.FC = () => {
       </div>
       
       <main className="absolute top-28 bottom-0 left-0 right-0 z-10 flex flex-col items-center justify-start pt-8">
-        {/* Text Above Clock */}
-        <div className="text-center text-primary-foreground mb-8">
-          <div className="text-3xl font-bold tracking-widest">ESPRESSO</div>
-          <div className="text-2xl font-bold tracking-widest">TOURNAMENT</div>
-          <div className="text-2xl font-bold tracking-widest">HOST</div>
-        </div>
-        
-        {/* Live Tournament - Single Center Circle */}
-        <div className="flex justify-center w-full">
-          <EnergyCard
-            to="/live"
-            icon="📺"
-            title="Live Tour"
-            description="Real-time tournament monitoring and live updates"
-            className="live-button featured single-circle"
-            featured={true}
-            liveBadge={true}
-            showWecLogo={true}
-            containerId="liveCardContainer"
-            canvasId="live-energy-canvas"
-          />
+        {/* Text Overlay */}
+        <div className="text-center text-primary-foreground">
+          <div className="text-4xl font-bold tracking-widest mb-2">ESPRESSO</div>
+          <div className="text-3xl font-bold tracking-widest mb-2">TOURNAMENT</div>
+          <div className="text-3xl font-bold tracking-widest">HOST</div>
         </div>
       </main>
     </div>
