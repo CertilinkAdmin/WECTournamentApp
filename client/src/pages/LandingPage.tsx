@@ -50,7 +50,7 @@ const LandingPage: React.FC = () => {
       <main className="absolute top-28 bottom-0 left-0 right-0 z-10 flex flex-col items-center justify-start pt-8">
         {/* Text Above Clock */}
         <div className="text-center text-primary-foreground mb-8">
-          <div className="text-3xl font-bold tracking-widest">WEC</div>
+          <div className="text-3xl font-bold tracking-widest">ESPRESSO</div>
           <div className="text-2xl font-bold tracking-widest">TOURNAMENT</div>
           <div className="text-2xl font-bold tracking-widest">HOST</div>
         </div>
