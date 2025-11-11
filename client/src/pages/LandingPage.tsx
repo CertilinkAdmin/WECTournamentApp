@@ -30,20 +30,22 @@ const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Background Video */}
+      {/* Background Image */}
       <div className="landing-background">
-        <video 
-          className="background-video" 
-          autoPlay 
-          muted 
-          loop 
-          playsInline
-          poster="/eespresso.png"
-        >
-          <source src="/freecompress-coffeetransition (3).mp4" type="video/mp4" />
-          {/* Fallback image if video doesn't load */}
-          <img src="/eespresso.png" alt="WEC 2025 Milano Background" className="background-image" />
-        </video>
+        <img 
+          src="/baristaPlaceHolder.png" 
+          alt="WEC 2025 Milano Background" 
+          className="background-image"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: 1
+          }}
+        />
         <div className="background-overlay"></div>
       </div>
       
@@ -55,7 +57,7 @@ const LandingPage: React.FC = () => {
           <div className="text-2xl font-bold tracking-widest">HOST</div>
         </div>
         
-        {/* Live Tournament - Single Center Circle with Clock and WEC Logo */}
+        {/* Live Tournament - Single Center Circle */}
         <div className="flex justify-center w-full">
           <EnergyCard
             to="/live"
