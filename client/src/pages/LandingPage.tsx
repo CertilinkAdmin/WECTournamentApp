@@ -48,6 +48,15 @@ const LandingPage: React.FC = () => {
         <div className="background-overlay"></div>
       </div>
       
+      {/* Large WEC Logo Overlay */}
+      <div className="absolute inset-0 z-5 flex items-center justify-center pointer-events-none">
+        <img 
+          src="/wec_logo_wht.png" 
+          alt="WEC Logo" 
+          className="w-96 h-auto opacity-20 filter drop-shadow-lg"
+        />
+      </div>
+
       <main className="absolute top-28 bottom-0 left-0 right-0 z-10 flex flex-col items-center justify-start pt-8">
         {/* Text Overlay */}
         <div className="text-center text-primary-foreground">
