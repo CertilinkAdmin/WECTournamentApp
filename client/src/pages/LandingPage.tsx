@@ -12,7 +12,7 @@ const LandingPage: React.FC = () => {
         <div className="px-4 py-6 flex items-center justify-between">
           {/* Left spacer for balance */}
           <div className="w-20"></div>
-          
+
           {/* Center: WEC Logo Image */}
           <div className="flex-1 flex justify-center">
             <img 
@@ -21,7 +21,7 @@ const LandingPage: React.FC = () => {
               className="h-20 w-auto"
             />
           </div>
-          
+
           {/* Right: Theme Toggle */}
           <div className="w-20 flex items-center justify-end gap-2">
             <ThemeToggle />
@@ -42,12 +42,15 @@ const LandingPage: React.FC = () => {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
+            objectPosition: '45% center',
+            transform: 'scale(1.5)',
+            transformOrigin: 'center center',
             zIndex: 1
           }}
         />
         <div className="background-overlay"></div>
       </div>
-      
+
       {/* Large WEC Logo Overlay */}
       <div className="absolute inset-0 z-5 flex items-center justify-center pointer-events-none">
         <img 
