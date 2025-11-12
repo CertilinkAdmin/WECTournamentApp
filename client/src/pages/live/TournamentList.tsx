@@ -144,19 +144,23 @@ export default function TournamentList() {
                     </div>
                   </div>
                 </CardHeader>
-                {tournament.startDate && (
-                  <CardContent className="pt-0">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      <span>
-                        {format(new Date(tournament.startDate), 'MMMM d, yyyy')}
-                        {tournament.endDate && 
-                          ` - ${format(new Date(tournament.endDate), 'MMMM d, yyyy')}`
-                        }
-                      </span>
-                    </div>
-                  </CardContent>
-                )}
+                <CardContent className="pt-0">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {tournament.status === 'SETUP' || !tournament.startDate ? (
+                      <span>Coming Soon</span>
+                    ) : (
+                      <>
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          {format(new Date(tournament.startDate), 'MMMM d, yyyy')}
+                          {tournament.endDate && 
+                            ` - ${format(new Date(tournament.endDate), 'MMMM d, yyyy')}`
+                          }
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
               </Card>
             );
           })}
