@@ -170,7 +170,7 @@ const Baristas: React.FC<BaristasProps> = () => {
         {baristas.map((barista, index) => (
           <div
             key={barista.id}
-            className="carousel-item"
+            className={`carousel-item ${index === active ? 'active' : ''}`}
             onClick={() => handleItemClick(index, barista.name)}
           >
             <div className="carousel-box">

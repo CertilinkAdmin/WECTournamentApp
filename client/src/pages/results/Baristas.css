@@ -55,7 +55,7 @@
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.carousel-item:first-child {
+.carousel-item.active {
   pointer-events: auto;
 }
 

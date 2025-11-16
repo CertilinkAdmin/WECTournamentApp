@@ -1,0 +1,144 @@
+{
+  "chainName": "Tournaments Page Restructure - Live Action Focus",
+  "description": "Restructure tournaments page to feature live action with tabs for Live/Upcoming/Completed, and update results page for hybrid completed+live results",
+  "version": "1.0.0",
+  "tasks": [
+    {
+      "id": "task-1",
+      "name": "Create Tournaments Page with Tabs Structure",
+      "description": "Restructure TournamentList component to have tabs: Live (default), Upcoming, Completed",
+      "type": "component",
+      "file": "client/src/pages/live/TournamentList.tsx",
+      "testFile": "client/src/pages/live/TournamentList.test.tsx",
+      "prompt": "Create a tabbed interface for TournamentList component with three tabs: 'Live' (default showing ACTIVE tournaments with live action), 'Upcoming' (showing SETUP tournaments for registration), and 'Completed' (quick access to COMPLETED tournaments). The Live tab should prominently feature live tournament action with visual indicators. Use Tabs component from ui/tabs. Write tests first (TDD) for tab switching, filtering tournaments by status, and rendering correct content per tab.",
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "Three tabs visible: Live, Upcoming, Completed",
+        "Live tab is default and shows ACTIVE tournaments",
+        "Upcoming tab shows SETUP tournaments",
+        "Completed tab shows COMPLETED tournaments",
+        "Live tournaments have prominent visual indicators",
+        "All tabs have tests covering functionality"
+      ]
+    },
+    {
+      "id": "task-2",
+      "name": "Add Real-time Updates for Live Tournaments",
+      "description": "Implement real-time updates for live tournaments showing current heats, rounds, and leaderboard",
+      "type": "feature",
+      "file": "client/src/pages/live/TournamentList.tsx",
+      "testFile": "client/src/pages/live/TournamentList.test.tsx",
+      "prompt": "Add real-time updates to the Live tab showing: current round number, active heats count, live leaderboard preview, and station status. Use React Query with polling or WebSocket if available. Display live indicators (pulsing badges, 'LIVE' text). Write tests first (TDD) for real-time data fetching, update intervals, and live indicator rendering.",
+      "dependencies": ["task-1"],
+      "acceptanceCriteria": [
+        "Live tournaments show current round number",
+        "Active heats count displayed",
+        "Live leaderboard preview visible",
+        "Station status indicators shown",
+        "Real-time updates work (polling or WebSocket)",
+        "Live indicators are visually prominent",
+        "Tests cover real-time functionality"
+      ]
+    },
+    {
+      "id": "task-3",
+      "name": "Build Upcoming Tab with Registration",
+      "description": "Create registration functionality for judges and baristas on SETUP tournaments",
+      "type": "feature",
+      "file": "client/src/pages/live/UpcomingTournaments.tsx",
+      "testFile": "client/src/pages/live/UpcomingTournaments.test.tsx",
+      "prompt": "Create a new UpcomingTournaments component for the Upcoming tab. Show SETUP tournaments with registration buttons for judges and baristas. Include tournament details (dates, location, description). Registration should check user role and allow signup. Write tests first (TDD) for component rendering, registration flow, role checking, and API calls.",
+      "dependencies": ["task-1"],
+      "acceptanceCriteria": [
+        "SETUP tournaments displayed with details",
+        "Registration buttons for judges and baristas",
+        "User role checking before registration",
+        "Registration API integration",
+        "Success/error handling",
+        "Tests cover registration flow"
+      ]
+    },
+    {
+      "id": "task-4",
+      "name": "Update Results Page for Hybrid View",
+      "description": "Modify Results page to show both completed tournaments and live tournament results",
+      "type": "component",
+      "file": "client/src/pages/results/ResultsLayout.tsx",
+      "testFile": "client/src/pages/results/ResultsLayout.test.tsx",
+      "prompt": "Update ResultsLayout to support hybrid view: show completed tournaments AND live tournament results as they publish. Add filtering by tournament status. Live results should appear alongside completed ones with clear visual distinction. Write tests first (TDD) for filtering logic, hybrid rendering, and status-based display.",
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "Results page shows completed tournaments",
+        "Live tournament results appear as they publish",
+        "Filter by tournament status works",
+        "Visual distinction between live and completed",
+        "Tests cover filtering and hybrid rendering"
+      ]
+    },
+    {
+      "id": "task-5",
+      "name": "Add Real-time Result Publishing",
+      "description": "Implement mechanism for active tournaments to publish results in real-time on Results page",
+      "type": "feature",
+      "file": "client/src/pages/results/WEC2025Results.tsx",
+      "testFile": "client/src/pages/results/WEC2025Results.test.tsx",
+      "prompt": "Add real-time result publishing for active tournaments on Results page. When a heat completes in an ACTIVE tournament, results should automatically appear on the Results page. Use React Query with polling or WebSocket. Mark live results with badges/indicators. Write tests first (TDD) for result publishing, real-time updates, and live result indicators.",
+      "dependencies": ["task-4"],
+      "acceptanceCriteria": [
+        "Active tournament results publish automatically",
+        "Real-time updates work on Results page",
+        "Live results have visual indicators",
+        "Results appear as heats complete",
+        "Tests cover publishing mechanism"
+      ]
+    },
+    {
+      "id": "task-6",
+      "name": "Create Comprehensive Tests",
+      "description": "Write tests for tab navigation, real-time updates, registration flows, and hybrid results",
+      "type": "test",
+      "file": "client/src/pages/live/__tests__/",
+      "testFile": "client/src/pages/results/__tests__/",
+      "prompt": "Create comprehensive test suites covering: tab navigation and switching, real-time data updates, registration flows for judges/baristas, hybrid results display, filtering by status, and live indicators. Use TDD approach - write tests before implementation where applicable. Cover edge cases and error scenarios.",
+      "dependencies": ["task-1", "task-2", "task-3", "task-4", "task-5"],
+      "acceptanceCriteria": [
+        "All tab functionality tested",
+        "Real-time updates tested",
+        "Registration flows tested",
+        "Hybrid results tested",
+        "Filtering tested",
+        "Edge cases covered",
+        "Error scenarios handled"
+      ]
+    },
+    {
+      "id": "task-7",
+      "name": "Update Routing and Navigation",
+      "description": "Update App.tsx routes and navigation to support new structure",
+      "type": "infrastructure",
+      "file": "client/src/App.tsx",
+      "testFile": "client/src/App.test.tsx",
+      "prompt": "Update routing in App.tsx to support new tournaments page structure. Ensure navigation between Live/Upcoming/Completed tabs works. Update BottomNav if needed. Add any new routes for registration endpoints. Write tests first (TDD) for route handling and navigation.",
+      "dependencies": ["task-1", "task-3"],
+      "acceptanceCriteria": [
+        "Routes updated correctly",
+        "Tab navigation works",
+        "Registration routes added",
+        "BottomNav updated if needed",
+        "Tests cover routing"
+      ]
+    }
+  ],
+  "executionOrder": [
+    "task-1",
+    "task-2",
+    "task-3",
+    "task-4",
+    "task-5",
+    "task-6",
+    "task-7"
+  ],
+  "testStrategy": "TDD - Write tests first, then implement functionality",
+  "notes": "Follow TDD principles. Each task should have tests written before implementation. Use React Query for data fetching. Consider WebSocket for real-time updates if available."
+}
+

@@ -9,6 +9,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import LiveLayout from './pages/live/LiveLayout';
 import TournamentList from './pages/live/TournamentList';
 import ResultsLayout from './pages/results/ResultsLayout';
+import ResultsTournamentList from './pages/results/ResultsTournamentList';
 import WEC2025Results from './pages/results/WEC2025Results';
 import TournamentBracketResults from './pages/results/TournamentBracketResults';
 import LiveBracket from './pages/live/LiveBracket';
@@ -21,6 +22,7 @@ import HeatResults from './pages/results/HeatResults';
 import HeatCarouselDemo from './pages/results/HeatCarouselDemo';
 import ResultsInputPage from './pages/admin/ResultsInputPage';
 import BracketBuilder from './pages/admin/BracketBuilder';
+import AdminTournaments from './pages/admin/AdminTournaments';
 import ManageBaristas from './pages/admin/ManageBaristas';
 import ManageJudges from './pages/admin/ManageJudges';
 import BottomNav from './components/BottomNav';
@@ -40,7 +42,7 @@ const App: React.FC = () => {
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
-            <Route path="tournaments" element={<div>Tournaments</div>} />
+            <Route path="tournaments" element={<AdminTournaments />} />
             <Route path="competitors" element={<ManageBaristas />} />
             <Route path="judges" element={<ManageJudges />} />
             <Route path="results-input" element={<ResultsInputPage />} />
@@ -60,6 +62,7 @@ const App: React.FC = () => {
           </Route>
 
           {/* Results Routes */}
+          <Route path="/results" element={<ResultsTournamentList />} />
           <Route path="/results/:tournamentId" element={<ResultsLayout />}>
             <Route index element={<WEC2025Results />} />
             <Route path="bracket" element={<TournamentBracketResults />} />
@@ -73,9 +76,6 @@ const App: React.FC = () => {
             <Route path="scorecards" element={<JudgeScorecardsResults />} />
             <Route path="scorecards/:judgeName" element={<JudgeScorecardsDetail />} />
           </Route>
-          
-          {/* Legacy results route - redirect to WEC 2025 Milano */}
-          <Route path="/results" element={<WEC2025Results />} />
         </Routes>
         </div>
       </Router>

@@ -271,13 +271,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournaments/:id/randomize-seeds", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
+      const { seedAssignments } = req.body; // Optional: accept specific seed assignments
+      
       const participants = await storage.getTournamentParticipants(tournamentId);
       
       if (participants.length === 0) {
         return res.status(400).json({ error: "No participants found" });
       }
 
-      const randomized = BracketGenerator.randomizeSeeds(participants);
+      let randomized: typeof participants;
+      
+      // If specific seed assignments provided, use them; otherwise randomize
+      if (seedAssignments && Array.isArray(seedAssignments)) {
+        // Validate seed assignments
+        const participantIds = new Set(participants.map(p => p.id));
+        const assignmentIds = new Set(seedAssignments.map((a: any) => a.participantId));
+        
+        if (participantIds.size !== assignmentIds.size || 
+            !Array.from(participantIds).every(id => assignmentIds.has(id))) {
+          return res.status(400).json({ error: "Invalid seed assignments" });
+        }
+        
+        randomized = seedAssignments.map((assignment: { participantId: number; seed: number }) => {
+          const participant = participants.find(p => p.id === assignment.participantId);
+          if (!participant) throw new Error(`Participant ${assignment.participantId} not found`);
+          return { ...participant, seed: assignment.seed };
+        });
+      } else {
+        // Use Fisher-Yates shuffle
+        randomized = BracketGenerator.randomizeSeeds(participants);
+      }
       
       // Persist the randomized seeds to database
       for (const participant of randomized) {
