@@ -113,114 +113,7 @@ const WEC2025Results = () => {
     return matchesByRound[currentRound] || [];
   }, [matchesByRound, currentRound]);
 
-  useEffect(() => {
-    if (tournamentId) {
-      fetchTournamentData();
-    } else {
-      // Legacy support: if no tournamentId in URL, try to find WEC 2025 Milano
-      fetchByName();
-    }
-  }, [tournamentId]);
-
-  const fetchByName = async () => {
-    try {
-      setLoading(true);
-      
-      const tournamentsResponse = await fetch('/api/tournaments');
-      if (!tournamentsResponse.ok) {
-        throw new Error('Failed to fetch tournaments');
-      }
-      
-      const tournaments = await tournamentsResponse.json();
-      const wec2025 = tournaments.find((t: any) => 
-        t.name === 'World Espresso Championships 2025 Milano'
-      );
-      
-      if (!wec2025) {
-        throw new Error('WEC 2025 Milano tournament not found');
-      }
-      
-      const response = await fetch(`/api/tournaments/${wec2025.id}`);
-      await processResponse(response);
-    } catch (err) {
-      handleError(err);
-    }
-  };
-
-  const fetchTournamentData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch tournament data by ID from route params
-      const response = await fetch(`/api/tournaments/${tournamentId}`);
-      
-      await processResponse(response);
-    } catch (err) {
-      handleError(err);
-    }
-  };
-
-  const processResponse = async (response: Response) => {
-    if (!response.ok) {
-      throw new Error('Failed to fetch tournament data');
-    }
-    
-    const data = await response.json();
-    
-    // Transform the data to match our interface
-    const transformedData: TournamentData = {
-      tournament: {
-        id: data.tournament.id,
-        name: data.tournament.name,
-        status: data.tournament.status,
-        startDate: data.tournament.startDate,
-        endDate: data.tournament.endDate,
-        totalRounds: data.tournament.totalRounds,
-        currentRound: data.tournament.currentRound
-      },
-      participants: data.participants.map((p: any) => ({
-        id: p.id,
-        seed: p.seed,
-        finalRank: p.finalRank,
-        userId: p.userId,
-        name: p.name || '',
-        email: p.email || ''
-      })),
-      matches: data.matches.map((m: any) => ({
-        id: m.id,
-        round: m.round,
-        heatNumber: m.heatNumber,
-        status: m.status,
-        startTime: m.startTime,
-        endTime: m.endTime,
-        competitor1Id: m.competitor1Id,
-        competitor2Id: m.competitor2Id,
-        winnerId: m.winnerId,
-        competitor1Name: m.competitor1Name || '',
-        competitor2Name: m.competitor2Name || ''
-      })),
-      scores: data.scores || [],
-      detailedScores: data.detailedScores || []
-    };
-    
-    setTournamentData(transformedData);
-    setError(null);
-    setLoading(false);
-  };
-
-  const handleError = (err: any) => {
-    console.error('Error fetching tournament data:', err);
-    // Fallback to local static bracket data so the page remains interactive
-    const fallback = buildFallbackData();
-    if (fallback) {
-      setTournamentData(fallback);
-      setError(null);
-    } else {
-      setError('Failed to load tournament data');
-    }
-    setLoading(false);
-  };
-
+  // Define all functions used by hooks BEFORE early returns
   // Build a minimal TournamentData from the local WEC25 data used elsewhere
   const buildFallbackData = (): TournamentData | null => {
     try {
@@ -306,6 +199,122 @@ const WEC2025Results = () => {
     }
   };
 
+  const handleError = (err: any) => {
+    console.error('Error fetching tournament data:', err);
+    // Fallback to local static bracket data so the page remains interactive
+    const fallback = buildFallbackData();
+    if (fallback) {
+      setTournamentData(fallback);
+      setError(null);
+    } else {
+      setError('Failed to load tournament data');
+    }
+    setLoading(false);
+  };
+
+  const processResponse = async (response: Response) => {
+    if (!response.ok) {
+      throw new Error('Failed to fetch tournament data');
+    }
+    
+    const data = await response.json();
+    
+    // Transform the data to match our interface
+    const transformedData: TournamentData = {
+      tournament: {
+        id: data.tournament.id,
+        name: data.tournament.name,
+        status: data.tournament.status,
+        startDate: data.tournament.startDate,
+        endDate: data.tournament.endDate,
+        totalRounds: data.tournament.totalRounds,
+        currentRound: data.tournament.currentRound
+      },
+      participants: data.participants.map((p: any) => ({
+        id: p.id,
+        seed: p.seed,
+        finalRank: p.finalRank,
+        userId: p.userId,
+        name: p.name || '',
+        email: p.email || ''
+      })),
+      matches: data.matches.map((m: any) => ({
+        id: m.id,
+        round: m.round,
+        heatNumber: m.heatNumber,
+        status: m.status,
+        startTime: m.startTime,
+        endTime: m.endTime,
+        competitor1Id: m.competitor1Id,
+        competitor2Id: m.competitor2Id,
+        winnerId: m.winnerId,
+        competitor1Name: m.competitor1Name || 'Unknown',
+        competitor2Name: m.competitor2Name || null
+      })),
+      scores: data.scores.map((s: any) => ({
+        matchId: s.matchId,
+        judgeId: s.judgeId,
+        competitorId: s.competitorId,
+        segment: s.segment,
+        score: s.score,
+        judgeName: s.judgeName
+      })),
+      detailedScores: data.detailedScores.map((ds: any) => ({
+        matchId: ds.matchId,
+        judgeName: ds.judgeName,
+        leftCupCode: ds.leftCupCode,
+        rightCupCode: ds.rightCupCode,
+        sensoryBeverage: ds.sensoryBeverage,
+        visualLatteArt: ds.visualLatteArt,
+        taste: ds.taste,
+        tactile: ds.tactile,
+        flavour: ds.flavour,
+        overall: ds.overall
+      }))
+    };
+    
+    setTournamentData(transformedData);
+    setLoading(false);
+    setError(null);
+  };
+
+  const fetchByName = async () => {
+    try {
+      setLoading(true);
+      
+      const tournamentsResponse = await fetch('/api/tournaments');
+      if (!tournamentsResponse.ok) {
+        throw new Error('Failed to fetch tournaments');
+      }
+      
+      const tournaments = await tournamentsResponse.json();
+      const wec2025 = tournaments.find((t: any) => 
+        t.name === 'World Espresso Championships 2025 Milano'
+      );
+      
+      if (!wec2025) {
+        throw new Error('WEC 2025 Milano tournament not found');
+      }
+      
+      const response = await fetch(`/api/tournaments/${wec2025.id}`);
+      await processResponse(response);
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const fetchTournamentData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch tournament data by ID from route params
+      const response = await fetch(`/api/tournaments/${tournamentId}`);
+      
+      await processResponse(response);
+    } catch (err) {
+      handleError(err);
+    }
+  };
 
   const getHeatScores = (matchId: number) => {
     if (!tournamentData?.scores) return [];
@@ -407,13 +416,6 @@ const WEC2025Results = () => {
       setCurrentRound(availableRounds[currentIndex + 1]);
     }
   };
-
-  // Initialize to first available round when data loads
-  useEffect(() => {
-    if (availableRounds.length > 0 && !availableRounds.includes(currentRound)) {
-      setCurrentRound(availableRounds[0]);
-    }
-  }, [availableRounds, currentRound]);
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8">
