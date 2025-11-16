@@ -103,7 +103,9 @@ const AdminDashboard: React.FC = () => {
       {/* Stats Grid */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon">🏆</div>
+          <div className="stat-icon">
+            <img src="/icons/bean n leaf.png" alt="Total Tournaments" />
+          </div>
           <div className="stat-content">
             <div className="stat-number">{stats.totalTournaments}</div>
             <div className="stat-label">Total Tournaments</div>
@@ -111,7 +113,9 @@ const AdminDashboard: React.FC = () => {
         </div>
         
         <div className="stat-card active">
-          <div className="stat-icon">📺</div>
+          <div className="stat-icon">
+            <img src="/icons/headset.png" alt="Active Tournaments" />
+          </div>
           <div className="stat-content">
             <div className="stat-number">{stats.activeTournaments}</div>
             <div className="stat-label">Active Tournaments</div>
@@ -119,7 +123,9 @@ const AdminDashboard: React.FC = () => {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon">👥</div>
+          <div className="stat-icon">
+            <img src="/icons/ChatGPT Image Oct 29, 2025, 04_43_32 PM 2.png" alt="Competitors" />
+          </div>
           <div className="stat-content">
             <div className="stat-number">{stats.totalCompetitors}</div>
             <div className="stat-label">Competitors</div>
@@ -127,7 +133,9 @@ const AdminDashboard: React.FC = () => {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon">⚖️</div>
+          <div className="stat-icon">
+            <img src="/icons/handcheck.png" alt="Judges" />
+          </div>
           <div className="stat-content">
             <div className="stat-number">{stats.totalJudges}</div>
             <div className="stat-label">Judges</div>
@@ -135,7 +143,9 @@ const AdminDashboard: React.FC = () => {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon">🏪</div>
+          <div className="stat-icon">
+            <img src="/icons/coffee tap.png" alt="Stations" />
+          </div>
           <div className="stat-content">
             <div className="stat-number">{stats.totalStations}</div>
             <div className="stat-label">Stations</div>

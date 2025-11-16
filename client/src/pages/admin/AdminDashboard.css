@@ -52,7 +52,16 @@
 .stat-icon {
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
+}
+
+.stat-icon img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .stat-number {
