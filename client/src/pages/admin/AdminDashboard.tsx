@@ -66,28 +66,28 @@ const AdminDashboard: React.FC = () => {
     {
       title: 'Create Tournament',
       description: 'Start a new tournament',
-      icon: '🏆',
+      icon: '/icons/trophy.png',
       link: '/admin/tournaments/create',
       color: 'blue'
     },
     {
       title: 'Manage Competitors',
       description: 'Add or edit competitors',
-      icon: '👥',
+      icon: '/icons/briefcase.png',
       link: '/admin/competitors',
       color: 'green'
     },
     {
       title: 'Assign Judges',
       description: 'Manage judge assignments',
-      icon: '⚖️',
+      icon: '/icons/stopwatch.png',
       link: '/admin/judges',
       color: 'purple'
     },
     {
       title: 'Setup Stations',
       description: 'Configure tournament stations',
-      icon: '🏪',
+      icon: '/icons/coffepot.png',
       link: '/admin/stations',
       color: 'orange'
     }
@@ -164,7 +164,9 @@ const AdminDashboard: React.FC = () => {
                 to={action.link} 
                 className={`quick-action-card ${action.color}`}
               >
-                <div className="action-icon">{action.icon}</div>
+                <div className="action-icon">
+                  <img src={action.icon} alt={action.title} />
+                </div>
                 <div className="action-content">
                   <h3 className="action-title">{action.title}</h3>
                   <p className="action-description">{action.description}</p>
