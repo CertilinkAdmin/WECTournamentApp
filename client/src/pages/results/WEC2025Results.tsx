@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -78,8 +78,40 @@ const WEC2025Results = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedHeat, setSelectedHeat] = useState<Match | null>(null);
-  const [currentSegment, setCurrentSegment] = useState(0);
-  const HEATS_PER_SEGMENT = 3;
+  const [currentRound, setCurrentRound] = useState(1);
+
+  // Group matches by round - memoized to prevent hook order issues (MUST be before any returns)
+  const matchesByRound = useMemo(() => {
+    if (!tournamentData?.matches) return {};
+    
+    const grouped = tournamentData.matches.reduce((acc, match) => {
+      const round = match.round || 1;
+      if (!acc[round]) {
+        acc[round] = [];
+      }
+      acc[round].push(match);
+      return acc;
+    }, {} as Record<number, Match[]>);
+
+    // Sort matches within each round by heat number
+    Object.keys(grouped).forEach(round => {
+      grouped[parseInt(round)].sort((a, b) => a.heatNumber - b.heatNumber);
+    });
+
+    return grouped;
+  }, [tournamentData?.matches]);
+
+  // Get available rounds - memoized (MUST be before any returns)
+  const availableRounds = useMemo(() => {
+    return Object.keys(matchesByRound)
+      .map(Number)
+      .sort((a, b) => a - b);
+  }, [matchesByRound]);
+
+  // Get current round matches - memoized (MUST be before any returns)
+  const currentRoundMatches = useMemo(() => {
+    return matchesByRound[currentRound] || [];
+  }, [matchesByRound, currentRound]);
 
   useEffect(() => {
     if (tournamentId) {
@@ -349,25 +381,39 @@ const WEC2025Results = () => {
       </div>
     );
   }
-
-  // Sort matches by heat number
-  const sortedMatches = tournamentData?.matches
-    ? [...tournamentData.matches].sort((a, b) => a.heatNumber - b.heatNumber)
-    : [];
-
-  // Calculate pagination
-  const totalSegments = Math.ceil(sortedMatches.length / HEATS_PER_SEGMENT);
-  const startIndex = currentSegment * HEATS_PER_SEGMENT;
-  const endIndex = startIndex + HEATS_PER_SEGMENT;
-  const currentHeats = sortedMatches.slice(startIndex, endIndex);
+  
+  // Get round display name
+  const getRoundDisplayName = (round: number) => {
+    const roundNames: Record<number, string> = {
+      1: 'Round 1 - Preliminary Heats',
+      2: 'Round 2 - Quarterfinals',
+      3: 'Round 3 - Semifinals',
+      4: 'Round 4 - Finals',
+      5: 'Final - Championship'
+    };
+    return roundNames[round] || `Round ${round}`;
+  };
 
   const handlePrevious = () => {
-    setCurrentSegment(prev => Math.max(0, prev - 1));
+    const currentIndex = availableRounds.indexOf(currentRound);
+    if (currentIndex > 0) {
+      setCurrentRound(availableRounds[currentIndex - 1]);
+    }
   };
 
   const handleNext = () => {
-    setCurrentSegment(prev => Math.min(totalSegments - 1, prev + 1));
+    const currentIndex = availableRounds.indexOf(currentRound);
+    if (currentIndex < availableRounds.length - 1) {
+      setCurrentRound(availableRounds[currentIndex + 1]);
+    }
   };
+
+  // Initialize to first available round when data loads
+  useEffect(() => {
+    if (availableRounds.length > 0 && !availableRounds.includes(currentRound)) {
+      setCurrentRound(availableRounds[0]);
+    }
+  }, [availableRounds, currentRound]);
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8">
@@ -376,7 +422,7 @@ const WEC2025Results = () => {
         <div className="mb-6 flex items-center justify-between gap-4">
           <button
             onClick={handlePrevious}
-            disabled={currentSegment === 0}
+            disabled={availableRounds.indexOf(currentRound) === 0}
             aria-label="Previous"
             data-testid="button-previous-segment"
             className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-0 bg-transparent border-0 rounded-lg transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -390,16 +436,16 @@ const WEC2025Results = () => {
           
           <div className="text-center flex-1 bg-gradient-to-br from-cinnamon-brown/20 to-cinnamon-brown/30 rounded-xl py-4 px-6 border-2 border-cinnamon-brown/40 shadow-lg backdrop-blur-sm">
             <p className="text-sm font-semibold text-cinnamon-brown/90 mb-1">
-              Heats {startIndex + 1}-{Math.min(endIndex, sortedMatches.length)} of {sortedMatches.length}
+              {getRoundDisplayName(currentRound)}
             </p>
             <p className="text-base font-bold text-white drop-shadow-sm">
-              Segment {currentSegment + 1} of {totalSegments}
+              {currentRoundMatches.length} Heat{currentRoundMatches.length !== 1 ? 's' : ''} • Round {availableRounds.indexOf(currentRound) + 1} of {availableRounds.length}
             </p>
           </div>
           
           <button
             onClick={handleNext}
-            disabled={currentSegment === totalSegments - 1}
+            disabled={availableRounds.indexOf(currentRound) === availableRounds.length - 1}
             aria-label="Next"
             data-testid="button-next-segment"
             className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-0 bg-transparent border-0 rounded-lg transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -412,10 +458,10 @@ const WEC2025Results = () => {
           </button>
         </div>
 
-        {/* Tournament Heats - 3-Stack Carousel */}
+        {/* Tournament Heats - All heats in current round */}
         <div className="space-y-4">
-          {currentHeats && currentHeats.length > 0 ? (
-            currentHeats.map(match => (
+          {currentRoundMatches && currentRoundMatches.length > 0 ? (
+            currentRoundMatches.map(match => (
                 <Card
                   key={match.id}
                   className="cursor-pointer hover-elevate active-elevate-2 transition-all"

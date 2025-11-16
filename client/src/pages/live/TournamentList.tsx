@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Trophy, ChevronRight, Home } from 'lucide-react';
+import { Calendar, Trophy, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
-import ThemeToggle from '../../components/ThemeToggle';
+import AppHeader from '../../components/AppHeader';
 
 interface Tournament {
   id: number;
@@ -69,35 +69,7 @@ export default function TournamentList() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Global Header */}
-      <header className="bg-primary/80 backdrop-blur-sm text-primary-foreground border-b border-primary-border/50">
-        <div className="px-4 py-4 flex items-center justify-between">
-          {/* Left spacer for balance */}
-          <div className="w-20"></div>
-          
-          {/* Center: WEC Logo */}
-          <div className="flex-1 flex justify-center">
-            <div className="flex items-center gap-2 text-primary-foreground">
-              <div className="flex flex-col items-center">
-                <div className="text-xl font-bold tracking-wider">WEC</div>
-                <div className="text-xs opacity-80">CHAMPIONSHIPS</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Right: Home + Theme Toggle */}
-          <div className="flex items-center gap-2">
-            <Link
-              to="/"
-              className="p-2 hover-elevate active-elevate-2 rounded-md"
-              data-testid="link-home"
-            >
-              <Home className="w-4 h-4" />
-            </Link>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <AppHeader />
       
       {/* Page Title */}
       <div className="bg-primary text-primary-foreground py-6 px-4">

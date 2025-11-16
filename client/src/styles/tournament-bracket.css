@@ -8,23 +8,58 @@
 
 /* Variables - WEC Brand Colors - Cinnamon Brown & Light Sand */
 :root {
-  --bracket-primary: #994D27;
+  /* Primary Brand Colors */
+  --bracket-primary: #994D27;        /* Cinnamon Brown - PANTONE 7586 C */
+  --bracket-brand-sand: #DECCA7;     /* Light Sand - PANTONE 7500 C */
+  
+  /* Secondary Brand Colors */
+  --bracket-dark-olive: #3E3F24;     /* Dark Olive Green - PANTONE 5747 C */
+  --bracket-golden: #C48D49;         /* Golden Brown - PANTONE 7510 C */
+  --bracket-teal-blue: #214966;      /* Dark Teal Blue - PANTONE 7477 C */
+  --bracket-taupe: #BDA088;          /* Light Taupe - PANTONE 4735 C */
+  
+  /* Light Mode Defaults */
   --bracket-secondary: #BDA088;
   --bracket-accent: #C48D49;
   --bracket-accent-light: #DECCA7;
   --bracket-accent-dark: #804020;
   --bracket-winner: #C48D49;
   --bracket-border: #994D27;
+  --bracket-bg: #F5F0E8;
+  --bracket-shadow: rgba(153, 77, 39, 0.2);
+  --bracket-glow: #994D27;
+  --bracket-text: #3E3F24;
+  --bracket-text-muted: #6B5B4F;
+  --bracket-surface: linear-gradient(145deg, rgba(222, 204, 167, 0.3), rgba(245, 240, 232, 0.9));
+  --bracket-glass: rgba(222, 204, 167, 0.2);
+  --bracket-reflection: rgba(222, 204, 167, 0.3);
+  --bracket-brand-brown: #994D27;
+}
+
+/* Dark Mode Overrides */
+.dark {
   --bracket-bg: #1a1a1a;
   --bracket-shadow: rgba(153, 77, 39, 0.4);
-  --bracket-glow: #994D27;
   --bracket-text: #DECCA7;
   --bracket-text-muted: #BDA088;
   --bracket-surface: linear-gradient(145deg, rgba(153, 77, 39, 0.2), rgba(0, 0, 0, 0.9));
   --bracket-glass: rgba(222, 204, 167, 0.1);
   --bracket-reflection: rgba(222, 204, 167, 0.2);
-  --bracket-brand-brown: #994D27;
-  --bracket-brand-sand: #DECCA7;
+}
+
+/* Background for bracket page */
+.tournament-bracket-bg {
+  background: var(--bracket-bg);
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.light .tournament-bracket-bg {
+  background: linear-gradient(135deg, #F5F0E8 0%, #E8E0D5 50%, #F5F0E8 100%);
+}
+
+.dark .tournament-bracket-bg {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
 }
 
 /* General Rules */
@@ -1111,35 +1146,132 @@
   }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .tournament-bracket-container {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+/* Light Mode Styling */
+.light .tournament-bracket-container,
+.light .tournament-bracket-container-compact {
+  background: var(--bracket-surface);
+  border: 1px solid rgba(153, 77, 39, 0.2);
+}
+
+.light .tournament-bracket__round-title {
+  background: linear-gradient(145deg, 
+    rgba(153, 77, 39, 0.15) 0%, 
+    rgba(153, 77, 39, 0.08) 50%, 
+    rgba(153, 77, 39, 0.15) 100%);
+  border-color: rgba(153, 77, 39, 0.4);
+  color: var(--bracket-text);
+}
+
+.light .tournament-bracket__match,
+.light .bracket-match-compact {
+  background: linear-gradient(145deg, 
+    rgba(222, 204, 167, 0.4) 0%, 
+    rgba(245, 240, 232, 0.8) 100%);
+  border-color: rgba(153, 77, 39, 0.3);
+  color: var(--bracket-text);
+}
+
+.light .tournament-bracket__code,
+.light .initials-compact {
+  background: linear-gradient(145deg, 
+    rgba(222, 204, 167, 0.5) 0%, 
+    rgba(245, 240, 232, 0.9) 100%);
+  border-color: rgba(153, 77, 39, 0.3);
+  color: var(--bracket-text);
+}
+
+.light .tournament-bracket__number,
+.light .score-compact {
+  background: linear-gradient(145deg, 
+    rgba(222, 204, 167, 0.5) 0%, 
+    rgba(245, 240, 232, 0.9) 100%);
+  border-color: rgba(153, 77, 39, 0.3);
+  color: var(--bracket-text);
+}
+
+.light .bracket-round-title-compact {
+  background: rgba(153, 77, 39, 0.15);
+  border-color: rgba(153, 77, 39, 0.4);
+  color: var(--bracket-text);
+}
+
+/* Dark Mode Styling */
+.dark .tournament-bracket-container,
+.dark .tournament-bracket-container-compact {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border: 1px solid rgba(153, 77, 39, 0.3);
+}
+
+.dark .tournament-bracket {
+  background: #2d2d2d;
+  color: var(--bracket-text);
+}
+
+.dark .tournament-bracket__match,
+.dark .bracket-match-compact {
+  background: linear-gradient(135deg, #2d2d2d 0%, #3a3a3a 100%);
+  border-color: rgba(153, 77, 39, 0.4);
+}
+
+.dark .tournament-bracket__code,
+.dark .initials-compact {
+  background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
+  color: var(--bracket-text);
+}
+
+.dark .tournament-bracket__number,
+.dark .score-compact {
+  background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
+  color: var(--bracket-text);
+}
+
+.dark .bracket-round-title-compact {
+  background: rgba(153, 77, 39, 0.3);
+  border-color: rgba(153, 77, 39, 0.5);
+}
+
+.dark .tournament-bracket__team--winner .tournament-bracket__code,
+.dark .tournament-bracket__team--winner .tournament-bracket__number {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: var(--bracket-accent-dark);
+}
+
+/* Mobile Light Mode - Enhanced Contrast */
+@media (max-width: 768px) {
+  .light .tournament-bracket-container-compact {
+    background: linear-gradient(145deg, 
+      rgba(222, 204, 167, 0.4) 0%, 
+      rgba(245, 240, 232, 0.95) 100%);
+    border: 1px solid rgba(153, 77, 39, 0.25);
   }
-  
-  .tournament-bracket {
-    background: #2d2d2d;
-    color: #e5e5e5;
+
+  .light .bracket-match-compact {
+    background: linear-gradient(145deg, 
+      rgba(222, 204, 167, 0.5) 0%, 
+      rgba(255, 255, 255, 0.9) 100%);
+    border-color: rgba(153, 77, 39, 0.35);
+    box-shadow: 0 2px 8px rgba(153, 77, 39, 0.15);
   }
-  
-  .tournament-bracket__match {
-    background: linear-gradient(135deg, #2d2d2d 0%, #3a3a3a 100%);
-    border-color: #4a4a4a;
+
+  .light .competitor-compact {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(153, 77, 39, 0.2);
   }
-  
-  .tournament-bracket__code {
-    background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
-    color: #e5e5e5;
+
+  .light .competitor-compact.winner-compact {
+    background: linear-gradient(90deg, 
+      rgba(196, 141, 73, 0.3), 
+      rgba(196, 141, 73, 0.15));
+    border-color: rgba(196, 141, 73, 0.5);
   }
-  
-  .tournament-bracket__number {
-    background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
-    color: #e5e5e5;
+
+  .light .initials-compact {
+    color: var(--bracket-text);
+    font-weight: 700;
   }
-  
-  .tournament-bracket__team--winner .tournament-bracket__code,
-  .tournament-bracket__team--winner .tournament-bracket__number {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: var(--bracket-accent-dark);
+
+  .light .score-compact {
+    color: var(--bracket-primary);
+    font-weight: 800;
   }
 }

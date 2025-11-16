@@ -1,5 +1,6 @@
 /* Mobile Optimizations */
 @import './styles/mobile.css';
+@import './styles/results-mobile.css';
 
 @tailwind base;
 @tailwind components;
@@ -91,11 +92,19 @@
   --chart-4: 30deg 86.54% 20.39%;
   --chart-5: 14.55deg 30.28% 21.37%;
 
-  /* WEC Brand Colors */
-  --brand-cinnamon-brown: #994D27;
-  --brand-light-sand: #DECCA7;
+  /* WEC Brand Colors - Official Style Guide */
+  /* Primary Colors */
+  --brand-cinnamon-brown: #994D27;  /* PANTONE 7586 C - RGB: 153, 77, 59 */
+  --brand-light-sand: #DECCA7;      /* PANTONE 7500 C - RGB: 222, 204, 167 */
+  
+  /* Secondary Colors */
+  --brand-dark-olive-green: #3E3F24;  /* PANTONE 5747 C - RGB: 62, 63, 36 */
+  --brand-golden-brown: #C48D49;      /* PANTONE 7510 C - RGB: 196, 141, 73 */
+  --brand-dark-teal-blue: #214966;    /* PANTONE 7477 C - RGB: 33, 75, 102 */
+  --brand-light-taupe: #BDA088;       /* PANTONE 4735 C - RGB: 189, 160, 136 */
+  
+  /* Legacy aliases for backward compatibility */
   --brand-forest-green: #3E3F24;
-  --brand-golden-brown: #C48D49;
   --brand-navy-blue: #214966;
   --brand-taupe: #BDA088;
 

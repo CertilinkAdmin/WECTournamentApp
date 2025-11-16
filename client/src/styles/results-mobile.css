@@ -1,0 +1,86 @@
+/* Results Page Mobile Light Mode Contrast Improvements */
+
+@media (max-width: 768px) {
+  /* Light mode only - improve contrast */
+  .light .results-layout,
+  .light [class*="results"] {
+    /* Ensure sufficient contrast for text */
+    --results-text-contrast: hsl(25 15% 10%);
+    --results-bg-contrast: hsl(40 20% 95%);
+    --results-card-bg: hsl(30 15% 98%);
+    --results-border-contrast: hsl(25 20% 75%);
+  }
+
+  /* Results page containers - darker background for better contrast */
+  .light .min-h-screen.bg-background {
+    background-color: hsl(40 15% 94%) !important;
+  }
+
+  /* Cards - stronger borders and backgrounds */
+  .light [class*="Card"],
+  .light .card,
+  .light [class*="card"] {
+    background-color: hsl(30 15% 98%) !important;
+    border-color: hsl(25 20% 75%) !important;
+    border-width: 1px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* Text elements - darker for better readability */
+  .light .text-muted-foreground {
+    color: hsl(25 15% 35%) !important;
+  }
+
+  .light .text-foreground {
+    color: hsl(25 15% 10%) !important;
+  }
+
+  /* Heat cards and match cards - improved contrast */
+  .light [class*="heat"],
+  .light [class*="Heat"],
+  .light [class*="match"],
+  .light [class*="Match"] {
+    background-color: hsl(30 10% 97%) !important;
+    border-color: hsl(25 25% 70%) !important;
+  }
+
+  /* Buttons - better visibility */
+  .light button:not([class*="primary"]):not([class*="destructive"]) {
+    border-color: hsl(25 20% 70%) !important;
+    background-color: hsl(40 20% 96%) !important;
+  }
+
+  /* Input fields and form elements */
+  .light input,
+  .light textarea,
+  .light select {
+    background-color: hsl(30 10% 98%) !important;
+    border-color: hsl(25 20% 75%) !important;
+    color: hsl(25 15% 10%) !important;
+  }
+
+  /* Badges and labels - stronger colors */
+  .light [class*="Badge"],
+  .light [class*="badge"] {
+    border-color: hsl(25 25% 65%) !important;
+  }
+
+  /* Gradient backgrounds - reduce opacity for better contrast */
+  .light [class*="gradient"] {
+    opacity: 0.95;
+  }
+
+  /* Segment header - improve contrast */
+  .light [class*="segment"],
+  .light [class*="Segment"] {
+    background-color: hsl(17 50% 25%) !important;
+    color: hsl(40 20% 98%) !important;
+  }
+
+  /* Navigation elements */
+  .light [class*="nav"],
+  .light [class*="Nav"] {
+    background-color: hsl(40 15% 95%) !important;
+  }
+}
+
