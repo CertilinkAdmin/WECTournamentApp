@@ -8,27 +8,12 @@ const LandingPage: React.FC = () => {
     <div className="landing-page overflow-hidden h-screen">
       <AppHeader className="fixed top-0 left-0 right-0 z-50" logoSize="large" />
 
-      {/* Background Image */}
+      {/* Background */}
       <div className="landing-background">
-        <img 
-          src="/baristaPlaceHolder.png" 
-          alt="WEC 2025 Milano Background" 
-          className="background-image"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center center',
-            zIndex: 1
-          }}
-        />
         <div className="background-overlay"></div>
       </div>
       
-      {/* Large WEC Logo Overlay */}
+      {/* Large WEC Logo */}
       <div className="absolute inset-0 z-5 flex items-center justify-center pointer-events-none">
         <img 
           src="/wec_logo_wht.png" 
