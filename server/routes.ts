@@ -8,8 +8,11 @@ import { registerBracketRoutes } from "./routes/bracket";
 import { 
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
-  insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema
+  insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
+  tournamentParticipants
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -208,16 +211,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tournaments/:id/participants", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
+      const { includeJudges } = req.query; // Optional query param to include judges
       const participants = await storage.getTournamentParticipants(tournamentId);
       
-      // Filter to only return baristas (competitors), not judges
-      const allUsers = await storage.getAllUsers();
-      const baristaParticipants = participants.filter(participant => {
-        const user = allUsers.find(u => u.id === participant.userId);
-        return user?.role === 'BARISTA';
-      });
+      if (includeJudges === 'true') {
+        // Return all participants including judges
+        res.json(participants);
+      } else {
+        // Filter to only return baristas (competitors), not judges
+        const allUsers = await storage.getAllUsers();
+        const baristaParticipants = participants.filter(participant => {
+          const user = allUsers.find(u => u.id === participant.userId);
+          return user?.role === 'BARISTA';
+        });
+        res.json(baristaParticipants);
+      }
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Update participant seed
+  app.patch("/api/tournaments/:id/participants/:participantId/seed", async (req, res) => {
+    try {
+      const participantId = parseInt(req.params.participantId);
+      const { seed } = req.body;
       
-      res.json(baristaParticipants);
+      if (typeof seed !== 'number') {
+        return res.status(400).json({ error: "Seed must be a number" });
+      }
+      
+      const participant = await storage.updateParticipantSeed(participantId, seed);
+      if (!participant) {
+        return res.status(404).json({ error: "Participant not found" });
+      }
+      
+      io.to(`tournament:${participant.tournamentId}`).emit("participant:updated", participant);
+      res.json(participant);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Delete participant
+  app.delete("/api/tournaments/:id/participants/:participantId", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const participantId = parseInt(req.params.participantId);
+      
+      // Get participant first to verify it exists and belongs to tournament
+      const participants = await storage.getTournamentParticipants(tournamentId);
+      const participant = participants.find(p => p.id === participantId);
+      
+      if (!participant) {
+        return res.status(404).json({ error: "Participant not found" });
+      }
+      
+      // Delete from database
+      await db.delete(tournamentParticipants).where(eq(tournamentParticipants.id, participantId));
+      
+      io.to(`tournament:${tournamentId}`).emit("participant:removed", { participantId, tournamentId });
+      res.json({ success: true, participantId });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

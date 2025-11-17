@@ -1,5 +1,4 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -7,16 +6,16 @@ const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <Button
-      variant="outline"
-      size="icon"
+    <button
       onClick={toggleTheme}
-      className="relative overflow-hidden"
+      className="relative w-6 h-6 flex items-center justify-center hover:opacity-80 transition-opacity bg-transparent border-none p-0 outline-none"
+      aria-label="Toggle theme"
+      style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}
     >
-      <Sun className={`h-4 w-4 transition-all ${theme === 'light' ? 'rotate-0 scale-100' : 'rotate-90 scale-0'}`} />
-      <Moon className={`absolute h-4 w-4 transition-all ${theme === 'dark' ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} />
+      <Sun className={`absolute h-5 w-5 transition-all ${theme === 'light' ? 'rotate-0 scale-100 opacity-100' : 'rotate-90 scale-0 opacity-0'}`} />
+      <Moon className={`absolute h-5 w-5 transition-all ${theme === 'dark' ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'}`} />
       <span className="sr-only">Toggle theme</span>
-    </Button>
+    </button>
   );
 };
 

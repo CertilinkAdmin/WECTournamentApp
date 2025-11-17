@@ -75,7 +75,7 @@ interface TournamentData {
 const WEC2025Results = () => {
   const { tournamentId } = useParams<{ tournamentId?: string }>();
   const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start as false to avoid initial spinner
   const [error, setError] = useState<string | null>(null);
   const [selectedHeat, setSelectedHeat] = useState<Match | null>(null);
   const [currentRound, setCurrentRound] = useState(1);
@@ -351,9 +351,11 @@ const WEC2025Results = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4" data-testid="loading-results">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-        <p className="text-muted-foreground">Loading WEC 2025 Milano Results...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-in fade-in duration-200" data-testid="loading-results">
+        <div className="h-2 w-48 bg-primary/20 rounded-full overflow-hidden mb-4">
+          <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }}></div>
+        </div>
+        <p className="text-muted-foreground text-sm">Loading results...</p>
       </div>
     );
   }
