@@ -118,24 +118,19 @@ const Judges: React.FC<JudgesProps> = () => {
   };
 
   const displayItems = (item: HTMLElement, index: number, activeIndex: number) => {
-    if (judges.length === 0) return;
     const zIndex = getZindex(judges, activeIndex)[index];
     item.style.setProperty('--zIndex', zIndex.toString());
-    item.style.setProperty('--active', ((index - activeIndex) / Math.max(1, judges.length)).toString());
+    item.style.setProperty('--active', ((index - activeIndex) / judges.length).toString());
   };
 
   const animate = () => {
-    if (judges.length === 0) return;
-    
     const clampedProgress = Math.max(0, Math.min(progress, 100));
-    const newActive = Math.floor(clampedProgress / 100 * Math.max(0, judges.length - 1));
+    const newActive = Math.floor(clampedProgress / 100 * (judges.length - 1));
     setActive(newActive);
     
     const items = document.querySelectorAll('.carousel-item');
     items.forEach((item, index) => {
-      if (index < judges.length) {
-        displayItems(item as HTMLElement, index, newActive);
-      }
+      displayItems(item as HTMLElement, index, newActive);
     });
   };
 

@@ -16,34 +16,17 @@
   display: flex;
   height: 280px;
   width: 200px;
-  background: linear-gradient(145deg, hsl(17 59% 22%), hsl(17 59% 18%));
+  background: hsl(17 59% 20%);
   border-radius: 12px;
-  border: 2px solid hsl(30 60% 45%);
-  box-shadow: 
-    -1rem 0 3rem rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(196, 141, 73, 0.3),
-    0 0 40px rgba(196, 141, 73, 0.2);
-  transition: all 0.4s ease-out;
+  border: 3px solid hsl(30 60% 50%);
+  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease-out;
   position: relative;
   left: 0px;
   cursor: pointer;
   flex-direction: column;
   align-items: flex-start;
   padding: 1rem;
-  animation: cardIlluminate 3s ease-in-out infinite;
-}
-
-@keyframes cardIlluminate {
-  0%, 100% {
-    filter: drop-shadow(0 0 15px rgba(196, 141, 73, 0.4))
-            drop-shadow(0 0 25px rgba(255, 190, 120, 0.3));
-    border-color: hsl(30 60% 45%);
-  }
-  50% {
-    filter: drop-shadow(0 0 25px rgba(196, 141, 73, 0.6))
-            drop-shadow(0 0 40px rgba(255, 190, 120, 0.5));
-    border-color: hsl(30 60% 55%);
-  }
 }
 
 .round-card:not(:first-child) {
@@ -51,14 +34,9 @@
 }
 
 .round-card:hover {
-  transform: translateY(-20px) scale(1.02);
-  transition: all 0.4s ease-out;
-  box-shadow: 
-    -1rem 0 3rem rgba(0, 0, 0, 0.6),
-    0 0 30px rgba(196, 141, 73, 0.5),
-    0 0 50px rgba(196, 141, 73, 0.3),
-    0 0 70px rgba(255, 190, 120, 0.2),
-    inset 0 0 30px rgba(196, 141, 73, 0.15);
+  transform: translateY(-20px) scale(1.05);
+  transition: all 0.3s ease-out;
+  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.6);
   border-color: hsl(30 60% 60%);
 }
 
@@ -70,56 +48,63 @@
 
 .round-card-title {
   color: hsl(var(--foreground));
-  font-weight: 300;
+  font-weight: 500;
   position: absolute;
   left: 20px;
   top: 15px;
   font-size: 1rem;
   z-index: 10;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.round-card-heat-count {
+.round-card-bracket {
   position: absolute;
-  bottom: 50%;
-  left: 50%;
-  transform: translate(-50%, 50%);
-  text-align: center;
-  color: hsl(30 60% 70%);
-  font-size: 2.5rem;
-  font-weight: 700;
+  top: 50px;
+  left: 20px;
+  right: 20px;
+  bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 10;
-  text-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.5),
-    0 0 10px rgba(196, 141, 73, 0.3);
-  letter-spacing: 1px;
+}
+
+.bracket-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 180px;
+}
+
+.round-card-heat-count-small {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: hsl(30 60% 65%);
+  font-size: 0.875rem;
+  font-weight: 600;
+  z-index: 10;
+  letter-spacing: 0.5px;
 }
 
 /* Light mode adjustments */
 :root .round-card {
-  background: linear-gradient(145deg, hsl(40 25% 94%), hsl(40 20% 88%));
-  border: 2px solid hsl(30 60% 60%);
-  box-shadow: 
-    -1rem 0 3rem rgba(0, 0, 0, 0.1),
-    0 0 20px rgba(196, 141, 73, 0.2),
-    0 0 40px rgba(255, 190, 120, 0.15);
+  background: hsl(40 25% 92%);
+  border: 3px solid hsl(30 60% 55%);
+  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.1);
 }
 
 :root .round-card:hover {
-  box-shadow: 
-    -1rem 0 3rem rgba(0, 0, 0, 0.15),
-    0 0 30px rgba(196, 141, 73, 0.3),
-    0 0 50px rgba(196, 141, 73, 0.2),
-    0 0 70px rgba(255, 190, 120, 0.15);
-  border-color: hsl(30 60% 70%);
+  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.15);
+  border-color: hsl(30 60% 65%);
 }
 
 :root .round-card-title {
   color: hsl(17 59% 20%);
 }
 
-:root .round-card-heat-count {
-  color: hsl(30 60% 45%);
+:root .round-card-heat-count-small {
+  color: hsl(30 60% 40%);
 }
 
 /* Dark mode */
@@ -131,8 +116,8 @@
   color: hsl(var(--foreground));
 }
 
-.dark .round-card-heat-count {
-  color: hsl(30 60% 70%);
+.dark .round-card-heat-count-small {
+  color: hsl(30 60% 65%);
 }
 
 /* Responsive */

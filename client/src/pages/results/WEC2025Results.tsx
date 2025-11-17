@@ -462,10 +462,47 @@ const WEC2025Results = () => {
                   key={round}
                   className="round-card"
                   onClick={() => setSelectedRound(round)}
+                  data-testid={`card-round-${round}`}
                 >
                   <h3 className="round-card-title">{getRoundDisplayName(round)}</h3>
-                  <div className="round-card-heat-count">
-                    {heatCount > 0 ? `${heatCount} Heat${heatCount !== 1 ? 's' : ''}` : 'No heats'}
+                  <div className="round-card-bracket">
+                    {heatCount > 0 ? (
+                      <svg viewBox="0 0 160 200" className="bracket-svg">
+                        {roundMatches.slice(0, 8).map((match, idx) => {
+                          const y = 20 + (idx * 22);
+                          const hasWinner = match.winnerId > 0;
+                          return (
+                            <g key={match.id}>
+                              {/* Match line */}
+                              <line
+                                x1="10"
+                                y1={y}
+                                x2="150"
+                                y2={y}
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                className={hasWinner ? "text-golden" : "text-muted-foreground"}
+                              />
+                              {/* Winner indicator dot */}
+                              {hasWinner && (
+                                <circle
+                                  cx="155"
+                                  cy={y}
+                                  r="3"
+                                  fill="currentColor"
+                                  className="text-golden"
+                                />
+                              )}
+                            </g>
+                          );
+                        })}
+                      </svg>
+                    ) : (
+                      <div className="text-muted-foreground text-sm">No heats</div>
+                    )}
+                  </div>
+                  <div className="round-card-heat-count-small">
+                    {heatCount} {heatCount === 1 ? 'Heat' : 'Heats'}
                   </div>
                 </div>
               );
