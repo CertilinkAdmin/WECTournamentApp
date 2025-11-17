@@ -120,8 +120,8 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
-.quick-action-card.blue:hover {
-  border-color: hsl(var(--chart-1));
+.quick-action-card.primary:hover {
+  border-color: hsl(var(--primary));
 }
 
 .quick-action-card.green:hover {

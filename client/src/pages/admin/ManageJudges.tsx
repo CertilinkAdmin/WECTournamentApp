@@ -166,7 +166,7 @@ const ManageJudges: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               {upcomingTournaments.length === 0 ? (
-                <SelectItem value="" disabled>No upcoming tournaments</SelectItem>
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">No upcoming tournaments</div>
               ) : (
                 upcomingTournaments.map((tournament) => (
                   <SelectItem key={tournament.id} value={tournament.id.toString()}>

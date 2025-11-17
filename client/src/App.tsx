@@ -63,7 +63,7 @@ const App: React.FC = () => {
 
           {/* Results Routes */}
           <Route path="/results" element={<ResultsTournamentList />} />
-          <Route path="/results/:tournamentId" element={<ResultsLayout />}>
+          <Route path="/results/:tournamentSlug" element={<ResultsLayout />}>
             <Route index element={<WEC2025Results />} />
             <Route path="bracket" element={<TournamentBracketResults />} />
             <Route path="heats/:heatId" element={<HeatResults />} />

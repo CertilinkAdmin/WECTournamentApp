@@ -1,13 +1,16 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import { findTournamentBySlug } from '@/utils/tournamentUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { X, Trophy, Coffee, ArrowLeft } from 'lucide-react';
 import CompetitorScorecard from '@/components/CompetitorScorecard';
 import SensoryEvaluationCard from '@/components/SensoryEvaluationCard';
 import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
+import './WEC2025Results.css';
 
 interface Tournament {
   id: number;
@@ -73,12 +76,12 @@ interface TournamentData {
 }
 
 const WEC2025Results = () => {
-  const { tournamentId } = useParams<{ tournamentId?: string }>();
+  const { tournamentSlug } = useParams<{ tournamentSlug?: string }>();
   const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(false); // Start as false to avoid initial spinner
   const [error, setError] = useState<string | null>(null);
   const [selectedHeat, setSelectedHeat] = useState<Match | null>(null);
-  const [currentRound, setCurrentRound] = useState(1);
+  const [selectedRound, setSelectedRound] = useState<number | null>(null);
 
   // Group matches by round - memoized to prevent hook order issues (MUST be before any returns)
   const matchesByRound = useMemo(() => {
@@ -102,16 +105,17 @@ const WEC2025Results = () => {
   }, [tournamentData?.matches]);
 
   // Get available rounds - memoized (MUST be before any returns)
+  // Always show 5 rounds (1-5) for WEC 2025
   const availableRounds = useMemo(() => {
-    return Object.keys(matchesByRound)
-      .map(Number)
-      .sort((a, b) => a - b);
-  }, [matchesByRound]);
+    // Always return rounds 1-5 for WEC tournaments
+    return [1, 2, 3, 4, 5];
+  }, []);
 
-  // Get current round matches - memoized (MUST be before any returns)
-  const currentRoundMatches = useMemo(() => {
-    return matchesByRound[currentRound] || [];
-  }, [matchesByRound, currentRound]);
+  // Get selected round matches - memoized (MUST be before any returns)
+  const selectedRoundMatches = useMemo(() => {
+    if (!selectedRound) return [];
+    return matchesByRound[selectedRound] || [];
+  }, [matchesByRound, selectedRound]);
 
   // Define all functions used by hooks BEFORE early returns
   // Build a minimal TournamentData from the local WEC25 data used elsewhere
@@ -307,7 +311,34 @@ const WEC2025Results = () => {
     try {
       setLoading(true);
       
-      // Fetch tournament data by ID from route params
+      // First, get all tournaments to find by location/year
+      const tournamentsResponse = await fetch('/api/tournaments');
+      if (!tournamentsResponse.ok) {
+        throw new Error('Failed to fetch tournaments');
+      }
+      
+      const tournaments = await tournamentsResponse.json();
+      
+      // Find tournament by slug
+      let tournamentId: number | null = null;
+      if (tournamentSlug) {
+        const tournament = findTournamentBySlug(tournaments, tournamentSlug);
+        tournamentId = tournament?.id || null;
+      }
+      
+      // Fallback: try to find WEC 2025 Milano if no slug provided
+      if (!tournamentId) {
+        const wec2025 = tournaments.find((t: any) => 
+          t.name === 'World Espresso Championships 2025 Milano'
+        );
+        tournamentId = wec2025?.id || null;
+      }
+      
+      if (!tournamentId) {
+        throw new Error('Tournament not found');
+      }
+      
+      // Fetch tournament data by ID
       const response = await fetch(`/api/tournaments/${tournamentId}`);
       
       await processResponse(response);
@@ -349,18 +380,28 @@ const WEC2025Results = () => {
     return !match.competitor2Id || match.competitor2Name === null;
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-in fade-in duration-200" data-testid="loading-results">
-        <div className="h-2 w-48 bg-primary/20 rounded-full overflow-hidden mb-4">
-          <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }}></div>
-        </div>
-        <p className="text-muted-foreground text-sm">Loading results...</p>
-      </div>
-    );
-  }
+  // Get round display name - must be before early returns
+  const getRoundDisplayName = (round: number) => {
+    const roundNames: Record<number, string> = {
+      1: 'Round 1 - Preliminary Heats',
+      2: 'Round 2 - Quarterfinals',
+      3: 'Round 3 - Semifinals',
+      4: 'Round 4 - Finals',
+      5: 'Final - Championship'
+    };
+    return roundNames[round] || `Round ${round}`;
+  };
 
-  if (error) {
+  // Fetch tournament data on mount or when slug changes
+  useEffect(() => {
+    if (!tournamentData) {
+      fetchTournamentData();
+    }
+  }, [tournamentSlug]);
+
+  // Always show round cards first - show them even while loading or if no data
+  // Only show error state if there's an actual error
+  if (error && !tournamentData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Card className="max-w-md w-full">
@@ -378,94 +419,146 @@ const WEC2025Results = () => {
     );
   }
 
-  if (!tournamentData) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle>No Tournament Data Found</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Unable to load tournament results.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
-  // Get round display name
-  const getRoundDisplayName = (round: number) => {
-    const roundNames: Record<number, string> = {
-      1: 'Round 1 - Preliminary Heats',
-      2: 'Round 2 - Quarterfinals',
-      3: 'Round 3 - Semifinals',
-      4: 'Round 4 - Finals',
-      5: 'Final - Championship'
-    };
-    return roundNames[round] || `Round ${round}`;
-  };
-
-  const handlePrevious = () => {
-    const currentIndex = availableRounds.indexOf(currentRound);
+  const handlePreviousRound = () => {
+    if (!selectedRound) return;
+    const currentIndex = availableRounds.indexOf(selectedRound);
     if (currentIndex > 0) {
-      setCurrentRound(availableRounds[currentIndex - 1]);
+      setSelectedRound(availableRounds[currentIndex - 1]);
     }
   };
 
-  const handleNext = () => {
-    const currentIndex = availableRounds.indexOf(currentRound);
+  const handleNextRound = () => {
+    if (!selectedRound) return;
+    const currentIndex = availableRounds.indexOf(selectedRound);
     if (currentIndex < availableRounds.length - 1) {
-      setCurrentRound(availableRounds[currentIndex + 1]);
+      setSelectedRound(availableRounds[currentIndex + 1]);
     }
   };
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8">
-      <div className="max-w-md mx-auto">
-        {/* Carousel Navigation Header */}
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <button
-            onClick={handlePrevious}
-            disabled={availableRounds.indexOf(currentRound) === 0}
-            aria-label="Previous"
-            data-testid="button-previous-segment"
-            className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-0 bg-transparent border-0 rounded-lg transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <img 
-              src="/icons/arrow_l.png" 
-              alt="Previous" 
-              className="block w-full h-full object-contain"
-            />
-          </button>
-          
-          <div className="text-center flex-1 bg-gradient-to-br from-cinnamon-brown/20 to-cinnamon-brown/30 rounded-xl py-4 px-6 border-2 border-cinnamon-brown/40 shadow-lg backdrop-blur-sm">
-            <p className="text-sm font-semibold text-cinnamon-brown/90 mb-1">
-              {getRoundDisplayName(currentRound)}
-            </p>
-            <p className="text-base font-bold text-white drop-shadow-sm">
-              {currentRoundMatches.length} Heat{currentRoundMatches.length !== 1 ? 's' : ''} • Round {availableRounds.indexOf(currentRound) + 1} of {availableRounds.length}
-            </p>
+      <div className="max-w-4xl mx-auto">
+        {/* Round Selection Cards */}
+        {!selectedRound ? (
+          <div className="round-cards-container">
+            {availableRounds.map((round) => {
+              const roundMatches = matchesByRound[round] || [];
+              const heatCount = roundMatches.length;
+              const progress = heatCount > 0 ? 100 : 0; // Full progress if heats exist
+              
+              return (
+                <div
+                  key={round}
+                  className="round-card"
+                  onClick={() => setSelectedRound(round)}
+                >
+                  <h3 className="round-card-title">{getRoundDisplayName(round)}</h3>
+                  <div className="round-card-bar">
+                    <div className="round-card-emptybar"></div>
+                    <div 
+                      className="round-card-filledbar"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                  <div className="round-card-circle">
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg">
+                      <circle 
+                        className="round-card-stroke" 
+                        cx="60" 
+                        cy="60" 
+                        r="50"
+                        style={{ strokeDashoffset: heatCount > 0 ? 100 : 360 }}
+                      />
+                    </svg>
+                  </div>
+                  <div className="round-card-heat-count">
+                    {heatCount > 0 ? `${heatCount} Heat${heatCount !== 1 ? 's' : ''}` : 'No heats'}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          
-          <button
-            onClick={handleNext}
-            disabled={availableRounds.indexOf(currentRound) === availableRounds.length - 1}
-            aria-label="Next"
-            data-testid="button-next-segment"
-            className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-0 bg-transparent border-0 rounded-lg transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <img 
-              src="/icons/arrow_r.png" 
-              alt="Next" 
-              className="block w-full h-full object-contain"
-            />
-          </button>
-        </div>
+        ) : (
+          <>
+            {/* Back to Round Selection Button */}
+            <div className="mb-4">
+              <Button
+                variant="ghost"
+                onClick={() => setSelectedRound(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Round Selection
+              </Button>
+            </div>
 
-        {/* Tournament Heats - All heats in current round */}
-        <div className="space-y-4">
-          {currentRoundMatches && currentRoundMatches.length > 0 ? (
-            currentRoundMatches.map(match => (
+            {/* Round Navigation Header */}
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <button
+                onClick={handlePreviousRound}
+                disabled={availableRounds.indexOf(selectedRound) === 0}
+                aria-label="Previous Round"
+                data-testid="button-previous-round"
+                className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-0 bg-transparent border-0 rounded-lg transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <img 
+                  src="/icons/arrow_l.png" 
+                  alt="Previous" 
+                  className="block w-full h-full object-contain"
+                />
+              </button>
+              
+              <div className="text-center flex-1 bg-gradient-to-br from-cinnamon-brown/20 to-cinnamon-brown/30 rounded-xl py-4 px-6 border-2 border-cinnamon-brown/40 shadow-lg backdrop-blur-sm">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Select
+                    value={selectedRound.toString()}
+                    onValueChange={(value) => setSelectedRound(parseInt(value))}
+                  >
+                    <SelectTrigger className="w-auto min-w-[200px] bg-transparent border-cinnamon-brown/50 text-white">
+                      <SelectValue>
+                        {getRoundDisplayName(selectedRound)}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRounds.map((round) => (
+                        <SelectItem key={round} value={round.toString()}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{getRoundDisplayName(round)}</span>
+                            {matchesByRound[round] && (
+                              <span className="text-muted-foreground ml-2 text-xs">
+                                ({matchesByRound[round].length} heats)
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-sm font-semibold text-white/90">
+                  {selectedRoundMatches.length} Heat{selectedRoundMatches.length !== 1 ? 's' : ''} • Round {availableRounds.indexOf(selectedRound) + 1} of {availableRounds.length}
+                </p>
+              </div>
+              
+              <button
+                onClick={handleNextRound}
+                disabled={availableRounds.indexOf(selectedRound) === availableRounds.length - 1}
+                aria-label="Next Round"
+                data-testid="button-next-round"
+                className="flex-shrink-0 h-12 w-12 md:h-14 md:w-14 p-0 bg-transparent border-0 rounded-lg transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <img 
+                  src="/icons/arrow_r.png" 
+                  alt="Next" 
+                  className="block w-full h-full object-contain"
+                />
+              </button>
+            </div>
+
+            {/* Tournament Heats - All heats in selected round */}
+            <div className="space-y-4">
+              {selectedRoundMatches && selectedRoundMatches.length > 0 ? (
+                selectedRoundMatches.map(match => (
                 <Card
                   key={match.id}
                   className="cursor-pointer hover-elevate active-elevate-2 transition-all"
@@ -538,11 +631,15 @@ const WEC2025Results = () => {
                 </Card>
               ))
           ) : (
-            <div className="col-span-full text-center py-8 text-muted-foreground">
-              No tournament matches found.
-            </div>
+            <Card>
+              <CardContent className="text-center py-8 text-muted-foreground">
+                No heats found for this round.
+              </CardContent>
+            </Card>
           )}
         </div>
+        </>
+        )}
       </div>
 
       {/* Heat Details Dialog */}

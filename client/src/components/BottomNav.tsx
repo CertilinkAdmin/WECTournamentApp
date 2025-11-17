@@ -37,15 +37,17 @@ export default function BottomNav() {
       ];
     }
     
-    // Results section navigation - show for any /results route with tournamentId
-    // Also handle /results/:tournamentId/* routes (like /results/1/heats/1)
-    if (pathname.startsWith('/results/') && tournamentId) {
+    // Results section navigation - show for any /results route with tournament slug
+    // Handle /results/:tournamentSlug/* routes (like /results/milan2025/bracket)
+    const resultsMatch = pathname.match(/^\/results\/([^\/]+)/);
+    if (resultsMatch && resultsMatch[1] !== '') {
+      const tournamentSlug = resultsMatch[1];
       return [
-        { path: `/results/${tournamentId}`, label: 'Overview', icon: LayoutGrid },
-        { path: `/results/${tournamentId}/bracket`, label: 'Bracket', icon: Trophy },
-        { path: `/results/${tournamentId}/baristas`, label: 'Baristas', icon: Crown },
-        { path: `/results/${tournamentId}/judges`, label: 'Judges', icon: Award },
-        { path: `/results/${tournamentId}/scorecards`, label: 'Scorecards', icon: FileText },
+        { path: `/results/${tournamentSlug}`, label: 'Overview', icon: LayoutGrid },
+        { path: `/results/${tournamentSlug}/bracket`, label: 'Bracket', icon: Trophy },
+        { path: `/results/${tournamentSlug}/baristas`, label: 'Baristas', icon: Crown },
+        { path: `/results/${tournamentSlug}/judges`, label: 'Judges', icon: Award },
+        { path: `/results/${tournamentSlug}/scorecards`, label: 'Scorecards', icon: FileText },
       ];
     }
     

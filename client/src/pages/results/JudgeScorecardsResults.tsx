@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trophy, Users, Coffee, Award, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, Users, Coffee, Award, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
 
 const JudgeScorecardsResults: React.FC = () => {
@@ -14,6 +14,7 @@ const JudgeScorecardsResults: React.FC = () => {
   const [currentHeatIndex, setCurrentHeatIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [showJudgeStats, setShowJudgeStats] = useState(false);
 
   const allHeats = [
     ...WEC25_BRACKET_POSITIONS,
@@ -156,32 +157,47 @@ const JudgeScorecardsResults: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Judge Statistics */}
+        {/* Judge Statistics - Collapsible */}
         <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Judge Statistics
+          <CardHeader 
+            className="cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setShowJudgeStats(!showJudgeStats)}
+          >
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                <span>Judge Statistics</span>
+                <Badge variant="outline" className="text-xs">
+                  {allJudges.length} judges
+                </Badge>
+              </div>
+              {showJudgeStats ? (
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              )}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-              {allJudges.map(judge => {
-                const stats = getJudgeStats(judge);
-                return (
-                  <button
-                    key={judge}
-                    onClick={() => navigate(`/results/scorecards/${encodeURIComponent(judge)}`)}
-                    className="text-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer border border-transparent hover:border-primary/30"
-                  >
-                    <div className="font-semibold text-sm text-gray-600">{judge}</div>
-                    <div className="text-2xl font-bold text-primary">{stats.totalHeats}</div>
-                    <div className="text-xs text-gray-500">Heats Judged</div>
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
+          {showJudgeStats && (
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                {allJudges.map(judge => {
+                  const stats = getJudgeStats(judge);
+                  return (
+                    <button
+                      key={judge}
+                      onClick={() => navigate(`/results/scorecards/${encodeURIComponent(judge)}`)}
+                      className="text-center p-4 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors cursor-pointer border border-transparent hover:border-primary/30"
+                    >
+                      <div className="font-semibold text-sm text-muted-foreground">{judge}</div>
+                      <div className="text-2xl font-bold text-primary">{stats.totalHeats}</div>
+                      <div className="text-xs text-muted-foreground">Heats Judged</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* Heat Navigation */}

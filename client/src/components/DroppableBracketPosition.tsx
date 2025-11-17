@@ -55,7 +55,7 @@ export default function DroppableBracketPosition({
         isOver 
           ? 'ring-2 ring-primary bg-primary/10 scale-105' 
           : isActive 
-            ? 'ring-2 ring-blue-500 bg-blue-50' 
+            ? 'ring-2 ring-primary bg-primary/10' 
             : 'hover:shadow-md'
       }`}
     >

@@ -262,8 +262,8 @@ export default function TournamentBracket() {
     <Card 
       key={heat.heatNumber} 
       className={`min-h-[120px] transition-all duration-200 ${
-        heat.status === 'RUNNING' ? 'ring-2 ring-blue-500 bg-blue-50' : 
-        heat.status === 'DONE' ? 'ring-2 ring-green-500 bg-green-50' : 
+        heat.status === 'RUNNING' ? 'ring-2 ring-primary bg-primary/10' : 
+        heat.status === 'DONE' ? 'ring-2 ring-accent bg-accent/10' : 
         'hover:shadow-lg'
       }`}
       data-testid={`bracket-heat-${heat.heatNumber}`}

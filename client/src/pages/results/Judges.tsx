@@ -10,19 +10,23 @@ interface User {
   role: string;
 }
 
-interface JudgesProps {}
+interface TournamentParticipant {
+  id: number;
+  userId: number;
+  seed: number | null;
+  finalRank: number | null;
+}
 
-// Fallback list with real judge names
-const FALLBACK_JUDGES = [
-  { id: 1, name: 'Jasper', rank: 1 },
-  { id: 2, name: 'Korn', rank: 2 },
-  { id: 3, name: 'Michalis', rank: 3 },
-  { id: 4, name: 'Shinsaku', rank: 4 },
-  { id: 5, name: 'Ali', rank: 5 },
-  { id: 6, name: 'Junior', rank: 6 },
-  { id: 7, name: 'Tess', rank: 7 },
-  { id: 8, name: 'Boss', rank: 8 },
-];
+interface JudgeWithData {
+  id: number;
+  name: string;
+  email: string;
+  participantId: number;
+  seed: number | null;
+  rank: number;
+}
+
+interface JudgesProps {}
 
 const Judges: React.FC<JudgesProps> = () => {
   const navigate = useNavigate();
@@ -35,36 +39,65 @@ const Judges: React.FC<JudgesProps> = () => {
   const speedWheel = 0.02;
   const speedDrag = -0.1;
 
-  // For now, still fetch users list (judges are not tournament-specific yet)
-  const { data: users = [], isLoading, error } = useQuery<User[]>({
+  // Fetch all users to get judge details
+  const { data: allUsers = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
+    enabled: !!tournamentId,
+  });
+
+  // Fetch tournament participants (including judges)
+  const { data: participants = [], isLoading: isLoadingParticipants } = useQuery<TournamentParticipant[]>({
+    queryKey: [`/api/tournaments/${tournamentId}/participants`],
     queryFn: async () => {
-      const response = await fetch('/api/users', {
+      if (!tournamentId) return [];
+      const response = await fetch(`/api/tournaments/${tournamentId}/participants?includeJudges=true`, {
         credentials: 'include'
       });
       if (!response.ok) {
-        console.error('Failed to fetch users:', response.status, response.statusText);
-        throw new Error('Failed to fetch users');
+        console.error('Failed to fetch participants:', response.status, response.statusText);
+        throw new Error('Failed to fetch participants');
       }
-      const data = await response.json();
-      console.log('Fetched users:', data);
-      return data;
+      return response.json();
     },
     enabled: !!tournamentId,
   });
 
-  // Always use the specified tournament judges
+  // Get judges from tournament participants
   const judges = useMemo(() => {
-    // Wait for loading to complete before showing judges
-    if (isLoading) {
-      console.log('Still loading users...');
+    if (isLoadingParticipants || !participants.length || !allUsers.length) {
       return [];
     }
-    
-    // Always use the fallback judges list for the tournament
-    console.log('Using tournament judges:', FALLBACK_JUDGES.map(j => j.name));
-    return FALLBACK_JUDGES;
-  }, [isLoading]);
+
+    // Filter participants to only judges and map with user data
+    const judgeParticipants = participants
+      .map(participant => {
+        const user = allUsers.find(u => u.id === participant.userId && u.role === 'JUDGE');
+        if (!user) return null;
+        
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          participantId: participant.id,
+          seed: participant.seed,
+          rank: participant.seed || participant.finalRank || 0
+        } as JudgeWithData;
+      })
+      .filter((judge): judge is JudgeWithData => judge !== null)
+      .sort((a, b) => {
+        // Sort by seed if available, otherwise by finalRank, otherwise by name
+        if (a.seed && b.seed) return a.seed - b.seed;
+        if (a.rank && b.rank) return a.rank - b.rank;
+        return a.name.localeCompare(b.name);
+      })
+      .map((judge, index) => ({
+        ...judge,
+        rank: judge.rank || index + 1
+      }));
+
+    console.log('Tournament judges:', judgeParticipants.map(j => j.name));
+    return judgeParticipants;
+  }, [participants, allUsers, isLoadingParticipants]);
 
   const getZindex = (array: any[], index: number) => {
     return array.map((_, i) => 
@@ -93,6 +126,14 @@ const Judges: React.FC<JudgesProps> = () => {
       }
     });
   };
+
+  // Initialize carousel when judges first load
+  useEffect(() => {
+    if (judges.length > 0 && active === 0 && progress === 50) {
+      setProgress(0);
+      setActive(0);
+    }
+  }, [judges.length]);
 
   useEffect(() => {
     if (judges.length > 0) {
@@ -184,29 +225,38 @@ const Judges: React.FC<JudgesProps> = () => {
         />
       </div>
       <div className="carousel">
-        {judges.length > 0 ? judges.map((judge, index) => (
-          <div
-            key={`judge-${judge.id}-${index}`}
-            className="carousel-item"
-            onClick={() => handleItemClick(index, judge.name)}
-          >
-            <div className="carousel-box">
-              <div className="title">{judge.name}</div>
-              <div className="num">{String(judge.rank || index + 1).padStart(2, '0')}</div>
-              <div className="judge-image">
-                <img 
-                  src="/thumbnail.jpg" 
-                  alt={judge.name}
-                  className="judge-img"
-                />
-                <div className="judge-initials">{getInitials(judge.name)}</div>
-              </div>
-            </div>
-          </div>
-        )) : (
+        {isLoadingParticipants ? (
           <div className="carousel-item">
             <div className="carousel-box">
               <div className="title">Loading Judges...</div>
+            </div>
+          </div>
+        ) : judges.length > 0 ? (
+          judges.map((judge, index) => (
+            <div
+              key={`judge-${judge.id}-${index}`}
+              className={`carousel-item ${index === active ? 'active' : ''}`}
+              onClick={() => handleItemClick(index, judge.name)}
+            >
+              <div className="carousel-box">
+                <div className="title">{judge.name}</div>
+                <div className="num">{String(judge.rank || index + 1).padStart(2, '0')}</div>
+                <div className="judge-image">
+                  <img 
+                    src="/thumbnail.jpg" 
+                    alt={judge.name}
+                    className="judge-img"
+                  />
+                  <div className="judge-initials">{getInitials(judge.name)}</div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="carousel-item">
+            <div className="carousel-box">
+              <div className="title">No Judges Found</div>
+              <div className="text-sm text-muted-foreground mt-2">No judges registered for this tournament</div>
             </div>
           </div>
         )}

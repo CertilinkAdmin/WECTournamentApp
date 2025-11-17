@@ -16,9 +16,9 @@ const LandingPage: React.FC = () => {
       {/* Large WEC Logo */}
       <div className="absolute inset-0 z-5 flex items-center justify-center pointer-events-none">
         <img 
-          src="/wec_logo_wht.png" 
+          src="/wec_logo_orange.png" 
           alt="WEC Logo" 
-          className="w-96 h-auto opacity-20 filter drop-shadow-lg"
+          className="w-96 h-auto opacity-30 filter drop-shadow-lg"
         />
       </div>
 

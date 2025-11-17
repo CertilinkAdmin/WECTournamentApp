@@ -91,7 +91,7 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, sc
 
 export default function WEC25BracketDisplay() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-background p-6" style={{ background: 'hsl(var(--background))' }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

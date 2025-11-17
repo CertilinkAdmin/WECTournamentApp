@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Calendar, Trophy, ChevronRight, Radio, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import AppHeader from '../../components/AppHeader';
+import { extractTournamentSlug } from '@/utils/tournamentUtils';
 
 interface Tournament {
   id: number;
@@ -117,7 +118,15 @@ export default function ResultsTournamentList() {
           hover-elevate active-elevate-2 cursor-pointer transition-all
           ${isLive ? 'ring-2 ring-green-500 ring-opacity-30' : ''}
         `}
-        onClick={() => navigate(`/results/${tournament.id}`)}
+        onClick={() => {
+          const slug = extractTournamentSlug(tournament.name);
+          if (slug) {
+            navigate(`/results/${slug}`);
+          } else {
+            // Fallback to ID if slug can't be extracted
+            navigate(`/results/${tournament.id}`);
+          }
+        }}
         data-testid={`card-tournament-${tournament.id}`}
       >
         <CardHeader className="pb-3">

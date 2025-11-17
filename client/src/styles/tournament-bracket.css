@@ -38,28 +38,31 @@
 
 /* Dark Mode Overrides */
 .dark {
-  --bracket-bg: #1a1a1a;
+  --bracket-bg: hsl(17 59% 38%); /* Cinnamon Brown */
   --bracket-shadow: rgba(153, 77, 39, 0.4);
   --bracket-text: #DECCA7;
   --bracket-text-muted: #BDA088;
-  --bracket-surface: linear-gradient(145deg, rgba(153, 77, 39, 0.2), rgba(0, 0, 0, 0.9));
+  --bracket-surface: linear-gradient(145deg, rgba(153, 77, 39, 0.2), rgba(107, 52, 25, 0.9));
   --bracket-glass: rgba(222, 204, 167, 0.1);
   --bracket-reflection: rgba(222, 204, 167, 0.2);
 }
 
 /* Background for bracket page */
 .tournament-bracket-bg {
-  background: var(--bracket-bg);
+  background: hsl(40 25% 97%); /* Soft sand beige - light mode default */
   min-height: 100vh;
   padding: 1rem;
 }
 
+/* Light mode - sandy beige background */
+:root .tournament-bracket-bg,
 .light .tournament-bracket-bg {
-  background: linear-gradient(135deg, #F5F0E8 0%, #E8E0D5 50%, #F5F0E8 100%);
+  background: hsl(40 25% 97%); /* Soft sand beige */
 }
 
+/* Dark mode - cinnamon brown background */
 .dark .tournament-bracket-bg {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+  background: hsl(17 59% 38%); /* Cinnamon Brown */
 }
 
 /* General Rules */
@@ -971,7 +974,7 @@
 
 .bracket-match-compact {
   background: var(--bracket-surface);
-  border: 1px solid rgba(153, 77, 39, 0.3);
+  border: 2px solid rgba(153, 77, 39, 0.5);
   border-radius: 8px;
   padding: 0.5rem;
   cursor: pointer;
@@ -980,18 +983,20 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .bracket-match-compact:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(153, 77, 39, 0.4);
+  box-shadow: 0 6px 16px rgba(153, 77, 39, 0.5);
   border-color: var(--bracket-accent);
+  border-width: 2px;
 }
 
 .bracket-match-compact.championship-compact {
-  background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(255, 140, 0, 0.2));
-  border: 2px solid #FFD700;
-  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(145deg, rgba(196, 141, 73, 0.2), rgba(153, 77, 39, 0.2));
+  border: 2px solid #C48D49;
+  box-shadow: 0 4px 16px rgba(196, 141, 73, 0.3);
 }
 
 .match-header-compact {
@@ -1030,13 +1035,15 @@
   padding: 0.2rem 0.3rem;
   border-radius: 4px;
   background: rgba(245, 245, 220, 0.05);
+  border: 1px solid rgba(153, 77, 39, 0.2);
   transition: all 0.2s ease;
 }
 
 .competitor-compact.winner-compact {
-  background: linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 140, 0, 0.1));
-  border: 1px solid rgba(255, 215, 0, 0.4);
+  background: linear-gradient(90deg, rgba(196, 141, 73, 0.3), rgba(153, 77, 39, 0.2));
+  border: 2px solid rgba(196, 141, 73, 0.6);
   font-weight: 700;
+  box-shadow: 0 2px 4px rgba(196, 141, 73, 0.3);
 }
 
 .initials-compact {
@@ -1048,7 +1055,7 @@
 }
 
 .winner-compact .initials-compact {
-  color: #FFD700;
+  color: #C48D49;
 }
 
 .score-compact {
@@ -1061,7 +1068,7 @@
 }
 
 .winner-compact .score-compact {
-  color: #FFD700;
+  color: #C48D49;
   font-size: 0.85rem;
 }
 
@@ -1146,93 +1153,108 @@
   }
 }
 
-/* Light Mode Styling */
+/* Light Mode Styling - Sandy Beige */
 .light .tournament-bracket-container,
 .light .tournament-bracket-container-compact {
-  background: var(--bracket-surface);
+  background: hsl(40 25% 97%); /* Soft sand beige */
   border: 1px solid rgba(153, 77, 39, 0.2);
 }
 
 .light .tournament-bracket__round-title {
   background: linear-gradient(145deg, 
     rgba(153, 77, 39, 0.15) 0%, 
-    rgba(153, 77, 39, 0.08) 50%, 
+    rgba(196, 141, 73, 0.1) 50%, 
     rgba(153, 77, 39, 0.15) 100%);
   border-color: rgba(153, 77, 39, 0.4);
-  color: var(--bracket-text);
+  color: hsl(17 59% 20%);
 }
 
 .light .tournament-bracket__match,
 .light .bracket-match-compact {
   background: linear-gradient(145deg, 
-    rgba(222, 204, 167, 0.4) 0%, 
-    rgba(245, 240, 232, 0.8) 100%);
-  border-color: rgba(153, 77, 39, 0.3);
-  color: var(--bracket-text);
+    hsl(40 25% 92%) 0%, 
+    hsl(40 25% 96%) 100%);
+  border: 2px solid rgba(153, 77, 39, 0.4);
+  color: hsl(17 59% 20%);
+  box-shadow: 0 2px 8px rgba(153, 77, 39, 0.2);
 }
 
 .light .tournament-bracket__code,
 .light .initials-compact {
   background: linear-gradient(145deg, 
-    rgba(222, 204, 167, 0.5) 0%, 
-    rgba(245, 240, 232, 0.9) 100%);
-  border-color: rgba(153, 77, 39, 0.3);
-  color: var(--bracket-text);
+    hsl(40 25% 94%) 0%, 
+    hsl(40 25% 97%) 100%);
+  border-color: rgba(153, 77, 39, 0.25);
+  color: hsl(17 59% 20%);
 }
 
 .light .tournament-bracket__number,
 .light .score-compact {
   background: linear-gradient(145deg, 
-    rgba(222, 204, 167, 0.5) 0%, 
-    rgba(245, 240, 232, 0.9) 100%);
-  border-color: rgba(153, 77, 39, 0.3);
-  color: var(--bracket-text);
+    hsl(40 25% 94%) 0%, 
+    hsl(40 25% 97%) 100%);
+  border-color: rgba(153, 77, 39, 0.25);
+  color: hsl(17 59% 20%);
 }
 
 .light .bracket-round-title-compact {
   background: rgba(153, 77, 39, 0.15);
   border-color: rgba(153, 77, 39, 0.4);
-  color: var(--bracket-text);
+  color: hsl(17 59% 20%);
 }
 
-/* Dark Mode Styling */
+.light .competitor-compact {
+  background: hsl(40 25% 94%);
+  border: 1px solid rgba(153, 77, 39, 0.3);
+  box-shadow: 0 1px 3px rgba(153, 77, 39, 0.1);
+}
+
+/* Dark Mode Styling - Cinnamon Brown */
 .dark .tournament-bracket-container,
 .dark .tournament-bracket-container-compact {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  border: 1px solid rgba(153, 77, 39, 0.3);
+  background: hsl(17 59% 38%); /* Cinnamon Brown */
+  border: 1px solid rgba(153, 77, 39, 0.5);
 }
 
 .dark .tournament-bracket {
-  background: #2d2d2d;
+  background: hsl(17 59% 38%); /* Cinnamon Brown */
   color: var(--bracket-text);
 }
 
 .dark .tournament-bracket__match,
 .dark .bracket-match-compact {
-  background: linear-gradient(135deg, #2d2d2d 0%, #3a3a3a 100%);
-  border-color: rgba(153, 77, 39, 0.4);
+  background: linear-gradient(135deg, hsl(17 59% 32%) 0%, hsl(17 59% 38%) 100%);
+  border: 2px solid rgba(222, 204, 167, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .dark .tournament-bracket__code,
 .dark .initials-compact {
-  background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
-  color: var(--bracket-text);
+  background: linear-gradient(135deg, hsl(17 59% 42%), hsl(17 59% 45%));
+  color: hsl(var(--foreground));
 }
 
 .dark .tournament-bracket__number,
 .dark .score-compact {
-  background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
-  color: var(--bracket-text);
+  background: linear-gradient(135deg, hsl(17 59% 42%), hsl(17 59% 45%));
+  color: hsl(var(--foreground));
 }
 
 .dark .bracket-round-title-compact {
-  background: rgba(153, 77, 39, 0.3);
-  border-color: rgba(153, 77, 39, 0.5);
+  background: rgba(196, 141, 73, 0.3); /* Golden Brown overlay */
+  border-color: rgba(222, 204, 167, 0.4);
+  color: hsl(var(--foreground));
+}
+
+.dark .competitor-compact {
+  background: rgba(222, 204, 167, 0.15); /* Light sand overlay */
+  border: 1px solid rgba(222, 204, 167, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .dark .tournament-bracket__team--winner .tournament-bracket__code,
 .dark .tournament-bracket__team--winner .tournament-bracket__number {
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: linear-gradient(135deg, #C48D49, #994D27);
   color: var(--bracket-accent-dark);
 }
 
@@ -1247,15 +1269,16 @@
 
   .light .bracket-match-compact {
     background: linear-gradient(145deg, 
-      rgba(222, 204, 167, 0.5) 0%, 
-      rgba(255, 255, 255, 0.9) 100%);
-    border-color: rgba(153, 77, 39, 0.35);
-    box-shadow: 0 2px 8px rgba(153, 77, 39, 0.15);
+      hsl(40 25% 92%) 0%, 
+      hsl(40 25% 96%) 100%);
+    border: 2px solid rgba(153, 77, 39, 0.4);
+    box-shadow: 0 2px 8px rgba(153, 77, 39, 0.2);
   }
 
   .light .competitor-compact {
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(153, 77, 39, 0.2);
+    background: hsl(40 25% 94%);
+    border: 1px solid rgba(153, 77, 39, 0.3);
+    box-shadow: 0 1px 3px rgba(153, 77, 39, 0.1);
   }
 
   .light .competitor-compact.winner-compact {

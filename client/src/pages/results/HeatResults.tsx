@@ -191,10 +191,10 @@ const HeatResults: React.FC = () => {
 
                       {/* Scoring Categories */}
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
                           <div className="flex items-center gap-2">
-                            <Coffee className="h-4 w-4 text-blue-600" />
-                            <span className="font-medium text-blue-900">Visual Latte Art</span>
+                            <Coffee className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-primary">Visual Latte Art</span>
                           </div>
                           <Badge variant={judge.visualLatteArt === 'left' ? 'default' : 'secondary'}>
                             {judge.visualLatteArt === 'left' ? 'Left' : 'Right'}

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import AppHeader from '../../components/AppHeader';
+import { findTournamentBySlug } from '@/utils/tournamentUtils';
 import './ResultsLayout.css';
 
 interface Tournament {
@@ -13,11 +14,21 @@ interface Tournament {
 }
 
 const ResultsLayout: React.FC = () => {
-  const { tournamentId } = useParams<{ tournamentId: string }>();
+  const { tournamentSlug } = useParams<{ tournamentSlug: string }>();
 
-  const { data: tournament, isLoading } = useQuery<Tournament>({
-    queryKey: [`/api/tournaments/${tournamentId}`],
-    enabled: !!tournamentId,
+  // Fetch all tournaments to find by slug
+  const { data: tournaments = [] } = useQuery<Tournament[]>({
+    queryKey: ['/api/tournaments'],
+  });
+
+  const tournament = useMemo(() => {
+    if (!tournamentSlug) return null;
+    return findTournamentBySlug(tournaments, tournamentSlug);
+  }, [tournaments, tournamentSlug]);
+
+  const { data: tournamentData, isLoading } = useQuery<Tournament>({
+    queryKey: [`/api/tournaments/${tournament?.id}`],
+    enabled: !!tournament?.id,
   });
 
   const getShortName = (name: string | undefined): string => {

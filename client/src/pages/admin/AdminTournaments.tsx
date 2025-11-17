@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { Trophy, Shuffle, Save, RotateCcw, Loader2, Users, Settings2, ArrowLeftRight, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -330,33 +331,28 @@ export default function AdminTournaments() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {tournaments.length === 0 ? (
-                <p className="text-muted-foreground">No tournaments found. Create a tournament first.</p>
-              ) : (
-                tournaments.map(tournament => (
-                  <Card
-                    key={tournament.id}
-                    className="cursor-pointer hover:bg-muted transition-colors"
-                    onClick={() => setSelectedTournamentId(tournament.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{tournament.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Status: <Badge variant="outline">{tournament.status}</Badge>
-                          </p>
-                        </div>
-                        <Button variant="ghost">
-                          Select
-                        </Button>
+            {tournaments.length === 0 ? (
+              <p className="text-muted-foreground">No tournaments found. Create a tournament first.</p>
+            ) : (
+              <Select
+                value={selectedTournamentId?.toString() || ''}
+                onValueChange={(value) => setSelectedTournamentId(value ? parseInt(value) : null)}
+              >
+                <SelectTrigger className="w-full max-w-md">
+                  <SelectValue placeholder="Choose a tournament..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {tournaments.map((tournament) => (
+                    <SelectItem key={tournament.id} value={tournament.id.toString()}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{tournament.name}</span>
+                        <Badge variant="outline" className="ml-2">{tournament.status}</Badge>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </CardContent>
         </Card>
       </div>

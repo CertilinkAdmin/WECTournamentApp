@@ -1,9 +1,19 @@
 .baristas-page {
   min-height: 100vh;
-  background: #1a1a1a;
-  color: #DECCA7;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   overflow: hidden;
   position: relative;
+}
+
+/* Light mode - sandy beige background */
+:root .baristas-page {
+  background: hsl(40 25% 97%); /* Soft sand beige */
+}
+
+/* Dark mode - cinnamon brown background */
+.dark .baristas-page {
+  background: hsl(17 59% 38%); /* Cinnamon Brown */
 }
 
 .baristas-logo-container {

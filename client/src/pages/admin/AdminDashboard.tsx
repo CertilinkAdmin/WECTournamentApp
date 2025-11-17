@@ -68,7 +68,7 @@ const AdminDashboard: React.FC = () => {
       description: 'Start a new tournament',
       icon: '/icons/trophy.png',
       link: '/admin/tournaments/create',
-      color: 'blue'
+      color: 'primary'
     },
     {
       title: 'Manage Competitors',
