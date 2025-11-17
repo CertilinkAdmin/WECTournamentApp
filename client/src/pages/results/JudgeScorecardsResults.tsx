@@ -153,14 +153,14 @@ const JudgeScorecardsResults: React.FC = () => {
           </div>
           
           <Select
-            value={selectedRound?.toString() || ''}
-            onValueChange={(value) => setSelectedRound(value ? parseInt(value) : null)}
+            value={selectedRound?.toString() || 'all'}
+            onValueChange={(value) => setSelectedRound(value === 'all' ? null : parseInt(value))}
           >
             <SelectTrigger className="w-[140px] h-9">
               <SelectValue placeholder="All Rounds" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Rounds</SelectItem>
+              <SelectItem value="all">All Rounds</SelectItem>
               {availableRounds.map(round => {
                 const roundHeats = allHeats.filter(h => getRoundFromHeatNumber(h.heatNumber) === round);
                 const roundName = round === 5 ? 'Final' : round === 4 ? 'Semi-Finals' : `Round ${round}`;
