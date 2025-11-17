@@ -176,7 +176,7 @@ const JudgeScorecardsResults: React.FC = () => {
               Previous
             </Button>
             
-            <div className="text-center px-6 py-3 bg-gradient-to-r from-primary/10 to-chart-3/10 rounded-xl border border-primary/20 backdrop-blur-sm">
+            <div className="text-center px-6 py-3 bg-gradient-to-r from-primary/10 to-chart-3/10 rounded-xl border-2 border-primary shadow-lg shadow-primary/25 ring-2 ring-primary/10">
               <div className="text-lg font-semibold text-primary animate-pulse">
                 Heat {currentHeatIndex + 1} of {filteredHeats.length}
               </div>
