@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trophy, Users, Coffee, Award, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, Users, Coffee, Award, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react';
 import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
+import JudgeConsensus from '@/components/JudgeConsensus';
 
 const JudgeScorecardsResults: React.FC = () => {
   const navigate = useNavigate();
@@ -246,132 +247,170 @@ const JudgeScorecardsResults: React.FC = () => {
                       </span>
                     </h3>
                     
-                    {/* Tabs for Judges - Breadcrumb Style */}
-                    <Tabs value={selectedJudgeTab} onValueChange={setSelectedJudgeTab} className="w-full">
-                      <TabsList 
-                        className="grid w-full gap-2 h-auto p-2 bg-muted/70 backdrop-blur-sm border border-primary/20 rounded-lg shadow-lg shadow-primary/10"
-                        style={{ gridTemplateColumns: `repeat(${currentHeat.judges.length}, 1fr)` }}
-                      >
-                        {currentHeat.judges.map((judge, index) => (
-                          <TabsTrigger 
-                            key={`judge-tab-${index}`}
-                            value={judge.judgeName}
-                            className="px-4 py-3 text-sm font-semibold transition-all duration-200 rounded-md border border-transparent hover:border-primary/30 hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 data-[state=active]:border-primary data-[state=active]:scale-105 data-[state=active]:font-bold"
-                          >
-                            {judge.judgeName}
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
+                    {/* Judge Consensus Overview */}
+                    <JudgeConsensus judges={currentHeat.judges} />
+                    
+                    {/* Judge Details Tabs */}
+                    {(() => {
+                      if (!currentHeat.judges) return null;
                       
-                      {currentHeat.judges.map((judge, index) => (
-                        <TabsContent 
-                          key={`judge-content-${index}`}
-                          value={judge.judgeName}
-                          className="mt-4"
-                        >
-                          <Card className="border-l-4 border-l-primary bg-card">
-                            <CardHeader className="pb-3 relative z-10">
-                              <CardTitle className="text-lg flex items-center gap-2 group-hover/judge:text-primary transition-colors duration-300">
-                                <Users className="h-5 w-5" />
-                                <span className="font-bold">{judge.judgeName}</span>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4 relative z-10">
-                              {/* Cup Codes */}
-                              <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
-                                <div className="text-center">
-                                  <div className="text-xs text-slate-600 font-medium">Left Cup</div>
-                                  <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
-                                    {judge.leftCupCode}
+                      const getConsensus = (category: 'visualLatteArt' | 'taste' | 'tactile' | 'flavour' | 'overall'): 'left' | 'right' | 'tie' => {
+                        const votes = currentHeat.judges!.map(j => j[category]);
+                        const leftVotes = votes.filter(v => v === 'left').length;
+                        const rightVotes = votes.filter(v => v === 'right').length;
+                        if (leftVotes > rightVotes) return 'left';
+                        if (rightVotes > leftVotes) return 'right';
+                        return 'tie';
+                      };
+                      
+                      const consensus: Record<'visualLatteArt' | 'taste' | 'tactile' | 'flavour' | 'overall', 'left' | 'right' | 'tie'> = {
+                        visualLatteArt: getConsensus('visualLatteArt'),
+                        taste: getConsensus('taste'),
+                        tactile: getConsensus('tactile'),
+                        flavour: getConsensus('flavour'),
+                        overall: getConsensus('overall'),
+                      };
+                      
+                      const isInMajority = (judgeVote: 'left' | 'right' | null, categoryConsensus: 'left' | 'right' | 'tie') => {
+                        if (!judgeVote || categoryConsensus === 'tie') return true;
+                        return judgeVote === categoryConsensus;
+                      };
+                      
+                      return (
+                        <Tabs value={selectedJudgeTab} onValueChange={setSelectedJudgeTab} className="w-full">
+                          <TabsList 
+                            className="grid w-full gap-2 h-auto p-2 bg-muted/70 backdrop-blur-sm border border-primary/20 rounded-lg shadow-lg shadow-primary/10"
+                            style={{ gridTemplateColumns: `repeat(${currentHeat.judges.length}, 1fr)` }}
+                          >
+                            {currentHeat.judges.map((judge, index) => (
+                              <TabsTrigger 
+                                key={`judge-tab-${index}`}
+                                value={judge.judgeName}
+                                className="px-4 py-3 text-sm font-semibold transition-all duration-200 rounded-md border border-transparent hover:border-primary/30 hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 data-[state=active]:border-primary data-[state=active]:scale-105 data-[state=active]:font-bold"
+                              >
+                                {judge.judgeName}
+                              </TabsTrigger>
+                            ))}
+                          </TabsList>
+                          
+                          {currentHeat.judges.map((judge, index) => {
+                            const renderCategoryRow = (
+                              category: 'visualLatteArt' | 'taste' | 'tactile' | 'flavour' | 'overall',
+                              label: string
+                            ) => {
+                              const judgeVote = judge[category];
+                              const categoryConsensus = consensus[category];
+                              const inMajority = isInMajority(judgeVote, categoryConsensus);
+                              
+                              return (
+                                <div 
+                                  key={category}
+                                  className={`grid grid-cols-3 items-center p-3 rounded-lg text-sm border transition-all ${
+                                    inMajority
+                                      ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20'
+                                      : 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20'
+                                  }`}
+                                >
+                                  <label className="flex items-center gap-2 justify-start">
+                                    <input 
+                                      type="checkbox" 
+                                      checked={judgeVote === 'left'} 
+                                      readOnly 
+                                      className={`h-4 w-4 accent-[color:oklch(var(--foreground))] ${
+                                        inMajority && judgeVote === 'left' ? 'ring-2 ring-green-500' : ''
+                                      }`}
+                                    />
+                                    <span className="text-xs text-muted-foreground">Left</span>
+                                    {judgeVote === 'left' && !inMajority && (
+                                      <XCircle className="h-3 w-3 text-red-500" />
+                                    )}
+                                    {judgeVote === 'left' && inMajority && (
+                                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                    )}
+                                  </label>
+                                  <div className="text-center font-semibold text-primary flex items-center justify-center gap-1">
+                                    {label}
+                                    {categoryConsensus !== 'tie' && (
+                                      <Badge variant="outline" className="text-xs">
+                                        {categoryConsensus === 'left' ? 'L' : 'R'} Majority
+                                      </Badge>
+                                    )}
                                   </div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="text-xs text-slate-600 font-medium">Right Cup</div>
-                                  <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
-                                    {judge.rightCupCode}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Scoring Categories (center label, checkboxes on sides) */}
-                              <div className="space-y-3">
-                                {/* Visual Latte Art */}
-                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
-                                  <label className="flex items-center gap-2 justify-start">
-                                    <input type="checkbox" checked={judge.visualLatteArt === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                    <span className="text-xs text-muted-foreground">Left</span>
-                                  </label>
-                                  <div className="text-center font-semibold text-primary">Visual Latte Art</div>
                                   <label className="flex items-center gap-2 justify-end">
                                     <span className="text-xs text-muted-foreground">Right</span>
-                                    <input type="checkbox" checked={judge.visualLatteArt === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                    <input 
+                                      type="checkbox" 
+                                      checked={judgeVote === 'right'} 
+                                      readOnly 
+                                      className={`h-4 w-4 accent-[color:oklch(var(--foreground))] ${
+                                        inMajority && judgeVote === 'right' ? 'ring-2 ring-green-500' : ''
+                                      }`}
+                                    />
+                                    {judgeVote === 'right' && !inMajority && (
+                                      <XCircle className="h-3 w-3 text-red-500" />
+                                    )}
+                                    {judgeVote === 'right' && inMajority && (
+                                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                    )}
                                   </label>
                                 </div>
+                              );
+                            };
+                            
+                            return (
+                              <TabsContent 
+                                key={`judge-content-${index}`}
+                                value={judge.judgeName}
+                                className="mt-4"
+                              >
+                                <Card className="border-l-4 border-l-primary bg-card">
+                                  <CardHeader className="pb-3 relative z-10">
+                                    <CardTitle className="text-lg flex items-center gap-2 group-hover/judge:text-primary transition-colors duration-300">
+                                      <Users className="h-5 w-5" />
+                                      <span className="font-bold">{judge.judgeName}</span>
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="space-y-4 relative z-10">
+                                    {/* Cup Codes */}
+                                    <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
+                                      <div className="text-center">
+                                        <div className="text-xs text-slate-600 font-medium">Left Cup</div>
+                                        <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
+                                          {judge.leftCupCode}
+                                        </div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="text-xs text-slate-600 font-medium">Right Cup</div>
+                                        <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
+                                          {judge.rightCupCode}
+                                        </div>
+                                      </div>
+                                    </div>
 
-                                {/* Sensory Beverage (no left/right) */}
-                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
-                                  <div></div>
-                                  <div className="text-center font-semibold text-primary">{`Sensory ${judge.sensoryBeverage}`}</div>
-                                  <div></div>
-                                </div>
+                                    {/* Scoring Categories with Consensus Indicators */}
+                                    <div className="space-y-3">
+                                      {renderCategoryRow('visualLatteArt', 'Visual Latte Art')}
+                                      
+                                      {/* Sensory Beverage (no left/right) */}
+                                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                                        <div></div>
+                                        <div className="text-center font-semibold text-primary">{`Sensory ${judge.sensoryBeverage}`}</div>
+                                        <div></div>
+                                      </div>
 
-                                {/* Taste */}
-                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
-                                  <label className="flex items-center gap-2 justify-start">
-                                    <input type="checkbox" checked={judge.taste === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                    <span className="text-xs text-muted-foreground">Left</span>
-                                  </label>
-                                  <div className="text-center font-semibold text-primary">Taste</div>
-                                  <label className="flex items-center gap-2 justify-end">
-                                    <span className="text-xs text-muted-foreground">Right</span>
-                                    <input type="checkbox" checked={judge.taste === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                  </label>
-                                </div>
-
-                                {/* Tactile */}
-                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
-                                  <label className="flex items-center gap-2 justify-start">
-                                    <input type="checkbox" checked={judge.tactile === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                    <span className="text-xs text-muted-foreground">Left</span>
-                                  </label>
-                                  <div className="text-center font-semibold text-primary">Tactile</div>
-                                  <label className="flex items-center gap-2 justify-end">
-                                    <span className="text-xs text-muted-foreground">Right</span>
-                                    <input type="checkbox" checked={judge.tactile === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                  </label>
-                                </div>
-
-                                {/* Flavour */}
-                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
-                                  <label className="flex items-center gap-2 justify-start">
-                                    <input type="checkbox" checked={judge.flavour === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                    <span className="text-xs text-muted-foreground">Left</span>
-                                  </label>
-                                  <div className="text-center font-semibold text-primary">Flavour</div>
-                                  <label className="flex items-center gap-2 justify-end">
-                                    <span className="text-xs text-muted-foreground">Right</span>
-                                    <input type="checkbox" checked={judge.flavour === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                  </label>
-                                </div>
-
-                                {/* Overall */}
-                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
-                                  <label className="flex items-center gap-2 justify-start">
-                                    <input type="checkbox" checked={judge.overall === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                    <span className="text-xs text-muted-foreground">Left</span>
-                                  </label>
-                                  <div className="text-center font-semibold text-primary">Overall</div>
-                                  <label className="flex items-center gap-2 justify-end">
-                                    <span className="text-xs text-muted-foreground">Right</span>
-                                    <input type="checkbox" checked={judge.overall === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                  </label>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </TabsContent>
-                      ))}
-                    </Tabs>
+                                      {renderCategoryRow('taste', 'Taste')}
+                                      {renderCategoryRow('tactile', 'Tactile')}
+                                      {renderCategoryRow('flavour', 'Flavour')}
+                                      {renderCategoryRow('overall', 'Overall')}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </TabsContent>
+                            );
+                          })}
+                        </Tabs>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div className="text-center p-6 text-gray-500 mb-8">

@@ -101,12 +101,13 @@ const Judges: React.FC<JudgesProps> = () => {
   };
 
   const handleMouseMove = (e: MouseEvent | TouchEvent) => {
-    const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
+    const clientX = 'touches' in e ? e.touches[0]?.clientX : (e as MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0]?.clientY : (e as MouseEvent).clientY;
     
     // Update cursor position
     const cursors = document.querySelectorAll('.cursor');
     cursors.forEach((cursor) => {
-      (cursor as HTMLElement).style.transform = `translate(${clientX}px, ${(e as MouseEvent).clientY || e.touches[0]?.clientY || 0}px)`;
+      (cursor as HTMLElement).style.transform = `translate(${clientX}px, ${clientY}px)`;
     });
 
     if (!isDown || !clientX) return;
