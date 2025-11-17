@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Trophy, Users, Coffee, Award, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
 
@@ -15,6 +16,7 @@ const JudgeScorecardsResults: React.FC = () => {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [showJudgeStats, setShowJudgeStats] = useState(false);
+  const [selectedJudgeTab, setSelectedJudgeTab] = useState<string>('');
 
   const allHeats = [
     ...WEC25_BRACKET_POSITIONS,
@@ -85,6 +87,15 @@ const JudgeScorecardsResults: React.FC = () => {
 
   const currentHeat = filteredHeats[currentHeatIndex];
 
+  // Reset judge tab when heat changes
+  useEffect(() => {
+    if (currentHeat?.judges && currentHeat.judges.length > 0) {
+      setSelectedJudgeTab(currentHeat.judges[0].judgeName);
+    } else {
+      setSelectedJudgeTab('');
+    }
+  }, [currentHeat]);
+
   const getJudgeStats = (judgeName: string) => {
     const judgeHeats = allHeats.filter(heat => 
       heat.judges?.some(judge => judge.judgeName === judgeName)
@@ -100,7 +111,7 @@ const JudgeScorecardsResults: React.FC = () => {
     <div className="min-h-screen tournament-bracket-bg p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-4 mb-4">
             <Users className="h-12 w-12 text-primary" />
             <h1 className="text-4xl font-bold text-primary">WEC25 Judge Scorecards</h1>
@@ -111,94 +122,45 @@ const JudgeScorecardsResults: React.FC = () => {
           </p>
         </div>
 
-        {/* Filters and Search */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filter & Search
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search competitors or heats..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <select
-                value={selectedHeat || ''}
-                onChange={(e) => setSelectedHeat(e.target.value ? parseInt(e.target.value) : null)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">All Heats</option>
-                {allHeats.map(heat => (
-                  <option key={heat.heatNumber} value={heat.heatNumber}>
-                    Heat {heat.heatNumber}
-                  </option>
-                ))}
-              </select>
-              
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedHeat(null);
-                }}
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Judge Statistics - Collapsible */}
-        <Card className="mb-8">
-          <CardHeader 
-            className="cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => setShowJudgeStats(!showJudgeStats)}
+        {/* Streamlined Search and Filters - Inline */}
+        <div className="flex flex-wrap items-center gap-3 mb-6 p-3 bg-muted/30 rounded-lg border border-primary/10">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search competitors or heats..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-9"
+            />
+          </div>
+          
+          <select
+            value={selectedHeat || ''}
+            onChange={(e) => setSelectedHeat(e.target.value ? parseInt(e.target.value) : null)}
+            className="px-3 py-2 h-9 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary text-sm"
           >
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                <span>Judge Statistics</span>
-                <Badge variant="outline" className="text-xs">
-                  {allJudges.length} judges
-                </Badge>
-              </div>
-              {showJudgeStats ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-              )}
-            </CardTitle>
-          </CardHeader>
-          {showJudgeStats && (
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                {allJudges.map(judge => {
-                  const stats = getJudgeStats(judge);
-                  return (
-                    <button
-                      key={judge}
-                      onClick={() => navigate(`/results/scorecards/${encodeURIComponent(judge)}`)}
-                      className="text-center p-4 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors cursor-pointer border border-transparent hover:border-primary/30"
-                    >
-                      <div className="font-semibold text-sm text-muted-foreground">{judge}</div>
-                      <div className="text-2xl font-bold text-primary">{stats.totalHeats}</div>
-                      <div className="text-xs text-muted-foreground">Heats Judged</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
+            <option value="">All Heats</option>
+            {allHeats.map(heat => (
+              <option key={heat.heatNumber} value={heat.heatNumber}>
+                Heat {heat.heatNumber}
+              </option>
+            ))}
+          </select>
+          
+          {(searchTerm || selectedHeat) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedHeat(null);
+              }}
+              className="h-9"
+            >
+              Clear
+            </Button>
           )}
-        </Card>
+        </div>
 
         {/* Heat Navigation */}
         {filteredHeats.length > 0 && (
@@ -274,9 +236,153 @@ const JudgeScorecardsResults: React.FC = () => {
               </CardHeader>
               
               <CardContent className="relative z-10">
-                {/* Competitors */}
-                <div className="grid grid-cols-2 gap-6 mb-8">
-                  <div className={`group/competitor p-6 rounded-xl border-2 ${
+                {/* Judge Scorecards - Now First */}
+                {currentHeat.judges && currentHeat.judges.length > 0 ? (
+                  <div className="space-y-6 mb-8">
+                    <h3 className="text-xl font-bold flex items-center gap-3 bg-secondary/30 p-4 rounded-xl border border-primary/20">
+                      <Users className="h-6 w-6 text-primary animate-pulse" />
+                      <span className="text-primary">
+                        Judge Scorecards ({currentHeat.judges.length} judges)
+                      </span>
+                    </h3>
+                    
+                    {/* Tabs for Judges - Breadcrumb Style */}
+                    <Tabs value={selectedJudgeTab} onValueChange={setSelectedJudgeTab} className="w-full">
+                      <TabsList 
+                        className="grid w-full gap-2 h-auto p-2 bg-muted/70 backdrop-blur-sm border border-primary/20 rounded-lg shadow-lg shadow-primary/10"
+                        style={{ gridTemplateColumns: `repeat(${currentHeat.judges.length}, 1fr)` }}
+                      >
+                        {currentHeat.judges.map((judge, index) => (
+                          <TabsTrigger 
+                            key={`judge-tab-${index}`}
+                            value={judge.judgeName}
+                            className="px-4 py-3 text-sm font-semibold transition-all duration-200 rounded-md border border-transparent hover:border-primary/30 hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 data-[state=active]:border-primary data-[state=active]:scale-105 data-[state=active]:font-bold"
+                          >
+                            {judge.judgeName}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                      
+                      {currentHeat.judges.map((judge, index) => (
+                        <TabsContent 
+                          key={`judge-content-${index}`}
+                          value={judge.judgeName}
+                          className="mt-4"
+                        >
+                          <Card className="border-l-4 border-l-primary bg-card">
+                            <CardHeader className="pb-3 relative z-10">
+                              <CardTitle className="text-lg flex items-center gap-2 group-hover/judge:text-primary transition-colors duration-300">
+                                <Users className="h-5 w-5" />
+                                <span className="font-bold">{judge.judgeName}</span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4 relative z-10">
+                              {/* Cup Codes */}
+                              <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
+                                <div className="text-center">
+                                  <div className="text-xs text-slate-600 font-medium">Left Cup</div>
+                                  <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
+                                    {judge.leftCupCode}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-xs text-slate-600 font-medium">Right Cup</div>
+                                  <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
+                                    {judge.rightCupCode}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Scoring Categories (center label, checkboxes on sides) */}
+                              <div className="space-y-3">
+                                {/* Visual Latte Art */}
+                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                                  <label className="flex items-center gap-2 justify-start">
+                                    <input type="checkbox" checked={judge.visualLatteArt === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                    <span className="text-xs text-muted-foreground">Left</span>
+                                  </label>
+                                  <div className="text-center font-semibold text-primary">Visual Latte Art</div>
+                                  <label className="flex items-center gap-2 justify-end">
+                                    <span className="text-xs text-muted-foreground">Right</span>
+                                    <input type="checkbox" checked={judge.visualLatteArt === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                  </label>
+                                </div>
+
+                                {/* Sensory Beverage (no left/right) */}
+                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                                  <div></div>
+                                  <div className="text-center font-semibold text-primary">{`Sensory ${judge.sensoryBeverage}`}</div>
+                                  <div></div>
+                                </div>
+
+                                {/* Taste */}
+                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                                  <label className="flex items-center gap-2 justify-start">
+                                    <input type="checkbox" checked={judge.taste === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                    <span className="text-xs text-muted-foreground">Left</span>
+                                  </label>
+                                  <div className="text-center font-semibold text-primary">Taste</div>
+                                  <label className="flex items-center gap-2 justify-end">
+                                    <span className="text-xs text-muted-foreground">Right</span>
+                                    <input type="checkbox" checked={judge.taste === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                  </label>
+                                </div>
+
+                                {/* Tactile */}
+                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                                  <label className="flex items-center gap-2 justify-start">
+                                    <input type="checkbox" checked={judge.tactile === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                    <span className="text-xs text-muted-foreground">Left</span>
+                                  </label>
+                                  <div className="text-center font-semibold text-primary">Tactile</div>
+                                  <label className="flex items-center gap-2 justify-end">
+                                    <span className="text-xs text-muted-foreground">Right</span>
+                                    <input type="checkbox" checked={judge.tactile === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                  </label>
+                                </div>
+
+                                {/* Flavour */}
+                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                                  <label className="flex items-center gap-2 justify-start">
+                                    <input type="checkbox" checked={judge.flavour === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                    <span className="text-xs text-muted-foreground">Left</span>
+                                  </label>
+                                  <div className="text-center font-semibold text-primary">Flavour</div>
+                                  <label className="flex items-center gap-2 justify-end">
+                                    <span className="text-xs text-muted-foreground">Right</span>
+                                    <input type="checkbox" checked={judge.flavour === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                  </label>
+                                </div>
+
+                                {/* Overall */}
+                                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                                  <label className="flex items-center gap-2 justify-start">
+                                    <input type="checkbox" checked={judge.overall === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                    <span className="text-xs text-muted-foreground">Left</span>
+                                  </label>
+                                  <div className="text-center font-semibold text-primary">Overall</div>
+                                  <label className="flex items-center gap-2 justify-end">
+                                    <span className="text-xs text-muted-foreground">Right</span>
+                                    <input type="checkbox" checked={judge.overall === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                                  </label>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </div>
+                ) : (
+                  <div className="text-center p-6 text-gray-500 mb-8">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No judge scorecards available for this heat</p>
+                  </div>
+                )}
+
+                {/* Competitors - Now After Judges */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className={`group/competitor p-6 rounded-xl border-2 relative ${
                     currentHeat.winner === currentHeat.competitor1 
                       ? 'border-primary bg-secondary' 
                       : 'border-border bg-card'
@@ -302,7 +408,7 @@ const JudgeScorecardsResults: React.FC = () => {
                     )}
                   </div>
                   
-                  <div className={`group/competitor p-6 rounded-xl border-2 ${
+                  <div className={`group/competitor p-6 rounded-xl border-2 relative ${
                     currentHeat.winner === currentHeat.competitor2 
                       ? 'border-primary bg-secondary' 
                       : 'border-border bg-card'
@@ -328,131 +434,6 @@ const JudgeScorecardsResults: React.FC = () => {
                     )}
                   </div>
                 </div>
-
-                {/* Judge Scorecards */}
-                {currentHeat.judges && currentHeat.judges.length > 0 ? (
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-bold flex items-center gap-3 bg-secondary/30 p-4 rounded-xl border border-primary/20">
-                      <Users className="h-6 w-6 text-primary animate-pulse" />
-                      <span className="text-primary">
-                        Judge Scorecards ({currentHeat.judges.length} judges)
-                      </span>
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {currentHeat.judges.map((judge, index) => (
-                        <Card 
-                          key={`${currentHeat.heatNumber}-judge-${index}`} 
-                          className="border-l-4 border-l-primary bg-card"
-                        >
-                          
-                          <CardHeader className="pb-3 relative z-10">
-                            <CardTitle className="text-lg flex items-center gap-2 group-hover/judge:text-primary transition-colors duration-300">
-                              <Users className="h-5 w-5 animate-bounce" />
-                              <span className="font-bold">{judge.judgeName}</span>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-4 relative z-10">
-                            {/* Cup Codes */}
-                            <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
-                              <div className="text-center">
-                                <div className="text-xs text-slate-600 font-medium">Left Cup</div>
-                                <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
-                                  {judge.leftCupCode}
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-xs text-slate-600 font-medium">Right Cup</div>
-                                <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
-                                  {judge.rightCupCode}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Scoring Categories (center label, checkboxes on sides) */}
-                            <div className="space-y-3">
-                              {/* Visual Latte Art */}
-                              <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-amber-500 bg-card text-foreground">
-                                <label className="flex items-center gap-2 justify-start">
-                                  <input type="checkbox" checked={judge.visualLatteArt === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                  <span className="text-xs text-muted-foreground">Left</span>
-                                </label>
-                                <div className="text-center font-semibold">Visual Latte Art</div>
-                                <label className="flex items-center gap-2 justify-end">
-                                  <span className="text-xs text-muted-foreground">Right</span>
-                                  <input type="checkbox" checked={judge.visualLatteArt === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                </label>
-                              </div>
-
-                              {/* Sensory Beverage (no left/right) */}
-                              <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
-                                <div></div>
-                                <div className="text-center font-semibold text-primary">{`Sensory ${judge.sensoryBeverage}`}</div>
-                                <div></div>
-                              </div>
-
-                              {/* Taste */}
-                              <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-amber-500 bg-card text-foreground">
-                                <label className="flex items-center gap-2 justify-start">
-                                  <input type="checkbox" checked={judge.taste === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                  <span className="text-xs text-muted-foreground">Left</span>
-                                </label>
-                                <div className="text-center font-semibold">Taste</div>
-                                <label className="flex items-center gap-2 justify-end">
-                                  <span className="text-xs text-muted-foreground">Right</span>
-                                  <input type="checkbox" checked={judge.taste === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                </label>
-                              </div>
-
-                              {/* Tactile */}
-                              <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
-                                <label className="flex items-center gap-2 justify-start">
-                                  <input type="checkbox" checked={judge.tactile === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                  <span className="text-xs text-muted-foreground">Left</span>
-                                </label>
-                                <div className="text-center font-semibold text-primary">Tactile</div>
-                                <label className="flex items-center gap-2 justify-end">
-                                  <span className="text-xs text-muted-foreground">Right</span>
-                                  <input type="checkbox" checked={judge.tactile === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                </label>
-                              </div>
-
-                              {/* Flavour */}
-                              <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-amber-500 bg-card text-foreground">
-                                <label className="flex items-center gap-2 justify-start">
-                                  <input type="checkbox" checked={judge.flavour === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                  <span className="text-xs text-muted-foreground">Left</span>
-                                </label>
-                                <div className="text-center font-semibold">Flavour</div>
-                                <label className="flex items-center gap-2 justify-end">
-                                  <span className="text-xs text-muted-foreground">Right</span>
-                                  <input type="checkbox" checked={judge.flavour === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                </label>
-                              </div>
-
-                              {/* Overall */}
-                              <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
-                                <label className="flex items-center gap-2 justify-start">
-                                  <input type="checkbox" checked={judge.overall === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                  <span className="text-xs text-muted-foreground">Left</span>
-                                </label>
-                                <div className="text-center font-semibold text-primary">Overall</div>
-                                <label className="flex items-center gap-2 justify-end">
-                                  <span className="text-xs text-muted-foreground">Right</span>
-                                  <input type="checkbox" checked={judge.overall === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
-                                </label>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center p-6 text-gray-500">
-                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No judge scorecards available for this heat</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
@@ -463,6 +444,49 @@ const JudgeScorecardsResults: React.FC = () => {
             <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
           </div>
         )}
+
+        {/* Judge Statistics - Moved to Bottom */}
+        <Card className="mt-8">
+          <CardHeader 
+            className="cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setShowJudgeStats(!showJudgeStats)}
+          >
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                <span>Judge Statistics</span>
+                <Badge variant="outline" className="text-xs">
+                  {allJudges.length} judges
+                </Badge>
+              </div>
+              {showJudgeStats ? (
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              )}
+            </CardTitle>
+          </CardHeader>
+          {showJudgeStats && (
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                {allJudges.map(judge => {
+                  const stats = getJudgeStats(judge);
+                  return (
+                    <button
+                      key={judge}
+                      onClick={() => navigate(`/results/scorecards/${encodeURIComponent(judge)}`)}
+                      className="text-center p-4 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors cursor-pointer border border-transparent hover:border-primary/30"
+                    >
+                      <div className="font-semibold text-sm text-muted-foreground">{judge}</div>
+                      <div className="text-2xl font-bold text-primary">{stats.totalHeats}</div>
+                      <div className="text-xs text-muted-foreground">Heats Judged</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          )}
+        </Card>
       </div>
     </div>
   );

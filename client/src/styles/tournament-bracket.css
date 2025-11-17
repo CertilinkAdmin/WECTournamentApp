@@ -931,8 +931,8 @@
   background: var(--bracket-surface);
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: hidden;
+  position: relative;
 }
 
 .tournament-bracket-compact {
@@ -940,6 +940,18 @@
   gap: 0.5rem;
   min-width: min-content;
   padding: 1rem 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform;
+}
+
+.bracket-zoom-container {
+  cursor: grab;
+}
+
+.bracket-zoom-container:active {
+  cursor: grabbing;
 }
 
 .bracket-round-compact {
@@ -1213,7 +1225,8 @@
 .dark .tournament-bracket-container,
 .dark .tournament-bracket-container-compact {
   background: hsl(17 59% 38%); /* Cinnamon Brown */
-  border: 1px solid rgba(153, 77, 39, 0.5);
+  border: 2px solid hsl(40 44% 76%); /* Sand beige outline */
+  box-shadow: 0 0 0 1px rgba(222, 204, 167, 0.3);
 }
 
 .dark .tournament-bracket {
@@ -1242,7 +1255,8 @@
 
 .dark .bracket-round-title-compact {
   background: rgba(196, 141, 73, 0.3); /* Golden Brown overlay */
-  border-color: rgba(222, 204, 167, 0.4);
+  border: 2px solid hsl(40 44% 76%); /* Sand beige outline */
+  box-shadow: 0 0 0 1px rgba(222, 204, 167, 0.2);
   color: hsl(var(--foreground));
 }
 

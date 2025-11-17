@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trophy, Medal, Award, Star, Coffee, Zap, Maximize2, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +44,11 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
   const [animatedMatches, setAnimatedMatches] = useState<Set<number>>(new Set());
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedHeat, setSelectedHeat] = useState<BracketMatch | null>(null);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null);
+  const [lastTouchCenter, setLastTouchCenter] = useState<{ x: number; y: number } | null>(null);
+  const bracketRef = useRef<HTMLDivElement>(null);
 
   // WEC25 Milano historical data
   const wec25Rounds: BracketRound[] = [
@@ -99,6 +104,84 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 3);
   };
 
+  // Calculate distance between two touch points
+  const getTouchDistance = (touch1: Touch, touch2: Touch): number => {
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // Calculate center point between two touches
+  const getTouchCenter = (touch1: Touch, touch2: Touch): { x: number; y: number } => {
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2,
+    };
+  };
+
+  // Handle touch start for pinch zoom
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      setLastTouchDistance(distance);
+      setLastTouchCenter(center);
+    }
+  };
+
+  // Handle touch move for pinch zoom and pan
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    
+    if (e.touches.length === 2 && lastTouchDistance !== null && lastTouchCenter !== null) {
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      
+      // Calculate scale change
+      const scaleChange = distance / lastTouchDistance;
+      const newScale = Math.max(0.5, Math.min(3, scale * scaleChange));
+      
+      // Calculate position adjustment based on center movement
+      const deltaX = center.x - lastTouchCenter.x;
+      const deltaY = center.y - lastTouchCenter.y;
+      
+      setScale(newScale);
+      setPosition(prev => ({
+        x: prev.x + deltaX / newScale,
+        y: prev.y + deltaY / newScale,
+      }));
+      
+      setLastTouchDistance(distance);
+      setLastTouchCenter(center);
+    } else if (e.touches.length === 1 && scale > 1) {
+      // Pan when zoomed in
+      const touch = e.touches[0];
+      if (lastTouchCenter) {
+        const deltaX = touch.clientX - lastTouchCenter.x;
+        const deltaY = touch.clientY - lastTouchCenter.y;
+        setPosition(prev => ({
+          x: prev.x + deltaX / scale,
+          y: prev.y + deltaY / scale,
+        }));
+        setLastTouchCenter({ x: touch.clientX, y: touch.clientY });
+      } else {
+        setLastTouchCenter({ x: touch.clientX, y: touch.clientY });
+      }
+    }
+  };
+
+  // Handle touch end
+  const handleTouchEnd = () => {
+    setLastTouchDistance(null);
+    setLastTouchCenter(null);
+  };
+
+  // Reset zoom on double tap
+  const handleDoubleClick = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
   return (
     <>
       <div className="tournament-bracket-container-compact px-2 sm:px-4 md:px-6">
@@ -128,7 +211,18 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
           <p className="text-xs sm:text-sm text-accent/80 mt-2 px-2">Tap any heat to view details</p>
         </div>
         
-        <div className="tournament-bracket-compact overflow-x-auto hide-scrollbar mobile-scroll pb-4">
+        <div 
+          ref={bracketRef}
+          className="tournament-bracket-compact bracket-zoom-container pb-4"
+          style={{
+            transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+            transformOrigin: 'center center',
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onDoubleClick={handleDoubleClick}
+        >
           {rounds.map((round) => (
             <div key={round.title} className="bracket-round-compact min-w-[140px] sm:min-w-[160px]">
               <h3 className="bracket-round-title-compact flex items-center justify-center gap-1 sm:gap-1.5 px-2">
