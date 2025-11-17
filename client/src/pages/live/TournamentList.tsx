@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Calendar, Trophy, ChevronRight, Radio, Clock, Activity, MapPin, UserPlus, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { extractTournamentSlug } from '@/utils/tournamentUtils';
 import AppHeader from '../../components/AppHeader';
 
 interface Match {
@@ -81,7 +82,18 @@ export default function TournamentList() {
     if (tournament.status === 'ACTIVE') {
       navigate(`/live/${tournament.id}`);
     } else if (tournament.status === 'COMPLETED') {
-      navigate(`/results/${tournament.id}`);
+      const slug = extractTournamentSlug(tournament.name);
+      if (slug) {
+        navigate(`/results/${slug}`);
+      } else {
+        // Fallback: For WEC 2025 Milano, use WEC2025 slug
+        if (tournament.name.includes('2025') && tournament.name.toLowerCase().includes('milano')) {
+          navigate(`/results/WEC2025`);
+        } else {
+          // Fallback to ID if slug can't be extracted (deprecated, but kept for backwards compatibility)
+          navigate(`/results/${tournament.id}`);
+        }
+      }
     }
   };
 

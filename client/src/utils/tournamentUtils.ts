@@ -11,18 +11,24 @@
  * - "2026 United States Espresso Championship" -> "WEC2026" (or could be "US2026" if needed)
  */
 export function extractTournamentSlug(tournamentName: string): string | null {
-  // Match WEC pattern: "World Espresso Championships" + year
-  const wecMatch = tournamentName.match(/World\s+Espresso\s+Championships\s+(\d{4})/i);
+  if (!tournamentName) return null;
+  
+  // Normalize the name: trim and handle multiple spaces
+  const normalizedName = tournamentName.trim().replace(/\s+/g, ' ');
+  
+  // Match WEC pattern: "World Espresso Championships" + year (with optional location)
+  // Examples: "World Espresso Championships 2025 Milano", "World Espresso Championships 2025"
+  const wecMatch = normalizedName.match(/World\s+Espresso\s+Championships\s+(\d{4})(?:\s+\w+)?/i);
   if (wecMatch) {
     return `WEC${wecMatch[1]}`;
   }
 
   // Match year pattern: "2025", "2026", etc. at the start or in the name
-  const yearMatch = tournamentName.match(/(\d{4})/);
+  const yearMatch = normalizedName.match(/(\d{4})/);
   if (yearMatch) {
     const year = yearMatch[1];
     // Check if it's an Espresso Championship
-    if (tournamentName.toLowerCase().includes('espresso championship')) {
+    if (normalizedName.toLowerCase().includes('espresso championship')) {
       return `WEC${year}`;
     }
     // For other formats, use WEC prefix

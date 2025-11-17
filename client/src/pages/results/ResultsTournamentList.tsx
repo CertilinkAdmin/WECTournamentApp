@@ -120,11 +120,17 @@ export default function ResultsTournamentList() {
         `}
         onClick={() => {
           const slug = extractTournamentSlug(tournament.name);
+          console.log('Tournament name:', tournament.name, 'Extracted slug:', slug);
           if (slug) {
             navigate(`/results/${slug}`);
           } else {
-            // Fallback to ID if slug can't be extracted
-            navigate(`/results/${tournament.id}`);
+            // Fallback: For WEC 2025 Milano, use WEC2025 slug
+            if (tournament.name.includes('2025') && tournament.name.toLowerCase().includes('milano')) {
+              navigate(`/results/WEC2025`);
+            } else {
+              // Fallback to ID if slug can't be extracted
+              navigate(`/results/${tournament.id}`);
+            }
           }
         }}
         data-testid={`card-tournament-${tournament.id}`}
