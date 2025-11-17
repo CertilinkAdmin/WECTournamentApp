@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trophy, Users, Coffee, Award, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react';
+import { Trophy, Users, Coffee, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react';
 import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
 import JudgeConsensus from '@/components/JudgeConsensus';
 
@@ -18,8 +18,8 @@ const JudgeScorecardsResults: React.FC = () => {
   const [currentHeatIndex, setCurrentHeatIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [showJudgeStats, setShowJudgeStats] = useState(false);
   const [selectedJudgeTab, setSelectedJudgeTab] = useState<string>('');
+  const [showConsensus, setShowConsensus] = useState(false);
 
   const allHeats = [
     ...WEC25_BRACKET_POSITIONS,
@@ -29,10 +29,6 @@ const JudgeScorecardsResults: React.FC = () => {
     ...WEC25_FINAL_POSITION
   ];
 
-  // Get all unique judges
-  const allJudges = Array.from(new Set(
-    allHeats.flatMap(heat => heat.judges?.map(judge => judge.judgeName) || [])
-  ));
 
   // Helper function to determine round from heat number
   const getRoundFromHeatNumber = (heatNumber: number): number => {
@@ -114,16 +110,6 @@ const JudgeScorecardsResults: React.FC = () => {
     }
   }, [currentHeat]);
 
-  const getJudgeStats = (judgeName: string) => {
-    const judgeHeats = allHeats.filter(heat => 
-      heat.judges?.some(judge => judge.judgeName === judgeName)
-    );
-    
-    return {
-      totalHeats: judgeHeats.length,
-      totalRounds: new Set(judgeHeats.map(h => Math.ceil(h.heatNumber / 8))).size
-    };
-  };
 
   return (
     <div className="min-h-screen tournament-bracket-bg p-6">
@@ -298,8 +284,30 @@ const JudgeScorecardsResults: React.FC = () => {
                       </span>
                     </h3>
                     
-                    {/* Judge Consensus Overview */}
-                    <JudgeConsensus judges={currentHeat.judges} />
+                    {/* Judge Consensus Overview - Collapsible */}
+                    <Card className="border-primary/20">
+                      <CardHeader 
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => setShowConsensus(!showConsensus)}
+                      >
+                        <CardTitle className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-primary" />
+                            <span>Judge Consensus Overview</span>
+                          </div>
+                          {showConsensus ? (
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      {showConsensus && (
+                        <CardContent>
+                          <JudgeConsensus judges={currentHeat.judges} />
+                        </CardContent>
+                      )}
+                    </Card>
                     
                     {/* Judge Details Tabs */}
                     {(() => {
@@ -535,48 +543,6 @@ const JudgeScorecardsResults: React.FC = () => {
           </div>
         )}
 
-        {/* Judge Statistics - Moved to Bottom */}
-        <Card className="mt-8">
-          <CardHeader 
-            className="cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => setShowJudgeStats(!showJudgeStats)}
-          >
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                <span>Judge Statistics</span>
-                <Badge variant="outline" className="text-xs">
-                  {allJudges.length} judges
-                </Badge>
-              </div>
-              {showJudgeStats ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-              )}
-            </CardTitle>
-          </CardHeader>
-          {showJudgeStats && (
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                {allJudges.map(judge => {
-                  const stats = getJudgeStats(judge);
-                  return (
-                    <button
-                      key={judge}
-                      onClick={() => navigate(`/results/scorecards/${encodeURIComponent(judge)}`)}
-                      className="text-center p-4 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors cursor-pointer border border-transparent hover:border-primary/30"
-                    >
-                      <div className="font-semibold text-sm text-muted-foreground">{judge}</div>
-                      <div className="text-2xl font-bold text-primary">{stats.totalHeats}</div>
-                      <div className="text-xs text-muted-foreground">Heats Judged</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          )}
-        </Card>
       </div>
     </div>
   );

@@ -128,8 +128,8 @@ export default function ResultsTournamentList() {
             if (tournament.name.includes('2025') && tournament.name.toLowerCase().includes('milano')) {
               navigate(`/results/WEC2025`);
             } else {
-              // Fallback to ID if slug can't be extracted
-              navigate(`/results/${tournament.id}`);
+              // Fallback to WEC2025 if slug can't be extracted
+              navigate(`/results/WEC2025`);
             }
           }
         }}

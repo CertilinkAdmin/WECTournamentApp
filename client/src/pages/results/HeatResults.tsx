@@ -7,8 +7,9 @@ import { Trophy, Users, Coffee, Award, ArrowLeft, Clock, MapPin } from 'lucide-r
 import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
 
 const HeatResults: React.FC = () => {
-  const { heatId } = useParams<{ heatId: string }>();
+  const { heatId, tournamentSlug } = useParams<{ heatId: string; tournamentSlug?: string }>();
   const heatNumber = heatId ? parseInt(heatId) : 0;
+  const tournament = tournamentSlug || 'WEC2025';
 
   const allHeats = [
     ...WEC25_BRACKET_POSITIONS,
@@ -29,7 +30,7 @@ const HeatResults: React.FC = () => {
               <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-400" />
               <h1 className="text-2xl font-bold text-gray-600 mb-2">Heat Not Found</h1>
               <p className="text-gray-500 mb-4">The requested heat could not be found.</p>
-              <Link to="/results/bracket">
+              <Link to={`/results/${tournament}/bracket`}>
                 <Button variant="outline">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Bracket
@@ -57,7 +58,7 @@ const HeatResults: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/results/bracket">
+          <Link to={`/results/${tournament}/bracket`}>
             <Button variant="outline" className="mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Bracket

@@ -7,8 +7,9 @@ import { Users, Trophy, ArrowLeft } from 'lucide-react';
 import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
 
 const JudgeScorecardsDetail: React.FC = () => {
-  const { judgeName } = useParams<{ judgeName: string }>();
+  const { judgeName, tournamentSlug } = useParams<{ judgeName: string; tournamentSlug?: string }>();
   const navigate = useNavigate();
+  const tournament = tournamentSlug || 'WEC2025';
   const [currentHeatIndex, setCurrentHeatIndex] = useState(0);
 
   const decodedJudgeName = judgeName ? decodeURIComponent(judgeName) : '';
@@ -50,7 +51,7 @@ const JudgeScorecardsDetail: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">No scorecards found for this judge.</p>
-            <Button onClick={() => navigate('/results/judges')}>Back to Judges</Button>
+            <Button onClick={() => navigate(`/results/${tournament}/judges`)}>Back to Judges</Button>
           </CardContent>
         </Card>
       </div>
@@ -64,7 +65,7 @@ const JudgeScorecardsDetail: React.FC = () => {
         <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigate('/results/judges')}
+              onClick={() => navigate(`/results/${tournament}/judges`)}
               className="mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />

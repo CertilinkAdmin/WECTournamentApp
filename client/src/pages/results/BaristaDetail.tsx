@@ -47,8 +47,9 @@ const getCategoryResult = (earnedPoints: number, maxPointsPerJudge: number): 'WI
 };
 
 const BaristaDetail: React.FC = () => {
-  const { baristaName } = useParams<{ baristaName: string }>();
+  const { baristaName, tournamentSlug } = useParams<{ baristaName: string; tournamentSlug?: string }>();
   const navigate = useNavigate();
+  const tournament = tournamentSlug || 'WEC2025';
   const [currentHeatIndex, setCurrentHeatIndex] = useState(0);
   
   // Get heat number from URL query params if navigating from a heat
@@ -190,7 +191,7 @@ const BaristaDetail: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">No heats found for this barista.</p>
-            <Button onClick={() => navigate('/results/baristas')}>Back to Baristas</Button>
+            <Button onClick={() => navigate(`/results/${tournament}/baristas`)}>Back to Baristas</Button>
           </CardContent>
         </Card>
       </div>
@@ -218,7 +219,7 @@ const BaristaDetail: React.FC = () => {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/results/baristas')}
+            onClick={() => navigate(`/results/${tournament}/baristas`)}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

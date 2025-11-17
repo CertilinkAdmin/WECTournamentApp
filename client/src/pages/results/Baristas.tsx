@@ -38,7 +38,7 @@ const FALLBACK_BARISTAS = [
 
 const Baristas: React.FC<BaristasProps> = () => {
   const navigate = useNavigate();
-  const { tournamentId } = useParams<{ tournamentId: string }>();
+  const { tournamentSlug } = useParams<{ tournamentSlug: string }>();
   const [progress, setProgress] = useState(50);
   const [startX, setStartX] = useState(0);
   const [active, setActive] = useState(0);
@@ -144,7 +144,7 @@ const Baristas: React.FC<BaristasProps> = () => {
   const handleItemClick = (index: number, baristaName: string) => {
     // Navigate to barista detail page
     const encodedName = encodeURIComponent(baristaName);
-    navigate(`/results/${tournamentId}/baristas/${encodedName}`);
+    navigate(`/results/${tournamentSlug || 'WEC2025'}/baristas/${encodedName}`);
   };
 
   // Get initials for display

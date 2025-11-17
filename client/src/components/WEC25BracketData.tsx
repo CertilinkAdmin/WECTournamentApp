@@ -311,9 +311,9 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     station: "C", 
     competitor1: "Bill", 
     competitor2: "BYE", 
-    winner: "Bill", 
-    score1: 33, 
-    score2: 0,
+    winner: "BYE", 
+    score1: 0, 
+    score2: 33,
     leftCupCode: "N2",
     rightCupCode: "BYE"
   },
@@ -322,9 +322,9 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     station: "A", 
     competitor1: "Engi", 
     competitor2: "BYE", 
-    winner: "Engi", 
-    score1: 33, 
-    score2: 0,
+    winner: "BYE", 
+    score1: 0, 
+    score2: 33,
     leftCupCode: "Y9",
     rightCupCode: "BYE"
   },
@@ -430,8 +430,8 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
     competitor1: "Artur", 
     competitor2: "Julian", 
     winner: "Artur", 
-    score1: 24, 
-    score2: 9,
+    score1: 9, 
+    score2: 2,
     leftCupCode: "G2",
     rightCupCode: "W8",
     judges: [
@@ -677,8 +677,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
     winner: "Aga", 
     score1: 8, 
     score2: 25,
-    leftCupCode: "S5",
-    rightCupCode: "J1",
+    leftCupCode: "A7",
+    rightCupCode: "F3",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -724,7 +724,7 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
     score1: 9, 
     score2: 24,
     leftCupCode: "K5",
-    rightCupCode: "G2",
+    rightCupCode: "J1",
     judges: [
       {
         judgeName: "Michalis",
@@ -766,11 +766,11 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
     station: "C", 
     competitor1: "Christos", 
     competitor2: "Stevo", 
-    winner: "Stevo", 
-    score1: 14, 
-    score2: 19,
-    leftCupCode: "B1",
-    rightCupCode: "M7",
+    winner: "Christos", 
+    score1: 24, 
+    score2: 9,
+    leftCupCode: "K5",
+    rightCupCode: "J1",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -865,8 +865,8 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
     winner: "Aga", 
     score1: 25, 
     score2: 8,
-    leftCupCode: "J1",
-    rightCupCode: "G2",
+    leftCupCode: "L2",
+    rightCupCode: "Z7",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -911,8 +911,8 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
     winner: "Jae", 
     score1: 14, 
     score2: 19,
-    leftCupCode: "B1",
-    rightCupCode: "L4",
+    leftCupCode: "N4",
+    rightCupCode: "K6",
     judges: [
       {
         judgeName: "Shinsaku",
