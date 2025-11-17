@@ -7,7 +7,7 @@
 
 /* Mobile Navigation removed - now using hamburger menu */
 
-/* Background Video */
+/* Photo Carousel Background */
 .landing-background {
   position: absolute;
   top: 0;
@@ -16,6 +16,35 @@
   height: 100%;
   z-index: 1;
   overflow: hidden;
+}
+
+/* Mobile-optimized carousel controls */
+@media (max-width: 640px) {
+  .landing-background button[data-testid^="button-carousel"] {
+    padding: 0.5rem !important;
+    opacity: 0.9;
+  }
+  
+  .landing-background button[data-testid^="button-carousel"] svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+  
+  /* Dot indicators smaller on mobile */
+  .landing-background button[data-testid^="button-carousel-dot"] {
+    width: 0.5rem !important;
+    height: 0.5rem !important;
+  }
+  
+  .landing-background button[data-testid^="button-carousel-dot"]:not([disabled]) {
+    width: 1.5rem !important;
+  }
+  
+  /* Image counter smaller on mobile */
+  .landing-background > div:last-of-type {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+  }
 }
 
 .background-video {
