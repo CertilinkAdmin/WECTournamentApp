@@ -471,17 +471,6 @@ const WEC2025Results = () => {
                       style={{ width: `${progress}%` }}
                     ></div>
                   </div>
-                  <div className="round-card-circle">
-                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg">
-                      <circle 
-                        className="round-card-stroke" 
-                        cx="60" 
-                        cy="60" 
-                        r="50"
-                        style={{ strokeDashoffset: heatCount > 0 ? 100 : 360 }}
-                      />
-                    </svg>
-                  </div>
                   <div className="round-card-heat-count">
                     {heatCount > 0 ? `${heatCount} Heat${heatCount !== 1 ? 's' : ''}` : 'No heats'}
                   </div>

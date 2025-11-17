@@ -127,77 +127,64 @@ const Judges: React.FC<JudgesProps> = () => {
     });
   };
 
-  // Initialize carousel when judges first load
-  useEffect(() => {
-    if (judges.length > 0 && active === 0 && progress === 50) {
-      setProgress(0);
-      setActive(0);
-    }
-  }, [judges.length]);
 
   useEffect(() => {
-    if (judges.length > 0) {
-      // Use setTimeout to ensure DOM is ready
-      const timer = setTimeout(() => {
-        animate();
-      }, 0);
-      return () => clearTimeout(timer);
-    }
+    animate();
   }, [progress, judges]);
 
-  useEffect(() => {
-    const wheelHandler = (e: WheelEvent) => {
-      e.preventDefault();
-      const wheelProgress = e.deltaY * speedWheel;
-      setProgress(prev => prev + wheelProgress);
-    };
+  const handleWheel = (e: WheelEvent) => {
+    e.preventDefault();
+    const wheelProgress = e.deltaY * speedWheel;
+    setProgress(prev => prev + wheelProgress);
+  };
 
-    const mouseMoveHandler = (e: MouseEvent | TouchEvent) => {
-      const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
-      
-      // Update cursor position
-      const cursors = document.querySelectorAll('.cursor');
-      cursors.forEach((cursor) => {
-        (cursor as HTMLElement).style.transform = `translate(${clientX}px, ${(e as MouseEvent).clientY || e.touches[0]?.clientY || 0}px)`;
-      });
+  const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
+    
+    // Update cursor position
+    const cursors = document.querySelectorAll('.cursor');
+    cursors.forEach((cursor) => {
+      (cursor as HTMLElement).style.transform = `translate(${clientX}px, ${(e as MouseEvent).clientY || e.touches[0]?.clientY || 0}px)`;
+    });
 
-      if (!isDown || !clientX) return;
-      
-      const mouseProgress = (clientX - startX) * speedDrag;
-      setProgress(prev => prev + mouseProgress);
+    if (!isDown || !clientX) return;
+    
+    const mouseProgress = (clientX - startX) * speedDrag;
+    setProgress(prev => prev + mouseProgress);
+    setStartX(clientX);
+  };
+
+  const handleMouseDown = (e: MouseEvent | TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0]?.clientX : (e as MouseEvent).clientX;
+    if (clientX) {
+      setIsDown(true);
       setStartX(clientX);
-    };
+    }
+  };
 
-    const mouseDownHandler = (e: MouseEvent | TouchEvent) => {
-      const clientX = 'touches' in e ? e.touches[0]?.clientX : (e as MouseEvent).clientX;
-      if (clientX) {
-        setIsDown(true);
-        setStartX(clientX);
-      }
-    };
+  const handleMouseUp = () => {
+    setIsDown(false);
+  };
 
-    const mouseUpHandler = () => {
-      setIsDown(false);
-    };
-
-    document.addEventListener('wheel', wheelHandler, { passive: false });
-    document.addEventListener('mousedown', mouseDownHandler);
-    document.addEventListener('mousemove', mouseMoveHandler);
-    document.addEventListener('mouseup', mouseUpHandler);
-    document.addEventListener('touchstart', mouseDownHandler);
-    document.addEventListener('touchmove', mouseMoveHandler);
-    document.addEventListener('touchend', mouseUpHandler);
+  useEffect(() => {
+    document.addEventListener('wheel', handleWheel as any, { passive: false });
+    document.addEventListener('mousedown', handleMouseDown as any);
+    document.addEventListener('mousemove', handleMouseMove as any);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchstart', handleMouseDown as any);
+    document.addEventListener('touchmove', handleMouseMove as any);
+    document.addEventListener('touchend', handleMouseUp);
 
     return () => {
-      document.removeEventListener('wheel', wheelHandler);
-      document.removeEventListener('mousedown', mouseDownHandler);
-      document.removeEventListener('mousemove', mouseMoveHandler);
-      document.removeEventListener('mouseup', mouseUpHandler);
-      document.removeEventListener('touchstart', mouseDownHandler);
-      document.removeEventListener('touchmove', mouseMoveHandler);
-      document.removeEventListener('touchend', mouseUpHandler);
+      document.removeEventListener('wheel', handleWheel as any);
+      document.removeEventListener('mousedown', handleMouseDown as any);
+      document.removeEventListener('mousemove', handleMouseMove as any);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchstart', handleMouseDown as any);
+      document.removeEventListener('touchmove', handleMouseMove as any);
+      document.removeEventListener('touchend', handleMouseUp);
     };
-  }, [isDown, startX, speedWheel, speedDrag]);
+  }, [isDown, startX, progress]);
 
   const handleItemClick = (index: number, judgeName: string) => {
     // Navigate to judge detail page using tournamentSlug
