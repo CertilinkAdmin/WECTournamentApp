@@ -1,6 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
+import PhotoCarousel from '../components/PhotoCarousel';
+import { wecPhotoAlbum, carouselSettings } from '../config/photoAlbum';
 import './LandingPage.css';
 
 const LandingPage: React.FC = () => {
@@ -8,9 +10,14 @@ const LandingPage: React.FC = () => {
     <div className="landing-page overflow-hidden h-screen">
       <AppHeader className="fixed top-0 left-0 right-0 z-50" logoSize="large" />
 
-      {/* Background */}
+      {/* Photo Carousel Background */}
       <div className="landing-background">
-        <div className="background-overlay"></div>
+        <PhotoCarousel
+          images={wecPhotoAlbum}
+          autoPlayInterval={carouselSettings.autoPlayInterval}
+          showControls={carouselSettings.showControls}
+          className="w-full h-full"
+        />
       </div>
       
       {/* Large WEC Logo */}
