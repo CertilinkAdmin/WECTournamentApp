@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PhotoCarouselProps {
@@ -16,6 +16,7 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (images.length <= 1) return;
@@ -24,28 +25,33 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
       nextImage();
     }, autoPlayInterval);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+    };
   }, [currentIndex, images.length, autoPlayInterval]);
 
   const nextImage = () => {
     if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentIndex((prev) => (prev + 1) % images.length);
-    setTimeout(() => setIsTransitioning(false), 1000);
+    transitionTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 1000);
   };
 
   const previousImage = () => {
     if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-    setTimeout(() => setIsTransitioning(false), 1000);
+    transitionTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 1000);
   };
 
   const goToImage = (index: number) => {
     if (isTransitioning || index === currentIndex) return;
     setIsTransitioning(true);
     setCurrentIndex(index);
-    setTimeout(() => setIsTransitioning(false), 1000);
+    transitionTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 1000);
   };
 
   if (images.length === 0) {
