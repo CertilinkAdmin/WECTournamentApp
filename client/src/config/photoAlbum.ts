@@ -32,6 +32,9 @@ export const wecPhotoAlbum: string[] = [
   'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=1920&q=80', // Barista at work
   'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1920&q=80', // Coffee beans close-up
   'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=1920&q=80', // Barista making espresso
+  'https://images.unsplash.com/photo-1585493131067-f384cc89be6a?w=1920&q=80', // Espresso extraction close-up
+  'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=1920&q=80', // Cappuccino with art
+  'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=1920&q=80', // Professional barista setup
 ];
 
 /**

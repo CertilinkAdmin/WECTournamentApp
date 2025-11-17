@@ -17,42 +17,43 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (images.length <= 1) return;
-
-    const interval = setInterval(() => {
-      nextImage();
-    }, autoPlayInterval);
-
-    return () => {
-      clearInterval(interval);
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-      }
-    };
-  }, [currentIndex, images.length, autoPlayInterval]);
+  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
 
   const nextImage = () => {
-    if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentIndex((prev) => (prev + 1) % images.length);
     transitionTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 1000);
   };
 
   const previousImage = () => {
-    if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
     transitionTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 1000);
   };
 
   const goToImage = (index: number) => {
-    if (isTransitioning || index === currentIndex) return;
+    if (index === currentIndex) return;
     setIsTransitioning(true);
     setCurrentIndex(index);
     transitionTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 1000);
   };
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+
+    autoPlayRef.current = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, autoPlayInterval);
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, [images.length, autoPlayInterval]);
 
   if (images.length === 0) {
     return (
@@ -89,38 +90,35 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
       {/* Navigation Controls */}
       {showControls && images.length > 1 && (
         <>
-          {/* Previous/Next Buttons */}
+          {/* Previous/Next Buttons - Larger for mobile */}
           <button
             onClick={previousImage}
-            disabled={isTransitioning}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-primary/80 hover:bg-primary text-primary-foreground p-3 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110"
+            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 bg-primary/90 hover:bg-primary text-primary-foreground p-3 md:p-4 rounded-full transition-all hover:scale-110 active:scale-95 shadow-lg"
             aria-label="Previous image"
             data-testid="button-carousel-previous"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
           </button>
           <button
             onClick={nextImage}
-            disabled={isTransitioning}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-primary/80 hover:bg-primary text-primary-foreground p-3 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110"
+            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-30 bg-primary/90 hover:bg-primary text-primary-foreground p-3 md:p-4 rounded-full transition-all hover:scale-110 active:scale-95 shadow-lg"
             aria-label="Next image"
             data-testid="button-carousel-next"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
           </button>
 
-          {/* Dot Indicators */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+          {/* Dot Indicators - Larger and easier to tap on mobile */}
+          <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2 md:gap-3">
             {images.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToImage(index)}
-                disabled={isTransitioning}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                className={`rounded-full transition-all duration-300 ${
                   index === currentIndex
-                    ? 'bg-primary w-8 scale-110'
-                    : 'bg-white/50 hover:bg-white/80'
-                } disabled:cursor-not-allowed`}
+                    ? 'bg-primary w-8 md:w-10 h-3 md:h-4 scale-110'
+                    : 'bg-white/60 hover:bg-white/90 w-3 md:w-4 h-3 md:h-4'
+                }`}
                 aria-label={`Go to image ${index + 1}`}
                 data-testid={`button-carousel-dot-${index}`}
               />
