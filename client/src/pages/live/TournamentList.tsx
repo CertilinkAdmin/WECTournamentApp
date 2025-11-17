@@ -357,6 +357,12 @@ export default function TournamentList() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
+          {tournament.location && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <MapPin className="w-4 h-4" />
+              <span>{tournament.location}</span>
+            </div>
+          )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {tournament.status === 'SETUP' || !tournament.startDate ? (
               <span>Coming Soon</span>

@@ -23,6 +23,7 @@ import HeatCarouselDemo from './pages/results/HeatCarouselDemo';
 import ResultsInputPage from './pages/admin/ResultsInputPage';
 import BracketBuilder from './pages/admin/BracketBuilder';
 import AdminTournaments from './pages/admin/AdminTournaments';
+import CreateTournament from './pages/admin/CreateTournament';
 import ManageBaristas from './pages/admin/ManageBaristas';
 import ManageJudges from './pages/admin/ManageJudges';
 import BottomNav from './components/BottomNav';
@@ -43,6 +44,7 @@ const App: React.FC = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="tournaments" element={<AdminTournaments />} />
+            <Route path="tournaments/create" element={<CreateTournament />} />
             <Route path="competitors" element={<ManageBaristas />} />
             <Route path="judges" element={<ManageJudges />} />
             <Route path="results-input" element={<ResultsInputPage />} />

@@ -29,6 +29,7 @@ export type User = typeof users.$inferSelect;
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  location: text("location"),
   status: tournamentStatusEnum("status").notNull().default('SETUP'),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
