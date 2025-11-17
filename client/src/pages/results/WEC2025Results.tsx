@@ -464,13 +464,6 @@ const WEC2025Results = () => {
                   onClick={() => setSelectedRound(round)}
                 >
                   <h3 className="round-card-title">{getRoundDisplayName(round)}</h3>
-                  <div className="round-card-bar">
-                    <div className="round-card-emptybar"></div>
-                    <div 
-                      className="round-card-filledbar"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
                   <div className="round-card-heat-count">
                     {heatCount > 0 ? `${heatCount} Heat${heatCount !== 1 ? 's' : ''}` : 'No heats'}
                   </div>

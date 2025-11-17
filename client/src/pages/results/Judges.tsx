@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
+import { findTournamentBySlug } from '@/utils/tournamentUtils';
 import './Judges.css';
 
 interface User {
@@ -30,7 +31,7 @@ interface JudgesProps {}
 
 const Judges: React.FC<JudgesProps> = () => {
   const navigate = useNavigate();
-  const { tournamentId } = useParams<{ tournamentId: string }>();
+  const { tournamentSlug } = useParams<{ tournamentSlug: string }>();
   const [progress, setProgress] = useState(50);
   const [startX, setStartX] = useState(0);
   const [active, setActive] = useState(0);
@@ -42,15 +43,26 @@ const Judges: React.FC<JudgesProps> = () => {
   // Fetch all users to get judge details
   const { data: allUsers = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
-    enabled: !!tournamentId,
+    enabled: !!tournamentSlug,
   });
 
   // Fetch tournament participants (including judges)
   const { data: participants = [], isLoading: isLoadingParticipants } = useQuery<TournamentParticipant[]>({
-    queryKey: [`/api/tournaments/${tournamentId}/participants`],
+    queryKey: [`/api/tournaments/${tournamentSlug}/participants`],
     queryFn: async () => {
-      if (!tournamentId) return [];
-      const response = await fetch(`/api/tournaments/${tournamentId}/participants?includeJudges=true`, {
+      if (!tournamentSlug) return [];
+      // First, get all tournaments to find by slug
+      const tournamentsResponse = await fetch('/api/tournaments');
+      if (!tournamentsResponse.ok) {
+        throw new Error('Failed to fetch tournaments');
+      }
+      const tournaments = await tournamentsResponse.json();
+      const tournament = findTournamentBySlug(tournaments, tournamentSlug);
+      if (!tournament) {
+        throw new Error('Tournament not found');
+      }
+
+      const response = await fetch(`/api/tournaments/${tournament.id}/participants?includeJudges=true`, {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -59,7 +71,7 @@ const Judges: React.FC<JudgesProps> = () => {
       }
       return response.json();
     },
-    enabled: !!tournamentId,
+    enabled: !!tournamentSlug,
   });
 
   // Get judges from tournament participants
