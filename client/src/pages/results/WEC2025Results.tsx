@@ -62,7 +62,6 @@ interface JudgeDetailedScore {
   sensoryBeverage: string;
   visualLatteArt: "left" | "right";
   taste: "left" | "right";
-  tactile: "left" | "right";
   flavour: "left" | "right";
   overall: "left" | "right";
 }
@@ -87,7 +86,7 @@ const WEC2025Results = () => {
   // Group matches by round - memoized to prevent hook order issues (MUST be before any returns)
   const matchesByRound = useMemo(() => {
     if (!tournamentData?.matches) return {};
-    
+
     const grouped = tournamentData.matches.reduce((acc, match) => {
       const round = match.round || 1;
       if (!acc[round]) {
@@ -176,7 +175,6 @@ const WEC2025Results = () => {
           sensoryBeverage: j.sensoryBeverage,
           visualLatteArt: j.visualLatteArt,
           taste: j.taste,
-          tactile: j.tactile,
           flavour: j.flavour,
           overall: j.overall,
         } as JudgeDetailedScore));
@@ -231,9 +229,9 @@ const WEC2025Results = () => {
     if (!response.ok) {
       throw new Error('Failed to fetch tournament data');
     }
-    
+
     const data = await response.json();
-    
+
     // Transform the data to match our interface
     const transformedData: TournamentData = {
       tournament: {
@@ -287,7 +285,7 @@ const WEC2025Results = () => {
         overall: ds.overall
       }))
     };
-    
+
     setTournamentData(transformedData);
     setLoading(false);
     setError(null);
@@ -296,21 +294,21 @@ const WEC2025Results = () => {
   const fetchByName = async () => {
     try {
       setLoading(true);
-      
+
       const tournamentsResponse = await fetch('/api/tournaments');
       if (!tournamentsResponse.ok) {
         throw new Error('Failed to fetch tournaments');
       }
-      
+
       const tournaments = await tournamentsResponse.json();
       const wec2025 = tournaments.find((t: any) => 
         t.name === 'World Espresso Championships 2025 Milano'
       );
-      
+
       if (!wec2025) {
         throw new Error('WEC 2025 Milano tournament not found');
       }
-      
+
       const response = await fetch(`/api/tournaments/${wec2025.id}`);
       await processResponse(response);
     } catch (err) {
@@ -321,22 +319,22 @@ const WEC2025Results = () => {
   const fetchTournamentData = async () => {
     try {
       setLoading(true);
-      
+
       // First, get all tournaments to find by location/year
       const tournamentsResponse = await fetch('/api/tournaments');
       if (!tournamentsResponse.ok) {
         throw new Error('Failed to fetch tournaments');
       }
-      
+
       const tournaments = await tournamentsResponse.json();
-      
+
       // Find tournament by slug
       let tournamentId: number | null = null;
       if (tournamentSlug) {
         const tournament = findTournamentBySlug(tournaments, tournamentSlug);
         tournamentId = tournament?.id || null;
       }
-      
+
       // Fallback: try to find WEC 2025 Milano if no slug provided
       if (!tournamentId) {
         const wec2025 = tournaments.find((t: any) => 
@@ -344,14 +342,14 @@ const WEC2025Results = () => {
         );
         tournamentId = wec2025?.id || null;
       }
-      
+
       if (!tournamentId) {
         throw new Error('Tournament not found');
       }
-      
+
       // Fetch tournament data by ID
       const response = await fetch(`/api/tournaments/${tournamentId}`);
-      
+
       await processResponse(response);
     } catch (err) {
       handleError(err);
@@ -395,7 +393,7 @@ const WEC2025Results = () => {
   const getRoundDisplayName = (round: number) => {
     const roundNames: Record<number, string> = {
       1: 'Round 1 - Round of 32',
-      2: 'Round 2 - Round of 16',
+      2: 'Round 2 - Round of 16', 
       3: 'Round 3 - Quarterfinals',
       4: 'Round 4 - Semifinals',
       5: 'Final - Championship'
@@ -456,7 +454,7 @@ const WEC2025Results = () => {
               const roundMatches = matchesByRound[round] || [];
               const heatCount = roundMatches.length;
               const progress = heatCount > 0 ? 100 : 0; // Full progress if heats exist
-              
+
               return (
                 <div
                   key={round}
@@ -537,7 +535,7 @@ const WEC2025Results = () => {
                   className="block w-full h-full object-contain"
                 />
               </button>
-              
+
               <div className="text-center flex-1 bg-gradient-to-br from-cinnamon-brown/20 to-cinnamon-brown/30 rounded-xl py-4 px-6 border-2 border-cinnamon-brown/40 shadow-lg backdrop-blur-sm">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Select
@@ -569,7 +567,7 @@ const WEC2025Results = () => {
                   {selectedRoundMatches.length} Heat{selectedRoundMatches.length !== 1 ? 's' : ''} • Round {availableRounds.indexOf(selectedRound) + 1} of {availableRounds.length}
                 </p>
               </div>
-              
+
               <button
                 onClick={handleNextRound}
                 disabled={availableRounds.indexOf(selectedRound) === availableRounds.length - 1}
@@ -632,11 +630,11 @@ const WEC2025Results = () => {
                           {getTotalScore(match.id, match.competitor1Id)}
                         </span>
                       </div>
-                      
+
                       <div className="text-center text-xs text-muted-foreground font-medium">
                         VS
                       </div>
-                      
+
                       <div
                         className={`flex items-center justify-between p-2 rounded-md border ${
                           match.winnerId === match.competitor2Id
@@ -663,7 +661,7 @@ const WEC2025Results = () => {
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="flex justify-center pt-2">
                       <Badge
                         className={
@@ -713,7 +711,7 @@ const WEC2025Results = () => {
               View sensory evaluation scores and detailed judge-by-judge breakdowns for this heat.
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedHeat && (
             <div className="space-y-6">
               {/* Sensory Evaluation Card - Overview */}
@@ -731,11 +729,11 @@ const WEC2025Results = () => {
                 leftCompetitor={selectedHeat.competitor1Name}
                 rightCompetitor={selectedHeat.competitor2Name || "—"}
               />
-              
+
               {/* Individual Competitor Scorecards */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-cinnamon-brown">Individual Competitor Scorecards</h3>
-                
+
                 <CompetitorScorecard
                   competitorName={selectedHeat.competitor1Name}
                   position="left"
@@ -743,7 +741,7 @@ const WEC2025Results = () => {
                   isWinner={selectedHeat.winnerId === selectedHeat.competitor1Id}
                   isBye={isByeMatch(selectedHeat)}
                 />
-                
+
                 {!isByeMatch(selectedHeat) && (
                   <CompetitorScorecard
                     competitorName={selectedHeat.competitor2Name}
