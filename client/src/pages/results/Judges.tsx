@@ -200,9 +200,9 @@ const Judges: React.FC<JudgesProps> = () => {
   }, [isDown, startX, speedWheel, speedDrag]);
 
   const handleItemClick = (index: number, judgeName: string) => {
-    // Navigate to judge detail page
+    // Navigate to judge detail page using tournamentSlug
     const encodedName = encodeURIComponent(judgeName);
-    navigate(`/results/${tournamentId}/judges/${encodedName}`);
+    navigate(`/results/${tournamentSlug}/judges/${encodedName}`);
   };
 
   // Get initials for display
