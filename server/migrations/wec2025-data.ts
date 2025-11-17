@@ -1,3 +1,4 @@
+
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { 
@@ -26,7 +27,7 @@ const WEC_2025_DATA = {
     totalRounds: 5,
     currentRound: 5
   },
-
+  
   competitors: [
     // WEC25 Tournament Competitors
     { name: "Penny", code: "P1", seed: 1 },
@@ -61,25 +62,65 @@ const WEC_2025_DATA = {
   ],
 
   heats: [
-    // Round 1 heats (heats 1-16) - BYE heats and competitive heats
-    { heatNumber: 1, round: 1, competitor1: "Penny", competitor2: "BYE", winner: "Penny", points1: 0, points2: 0 },
-    { heatNumber: 2, round: 1, competitor1: "Erland", competitor2: "BYE", winner: "Erland", points1: 0, points2: 0 },
-    { heatNumber: 3, round: 1, competitor1: "Felix", competitor2: "BYE", winner: "Felix", points1: 0, points2: 0 },
-    { heatNumber: 4, round: 1, competitor1: "Aga", competitor2: "BYE", winner: "Aga", points1: 0, points2: 0 },
-    { heatNumber: 5, round: 1, competitor1: "Julian", competitor2: "BYE", winner: "Julian", points1: 0, points2: 0 },
-    { heatNumber: 6, round: 1, competitor1: "Artur", competitor2: "BYE", winner: "Artur", points1: 0, points2: 0 },
-    { heatNumber: 7, round: 1, competitor1: "Hojat", competitor2: "BYE", winner: "Hojat", points1: 0, points2: 0 },
-    { heatNumber: 8, round: 1, competitor1: "SCRATCHED", competitor2: "BYE", winner: "SCRATCHED", points1: 0, points2: 0 },
-    { heatNumber: 9, round: 1, competitor1: "Faiz", competitor2: "BYE", winner: "Faiz", points1: 0, points2: 0 },
-    { heatNumber: 10, round: 1, competitor1: "Christos", competitor2: "BYE", winner: "Christos", points1: 0, points2: 0 },
-    { heatNumber: 11, round: 1, competitor1: "Daniele", competitor2: "BYE", winner: "Daniele", points1: 0, points2: 0 },
-    { heatNumber: 12, round: 1, competitor1: "Stevo", competitor2: "Edwin", winner: "Stevo", points1: 28, points2: 5 },
-    { heatNumber: 13, round: 1, competitor1: "Kirill", competitor2: "Anja", winner: "Kirill", points1: 24, points2: 9 },
-    { heatNumber: 14, round: 1, competitor1: "Jae", competitor2: "Carlos", winner: "Jae", points1: 28, points2: 5 },
-    { heatNumber: 15, round: 1, competitor1: "Bill", competitor2: "BYE", winner: "Bill", points1: 0, points2: 0 },
-    { heatNumber: 16, round: 1, competitor1: "Engi", competitor2: "BYE", winner: "Engi", points1: 0, points2: 0 },
-
-    // Round 2 heats (heats 17-24) - Round of 16
+    // Round 1 - Round of 32 (Heats 1-16)
+    { heatNumber: 1, round: 1, competitor1: "Penny", competitor2: "BYE", winner: "Penny", points1: 33, points2: 0 },
+    { heatNumber: 2, round: 1, competitor1: "Erland", competitor2: "BYE", winner: "Erland", points1: 33, points2: 0 },
+    { heatNumber: 3, round: 1, competitor1: "Felix", competitor2: "BYE", winner: "Felix", points1: 33, points2: 0 },
+    { heatNumber: 4, round: 1, competitor1: "Aga", competitor2: "BYE", winner: "Aga", points1: 33, points2: 0 },
+    { heatNumber: 5, round: 1, competitor1: "Julian", competitor2: "BYE", winner: "Julian", points1: 33, points2: 0 },
+    { heatNumber: 6, round: 1, competitor1: "Artur", competitor2: "BYE", winner: "Artur", points1: 33, points2: 0 },
+    { heatNumber: 7, round: 1, competitor1: "Hojat", competitor2: "BYE", winner: "Hojat", points1: 33, points2: 0 },
+    { heatNumber: 8, round: 1, competitor1: "SCRATCHED", competitor2: "BYE", winner: "BYE", points1: 0, points2: 33 },
+    { heatNumber: 9, round: 1, competitor1: "Faiz", competitor2: "BYE", winner: "Faiz", points1: 33, points2: 0 },
+    { heatNumber: 10, round: 1, competitor1: "Christos", competitor2: "BYE", winner: "Christos", points1: 33, points2: 0 },
+    { heatNumber: 11, round: 1, competitor1: "Daniele", competitor2: "BYE", winner: "Daniele", points1: 33, points2: 0 },
+    
+    { 
+      heatNumber: 12, 
+      round: 1, 
+      competitor1: "Stevo", 
+      competitor2: "Edwin", 
+      winner: "Stevo", 
+      points1: 28, 
+      points2: 5,
+      judgeScores: [
+        { judge: "Jasper", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
+        { judge: "Korn", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
+        { judge: "Michalis", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+      ]
+    },
+    { 
+      heatNumber: 13, 
+      round: 1, 
+      competitor1: "Kirill", 
+      competitor2: "Anja", 
+      winner: "Kirill", 
+      points1: 24, 
+      points2: 9,
+      judgeScores: [
+        { judge: "Shinsaku", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
+        { judge: "Ali", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
+        { judge: "Junior", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+      ]
+    },
+    { 
+      heatNumber: 14, 
+      round: 1, 
+      competitor1: "Jae", 
+      competitor2: "Carlos", 
+      winner: "Jae", 
+      points1: 28, 
+      points2: 5,
+      judgeScores: [
+        { judge: "Michalis", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
+        { judge: "Jasper", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
+        { judge: "Korn", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+      ]
+    },
+    { heatNumber: 15, round: 1, competitor1: "Bill", competitor2: "BYE", winner: "Bill", points1: 33, points2: 0 },
+    { heatNumber: 16, round: 1, competitor1: "Engi", competitor2: "BYE", winner: "Engi", points1: 33, points2: 0 },
+    
+    // Round 2 - Round of 16 (Heats 17-23)
     { 
       heatNumber: 17, 
       round: 2, 
@@ -117,12 +158,12 @@ const WEC_2025_DATA = {
       points1: 2, 
       points2: 9,
       judgeScores: [
-        { judge: "Shinsaku", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 } },
-        { judge: "Tess", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 } },
-        { judge: "Junior", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Shinsaku", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 3 } },
+        { judge: "Tess", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 2 } },
+        { judge: "Junior", competitor1: { visual: 2, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 1, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
       ]
     },
-    { heatNumber: 20, round: 2, competitor1: "Daniele", competitor2: "BYE", winner: "Daniele", points1: 0, points2: 0 },
+    { heatNumber: 20, round: 2, competitor1: "Daniele", competitor2: "BYE", winner: "Daniele", points1: 33, points2: 0 },
     { 
       heatNumber: 21, 
       round: 2, 
@@ -134,7 +175,7 @@ const WEC_2025_DATA = {
       judgeScores: [
         { judge: "Michalis", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
         { judge: "Ali", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Jasper", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Jasper", competitor1: { visual: 2, taste: 0, tactile: 0, flavour: 0, overall: 3 }, competitor2: { visual: 1, taste: 1, tactile: 1, flavour: 1, overall: 4 } }
       ]
     },
     { 
@@ -148,7 +189,7 @@ const WEC_2025_DATA = {
       judgeScores: [
         { judge: "Shinsaku", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
         { judge: "Tess", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 } },
-        { judge: "Junior", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Junior", competitor1: { visual: 2, taste: 0, tactile: 0, flavour: 0, overall: 2 }, competitor2: { visual: 1, taste: 1, tactile: 1, flavour: 1, obvious: 4 } }
       ]
     },
     { 
@@ -161,8 +202,8 @@ const WEC_2025_DATA = {
       points2: 6,
       judgeScores: [
         { judge: "Shinsaku", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Tess", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Junior", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Tess", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 4 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 2 } },
+        { judge: "Junior", competitor1: { visual: 3, taste: 0, tactile: 0, flavour: 0, overall: 3 }, competitor2: { visual: 0, taste: 1, tactile: 1, flavour: 1, overall: 1 } }
       ]
     },
     { 
@@ -176,7 +217,7 @@ const WEC_2025_DATA = {
       judgeScores: [
         { judge: "Michalis", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
         { judge: "Ali", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Jasper", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Jasper", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 3 } }
       ]
     },
 
@@ -191,8 +232,8 @@ const WEC_2025_DATA = {
       points2: 8,
       judgeScores: [
         { judge: "Shinsaku", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Tess", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Junior", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Tess", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 3 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 2 } },
+        { judge: "Junior", competitor1: { visual: 2, taste: 0, tactile: 0, flavour: 0, overall: 2 }, competitor2: { visual: 1, taste: 1, tactile: 1, flavour: 1, overall: 2 } }
       ]
     },
     { 
@@ -206,7 +247,7 @@ const WEC_2025_DATA = {
       judgeScores: [
         { judge: "Michalis", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
         { judge: "Korn", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Junior", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Junior", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 3 } }
       ]
     },
     { 
@@ -220,7 +261,7 @@ const WEC_2025_DATA = {
       judgeScores: [
         { judge: "Shinsaku", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
         { judge: "Korn", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Junior", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Junior", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 3 } }
       ]
     },
     { 
@@ -233,8 +274,8 @@ const WEC_2025_DATA = {
       points2: 10,
       judgeScores: [
         { judge: "Michalis", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Tess", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Junior", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Tess", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 3 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 2 } },
+        { judge: "Junior", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 2 } }
       ]
     },
 
@@ -250,7 +291,7 @@ const WEC_2025_DATA = {
       judgeScores: [
         { judge: "Shinsaku", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
         { judge: "Korn", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
-        { judge: "Boss", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Boss", competitor1: { visual: 2, taste: 0, tactile: 0, flavour: 0, overall: 3 }, competitor2: { visual: 1, taste: 1, tactile: 1, flavour: 1, overall: 4 } }
       ]
     },
     { 
@@ -264,7 +305,7 @@ const WEC_2025_DATA = {
       judgeScores: [
         { judge: "Shinsaku", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
         { judge: "Korn", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 } },
-        { judge: "Boss", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
+        { judge: "Boss", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 4 } }
       ]
     },
 
@@ -299,12 +340,12 @@ async function migrateWEC2025Data() {
     console.log('👥 Creating users...');
     const allUsers = [...WEC_2025_DATA.competitors, ...WEC_2025_DATA.judges];
     const userMap = new Map<string, number>();
-
+    
     for (const user of allUsers) {
       const [createdUser] = await db.insert(users).values({
         name: user.name,
         email: `${user.name.toLowerCase().replace(/\s+/g, '')}@wec2025.com`,
-        role: 'judges' in user ? 'JUDGE' : 'BARISTA'
+        role: 'role' in user ? 'JUDGE' : 'BARISTA'
       }).returning();
       userMap.set(user.name, createdUser.id);
       console.log(`✅ Created user: ${user.name} (ID: ${createdUser.id})`);
@@ -317,7 +358,7 @@ async function migrateWEC2025Data() {
         tournamentId: tournament.id,
         userId: userMap.get(competitor.name)!,
         seed: competitor.seed,
-        finalRank: competitor.name === 'Aga' ? 1 : null // Aga is the champion
+        finalRank: competitor.name === 'Aga' ? 1 : competitor.name === 'Jae' ? 2 : null
       });
     }
     console.log('✅ Tournament participants created');
@@ -329,7 +370,7 @@ async function migrateWEC2025Data() {
       { name: "Station 2", location: "Side Stage" },
       { name: "Station 3", location: "Practice Area" }
     ];
-
+    
     const stationMap = new Map<number, number>();
     for (const station of stations_data) {
       const [createdStation] = await db.insert(stations).values(station).returning();
@@ -360,10 +401,10 @@ async function migrateWEC2025Data() {
 
       // Handle BYE matches - no scoring, just advance
       if (heat.competitor2 === 'BYE' && competitor1Id) {
-        // BYE matches don't have scores - competitor advances automatically
         console.log(`✅ BYE Heat ${heat.heatNumber} - ${heat.competitor1} advances`);
+        continue;
       }
-
+      
       // Handle competition heats with judge scores
       if (heat.judgeScores) {
         for (const judgeScore of heat.judgeScores) {
@@ -401,19 +442,19 @@ async function migrateWEC2025Data() {
             });
           }
         }
-
+        
         // Add detailed scores with cup codes
         const comp1CupCode = heat.competitor1.substring(0, 2).toUpperCase();
         const comp2CupCode = heat.competitor2.substring(0, 2).toUpperCase();
-
+        
         for (const judgeScore of heat.judgeScores) {
           // Determine which side won each category for detailed scoring
-          const visualWinner = judgeScore.competitor1.visual > 0 ? 'left' : 'right';
-          const tasteWinner = judgeScore.competitor1.taste > 0 ? 'left' : 'right';
-          const tactileWinner = judgeScore.competitor1.tactile > 0 ? 'left' : 'right';
-          const flavourWinner = judgeScore.competitor1.flavour > 0 ? 'left' : 'right';
-          const overallWinner = judgeScore.competitor1.overall > 0 ? 'left' : 'right';
-
+          const visualWinner = judgeScore.competitor1.visual > judgeScore.competitor2.visual ? 'left' : 'right';
+          const tasteWinner = judgeScore.competitor1.taste > judgeScore.competitor2.taste ? 'left' : 'right';
+          const tactileWinner = judgeScore.competitor1.tactile > judgeScore.competitor2.tactile ? 'left' : 'right';
+          const flavourWinner = judgeScore.competitor1.flavour > judgeScore.competitor2.flavour ? 'left' : 'right';
+          const overallWinner = judgeScore.competitor1.overall > judgeScore.competitor2.overall ? 'left' : 'right';
+          
           await db.insert(judgeDetailedScores).values({
             matchId: match.id,
             judgeName: judgeScore.judge,
@@ -436,6 +477,7 @@ async function migrateWEC2025Data() {
     console.log(`📊 Tournament ID: ${tournament.id}`);
     console.log(`👥 Total users: ${allUsers.length}`);
     console.log(`⚔️ Total heats: ${WEC_2025_DATA.heats.length}`);
+    console.log(`🏆 Champion: Aga`);
 
   } catch (error) {
     console.error('❌ Migration failed:', error);
