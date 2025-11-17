@@ -336,19 +336,32 @@ async function migrateWEC2025Data() {
     const [tournament] = await db.insert(tournaments).values(WEC_2025_DATA.tournament).returning();
     console.log(`✅ Tournament created with ID: ${tournament.id}`);
 
-    // 2. Create users (competitors and judges)
-    console.log('👥 Creating users...');
+    // 2. Create or get existing users (competitors and judges)
+    console.log('👥 Creating/getting users...');
     const allUsers = [...WEC_2025_DATA.competitors, ...WEC_2025_DATA.judges];
     const userMap = new Map<string, number>();
     
     for (const user of allUsers) {
-      const [createdUser] = await db.insert(users).values({
-        name: user.name,
-        email: `${user.name.toLowerCase().replace(/\s+/g, '')}@wec2025.com`,
-        role: 'role' in user ? 'JUDGE' : 'BARISTA'
-      }).returning();
-      userMap.set(user.name, createdUser.id);
-      console.log(`✅ Created user: ${user.name} (ID: ${createdUser.id})`);
+      const email = `${user.name.toLowerCase().replace(/\s+/g, '')}@wec2025.com`;
+      const role = 'role' in user ? 'JUDGE' : 'BARISTA';
+      
+      // Check if user already exists
+      const existingUser = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.email, email)
+      });
+      
+      if (existingUser) {
+        userMap.set(user.name, existingUser.id);
+        console.log(`✅ Found existing user: ${user.name} (ID: ${existingUser.id})`);
+      } else {
+        const [createdUser] = await db.insert(users).values({
+          name: user.name,
+          email,
+          role
+        }).returning();
+        userMap.set(user.name, createdUser.id);
+        console.log(`✅ Created user: ${user.name} (ID: ${createdUser.id})`);
+      }
     }
 
     // 3. Create tournament participants
