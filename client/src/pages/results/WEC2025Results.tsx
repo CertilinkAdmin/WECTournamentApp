@@ -219,10 +219,10 @@ const WEC2025Results = () => {
 
   // Helper function to determine round from heat number (used in both API and fallback)
   const getRoundFromHeatNumber = (heatNumber: number): number => {
-    if (heatNumber >= 1 && heatNumber <= 16) return 1;  // Round 1: Heats 1-16
-    if (heatNumber >= 17 && heatNumber <= 24) return 2; // Round 2: Heats 17-24
-    if (heatNumber >= 25 && heatNumber <= 28) return 3; // Round 3: Heats 25-28
-    if (heatNumber >= 29 && heatNumber <= 30) return 4; // Round 4: Heats 29-30
+    if (heatNumber >= 1 && heatNumber <= 16) return 1;  // Round 1 - Round of 32: Heats 1-16
+    if (heatNumber >= 17 && heatNumber <= 24) return 2; // Round 2 - Round of 16: Heats 17-24
+    if (heatNumber >= 25 && heatNumber <= 28) return 3; // Round 3 - Quarterfinals: Heats 25-28
+    if (heatNumber >= 29 && heatNumber <= 30) return 4; // Round 4 - Semifinals: Heats 29-30
     if (heatNumber === 31) return 5;                    // Final: Heat 31
     return 1; // Default fallback
   };
@@ -394,10 +394,10 @@ const WEC2025Results = () => {
   // Get round display name - must be before early returns
   const getRoundDisplayName = (round: number) => {
     const roundNames: Record<number, string> = {
-      1: 'Round 1 - Preliminary Heats',
-      2: 'Round 2 - Quarterfinals',
-      3: 'Round 3 - Semifinals',
-      4: 'Round 4 - Finals',
+      1: 'Round 1 - Round of 32',
+      2: 'Round 2 - Round of 16',
+      3: 'Round 3 - Quarterfinals',
+      4: 'Round 4 - Semifinals',
       5: 'Final - Championship'
     };
     return roundNames[round] || `Round ${round}`;

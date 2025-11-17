@@ -1,3 +1,4 @@
+
 // WEC25 Tournament Bracket Data
 // Based on the actual WEC25 tournament bracket with judges and scorecards
 
@@ -27,26 +28,29 @@ interface BracketPosition {
 }
 
 export const WEC25_COMPETITORS = [
-  // WEC25 Competitors from the tournament bracket image
-  { id: 1, name: "Sebastian Hernandez", email: "sebastian@example.com", role: "BARISTA" as const },
-  { id: 2, name: "Faiz Nordin", email: "faiz@example.com", role: "BARISTA" as const },
-  { id: 3, name: "Christos Sotiros", email: "christos@example.com", role: "BARISTA" as const },
-  { id: 4, name: "Daniele Ricci", email: "daniele@example.com", role: "BARISTA" as const },
-  { id: 5, name: "Stevo Kühn", email: "stevo@example.com", role: "BARISTA" as const },
-  { id: 6, name: "Edwin Tascon", email: "edwin@example.com", role: "BARISTA" as const },
-  { id: 7, name: "Kirill Shlyakov", email: "kirill@example.com", role: "BARISTA" as const },
-  { id: 8, name: "Anja Fürst", email: "anja@example.com", role: "BARISTA" as const },
-  { id: 9, name: "Carlos Medina", email: "carlos@example.com", role: "BARISTA" as const },
-  { id: 10, name: "Jae Kim", email: "jae@example.com", role: "BARISTA" as const },
-  { id: 11, name: "Bill Nguyen", email: "bill@example.com", role: "BARISTA" as const },
-  { id: 12, name: "Engi Pan", email: "engi@example.com", role: "BARISTA" as const },
-  { id: 13, name: "Hojat Mousavi", email: "hojat@example.com", role: "BARISTA" as const },
-  { id: 14, name: "Aga Muhammed", email: "aga@example.com", role: "BARISTA" as const },
+  // WEC25 Competitors from the tournament bracket
+  { id: 1, name: "Penny", email: "penny@example.com", role: "BARISTA" as const },
+  { id: 2, name: "Erland", email: "erland@example.com", role: "BARISTA" as const },
+  { id: 3, name: "Felix", email: "felix@example.com", role: "BARISTA" as const },
+  { id: 4, name: "Aga", email: "aga@example.com", role: "BARISTA" as const },
+  { id: 5, name: "Julian", email: "julian@example.com", role: "BARISTA" as const },
+  { id: 6, name: "Artur", email: "artur@example.com", role: "BARISTA" as const },
+  { id: 7, name: "Hojat", email: "hojat@example.com", role: "BARISTA" as const },
+  { id: 8, name: "Faiz", email: "faiz@example.com", role: "BARISTA" as const },
+  { id: 9, name: "Christos", email: "christos@example.com", role: "BARISTA" as const },
+  { id: 10, name: "Daniele", email: "daniele@example.com", role: "BARISTA" as const },
+  { id: 11, name: "Stevo", email: "stevo@example.com", role: "BARISTA" as const },
+  { id: 12, name: "Edwin", email: "edwin@example.com", role: "BARISTA" as const },
+  { id: 13, name: "Kirill", email: "kirill@example.com", role: "BARISTA" as const },
+  { id: 14, name: "Anja", email: "anja@example.com", role: "BARISTA" as const },
+  { id: 15, name: "Jae", email: "jae@example.com", role: "BARISTA" as const },
+  { id: 16, name: "Carlos", email: "carlos@example.com", role: "BARISTA" as const },
+  { id: 17, name: "Bill", email: "bill@example.com", role: "BARISTA" as const },
+  { id: 18, name: "Engi", email: "engi@example.com", role: "BARISTA" as const },
 ];
 
+// Round 1 - Round of 32 (Heats 1-16)
 export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
-  // Round 1 - Heats 1-16 (Bye heats 1-11, competitive heats 12-16)
-  // Accurate BYE matchups for Round 1
   { 
     heatNumber: 1, 
     station: "A", 
@@ -55,7 +59,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Penny", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "S5",
+    leftCupCode: "P1",
     rightCupCode: "BYE"
   },
   { 
@@ -66,7 +70,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Erland", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "W6",
+    leftCupCode: "E2",
     rightCupCode: "BYE"
   },
   { 
@@ -77,7 +81,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Felix", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "V4",
+    leftCupCode: "F3",
     rightCupCode: "BYE"
   },
   { 
@@ -88,7 +92,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Aga", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "J1",
+    leftCupCode: "A4",
     rightCupCode: "BYE"
   },
   { 
@@ -99,7 +103,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Julian", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "W8",
+    leftCupCode: "J5",
     rightCupCode: "BYE"
   },
   { 
@@ -110,7 +114,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Artur", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "G2",
+    leftCupCode: "A6",
     rightCupCode: "BYE"
   },
   { 
@@ -121,7 +125,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Hojat", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "K5",
+    leftCupCode: "H7",
     rightCupCode: "BYE"
   },
   { 
@@ -143,7 +147,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Faiz", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "Q5",
+    leftCupCode: "F9",
     rightCupCode: "BYE"
   },
   { 
@@ -154,7 +158,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Christos", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "B1",
+    leftCupCode: "C10",
     rightCupCode: "BYE"
   },
   { 
@@ -165,7 +169,7 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Daniele", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "J7",
+    leftCupCode: "D11",
     rightCupCode: "BYE"
   },
   { 
@@ -176,41 +180,41 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Stevo", 
     score1: 28, 
     score2: 5,
-    leftCupCode: "M7",
-    rightCupCode: "K9",
+    leftCupCode: "S12",
+    rightCupCode: "E12",
     judges: [
       {
         judgeName: "Jasper",
         visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
+        taste: "left",
         tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "K9",
-        rightCupCode: "M7"
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "S12",
+        rightCupCode: "E12"
       },
       {
         judgeName: "Korn",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
+        sensoryBeverage: "Cappuccino",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "S12",
+        rightCupCode: "E12"
+      },
+      {
+        judgeName: "Michalis",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
         taste: "left",
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "M7",
-        rightCupCode: "K9"
-      },
-      {
-        judgeName: "Michalis",
-        visualLatteArt: "left",
-        sensoryBeverage: "Cappuccino",
-        taste: "left",
-        tactile: "left",
-        flavour: "right",
-        overall: "left",
-        leftCupCode: "M7",
-        rightCupCode: "K9"
+        leftCupCode: "S12",
+        rightCupCode: "E12"
       }
     ]
   },
@@ -222,8 +226,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Kirill", 
     score1: 24, 
     score2: 9,
-    leftCupCode: "F5",
-    rightCupCode: "X1",
+    leftCupCode: "K13",
+    rightCupCode: "A13",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -233,19 +237,19 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "F5",
-        rightCupCode: "X1"
+        leftCupCode: "K13",
+        rightCupCode: "A13"
       },
       {
         judgeName: "Ali",
         visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
+        taste: "left",
         tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "X1",
-        rightCupCode: "F5"
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "K13",
+        rightCupCode: "A13"
       },
       {
         judgeName: "Junior",
@@ -255,8 +259,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "X1",
-        rightCupCode: "F5"
+        leftCupCode: "K13",
+        rightCupCode: "A13"
       }
     ]
   },
@@ -268,41 +272,41 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     winner: "Jae", 
     score1: 28, 
     score2: 5,
-    leftCupCode: "L4",
-    rightCupCode: "C6",
+    leftCupCode: "J14",
+    rightCupCode: "C14",
     judges: [
       {
         judgeName: "Michalis",
         visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
-        taste: "right",
+        taste: "left",
         tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "C6",
-        rightCupCode: "L4"
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "J14",
+        rightCupCode: "C14"
       },
       {
         judgeName: "Jasper",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "C6",
-        rightCupCode: "L4"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "J14",
+        rightCupCode: "C14"
       },
       {
         judgeName: "Korn",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
+        taste: "left",
+        tactile: "left",
         flavour: "left",
-        overall: "right",
-        leftCupCode: "C6",
-        rightCupCode: "L4"
+        overall: "left",
+        leftCupCode: "J14",
+        rightCupCode: "C14"
       }
     ]
   },
@@ -311,10 +315,10 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     station: "C", 
     competitor1: "Bill", 
     competitor2: "BYE", 
-    winner: "BYE", 
-    score1: 0, 
-    score2: 33,
-    leftCupCode: "N2",
+    winner: "Bill", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "B15",
     rightCupCode: "BYE"
   },
   { 
@@ -322,118 +326,118 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     station: "A", 
     competitor1: "Engi", 
     competitor2: "BYE", 
-    winner: "BYE", 
-    score1: 0, 
-    score2: 33,
-    leftCupCode: "Y9",
+    winner: "Engi", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "E16",
     rightCupCode: "BYE"
   },
 ];
 
+// Round 2 - Round of 16 (Heats 17-24)
 export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
-  // Round 2 - Heats 17-24
   { 
     heatNumber: 17, 
-    station: "B", 
-    competitor1: "Erland", 
-    competitor2: "Penny", 
+    station: "A", 
+    competitor1: "Penny", 
+    competitor2: "Erland", 
     winner: "Penny", 
-    score1: 9, 
-    score2: 24,
-    leftCupCode: "W6",
-    rightCupCode: "S5",
+    score1: 24, 
+    score2: 9,
+    leftCupCode: "P17",
+    rightCupCode: "E17",
     judges: [
       {
         judgeName: "Michalis",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
-        taste: "right",
+        taste: "left",
         tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "S5",
-        rightCupCode: "W6"
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "P17",
+        rightCupCode: "E17"
       },
       {
         judgeName: "Jasper",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
         taste: "left",
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "W6",
-        rightCupCode: "S5"
+        leftCupCode: "P17",
+        rightCupCode: "E17"
       },
       {
         judgeName: "Tess",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "W6",
-        rightCupCode: "S5"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "P17",
+        rightCupCode: "E17"
       }
     ]
   },
   { 
     heatNumber: 18, 
-    station: "C", 
-    competitor1: "Felix", 
-    competitor2: "Aga", 
+    station: "B", 
+    competitor1: "Aga", 
+    competitor2: "Felix", 
     winner: "Aga", 
-    score1: 2, 
-    score2: 31,
-    leftCupCode: "V4",
-    rightCupCode: "J1",
+    score1: 31, 
+    score2: 2,
+    leftCupCode: "A18",
+    rightCupCode: "F18",
     judges: [
       {
         judgeName: "Shinsaku",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "V4",
-        rightCupCode: "J1"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "A18",
+        rightCupCode: "F18"
       },
       {
         judgeName: "Ali",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
+        taste: "left",
         tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "V4",
-        rightCupCode: "J1"
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "A18",
+        rightCupCode: "F18"
       },
       {
         judgeName: "Junior",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
+        taste: "left",
+        tactile: "left",
         flavour: "left",
-        overall: "right",
-        leftCupCode: "V4",
-        rightCupCode: "J1"
+        overall: "left",
+        leftCupCode: "A18",
+        rightCupCode: "F18"
       }
     ]
   },
   { 
     heatNumber: 19, 
-    station: "A", 
+    station: "C", 
     competitor1: "Artur", 
     competitor2: "Julian", 
     winner: "Artur", 
-    score1: 9, 
-    score2: 2,
-    leftCupCode: "G2",
-    rightCupCode: "W8",
+    score1: 2, 
+    score2: 9,
+    leftCupCode: "A19",
+    rightCupCode: "J19",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -443,76 +447,76 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "G2",
-        rightCupCode: "W8"
+        leftCupCode: "A19",
+        rightCupCode: "J19"
       },
       {
         judgeName: "Tess",
         visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
+        taste: "left",
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "G2",
-        rightCupCode: "W8"
+        leftCupCode: "A19",
+        rightCupCode: "J19"
       },
       {
         judgeName: "Junior",
         visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "G2",
-        rightCupCode: "W8"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "A19",
+        rightCupCode: "J19"
       }
     ]
   },
   { 
     heatNumber: 20, 
-    station: "B", 
+    station: "A", 
     competitor1: "Daniele", 
     competitor2: "BYE", 
     winner: "Daniele", 
     score1: 33, 
     score2: 0,
-    leftCupCode: "J7",
+    leftCupCode: "D20",
     rightCupCode: "BYE"
   },
   { 
     heatNumber: 21, 
-    station: "C", 
-    competitor1: "Faiz", 
-    competitor2: "Christos", 
+    station: "B", 
+    competitor1: "Christos", 
+    competitor2: "Faiz", 
     winner: "Christos", 
-    score1: 15, 
-    score2: 18,
-    leftCupCode: "Q5",
-    rightCupCode: "B1",
+    score1: 25, 
+    score2: 8,
+    leftCupCode: "C21",
+    rightCupCode: "F21",
     judges: [
       {
         judgeName: "Michalis",
         visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
         taste: "left",
-        tactile: "right",
+        tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "Q5",
-        rightCupCode: "B1"
+        leftCupCode: "C21",
+        rightCupCode: "F21"
       },
       {
         judgeName: "Ali",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
+        taste: "left",
         tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "Q5",
-        rightCupCode: "B1"
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "C21",
+        rightCupCode: "F21"
       },
       {
         judgeName: "Jasper",
@@ -522,21 +526,21 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "Q5",
-        rightCupCode: "B1"
+        leftCupCode: "C21",
+        rightCupCode: "F21"
       }
     ]
   },
   { 
     heatNumber: 22, 
-    station: "A", 
+    station: "C", 
     competitor1: "Stevo", 
     competitor2: "Daniele", 
     winner: "Stevo", 
-    score1: 25, 
-    score2: 8,
-    leftCupCode: "M7",
-    rightCupCode: "J7",
+    score1: 19, 
+    score2: 14,
+    leftCupCode: "S22",
+    rightCupCode: "D22",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -546,8 +550,8 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "M7",
-        rightCupCode: "J7"
+        leftCupCode: "S22",
+        rightCupCode: "D22"
       },
       {
         judgeName: "Tess",
@@ -557,8 +561,8 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "M7",
-        rightCupCode: "J7"
+        leftCupCode: "S22",
+        rightCupCode: "D22"
       },
       {
         judgeName: "Junior",
@@ -568,43 +572,43 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "M7",
-        rightCupCode: "J7"
+        leftCupCode: "S22",
+        rightCupCode: "D22"
       }
     ]
   },
   { 
     heatNumber: 23, 
-    station: "B", 
+    station: "A", 
     competitor1: "Jae", 
     competitor2: "Kirill", 
     winner: "Jae", 
-    score1: 23, 
-    score2: 10,
-    leftCupCode: "L4",
-    rightCupCode: "F5",
+    score1: 27, 
+    score2: 6,
+    leftCupCode: "J23",
+    rightCupCode: "K23",
     judges: [
       {
         judgeName: "Shinsaku",
         visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
-        taste: "right",
-        tactile: "right",
+        taste: "left",
+        tactile: "left",
         flavour: "left",
-        overall: "right",
-        leftCupCode: "F5",
-        rightCupCode: "L4"
+        overall: "left",
+        leftCupCode: "J23",
+        rightCupCode: "K23"
       },
       {
         judgeName: "Tess",
         visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "F5",
-        rightCupCode: "L4"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "J23",
+        rightCupCode: "K23"
       },
       {
         judgeName: "Junior",
@@ -614,43 +618,43 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "F5",
-        rightCupCode: "L4"
+        leftCupCode: "J23",
+        rightCupCode: "K23"
       }
     ]
   },
   { 
     heatNumber: 24, 
-    station: "C", 
+    station: "B", 
     competitor1: "Engi", 
     competitor2: "Bill", 
     winner: "Engi", 
-    score1: 19, 
-    score2: 14,
-    leftCupCode: "Y9",
-    rightCupCode: "N2",
+    score1: 24, 
+    score2: 9,
+    leftCupCode: "E24",
+    rightCupCode: "B24",
     judges: [
       {
         judgeName: "Michalis",
         visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
         taste: "left",
-        tactile: "right",
+        tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "Y9",
-        rightCupCode: "N2"
+        leftCupCode: "E24",
+        rightCupCode: "B24"
       },
       {
         judgeName: "Ali",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
+        taste: "left",
         tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "Y9",
-        rightCupCode: "N2"
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "E24",
+        rightCupCode: "B24"
       },
       {
         judgeName: "Jasper",
@@ -660,93 +664,93 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "Y9",
-        rightCupCode: "N2"
+        leftCupCode: "E24",
+        rightCupCode: "B24"
       }
     ]
   },
 ];
 
+// Round 3 - Quarterfinals (Heats 25-28)
 export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
-  // Round 3 - Heats 25-28
   { 
     heatNumber: 25, 
     station: "A", 
-    competitor1: "Penny", 
-    competitor2: "Aga", 
+    competitor1: "Aga", 
+    competitor2: "Penny", 
     winner: "Aga", 
-    score1: 8, 
-    score2: 25,
-    leftCupCode: "A7",
-    rightCupCode: "F3",
+    score1: 25, 
+    score2: 8,
+    leftCupCode: "A25",
+    rightCupCode: "P25",
     judges: [
       {
         judgeName: "Shinsaku",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
         taste: "left",
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "S5",
-        rightCupCode: "J1"
+        leftCupCode: "A25",
+        rightCupCode: "P25"
       },
       {
         judgeName: "Tess",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "S5",
-        rightCupCode: "J1"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "A25",
+        rightCupCode: "P25"
       },
       {
         judgeName: "Junior",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "S5",
-        rightCupCode: "J1"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "A25",
+        rightCupCode: "P25"
       }
     ]
   },
   { 
     heatNumber: 26, 
     station: "B", 
-    competitor1: "Hojat", 
-    competitor2: "Artur", 
+    competitor1: "Artur", 
+    competitor2: "Hojat", 
     winner: "Artur", 
-    score1: 9, 
-    score2: 24,
-    leftCupCode: "K5",
-    rightCupCode: "J1",
+    score1: 24, 
+    score2: 9,
+    leftCupCode: "A26",
+    rightCupCode: "H26",
     judges: [
       {
         judgeName: "Michalis",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
-        taste: "right",
+        taste: "left",
         tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "K5",
-        rightCupCode: "G2"
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "A26",
+        rightCupCode: "H26"
       },
       {
         judgeName: "Korn",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "K5",
-        rightCupCode: "G2"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "A26",
+        rightCupCode: "H26"
       },
       {
         judgeName: "Junior",
@@ -756,8 +760,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "K5",
-        rightCupCode: "G2"
+        leftCupCode: "A26",
+        rightCupCode: "H26"
       }
     ]
   },
@@ -769,8 +773,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
     winner: "Christos", 
     score1: 24, 
     score2: 9,
-    leftCupCode: "K5",
-    rightCupCode: "J1",
+    leftCupCode: "C27",
+    rightCupCode: "S27",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -780,19 +784,19 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "B1",
-        rightCupCode: "M7"
+        leftCupCode: "C27",
+        rightCupCode: "S27"
       },
       {
         judgeName: "Korn",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "B1",
-        rightCupCode: "M7"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "C27",
+        rightCupCode: "S27"
       },
       {
         judgeName: "Junior",
@@ -802,8 +806,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "B1",
-        rightCupCode: "M7"
+        leftCupCode: "C27",
+        rightCupCode: "S27"
       }
     ]
   },
@@ -815,30 +819,30 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
     winner: "Jae", 
     score1: 23, 
     score2: 10,
-    leftCupCode: "L4",
-    rightCupCode: "Y9",
+    leftCupCode: "J28",
+    rightCupCode: "E28",
     judges: [
       {
         judgeName: "Michalis",
         visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
-        taste: "right",
-        tactile: "right",
+        taste: "left",
+        tactile: "left",
         flavour: "left",
-        overall: "right",
-        leftCupCode: "Y9",
-        rightCupCode: "L4"
+        overall: "left",
+        leftCupCode: "J28",
+        rightCupCode: "E28"
       },
       {
         judgeName: "Tess",
         visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "Y9",
-        rightCupCode: "L4"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "J28",
+        rightCupCode: "E28"
       },
       {
         judgeName: "Junior",
@@ -848,25 +852,25 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "L4",
-        rightCupCode: "Y9"
+        leftCupCode: "J28",
+        rightCupCode: "E28"
       }
     ]
   },
 ];
 
+// Round 4 - Semifinals (Heats 29-30)
 export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
-  // Round 4 - Heats 29-30
   { 
     heatNumber: 29, 
-    station: "B", 
+    station: "A", 
     competitor1: "Aga", 
     competitor2: "Artur", 
     winner: "Aga", 
     score1: 25, 
     score2: 8,
-    leftCupCode: "L2",
-    rightCupCode: "Z7",
+    leftCupCode: "A29",
+    rightCupCode: "A29R",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -876,43 +880,43 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "J1",
-        rightCupCode: "G2"
+        leftCupCode: "A29",
+        rightCupCode: "A29R"
       },
       {
         judgeName: "Korn",
         visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
+        taste: "left",
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "G2",
-        rightCupCode: "J1"
+        leftCupCode: "A29",
+        rightCupCode: "A29R"
       },
       {
         judgeName: "Boss",
         visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
+        taste: "left",
+        tactile: "left",
         flavour: "left",
-        overall: "right",
-        leftCupCode: "G2",
-        rightCupCode: "J1"
+        overall: "left",
+        leftCupCode: "A29",
+        rightCupCode: "A29R"
       }
     ]
   },
   { 
     heatNumber: 30, 
-    station: "C", 
-    competitor1: "Christos", 
-    competitor2: "Jae", 
+    station: "B", 
+    competitor1: "Jae", 
+    competitor2: "Christos", 
     winner: "Jae", 
-    score1: 14, 
-    score2: 19,
-    leftCupCode: "N4",
-    rightCupCode: "K6",
+    score1: 19, 
+    score2: 14,
+    leftCupCode: "J30",
+    rightCupCode: "C30",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -922,37 +926,37 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "B1",
-        rightCupCode: "L4"
+        leftCupCode: "J30",
+        rightCupCode: "C30"
       },
       {
         judgeName: "Korn",
         visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "B1",
-        rightCupCode: "L4"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "J30",
+        rightCupCode: "C30"
       },
       {
         judgeName: "Boss",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "B1",
-        rightCupCode: "L4"
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "J30",
+        rightCupCode: "C30"
       }
     ]
   },
 ];
 
+// Final - Heat 31
 export const WEC25_FINAL_POSITION: BracketPosition[] = [
-  // Final - Heat 31 (CHAMPION: Aga)
   { 
     heatNumber: 31, 
     station: "A", 
@@ -961,41 +965,41 @@ export const WEC25_FINAL_POSITION: BracketPosition[] = [
     winner: "Aga", 
     score1: 19, 
     score2: 14,
-    leftCupCode: "J1",
-    rightCupCode: "L4",
+    leftCupCode: "A31",
+    rightCupCode: "J31",
     judges: [
       {
         judgeName: "Shinsaku",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Cappuccino",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "L4",
-        rightCupCode: "J1"
-      },
-      {
-        judgeName: "Korn",
-        visualLatteArt: "right",
-        sensoryBeverage: "Espresso",
-        taste: "right",
+        taste: "left",
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "L4",
-        rightCupCode: "J1"
+        leftCupCode: "A31",
+        rightCupCode: "J31"
+      },
+      {
+        judgeName: "Korn",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "A31",
+        rightCupCode: "J31"
       },
       {
         judgeName: "Boss",
-        visualLatteArt: "right",
+        visualLatteArt: "left",
         sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
+        taste: "left",
+        tactile: "left",
         flavour: "left",
-        overall: "right",
-        leftCupCode: "J1",
-        rightCupCode: "L4"
+        overall: "left",
+        leftCupCode: "A31",
+        rightCupCode: "J31"
       }
     ]
   },
