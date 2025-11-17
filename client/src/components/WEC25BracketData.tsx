@@ -46,133 +46,134 @@ export const WEC25_COMPETITORS = [
 
 export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
   // Round 1 - Heats 1-16 (Bye heats 1-11, competitive heats 12-16)
+  // Accurate BYE matchups for Round 1
   { 
     heatNumber: 1, 
     station: "A", 
-    competitor1: "Aga Muhammed", 
+    competitor1: "Penny", 
     competitor2: "BYE", 
-    winner: "Aga Muhammed", 
-    score1: 33, 
-    score2: 0,
-    leftCupCode: "99",
-    rightCupCode: "BYE"
-  },
-  { 
-    heatNumber: 2, 
-    station: "B", 
-    competitor1: "Jae Kim", 
-    competitor2: "BYE", 
-    winner: "Jae Kim", 
-    score1: 33, 
-    score2: 0,
-    leftCupCode: "22",
-    rightCupCode: "BYE"
-  },
-  { 
-    heatNumber: 3, 
-    station: "C", 
-    competitor1: "Stevo Kühn", 
-    competitor2: "BYE", 
-    winner: "Stevo Kühn", 
-    score1: 33, 
-    score2: 0,
-    leftCupCode: "M7",
-    rightCupCode: "BYE"
-  },
-  { 
-    heatNumber: 4, 
-    station: "A", 
-    competitor1: "Edwin Tascon", 
-    competitor2: "BYE", 
-    winner: "Edwin Tascon", 
-    score1: 33, 
-    score2: 0,
-    leftCupCode: "K9",
-    rightCupCode: "BYE"
-  },
-  { 
-    heatNumber: 5, 
-    station: "B", 
-    competitor1: "Kirill Yudin", 
-    competitor2: "BYE", 
-    winner: "Kirill Yudin", 
-    score1: 33, 
-    score2: 0,
-    leftCupCode: "F5",
-    rightCupCode: "BYE"
-  },
-  { 
-    heatNumber: 6, 
-    station: "C", 
-    competitor1: "Anja Manfredi", 
-    competitor2: "BYE", 
-    winner: "Anja Manfredi", 
-    score1: 33, 
-    score2: 0,
-    leftCupCode: "X1",
-    rightCupCode: "BYE"
-  },
-  { 
-    heatNumber: 7, 
-    station: "A", 
-    competitor1: "Jae Kim", 
-    competitor2: "BYE", 
-    winner: "Jae Kim", 
-    score1: 33, 
-    score2: 0,
-    leftCupCode: "L4",
-    rightCupCode: "BYE"
-  },
-  { 
-    heatNumber: 8, 
-    station: "B", 
-    competitor1: "Carlos Medina", 
-    competitor2: "BYE", 
-    winner: "Carlos Medina", 
-    score1: 33, 
-    score2: 0,
-    leftCupCode: "C6",
-    rightCupCode: "BYE"
-  },
-  { 
-    heatNumber: 9, 
-    station: "C", 
-    competitor1: "Erland Oye", 
-    competitor2: "BYE", 
-    winner: "Erland Oye", 
-    score1: 33, 
-    score2: 0,
-    leftCupCode: "W6",
-    rightCupCode: "BYE"
-  },
-  { 
-    heatNumber: 10, 
-    station: "A", 
-    competitor1: "Penny Rodriguez", 
-    competitor2: "BYE", 
-    winner: "Penny Rodriguez", 
+    winner: "Penny", 
     score1: 33, 
     score2: 0,
     leftCupCode: "S5",
     rightCupCode: "BYE"
   },
   { 
-    heatNumber: 11, 
+    heatNumber: 2, 
     station: "B", 
-    competitor1: "Felix Irmer", 
+    competitor1: "Erland", 
     competitor2: "BYE", 
-    winner: "Felix Irmer", 
+    winner: "Erland", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "W6",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 3, 
+    station: "C", 
+    competitor1: "Felix", 
+    competitor2: "BYE", 
+    winner: "Felix", 
     score1: 33, 
     score2: 0,
     leftCupCode: "V4",
     rightCupCode: "BYE"
   },
   { 
+    heatNumber: 4, 
+    station: "A", 
+    competitor1: "Aga", 
+    competitor2: "BYE", 
+    winner: "Aga", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "J1",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 5, 
+    station: "B", 
+    competitor1: "Julian", 
+    competitor2: "BYE", 
+    winner: "Julian", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "W8",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 6, 
+    station: "C", 
+    competitor1: "Artur", 
+    competitor2: "BYE", 
+    winner: "Artur", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "G2",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 7, 
+    station: "A", 
+    competitor1: "Hojat", 
+    competitor2: "BYE", 
+    winner: "Hojat", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "K5",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 8, 
+    station: "B", 
+    competitor1: "SCRATCHED", 
+    competitor2: "BYE", 
+    winner: "BYE", 
+    score1: 0, 
+    score2: 33,
+    leftCupCode: "SCRATCHED",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 9, 
+    station: "C", 
+    competitor1: "Faiz", 
+    competitor2: "BYE", 
+    winner: "Faiz", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "Q5",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 10, 
+    station: "A", 
+    competitor1: "Christos", 
+    competitor2: "BYE", 
+    winner: "Christos", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "B1",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 11, 
+    station: "B", 
+    competitor1: "Daniele", 
+    competitor2: "BYE", 
+    winner: "Daniele", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "J7",
+    rightCupCode: "BYE"
+  },
+  { 
     heatNumber: 12, 
     station: "C", 
-    competitor1: "Stevo Kühn", 
-    competitor2: "Edwin Tascon", 
-    winner: "Stevo Kühn", 
+    competitor1: "Stevo", 
+    competitor2: "Edwin", 
+    winner: "Stevo", 
     score1: 28, 
     score2: 5,
     leftCupCode: "M7",
@@ -216,9 +217,9 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 13, 
     station: "A", 
-    competitor1: "Kirill Shlyakov", 
-    competitor2: "Anja Fürst", 
-    winner: "Kirill Shlyakov", 
+    competitor1: "Kirill", 
+    competitor2: "Anja", 
+    winner: "Kirill", 
     score1: 24, 
     score2: 9,
     leftCupCode: "F5",
@@ -262,13 +263,13 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 14, 
     station: "B", 
-    competitor1: "Carlos Medina", 
-    competitor2: "Jae Kim", 
-    winner: "Jae Kim", 
-    score1: 5, 
-    score2: 28,
-    leftCupCode: "C6",
-    rightCupCode: "L4",
+    competitor1: "Jae", 
+    competitor2: "Carlos", 
+    winner: "Jae", 
+    score1: 28, 
+    score2: 5,
+    leftCupCode: "L4",
+    rightCupCode: "C6",
     judges: [
       {
         judgeName: "Michalis",
@@ -308,105 +309,35 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 15, 
     station: "C", 
-    competitor1: "Julian Teo", 
-    competitor2: "Felix Irmer", 
-    winner: "Felix Irmer", 
-    score1: 8, 
-    score2: 25,
-    leftCupCode: "D3",
-    rightCupCode: "R8",
-    judges: [
-      {
-        judgeName: "Michalis",
-        visualLatteArt: "right",
-        sensoryBeverage: "Cappuccino",
-        taste: "right",
-        tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "D3",
-        rightCupCode: "R8"
-      },
-      {
-        judgeName: "Jasper",
-        visualLatteArt: "left",
-        sensoryBeverage: "Espresso",
-        taste: "left",
-        tactile: "right",
-        flavour: "left",
-        overall: "left",
-        leftCupCode: "D3",
-        rightCupCode: "R8"
-      },
-      {
-        judgeName: "Tess",
-        visualLatteArt: "right",
-        sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "D3",
-        rightCupCode: "R8"
-      }
-    ]
+    competitor1: "Bill", 
+    competitor2: "BYE", 
+    winner: "Bill", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "N2",
+    rightCupCode: "BYE"
   },
   { 
     heatNumber: 16, 
     station: "A", 
-    competitor1: "Danielle Ricci", 
-    competitor2: "Bill Nguyen", 
-    winner: "Bill Nguyen", 
-    score1: 12, 
-    score2: 21,
-    leftCupCode: "H7",
-    rightCupCode: "N2",
-    judges: [
-      {
-        judgeName: "Shinsaku",
-        visualLatteArt: "left",
-        sensoryBeverage: "Cappuccino",
-        taste: "left",
-        tactile: "left",
-        flavour: "right",
-        overall: "left",
-        leftCupCode: "H7",
-        rightCupCode: "N2"
-      },
-      {
-        judgeName: "Ali",
-        visualLatteArt: "right",
-        sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "H7",
-        rightCupCode: "N2"
-      },
-      {
-        judgeName: "Junior",
-        visualLatteArt: "left",
-        sensoryBeverage: "Espresso",
-        taste: "left",
-        tactile: "left",
-        flavour: "left",
-        overall: "left",
-        leftCupCode: "H7",
-        rightCupCode: "N2"
-      }
-    ]
+    competitor1: "Engi", 
+    competitor2: "BYE", 
+    winner: "Engi", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "Y9",
+    rightCupCode: "BYE"
   },
 ];
 
 export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
-  // Round 2 - Heats 17-24 (with actual results from bracket and judges)
+  // Round 2 - Heats 17-24
   { 
     heatNumber: 17, 
     station: "B", 
-    competitor1: "Erlend Wessel-Berg", 
-    competitor2: "Penny Chalkiadaki", 
-    winner: "Penny Chalkiadaki", 
+    competitor1: "Erland", 
+    competitor2: "Penny", 
+    winner: "Penny", 
     score1: 9, 
     score2: 24,
     leftCupCode: "W6",
@@ -450,9 +381,9 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 18, 
     station: "C", 
-    competitor1: "Felix Ouma", 
-    competitor2: "Aga Muhammed", 
-    winner: "Aga Muhammed", 
+    competitor1: "Felix", 
+    competitor2: "Aga", 
+    winner: "Aga", 
     score1: 2, 
     score2: 31,
     leftCupCode: "V4",
@@ -496,10 +427,10 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 19, 
     station: "A", 
-    competitor1: "Julian Teo", 
-    competitor2: "Artur Kosteniuk", 
-    winner: "Artur Kosteniuk", 
-    score1: 2, 
+    competitor1: "Artur", 
+    competitor2: "Julian", 
+    winner: "Artur", 
+    score1: 24, 
     score2: 9,
     leftCupCode: "G2",
     rightCupCode: "W8",
@@ -542,13 +473,24 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
   { 
     heatNumber: 20, 
     station: "B", 
-    competitor1: "Faiz Nordin", 
-    competitor2: "Engi Pan", 
-    winner: "Engi Pan", 
+    competitor1: "Daniele", 
+    competitor2: "BYE", 
+    winner: "Daniele", 
+    score1: 33, 
+    score2: 0,
+    leftCupCode: "J7",
+    rightCupCode: "BYE"
+  },
+  { 
+    heatNumber: 21, 
+    station: "C", 
+    competitor1: "Faiz", 
+    competitor2: "Christos", 
+    winner: "Christos", 
     score1: 15, 
     score2: 18,
-    leftCupCode: "U4",
-    rightCupCode: "Y9",
+    leftCupCode: "Q5",
+    rightCupCode: "B1",
     judges: [
       {
         judgeName: "Michalis",
@@ -558,8 +500,8 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "right",
         flavour: "left",
         overall: "left",
-        leftCupCode: "U4",
-        rightCupCode: "Y9"
+        leftCupCode: "Q5",
+        rightCupCode: "B1"
       },
       {
         judgeName: "Ali",
@@ -569,8 +511,8 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "right",
         overall: "right",
-        leftCupCode: "U4",
-        rightCupCode: "Y9"
+        leftCupCode: "Q5",
+        rightCupCode: "B1"
       },
       {
         judgeName: "Jasper",
@@ -580,61 +522,163 @@ export const WEC25_ROUND2_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "U4",
-        rightCupCode: "Y9"
+        leftCupCode: "Q5",
+        rightCupCode: "B1"
       }
     ]
   },
   { 
-    heatNumber: 21, 
-    station: "C", 
-    competitor1: "Faiz Nordin", 
-    competitor2: "Christos Sotiros", 
-    winner: "Christos Sotiros", 
-    score1: 0, 
-    score2: 0 
-  },
-  { 
     heatNumber: 22, 
     station: "A", 
-    competitor1: "Daniele Ricci", 
-    competitor2: "Stevo Kühn", 
-    winner: "Stevo Kühn", 
-    score1: 0, 
-    score2: 0 
+    competitor1: "Stevo", 
+    competitor2: "Daniele", 
+    winner: "Stevo", 
+    score1: 25, 
+    score2: 8,
+    leftCupCode: "M7",
+    rightCupCode: "J7",
+    judges: [
+      {
+        judgeName: "Shinsaku",
+        visualLatteArt: "left",
+        sensoryBeverage: "Cappuccino",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "M7",
+        rightCupCode: "J7"
+      },
+      {
+        judgeName: "Tess",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "M7",
+        rightCupCode: "J7"
+      },
+      {
+        judgeName: "Junior",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "M7",
+        rightCupCode: "J7"
+      }
+    ]
   },
   { 
     heatNumber: 23, 
     station: "B", 
-    competitor1: "Kirill Shlyakov", 
-    competitor2: "Jae Kim", 
-    winner: "Jae Kim", 
-    score1: 0, 
-    score2: 0 
+    competitor1: "Jae", 
+    competitor2: "Kirill", 
+    winner: "Jae", 
+    score1: 23, 
+    score2: 10,
+    leftCupCode: "L4",
+    rightCupCode: "F5",
+    judges: [
+      {
+        judgeName: "Shinsaku",
+        visualLatteArt: "left",
+        sensoryBeverage: "Cappuccino",
+        taste: "right",
+        tactile: "right",
+        flavour: "left",
+        overall: "right",
+        leftCupCode: "F5",
+        rightCupCode: "L4"
+      },
+      {
+        judgeName: "Tess",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "right",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "F5",
+        rightCupCode: "L4"
+      },
+      {
+        judgeName: "Junior",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "F5",
+        rightCupCode: "L4"
+      }
+    ]
   },
   { 
     heatNumber: 24, 
     station: "C", 
-    competitor1: "Bill Nguyen", 
-    competitor2: "Engi Pan", 
-    winner: "Engi Pan", 
-    score1: 0, 
-    score2: 0 
+    competitor1: "Engi", 
+    competitor2: "Bill", 
+    winner: "Engi", 
+    score1: 19, 
+    score2: 14,
+    leftCupCode: "Y9",
+    rightCupCode: "N2",
+    judges: [
+      {
+        judgeName: "Michalis",
+        visualLatteArt: "left",
+        sensoryBeverage: "Cappuccino",
+        taste: "left",
+        tactile: "right",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "Y9",
+        rightCupCode: "N2"
+      },
+      {
+        judgeName: "Ali",
+        visualLatteArt: "right",
+        sensoryBeverage: "Espresso",
+        taste: "right",
+        tactile: "left",
+        flavour: "right",
+        overall: "right",
+        leftCupCode: "Y9",
+        rightCupCode: "N2"
+      },
+      {
+        judgeName: "Jasper",
+        visualLatteArt: "left",
+        sensoryBeverage: "Espresso",
+        taste: "left",
+        tactile: "left",
+        flavour: "left",
+        overall: "left",
+        leftCupCode: "Y9",
+        rightCupCode: "N2"
+      }
+    ]
   },
 ];
 
 export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
-  // Round 3 - Heats 25-28 (with actual results from bracket and judges)
+  // Round 3 - Heats 25-28
   { 
     heatNumber: 25, 
     station: "A", 
-    competitor1: "Penny Chalkiadaki", 
-    competitor2: "Aga Muhammed", 
-    winner: "Aga Muhammed", 
+    competitor1: "Penny", 
+    competitor2: "Aga", 
+    winner: "Aga", 
     score1: 8, 
     score2: 25,
-    leftCupCode: "A7",
-    rightCupCode: "F3",
+    leftCupCode: "S5",
+    rightCupCode: "J1",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -644,8 +688,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "A7",
-        rightCupCode: "F3"
+        leftCupCode: "S5",
+        rightCupCode: "J1"
       },
       {
         judgeName: "Tess",
@@ -655,8 +699,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "right",
         flavour: "right",
         overall: "right",
-        leftCupCode: "A7",
-        rightCupCode: "F3"
+        leftCupCode: "S5",
+        rightCupCode: "J1"
       },
       {
         judgeName: "Junior",
@@ -666,21 +710,21 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "right",
         flavour: "right",
         overall: "right",
-        leftCupCode: "A7",
-        rightCupCode: "F3"
+        leftCupCode: "S5",
+        rightCupCode: "J1"
       }
     ]
   },
   { 
     heatNumber: 26, 
     station: "B", 
-    competitor1: "Hojat Mousavi", 
-    competitor2: "Artur Kosteniuk", 
-    winner: "Artur Kosteniuk", 
+    competitor1: "Hojat", 
+    competitor2: "Artur", 
+    winner: "Artur", 
     score1: 9, 
     score2: 24,
     leftCupCode: "K5",
-    rightCupCode: "J1",
+    rightCupCode: "G2",
     judges: [
       {
         judgeName: "Michalis",
@@ -691,7 +735,7 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "K5",
-        rightCupCode: "J1"
+        rightCupCode: "G2"
       },
       {
         judgeName: "Korn",
@@ -702,7 +746,7 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "K5",
-        rightCupCode: "J1"
+        rightCupCode: "G2"
       },
       {
         judgeName: "Junior",
@@ -713,20 +757,20 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "K5",
-        rightCupCode: "J1"
+        rightCupCode: "G2"
       }
     ]
   },
   { 
     heatNumber: 27, 
     station: "C", 
-    competitor1: "Hojat Mousavi", 
-    competitor2: "Artur Kosteniuk", 
-    winner: "Artur Kosteniuk", 
-    score1: 9, 
-    score2: 24,
-    leftCupCode: "P3",
-    rightCupCode: "M9",
+    competitor1: "Christos", 
+    competitor2: "Stevo", 
+    winner: "Stevo", 
+    score1: 14, 
+    score2: 19,
+    leftCupCode: "B1",
+    rightCupCode: "M7",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -736,8 +780,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "P3",
-        rightCupCode: "M9"
+        leftCupCode: "B1",
+        rightCupCode: "M7"
       },
       {
         judgeName: "Korn",
@@ -747,8 +791,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "right",
         flavour: "right",
         overall: "right",
-        leftCupCode: "P3",
-        rightCupCode: "M9"
+        leftCupCode: "B1",
+        rightCupCode: "M7"
       },
       {
         judgeName: "Junior",
@@ -758,21 +802,21 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "P3",
-        rightCupCode: "M9"
+        leftCupCode: "B1",
+        rightCupCode: "M7"
       }
     ]
   },
   { 
     heatNumber: 28, 
     station: "A", 
-    competitor1: "Jae Kim", 
-    competitor2: "Engi Pan", 
-    winner: "Jae Kim", 
+    competitor1: "Jae", 
+    competitor2: "Engi", 
+    winner: "Jae", 
     score1: 23, 
     score2: 10,
-    leftCupCode: "F4",
-    rightCupCode: "G8",
+    leftCupCode: "L4",
+    rightCupCode: "Y9",
     judges: [
       {
         judgeName: "Michalis",
@@ -782,8 +826,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "right",
         flavour: "left",
         overall: "right",
-        leftCupCode: "G8",
-        rightCupCode: "F4"
+        leftCupCode: "Y9",
+        rightCupCode: "L4"
       },
       {
         judgeName: "Tess",
@@ -793,8 +837,8 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "right",
         flavour: "right",
         overall: "right",
-        leftCupCode: "G8",
-        rightCupCode: "F4"
+        leftCupCode: "Y9",
+        rightCupCode: "L4"
       },
       {
         judgeName: "Junior",
@@ -804,25 +848,25 @@ export const WEC25_ROUND3_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "F4",
-        rightCupCode: "G8"
+        leftCupCode: "L4",
+        rightCupCode: "Y9"
       }
     ]
   },
 ];
 
 export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
-  // Round 4 - Heats 29-30 (with actual results from bracket and judges)
+  // Round 4 - Heats 29-30
   { 
     heatNumber: 29, 
     station: "B", 
-    competitor1: "Aga Muhammed", 
-    competitor2: "Artur Kosteniuk", 
-    winner: "Aga Muhammed", 
+    competitor1: "Aga", 
+    competitor2: "Artur", 
+    winner: "Aga", 
     score1: 25, 
     score2: 8,
-    leftCupCode: "L2",
-    rightCupCode: "Z7",
+    leftCupCode: "J1",
+    rightCupCode: "G2",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -832,8 +876,8 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "L2",
-        rightCupCode: "Z7"
+        leftCupCode: "J1",
+        rightCupCode: "G2"
       },
       {
         judgeName: "Korn",
@@ -843,8 +887,8 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "Z7",
-        rightCupCode: "L2"
+        leftCupCode: "G2",
+        rightCupCode: "J1"
       },
       {
         judgeName: "Boss",
@@ -854,21 +898,21 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
         tactile: "right",
         flavour: "left",
         overall: "right",
-        leftCupCode: "Z7",
-        rightCupCode: "L2"
+        leftCupCode: "G2",
+        rightCupCode: "J1"
       }
     ]
   },
   { 
     heatNumber: 30, 
     station: "C", 
-    competitor1: "Christos Sotiros", 
-    competitor2: "Jae Kim", 
-    winner: "Jae Kim", 
+    competitor1: "Christos", 
+    competitor2: "Jae", 
+    winner: "Jae", 
     score1: 14, 
     score2: 19,
-    leftCupCode: "N4",
-    rightCupCode: "K6",
+    leftCupCode: "B1",
+    rightCupCode: "L4",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -878,8 +922,8 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "N4",
-        rightCupCode: "K6"
+        leftCupCode: "B1",
+        rightCupCode: "L4"
       },
       {
         judgeName: "Korn",
@@ -889,8 +933,8 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
         tactile: "right",
         flavour: "right",
         overall: "right",
-        leftCupCode: "N4",
-        rightCupCode: "K6"
+        leftCupCode: "B1",
+        rightCupCode: "L4"
       },
       {
         judgeName: "Boss",
@@ -900,25 +944,25 @@ export const WEC25_ROUND4_POSITIONS: BracketPosition[] = [
         tactile: "right",
         flavour: "right",
         overall: "right",
-        leftCupCode: "N4",
-        rightCupCode: "K6"
+        leftCupCode: "B1",
+        rightCupCode: "L4"
       }
     ]
   },
 ];
 
 export const WEC25_FINAL_POSITION: BracketPosition[] = [
-  // Final - Heat 31 (CHAMPION: Aga Muhammed)
+  // Final - Heat 31 (CHAMPION: Aga)
   { 
     heatNumber: 31, 
     station: "A", 
-    competitor1: "Aga Muhammed", 
-    competitor2: "Jae Kim", 
-    winner: "Aga Muhammed", 
+    competitor1: "Aga", 
+    competitor2: "Jae", 
+    winner: "Aga", 
     score1: 19, 
     score2: 14,
-    leftCupCode: "99",
-    rightCupCode: "22",
+    leftCupCode: "J1",
+    rightCupCode: "L4",
     judges: [
       {
         judgeName: "Shinsaku",
@@ -928,8 +972,8 @@ export const WEC25_FINAL_POSITION: BracketPosition[] = [
         tactile: "right",
         flavour: "right",
         overall: "right",
-        leftCupCode: "22",
-        rightCupCode: "99"
+        leftCupCode: "L4",
+        rightCupCode: "J1"
       },
       {
         judgeName: "Korn",
@@ -939,8 +983,8 @@ export const WEC25_FINAL_POSITION: BracketPosition[] = [
         tactile: "left",
         flavour: "left",
         overall: "left",
-        leftCupCode: "22",
-        rightCupCode: "99"
+        leftCupCode: "L4",
+        rightCupCode: "J1"
       },
       {
         judgeName: "Boss",
@@ -950,8 +994,8 @@ export const WEC25_FINAL_POSITION: BracketPosition[] = [
         tactile: "right",
         flavour: "left",
         overall: "right",
-        leftCupCode: "99",
-        rightCupCode: "22"
+        leftCupCode: "J1",
+        rightCupCode: "L4"
       }
     ]
   },

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { findTournamentBySlug } from '@/utils/tournamentUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +77,7 @@ interface TournamentData {
 
 const WEC2025Results = () => {
   const { tournamentSlug } = useParams<{ tournamentSlug?: string }>();
+  const navigate = useNavigate();
   const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(false); // Start as false to avoid initial spinner
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +152,7 @@ const WEC2025Results = () => {
       // Matches from heats
       const matches = heats.map((h: any, i: number) => ({
         id: i + 1,
-        round: Math.ceil(h.heatNumber / 8) || 1,
+        round: getRoundFromHeatNumber(h.heatNumber),
         heatNumber: h.heatNumber,
         status: h.winner ? 'DONE' : 'PENDING',
         startTime: '',
@@ -188,8 +189,8 @@ const WEC2025Results = () => {
           status: 'COMPLETED',
           startDate: '',
           endDate: '',
-          totalRounds: 1,
-          currentRound: 1,
+          totalRounds: 5,  // Round 1-4 + Final
+          currentRound: 5, // Tournament is completed
         },
         participants,
         matches,
@@ -216,6 +217,16 @@ const WEC2025Results = () => {
     setLoading(false);
   };
 
+  // Helper function to determine round from heat number (used in both API and fallback)
+  const getRoundFromHeatNumber = (heatNumber: number): number => {
+    if (heatNumber >= 1 && heatNumber <= 16) return 1;  // Round 1: Heats 1-16
+    if (heatNumber >= 17 && heatNumber <= 24) return 2; // Round 2: Heats 17-24
+    if (heatNumber >= 25 && heatNumber <= 28) return 3; // Round 3: Heats 25-28
+    if (heatNumber >= 29 && heatNumber <= 30) return 4; // Round 4: Heats 29-30
+    if (heatNumber === 31) return 5;                    // Final: Heat 31
+    return 1; // Default fallback
+  };
+
   const processResponse = async (response: Response) => {
     if (!response.ok) {
       throw new Error('Failed to fetch tournament data');
@@ -231,8 +242,8 @@ const WEC2025Results = () => {
         status: data.tournament.status,
         startDate: data.tournament.startDate,
         endDate: data.tournament.endDate,
-        totalRounds: data.tournament.totalRounds,
-        currentRound: data.tournament.currentRound
+        totalRounds: data.tournament.totalRounds || 5,
+        currentRound: data.tournament.currentRound || 5
       },
       participants: data.participants.map((p: any) => ({
         id: p.id,
@@ -244,7 +255,7 @@ const WEC2025Results = () => {
       })),
       matches: data.matches.map((m: any) => ({
         id: m.id,
-        round: m.round,
+        round: getRoundFromHeatNumber(m.heatNumber), // Correct round based on heat number
         heatNumber: m.heatNumber,
         status: m.status,
         startTime: m.startTime,
@@ -585,9 +596,19 @@ const WEC2025Results = () => {
                         }`}
                         data-testid={`competitor-1-${match.id}`}
                       >
-                        <span className="text-sm font-medium truncate">
-                          {match.competitor1Name}
-                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (match.competitor1Name && match.competitor1Name !== 'BYE' && match.competitor1Name !== 'SCRATCHED') {
+                              const encodedName = encodeURIComponent(match.competitor1Name);
+                              navigate(`/results/${tournamentSlug}/baristas/${encodedName}?heat=${match.heatNumber}`);
+                            }
+                          }}
+                          className="text-sm font-medium truncate hover:underline cursor-pointer text-left flex-1"
+                          disabled={!match.competitor1Name || match.competitor1Name === 'BYE' || match.competitor1Name === 'SCRATCHED'}
+                        >
+                          {match.competitor1Name || '—'}
+                        </button>
                         <span className="text-lg font-bold text-golden ml-2">
                           {getTotalScore(match.id, match.competitor1Id)}
                         </span>
@@ -605,9 +626,19 @@ const WEC2025Results = () => {
                         }`}
                         data-testid={`competitor-2-${match.id}`}
                       >
-                        <span className="text-sm font-medium truncate">
-                          {match.competitor2Name}
-                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (match.competitor2Name && match.competitor2Name !== 'BYE' && match.competitor2Name !== 'SCRATCHED') {
+                              const encodedName = encodeURIComponent(match.competitor2Name);
+                              navigate(`/results/${tournamentSlug}/baristas/${encodedName}?heat=${match.heatNumber}`);
+                            }
+                          }}
+                          className="text-sm font-medium truncate hover:underline cursor-pointer text-left flex-1"
+                          disabled={!match.competitor2Name || match.competitor2Name === 'BYE' || match.competitor2Name === 'SCRATCHED'}
+                        >
+                          {match.competitor2Name || '—'}
+                        </button>
                         <span className="text-lg font-bold text-golden ml-2">
                           {getTotalScore(match.id, match.competitor2Id)}
                         </span>
