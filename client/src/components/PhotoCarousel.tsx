@@ -86,15 +86,6 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
       {/* Dark overlay for better text readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40 z-20 pointer-events-none" />
 
-      {/* Coffee Tap Icon - Top Left */}
-      <div className="absolute top-4 left-4 z-30 pointer-events-none">
-        <img
-          src="/icons/coffee tap.png"
-          alt="Coffee Tap"
-          className="w-16 h-16 md:w-20 md:h-20 opacity-90 drop-shadow-lg"
-        />
-      </div>
-
       {/* Navigation Controls */}
       {showControls && images.length > 1 && (
         <>

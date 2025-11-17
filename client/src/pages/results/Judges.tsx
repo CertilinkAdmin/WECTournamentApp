@@ -181,6 +181,11 @@ const Judges: React.FC<JudgesProps> = () => {
             onClick={() => handleItemClick(index, judge.name)}
           >
             <div className="carousel-box">
+              <img 
+                src="/icons/coffee tap.png" 
+                alt="Coffee Tap"
+                className="coffee-tap-icon"
+              />
               <div className="title">{judge.name}</div>
               <div className="num">{String(judge.rank || index + 1).padStart(2, '0')}</div>
               <div className="judge-image">
