@@ -29,6 +29,18 @@ interface JudgeWithData {
 
 interface JudgesProps {}
 
+// Fallback list with tournament judges
+const FALLBACK_JUDGES = [
+  { id: 1, name: 'Jasper', rank: 1 },
+  { id: 2, name: 'Korn', rank: 2 },
+  { id: 3, name: 'Michalis', rank: 3 },
+  { id: 4, name: 'Shinsaku', rank: 4 },
+  { id: 5, name: 'Ali', rank: 5 },
+  { id: 6, name: 'Junior', rank: 6 },
+  { id: 7, name: 'Tess', rank: 7 },
+  { id: 8, name: 'Boss', rank: 8 },
+];
+
 const Judges: React.FC<JudgesProps> = () => {
   const navigate = useNavigate();
   const { tournamentSlug } = useParams<{ tournamentSlug: string }>();
