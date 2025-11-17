@@ -22,12 +22,16 @@ export const wecPhotoAlbum: string[] = [
   'https://southcentralus1-mediap.svc.ms/transform/thumbnail?provider=spo&farmid=193565&inputFormat=jpg&cs=fFNQTw&docid=https%3A%2F%2Fmy.microsoftpersonalcontent.com%2F_api%2Fv2.0%2Fdrives%2Fb!J83iF6K3jEaRyqXEwzWMfnzhcPr7B59Esx5tXTEUfXDdRZVPGReVR6tnQFmHiHge%2Fitems%2F01P5IYF4VXWVT5HCGJPZEZK7CNOE5JPHYK%3Ftempauth%3Dv1e.eyJzaXRlaWQiOiIxN2UyY2QyNy1iN2EyLTQ2OGMtOTFjYS1hNWM0YzMzNThjN2UiLCJhdWQiOiIwMDAwMDAwMy0wMDAwLTBmZjEtY2UwMC0wMDAwMDAwMDAwMDAvbXkubWljcm9zb2Z0cGVyc29uYWxjb250ZW50LmNvbUA5MTg4MDQwZC02YzY3LTRjNWItYjExMi0zNmEzMDRiNjZkYWQiLCJleHAiOiIxNzYzMzgwODAwIn0.-BzHgjNXXEVBAE6aCKAAudEaG5kdiyaRgCC1Tfad8zn2D-RiJq5MKqV11aUkxAtuC7fMXjqHKelDIS8PFVP31uZtZQ7E7O5GR9ADtH-Q5Wj5meg9HaUm-fJ532ENxhxSQzYjLWHBa4eXy_toUqm0G16IZiJI5hsGy0r2ABqlr4DiOP_4uoeUFQFBMq1E305j3TlXIROMN7O5gNGbPDSno9DHU7jEHBHkR4YTcv4tBHPCh36qBpCzf8hzUC6t_YUxc5qnbmIaOgG_r0xLErNSNLiMvEf9qMsgzcTcMK08yM-4i87n9QhWZnrgjsYD08EnjJ6Qtkc847H5UyY-zsZfCvHrThqSXmSjUvqnbJjGqg9s8uU8QuOgHEHMgvGmKaVB7wwXauAAoge5AtbI4bdtjaAWHPROgncF6hhjyTL1lEEzbFku4xuK0VXnW9IhMXER-4D6SJV2Uz12W6tcw4FhndKZLfa-6dvh7ql0hL4dpwzCFZLGU0TTsmN8wj3JxJcy.a8VyMJbc-C-s-8o_KzyjQQGHw53m350iOQP4jkaedaw%26version%3DPublished&cb=63897397832&encodeFailures=1&width=571&height=856',
   'https://southcentralus1-mediap.svc.ms/transform/thumbnail?provider=spo&farmid=193565&inputFormat=jpg&cs=fFNQTw&docid=https%3A%2F%2Fmy.microsoftpersonalcontent.com%2F_api%2Fv2.0%2Fdrives%2Fb!J83iF6K3jEaRyqXEwzWMfnzhcPr7B59Esx5tXTEUfXDdRZVPGReVR6tnQFmHiHge%2Fitems%2F01P5IYF4QJKCFD76JRNVEKL24LSTYM7VZO%3Ftempauth%3Dv1e.eyJzaXRlaWQiOiIxN2UyY2QyNy1iN2EyLTQ2OGMtOTFjYS1hNWM0YzMzNThjN2UiLCJhdWQiOiIwMDAwMDAwMy0wMDAwLTBmZjEtY2UwMC0wMDAwMDAwMDAwMDAvbXkubWljcm9zb2Z0cGVyc29uYWxjb250ZW50LmNvbUA5MTg4MDQwZC02YzY3LTRjNWItYjExMi0zNmEzMDRiNjZkYWQiLCJleHAiOiIxNzYzMzgwODAwIn0.CHgnLUra2ugi63e3i0RtedC0-1i-_-F_PFfVFhadm_mwehcO0nYHn1Z0NfHECVTJXCQk-Uz3aGmd8rBW5qD7pvFoI2672AKDFbG0rM4rnspQ84pQYLc3JP1dBxaWQCVXPG01RvlCITxzXR64D2FF6gqHQ2Dvujsl3vF4Z0-b-bZJaN_Dwov6rrZxEyZeoGPwTgcHnlI6-DhN_vNnT_PY2uFLrF8C16mWUw3NKXzTOHwf544K98fBo7X47G2SAQmi8CCbui4LX9IdMbb4fySS2lPfH6o-iYAsejgvd2WaqizlLvwjrvd9skkrNrA6d7Y4FLR50HWv9aMcu1c6rJrIaDjv1aQXQRDSjfnL9uj1lTHhCtoc_fcIW7SldNeptEjh7Vify4NEWquVntBIWzTDHAA5I85aQIm30KL-C5KCKtkwVWD7htxsCN_PMSSmt7wP51K95uLMaPGYw13oPhMboKy4rKDhXuwkwNgzJCZPSGsQ7_gUDwQ1vWoyJL_NbPVC.fSv1BGqX0g8P73RVthfyn1RxRXx_cYwAxLyzx27TxIg%26version%3DPublished&cb=63897397824&encodeFailures=1&width=571&height=856',
   
-  // Coffee-themed placeholder images (keeping these - they look great!)
+  // Coffee-themed placeholder images - high quality espresso championship scenes
   'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=1920&q=80', // Coffee competition
-  'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1920&q=80', // Barista pouring
-  'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1920&q=80', // Coffee art
-  'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&q=80', // Coffee shop
-  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80', // Espresso machine
+  'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1920&q=80', // Barista pouring latte art
+  'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1920&q=80', // Perfect latte art
+  'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&q=80', // Coffee shop atmosphere
+  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80', // Professional espresso machine
+  'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1920&q=80', // Coffee cups display
+  'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=1920&q=80', // Barista at work
+  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1920&q=80', // Coffee beans close-up
+  'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=1920&q=80', // Barista making espresso
 ];
 
 /**
