@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +50,10 @@ const BaristaDetail: React.FC = () => {
   const { baristaName } = useParams<{ baristaName: string }>();
   const navigate = useNavigate();
   const [currentHeatIndex, setCurrentHeatIndex] = useState(0);
+  
+  // Get heat number from URL query params if navigating from a heat
+  const searchParams = new URLSearchParams(window.location.search);
+  const heatNumberParam = searchParams.get('heat');
 
   const decodedBaristaName = baristaName ? decodeURIComponent(baristaName) : '';
 
@@ -151,6 +155,17 @@ const BaristaDetail: React.FC = () => {
         totalPoints,
       } as HeatScore;
     });
+
+  // Set initial heat index if navigating from a specific heat
+  useEffect(() => {
+    if (heatNumberParam && baristaHeats.length > 0) {
+      const heatNum = parseInt(heatNumberParam, 10);
+      const heatIndex = baristaHeats.findIndex(h => h.heatNumber === heatNum);
+      if (heatIndex !== -1) {
+        setCurrentHeatIndex(heatIndex);
+      }
+    }
+  }, [heatNumberParam, baristaHeats.length]);
 
   const currentHeat = baristaHeats[currentHeatIndex];
 
