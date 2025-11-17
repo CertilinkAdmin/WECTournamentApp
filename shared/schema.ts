@@ -12,7 +12,7 @@ export const judgeRoleEnum = pgEnum('judge_role', ['HEAD', 'TECHNICAL', 'SENSORY
 export const userRoleEnum = pgEnum('user_role', ['ADMIN', 'JUDGE', 'BARISTA', 'STATION_LEAD', 'PUBLIC']);
 
 // Tournament Users table
-export const users = pgTable("users", {
+export const persons = pgTable("persons", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
@@ -21,13 +21,13 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export const insertPersonSchema = createInsertSchema(persons).omit({ id: true, createdAt: true });
+export type InsertPerson = z.infer<typeof insertPersonSchema>;
+export type Person = typeof persons.$inferSelect;
 
 // Tournaments table
 export const tournaments = pgTable("tournaments", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(),
   name: text("name").notNull(),
   location: text("location"),
   status: tournamentStatusEnum("status").notNull().default('SETUP'),
@@ -39,7 +39,7 @@ export const tournaments = pgTable("tournaments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTournamentSchema = createInsertSchema(tournaments).omit({ createdAt: true, updatedAt: true });
 export type InsertTournament = z.infer<typeof insertTournamentSchema>;
 export type Tournament = typeof tournaments.$inferSelect;
 

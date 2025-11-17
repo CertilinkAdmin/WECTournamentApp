@@ -1,11 +1,11 @@
 import { db } from "./db";
 import { 
-  users, tournaments, tournamentParticipants, tournamentRoundTimes,
+  persons, tournaments, tournamentRegistrations, tournamentRoundTimes,
   stations, matches, heatSegments, heatJudges, heatScores,
   judgeDetailedScores,
-  type User, type InsertUser,
+  type Person, type InsertPerson,
   type Tournament, type InsertTournament,
-  type TournamentParticipant, type InsertTournamentParticipant,
+  type TournamentRegistration, type InsertTournamentRegistration,
   type TournamentRoundTime, type InsertTournamentRoundTime,
   type Station, type InsertStation,
   type Match, type InsertMatch,
@@ -17,23 +17,23 @@ import {
 import { eq, and, desc, inArray } from "drizzle-orm";
 
 export interface IStorage {
-  // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  getAllUsers(): Promise<User[]>;
-  updateUser(id: number, data: Partial<InsertUser>): Promise<User | undefined>;
+  // Person methods (formerly User)
+  getPerson(id: number): Promise<Person | undefined>;
+  getPersonByEmail(email: string): Promise<Person | undefined>;
+  createPerson(person: InsertPerson): Promise<Person>;
+  getAllPersons(): Promise<Person[]>;
+  updatePerson(id: number, data: Partial<InsertPerson>): Promise<Person | undefined>;
 
-  // Tournament methods
+  // Tournament methods (ID is now text)
   createTournament(tournament: InsertTournament): Promise<Tournament>;
-  getTournament(id: number): Promise<Tournament | undefined>;
+  getTournament(id: string): Promise<Tournament | undefined>;
   getAllTournaments(): Promise<Tournament[]>;
-  updateTournament(id: number, data: Partial<InsertTournament>): Promise<Tournament | undefined>;
+  updateTournament(id: string, data: Partial<InsertTournament>): Promise<Tournament | undefined>;
 
-  // Tournament Participants
-  addParticipant(participant: InsertTournamentParticipant): Promise<TournamentParticipant>;
-  getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]>;
-  updateParticipantSeed(participantId: number, seed: number): Promise<TournamentParticipant | undefined>;
+  // Tournament Registrations (formerly Participants)
+  addRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration>;
+  getTournamentRegistrations(tournamentId: string): Promise<TournamentRegistration[]>;
+  updateRegistrationSeed(registrationId: number, seed: number): Promise<TournamentRegistration | undefined>;
 
   // Stations
   createStation(station: InsertStation): Promise<Station>;
@@ -44,7 +44,7 @@ export interface IStorage {
   // Matches
   createMatch(match: InsertMatch): Promise<Match>;
   getMatch(id: number): Promise<Match | undefined>;
-  getTournamentMatches(tournamentId: number): Promise<Match[]>;
+  getTournamentMatches(tournamentId: string): Promise<Match[]>;
   getStationMatches(stationId: number, limit?: number, offset?: number): Promise<Match[]>;
   updateMatch(id: number, data: Partial<InsertMatch>): Promise<Match | undefined>;
 
@@ -68,11 +68,11 @@ export interface IStorage {
 
   // Tournament Round Times
   setRoundTimes(times: InsertTournamentRoundTime): Promise<TournamentRoundTime>;
-  getRoundTimes(tournamentId: number, round: number): Promise<TournamentRoundTime | undefined>;
-  getTournamentRoundTimes(tournamentId: number): Promise<TournamentRoundTime[]>;
+  getRoundTimes(tournamentId: string, round: number): Promise<TournamentRoundTime | undefined>;
+  getTournamentRoundTimes(tournamentId: string): Promise<TournamentRoundTime[]>;
 
   // Clear tournament data
-  clearTournamentData(tournamentId: number): Promise<void>;
+  clearTournamentData(tournamentId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
