@@ -14,6 +14,7 @@ const JudgeScorecardsResults: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedHeat, setSelectedHeat] = useState<number | null>(null);
+  const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [currentHeatIndex, setCurrentHeatIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -33,6 +34,19 @@ const JudgeScorecardsResults: React.FC = () => {
     allHeats.flatMap(heat => heat.judges?.map(judge => judge.judgeName) || [])
   ));
 
+  // Helper function to determine round from heat number
+  const getRoundFromHeatNumber = (heatNumber: number): number => {
+    if (heatNumber >= 1 && heatNumber <= 16) return 1;  // Round 1: Heats 1-16
+    if (heatNumber >= 17 && heatNumber <= 24) return 2; // Round 2: Heats 17-24
+    if (heatNumber >= 25 && heatNumber <= 28) return 3; // Round 3: Heats 25-28
+    if (heatNumber >= 29 && heatNumber <= 30) return 4; // Round 4: Heats 29-30
+    if (heatNumber === 31) return 5;                    // Final: Heat 31
+    return 1; // Default fallback
+  };
+
+  // Get available rounds
+  const availableRounds = Array.from(new Set(allHeats.map(h => getRoundFromHeatNumber(h.heatNumber)))).sort((a, b) => a - b);
+
   // Filter heats based on search and filters
   const filteredHeats = allHeats.filter(heat => {
     const matchesSearch = !searchTerm || 
@@ -42,13 +56,15 @@ const JudgeScorecardsResults: React.FC = () => {
     
     const matchesHeat = !selectedHeat || heat.heatNumber === selectedHeat;
     
-    return matchesSearch && matchesHeat;
+    const matchesRound = !selectedRound || getRoundFromHeatNumber(heat.heatNumber) === selectedRound;
+    
+    return matchesSearch && matchesHeat && matchesRound;
   });
 
   // Reset current index when filters change
   useEffect(() => {
     setCurrentHeatIndex(0);
-  }, [searchTerm, selectedHeat]);
+  }, [searchTerm, selectedHeat, selectedRound]);
 
   // Touch handlers for swipe navigation
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -136,26 +152,51 @@ const JudgeScorecardsResults: React.FC = () => {
             />
           </div>
           
+          <Select
+            value={selectedRound?.toString() || ''}
+            onValueChange={(value) => setSelectedRound(value ? parseInt(value) : null)}
+          >
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue placeholder="All Rounds" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Rounds</SelectItem>
+              {availableRounds.map(round => {
+                const roundHeats = allHeats.filter(h => getRoundFromHeatNumber(h.heatNumber) === round);
+                const roundName = round === 5 ? 'Final' : round === 4 ? 'Semi-Finals' : `Round ${round}`;
+                return (
+                  <SelectItem key={round} value={round.toString()}>
+                    {roundName} ({roundHeats.length} heats)
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          
           <select
             value={selectedHeat || ''}
             onChange={(e) => setSelectedHeat(e.target.value ? parseInt(e.target.value) : null)}
             className="px-3 py-2 h-9 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary text-sm"
           >
             <option value="">All Heats</option>
-            {allHeats.map(heat => (
+            {(selectedRound 
+              ? allHeats.filter(h => getRoundFromHeatNumber(h.heatNumber) === selectedRound)
+              : allHeats
+            ).map(heat => (
               <option key={heat.heatNumber} value={heat.heatNumber}>
                 Heat {heat.heatNumber}
               </option>
             ))}
           </select>
           
-          {(searchTerm || selectedHeat) && (
+          {(searchTerm || selectedHeat || selectedRound) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setSearchTerm('');
                 setSelectedHeat(null);
+                setSelectedRound(null);
               }}
               className="h-9"
             >
@@ -184,6 +225,15 @@ const JudgeScorecardsResults: React.FC = () => {
               <div className="text-sm text-muted-foreground font-medium">
                 {currentHeat?.competitor1} vs {currentHeat?.competitor2}
               </div>
+              {currentHeat && (
+                <div className="text-xs text-primary/70 font-medium mt-1">
+                  {(() => {
+                    const round = getRoundFromHeatNumber(currentHeat.heatNumber);
+                    const roundName = round === 5 ? 'Final' : round === 4 ? 'Semi-Finals' : `Round ${round}`;
+                    return roundName;
+                  })()}
+                </div>
+              )}
             </div>
             
             <Button 
