@@ -16,11 +16,10 @@
  */
 
 export const wecPhotoAlbum: string[] = [
-  // Example OneDrive direct links (replace with actual URLs)
-  // 'https://onedrive.live.com/download?resid=C6270C9A1A05AA6B%21s...',
+  // WEC25 Milano Championship Photo from OneDrive
+  'https://southcentralus1-mediap.svc.ms/transform/thumbnail?provider=spo&farmid=193565&inputFormat=jpg&cs=fFNQTw&docid=https%3A%2F%2Fmy.microsoftpersonalcontent.com%2F_api%2Fv2.0%2Fdrives%2Fb!J83iF6K3jEaRyqXEwzWMfnzhcPr7B59Esx5tXTEUfXDdRZVPGReVR6tnQFmHiHge%2Fitems%2F01P5IYF4WR4BQV5Z3QEBEIII5UA4WUHAIC%3Ftempauth%3Dv1e.eyJzaXRlaWQiOiIxN2UyY2QyNy1iN2EyLTQ2OGMtOTFjYS1hNWM0YzMzNThjN2UiLCJhdWQiOiIwMDAwMDAwMy0wMDAwLTBmZjEtY2UwMC0wMDAwMDAwMDAwMDAvbXkubWljcm9zb2Z0cGVyc29uYWxjb250ZW50LmNvbUA5MTg4MDQwZC02YzY3LTRjNWItYjExMi0zNmEzMDRiNjZkYWQiLCJleHAiOiIxNzYzMzgwODAwIn0.RR29BpX7yIXQX069rQQHUSYpJgG55rtPO-Ct0H4yt5HFXBMQ5JNXnEYXtSPwUvGJ9NrAL7FnRaArv8mduDth_L166mg3JvsmzvWMKdZcX8d-YIW6K52B0hC3_6bOJO7TXAcDORfIfUo1kHL3FJgD1GPMRoWYpSq2jiDyY8BgoE8bgVkBmACLfqxhooBvO059WoUtymnfH-tSsvSik6Iadeyx9zrKNB-gjIVLVEn8Jm1zM_jqHGn1ozfdBZGA2PIk64-kTATpvqS-4DBleOJNtDh-HYgBGDPL4gZn5QXSRF71sHsGcg0k-mYbeT0EJsqZVfWSJlhddpOnPrjvu_Fb857B5aqOa2SvXnCkGGYuk1d8SwkoHgFxZ9pFiBC7us_F8hZhV-9T5Su5gVoZbwy5zClznGC0FJSZd0jjwmkTPDNm7lEeXvyHVgzuXymLGuPOT386gsZNYSSJ-D_LIgtjVG0P0R_dG9Lpibvu5k7XVkF43bCXaW3VS2pSD9rXq-6l.ChUbUcBuTBPYBOon8DPc1bcPk_cSqGp56pDHtrvslVM%26version%3DPublished&cb=63897397822&encodeFailures=1&width=1281&height=856',
   
-  // Temporary placeholder images - replace with actual OneDrive URLs
-  // or local images in /public/images/
+  // Coffee-themed placeholder images (keeping these - they look great!)
   'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=1920&q=80', // Coffee competition
   'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1920&q=80', // Barista pouring
   'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1920&q=80', // Coffee art
