@@ -24,15 +24,15 @@ export interface IStorage {
   getAllPersons(): Promise<Person[]>;
   updatePerson(id: number, data: Partial<InsertPerson>): Promise<Person | undefined>;
 
-  // Tournament methods (ID is now text)
+  // Tournament methods (ID is integer in current DB schema)
   createTournament(tournament: InsertTournament): Promise<Tournament>;
-  getTournament(id: string): Promise<Tournament | undefined>;
+  getTournament(id: number): Promise<Tournament | undefined>;
   getAllTournaments(): Promise<Tournament[]>;
-  updateTournament(id: string, data: Partial<InsertTournament>): Promise<Tournament | undefined>;
+  updateTournament(id: number, data: Partial<InsertTournament>): Promise<Tournament | undefined>;
 
   // Tournament Registrations (formerly Participants)
   addRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration>;
-  getTournamentRegistrations(tournamentId: string): Promise<TournamentRegistration[]>;
+  getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]>;
   updateRegistrationSeed(registrationId: number, seed: number): Promise<TournamentRegistration | undefined>;
 
   // Stations
@@ -44,7 +44,7 @@ export interface IStorage {
   // Matches
   createMatch(match: InsertMatch): Promise<Match>;
   getMatch(id: number): Promise<Match | undefined>;
-  getTournamentMatches(tournamentId: string): Promise<Match[]>;
+  getTournamentMatches(tournamentId: number): Promise<Match[]>;
   getStationMatches(stationId: number, limit?: number, offset?: number): Promise<Match[]>;
   updateMatch(id: number, data: Partial<InsertMatch>): Promise<Match | undefined>;
 
@@ -68,43 +68,43 @@ export interface IStorage {
 
   // Tournament Round Times
   setRoundTimes(times: InsertTournamentRoundTime): Promise<TournamentRoundTime>;
-  getRoundTimes(tournamentId: string, round: number): Promise<TournamentRoundTime | undefined>;
-  getTournamentRoundTimes(tournamentId: string): Promise<TournamentRoundTime[]>;
+  getRoundTimes(tournamentId: number, round: number): Promise<TournamentRoundTime | undefined>;
+  getTournamentRoundTimes(tournamentId: number): Promise<TournamentRoundTime[]>;
 
   // Clear tournament data
-  clearTournamentData(tournamentId: string): Promise<void>;
+  clearTournamentData(tournamentId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  // Person methods (formerly User)
+  async getPerson(id: number): Promise<Person | undefined> {
+    const result = await db.select().from(persons).where(eq(persons.id, id)).limit(1);
     return result[0];
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  async getPersonByEmail(email: string): Promise<Person | undefined> {
+    const result = await db.select().from(persons).where(eq(persons.email, email)).limit(1);
     return result[0];
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser).returning();
+  async createPerson(person: InsertPerson): Promise<Person> {
+    const result = await db.insert(persons).values(person).returning();
     return result[0];
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+  async getAllPersons(): Promise<Person[]> {
+    return await db.select().from(persons);
   }
 
-  async updateUser(id: number, data: Partial<InsertUser>): Promise<User | undefined> {
-    const result = await db.update(users)
-      .set(data)
-      .where(eq(users.id, id))
+  async updatePerson(id: number, data: Partial<InsertPerson>): Promise<Person | undefined> {
+    const result = await db.update(persons)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(persons.id, id))
       .returning();
     return result[0];
   }
 
-  // Tournament methods
+  // Tournament methods (ID is now text)
   async createTournament(tournament: InsertTournament): Promise<Tournament> {
     const result = await db.insert(tournaments).values(tournament).returning();
     return result[0];
@@ -127,22 +127,22 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  // Tournament Participants
-  async addParticipant(participant: InsertTournamentParticipant): Promise<TournamentParticipant> {
-    const result = await db.insert(tournamentParticipants).values(participant).returning();
+  // Tournament Registrations (formerly Participants)
+  async addRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration> {
+    const result = await db.insert(tournamentRegistrations).values(registration).returning();
     return result[0];
   }
 
-  async getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]> {
+  async getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]> {
     return await db.select()
-      .from(tournamentParticipants)
-      .where(eq(tournamentParticipants.tournamentId, tournamentId));
+      .from(tournamentRegistrations)
+      .where(eq(tournamentRegistrations.tournamentId, tournamentId));
   }
 
-  async updateParticipantSeed(participantId: number, seed: number): Promise<TournamentParticipant | undefined> {
-    const result = await db.update(tournamentParticipants)
-      .set({ seed })
-      .where(eq(tournamentParticipants.id, participantId))
+  async updateRegistrationSeed(registrationId: number, seed: number): Promise<TournamentRegistration | undefined> {
+    const result = await db.update(tournamentRegistrations)
+      .set({ seed, updatedAt: new Date() })
+      .where(eq(tournamentRegistrations.id, registrationId))
       .returning();
     return result[0];
   }
@@ -307,7 +307,7 @@ export class DatabaseStorage implements IStorage {
     
     // Delete tournament-specific data
     await db.delete(tournamentRoundTimes).where(eq(tournamentRoundTimes.tournamentId, tournamentId));
-    await db.delete(tournamentParticipants).where(eq(tournamentParticipants.tournamentId, tournamentId));
+    await db.delete(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, tournamentId));
   }
 }
 

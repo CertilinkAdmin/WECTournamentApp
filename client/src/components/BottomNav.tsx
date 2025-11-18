@@ -32,7 +32,7 @@ export default function BottomNav() {
     if (pathname === '/') {
       return [
         { path: '/admin', label: 'Admin', icon: Settings },
-        { path: '/live', label: 'Tournaments', icon: Play },
+        { path: '/live', label: 'Championships', icon: Play },
         { path: '/results', label: 'Results', icon: Trophy },
       ];
     }
@@ -55,7 +55,7 @@ export default function BottomNav() {
     if (pathname === '/results' || pathname === '/results/') {
       return [
         { path: '/admin', label: 'Admin', icon: Settings },
-        { path: '/live', label: 'Tournaments', icon: Play },
+        { path: '/live', label: 'Championships', icon: Play },
         { path: '/results', label: 'Results', icon: Trophy },
       ];
     }

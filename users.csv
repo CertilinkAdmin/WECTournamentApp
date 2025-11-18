@@ -1,0 +1,41 @@
+id,name,email,role,created_at,approved
+103,Stevo,stevo@wec2025.com,BARISTA,"""2025-10-29T17:43:02.239Z""",false
+104,Edwin,edwin@wec2025.com,BARISTA,"""2025-10-29T17:43:02.287Z""",false
+105,Kirill,kirill@wec2025.com,BARISTA,"""2025-10-29T17:43:02.329Z""",false
+106,Anja,anja@wec2025.com,BARISTA,"""2025-10-29T17:43:02.376Z""",false
+107,Jae,jae@wec2025.com,BARISTA,"""2025-10-29T17:43:02.419Z""",false
+108,Carlos,carlos@wec2025.com,BARISTA,"""2025-10-29T17:43:02.468Z""",false
+109,Penny,penny@wec2025.com,BARISTA,"""2025-10-29T17:43:02.509Z""",false
+110,Erland,erland@wec2025.com,BARISTA,"""2025-10-29T17:43:02.558Z""",false
+111,Felix,felix@wec2025.com,BARISTA,"""2025-10-29T17:43:02.601Z""",false
+112,Aga,aga@wec2025.com,BARISTA,"""2025-10-29T17:43:02.647Z""",false
+113,Artur,artur@wec2025.com,BARISTA,"""2025-10-29T17:43:02.687Z""",false
+114,Julian,julian@wec2025.com,BARISTA,"""2025-10-29T17:43:02.733Z""",false
+115,Faiz,faiz@wec2025.com,BARISTA,"""2025-10-29T17:43:02.774Z""",false
+116,Christos,christos@wec2025.com,BARISTA,"""2025-10-29T17:43:02.821Z""",false
+117,Danielle,danielle@wec2025.com,BARISTA,"""2025-10-29T17:43:02.863Z""",false
+118,Hojat,hojat@wec2025.com,BARISTA,"""2025-10-29T17:43:02.909Z""",false
+119,Bill,bill@wec2025.com,BARISTA,"""2025-10-29T17:43:02.950Z""",false
+120,Engi,engi@wec2025.com,BARISTA,"""2025-10-29T17:43:02.997Z""",false
+121,Ronny Chalhoub,ronnychalhoub@wec2025.com,BARISTA,"""2025-10-29T17:43:03.038Z""",false
+122,David Yescas-Berg,davidyescas-berg@wec2025.com,BARISTA,"""2025-10-29T17:43:03.083Z""",false
+123,Keita Osawa,keitaosawa@wec2025.com,BARISTA,"""2025-10-29T17:43:03.123Z""",false
+124,Alge Mohamed,algemohamed@wec2025.com,BARISTA,"""2025-10-29T17:43:03.169Z""",false
+125,Julian Yip,julianyip@wec2025.com,BARISTA,"""2025-10-29T17:43:03.209Z""",false
+126,Artur Kusnierz,arturkusnierz@wec2025.com,BARISTA,"""2025-10-29T17:43:03.254Z""",false
+127,Hojat Mousavi,hojatmousavi@wec2025.com,BARISTA,"""2025-10-29T17:43:03.295Z""",false
+128,Sebastian Hernandez,sebastianhernandez@wec2025.com,BARISTA,"""2025-10-29T17:43:03.341Z""",false
+129,Fraz Nurdin,fraznurdin@wec2025.com,BARISTA,"""2025-10-29T17:43:03.381Z""",false
+130,Christie Sidikat,christiesidikat@wec2025.com,BARISTA,"""2025-10-29T17:43:03.427Z""",false
+131,Danielle Misa,daniellemisa@wec2025.com,BARISTA,"""2025-10-29T17:43:03.468Z""",false
+132,Jasper,jasper@wec2025.com,JUDGE,"""2025-10-29T17:43:03.516Z""",false
+133,Korn,korn@wec2025.com,JUDGE,"""2025-10-29T17:43:03.557Z""",false
+134,Michalis,michalis@wec2025.com,JUDGE,"""2025-10-29T17:43:03.603Z""",false
+135,Shinsaku,shinsaku@wec2025.com,JUDGE,"""2025-10-29T17:43:03.644Z""",false
+136,Ali,ali@wec2025.com,JUDGE,"""2025-10-29T17:43:03.690Z""",false
+137,Junior,junior@wec2025.com,JUDGE,"""2025-10-29T17:43:03.729Z""",false
+138,Tess,tess@wec2025.com,JUDGE,"""2025-10-29T17:43:03.775Z""",false
+139,Boss,boss@wec2025.com,JUDGE,"""2025-10-29T17:43:03.815Z""",false
+140,,,,,
+141,,,,,
+142,,,,,

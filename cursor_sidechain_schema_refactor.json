@@ -1,0 +1,280 @@
+{
+  "name": "Schema Refactoring - Align TypeScript Schema with Database Migration",
+  "description": "Complete refactoring of schema.ts and all dependent code to match the new database structure with Persons and Tournaments hierarchy",
+  "version": "1.0.0",
+  "prompts": [
+    {
+      "id": "schema-1",
+      "step": 1,
+      "title": "Fix Persons Table Definition",
+      "description": "Update persons table to match migration: remove role/approved fields, add externalProfileId/phone/updatedAt",
+      "task_id": "1",
+      "instructions": [
+        "Read shared/schema.ts file",
+        "Update persons table definition:",
+        "  - Remove: role field (userRoleEnum)",
+        "  - Remove: approved field (boolean)",
+        "  - Add: externalProfileId (text, unique)",
+        "  - Add: phone (text, optional)",
+        "  - Add: updatedAt (timestamp, defaultNow, notNull)",
+        "Update insertPersonSchema to omit updatedAt",
+        "Verify no references to old fields remain"
+      ],
+      "validation": "Check that persons table matches migration SQL structure",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "schema-2",
+      "step": 2,
+      "title": "Add New Enums",
+      "description": "Add personRoleEnum and verificationStatusEnum enums",
+      "task_id": "2",
+      "instructions": [
+        "Add personRoleEnum: pgEnum('person_role', ['JUDGE', 'BARISTA', 'VOLUNTEER', 'PARTNER'])",
+        "Add verificationStatusEnum: pgEnum('verification_status', ['UNVERIFIED', 'VERIFIED', 'REJECTED'])",
+        "Keep existing enums (judgeRoleEnum, matchStatusEnum, etc.)",
+        "Remove userRoleEnum if no longer needed (check references)"
+      ],
+      "validation": "Enums match migration SQL exactly",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "schema-3",
+      "step": 3,
+      "title": "Fix Tournaments Table",
+      "description": "Add year field and make location NOT NULL",
+      "task_id": "3",
+      "instructions": [
+        "Update tournaments table:",
+        "  - Keep id as text (already correct)",
+        "  - Change location from optional to notNull()",
+        "  - Add year field: integer('year').notNull()",
+        "Verify insertTournamentSchema includes year"
+      ],
+      "validation": "Tournaments table matches migration SQL",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "schema-4",
+      "step": 4,
+      "title": "Replace tournamentParticipants with tournamentRegistrations",
+      "description": "Remove old table, add new registration table with verification workflow",
+      "task_id": "4",
+      "instructions": [
+        "Remove tournamentParticipants table definition",
+        "Remove insertTournamentParticipantSchema and TournamentParticipant type",
+        "Add tournamentRegistrations table with:",
+        "  - id, tournamentId (text), personId, role (personRoleEnum), verificationStatus (verificationStatusEnum)",
+        "  - seed, eliminatedRound, finalRank (for baristas)",
+        "  - registeredAt, verifiedAt, verifiedBy, createdAt, updatedAt",
+        "Add insertTournamentRegistrationSchema and TournamentRegistration type",
+        "Update all exports"
+      ],
+      "validation": "tournamentRegistrations table matches migration SQL exactly",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "schema-5",
+      "step": 5,
+      "title": "Fix Stations Table",
+      "description": "Add tournamentId, remove location, add timestamps",
+      "task_id": "5",
+      "instructions": [
+        "Update stations table:",
+        "  - Add tournamentId: text('tournament_id').notNull().references(() => tournaments.id)",
+        "  - Remove location field",
+        "  - Add createdAt: timestamp('created_at').defaultNow().notNull()",
+        "  - Add updatedAt: timestamp('updated_at').defaultNow().notNull()",
+        "Update insertStationSchema to omit createdAt and updatedAt"
+      ],
+      "validation": "Stations table matches migration SQL",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "schema-6",
+      "step": 6,
+      "title": "Fix Matches Table",
+      "description": "Change tournamentId to text, update competitor fields to use registrationId",
+      "task_id": "6",
+      "instructions": [
+        "Update matches table:",
+        "  - Change tournamentId from integer to text('tournament_id').notNull().references(() => tournaments.id)",
+        "  - Change competitor1Id to competitor1RegistrationId: integer('competitor1_registration_id').references(() => tournamentRegistrations.id)",
+        "  - Change competitor2Id to competitor2RegistrationId: integer('competitor2_registration_id').references(() => tournamentRegistrations.id)",
+        "  - Change winnerId to winnerRegistrationId: integer('winner_registration_id').references(() => tournamentRegistrations.id)",
+        "Update insertMatchSchema accordingly"
+      ],
+      "validation": "Matches table matches migration SQL",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "schema-7",
+      "step": 7,
+      "title": "Fix HeatJudges and HeatScores Tables",
+      "description": "Update to use registrationId instead of direct user references",
+      "task_id": "7",
+      "instructions": [
+        "Update heatJudges table:",
+        "  - Change judgeId to judgeRegistrationId: integer('judge_registration_id').notNull().references(() => tournamentRegistrations.id)",
+        "Update heatScores table:",
+        "  - Change judgeId to judgeRegistrationId: integer('judge_registration_id').notNull().references(() => tournamentRegistrations.id)",
+        "  - Change competitorId to competitorRegistrationId: integer('competitor_registration_id').notNull().references(() => tournamentRegistrations.id)",
+        "Update insert schemas accordingly"
+      ],
+      "validation": "Both tables match migration SQL",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "schema-8",
+      "step": 8,
+      "title": "Fix TournamentRoundTimes Table",
+      "description": "Change tournamentId from integer to text",
+      "task_id": "8",
+      "instructions": [
+        "Update tournamentRoundTimes table:",
+        "  - Change tournamentId from integer to text('tournament_id').notNull().references(() => tournaments.id)",
+        "Verify insertTournamentRoundTimeSchema is correct"
+      ],
+      "validation": "Table matches migration SQL",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "storage-1",
+      "step": 9,
+      "title": "Update Storage - Rename User to Person Methods",
+      "description": "Replace all User methods with Person methods in storage.ts",
+      "task_id": "9",
+      "instructions": [
+        "Read server/storage.ts",
+        "Rename methods:",
+        "  - getUser → getPerson",
+        "  - getUserByEmail → getPersonByEmail",
+        "  - createUser → createPerson",
+        "  - getAllUsers → getAllPersons",
+        "  - updateUser → updatePerson",
+        "Update method implementations to use 'persons' table instead of 'users'",
+        "Update type references: User → Person, InsertUser → InsertPerson",
+        "Update IStorage interface accordingly"
+      ],
+      "validation": "All User methods replaced with Person methods",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "storage-2",
+      "step": 10,
+      "title": "Update Storage - Rename Participant to Registration Methods",
+      "description": "Replace all Participant methods with Registration methods",
+      "task_id": "10",
+      "instructions": [
+        "Rename methods:",
+        "  - addParticipant → addRegistration",
+        "  - getTournamentParticipants → getTournamentRegistrations",
+        "  - updateParticipantSeed → updateRegistrationSeed",
+        "Update implementations to use 'tournamentRegistrations' table",
+        "Update type references: TournamentParticipant → TournamentRegistration",
+        "Update IStorage interface accordingly"
+      ],
+      "validation": "All Participant methods replaced with Registration methods",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "storage-3",
+      "step": 11,
+      "title": "Update Storage - Fix Tournament ID Types",
+      "description": "Change all tournament ID parameters from number to string",
+      "task_id": "11",
+      "instructions": [
+        "Update all methods that take tournamentId:",
+        "  - getTournament(id: number) → getTournament(id: string)",
+        "  - updateTournament(id: number, ...) → updateTournament(id: string, ...)",
+        "  - getTournamentRegistrations(tournamentId: number) → getTournamentRegistrations(tournamentId: string)",
+        "  - getTournamentMatches(tournamentId: number) → getTournamentMatches(tournamentId: string)",
+        "  - getRoundTimes(tournamentId: number, ...) → getRoundTimes(tournamentId: string, ...)",
+        "  - getTournamentRoundTimes(tournamentId: number) → getTournamentRoundTimes(tournamentId: string)",
+        "  - clearTournamentData(tournamentId: number) → clearTournamentData(tournamentId: string)",
+        "Update all queries to use eq() with string IDs",
+        "Update IStorage interface accordingly"
+      ],
+      "validation": "All tournament ID types are string",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "routes-1",
+      "step": 12,
+      "title": "Update Routes - Change /api/users to /api/persons",
+      "description": "Update all user routes to use persons API",
+      "task_id": "12",
+      "instructions": [
+        "Read server/routes.ts",
+        "Update routes:",
+        "  - POST /api/users → POST /api/persons",
+        "  - GET /api/users → GET /api/persons",
+        "  - PATCH /api/users → PATCH /api/persons",
+        "Update to use insertPersonSchema instead of insertUserSchema",
+        "Update to use storage.createPerson/getAllPersons/updatePerson",
+        "Update WebSocket join:tournament to accept string tournamentId"
+      ],
+      "validation": "All user routes now use persons",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "routes-2",
+      "step": 13,
+      "title": "Update Routes - Fix Tournament ID Parsing",
+      "description": "Change tournament ID parsing from parseInt to string",
+      "task_id": "13",
+      "instructions": [
+        "Find all routes with /api/tournaments/:id",
+        "Replace parseInt(req.params.id) with req.params.id (keep as string)",
+        "Update storage method calls to pass string IDs",
+        "Update all tournament ID references in route handlers",
+        "Update getTournamentParticipants calls to getTournamentRegistrations",
+        "Update user lookups to use persons and registrations"
+      ],
+      "validation": "All tournament IDs handled as strings",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "routes-3",
+      "step": 14,
+      "title": "Update Routes - Fix All Schema References",
+      "description": "Update all references to use new schema structure",
+      "task_id": "14",
+      "instructions": [
+        "Update tournament route handlers:",
+        "  - Replace tournamentParticipants with tournamentRegistrations",
+        "  - Replace user lookups with person + registration lookups",
+        "  - Update competitor/judge name lookups to use registrations",
+        "  - Update station creation to include tournamentId",
+        "Update imports to remove old schemas, add new ones",
+        "Fix any remaining references to old table/field names"
+      ],
+      "validation": "All routes use new schema",
+      "test": "TypeScript compilation should succeed"
+    },
+    {
+      "id": "verify",
+      "step": 15,
+      "title": "Verify and Test",
+      "description": "Verify schema matches database and run compilation tests",
+      "task_id": "15",
+      "instructions": [
+        "Run TypeScript compilation: npm run check",
+        "Verify no type errors",
+        "Compare schema.ts structure with migration SQL",
+        "Check that all table definitions match",
+        "Verify all foreign key references are correct",
+        "Document any remaining issues"
+      ],
+      "validation": "Schema matches database, no compilation errors",
+      "test": "npm run check passes"
+    }
+  ],
+  "metadata": {
+    "created": "2025-01-27",
+    "estimated_time": "2-3 hours",
+    "complexity": "high",
+    "dependencies": ["Database migration already executed"]
+  }
+}
+

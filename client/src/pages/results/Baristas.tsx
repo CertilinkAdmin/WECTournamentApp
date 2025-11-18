@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
+import { findTournamentBySlug } from '@/utils/tournamentUtils';
 import './Baristas.css';
 
 interface Participant {
@@ -47,10 +48,21 @@ const Baristas: React.FC<BaristasProps> = () => {
   const speedWheel = 0.02;
   const speedDrag = -0.1;
 
+  // Fetch all tournaments to find by slug
+  const { data: tournaments = [] } = useQuery<Array<{ id: number; name: string }>>({
+    queryKey: ['/api/tournaments'],
+  });
+
+  // Find tournament by slug
+  const tournament = useMemo(() => {
+    if (!tournamentSlug) return null;
+    return findTournamentBySlug(tournaments, tournamentSlug);
+  }, [tournaments, tournamentSlug]);
+
   // Fetch participants for this tournament
   const { data: participants = [] } = useQuery<Participant[]>({
-    queryKey: [`/api/tournaments/${tournamentId}/participants`],
-    enabled: !!tournamentId,
+    queryKey: [`/api/tournaments/${tournament?.id}/participants`],
+    enabled: !!tournament?.id,
   });
 
   // Always use the specified tournament baristas

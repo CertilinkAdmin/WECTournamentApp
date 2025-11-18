@@ -84,10 +84,12 @@ const WEC2025Results = () => {
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
 
   // Group matches by round - memoized to prevent hook order issues (MUST be before any returns)
+  // Uses database round field directly, following Tournament -> Round -> Heat hierarchy
   const matchesByRound = useMemo(() => {
     if (!tournamentData?.matches) return {};
 
     const grouped = tournamentData.matches.reduce((acc, match) => {
+      // Use database round field directly (Tournament -> Round -> Heat hierarchy)
       const round = match.round || 1;
       if (!acc[round]) {
         acc[round] = [];
@@ -105,11 +107,26 @@ const WEC2025Results = () => {
   }, [tournamentData?.matches]);
 
   // Get available rounds - memoized (MUST be before any returns)
-  // Always show 5 rounds (1-5) for WEC 2025
+  // Show rounds based on database structure (Tournament -> Rounds -> Heats)
+  // For WEC2025, we expect 5 rounds (1-5)
   const availableRounds = useMemo(() => {
-    // Always return rounds 1-5 for WEC tournaments
-    return [1, 2, 3, 4, 5];
-  }, []);
+    if (!tournamentData?.tournament) {
+      // Default to 5 rounds for WEC tournaments if no data yet
+      return [1, 2, 3, 4, 5];
+    }
+    
+    // Get rounds from database matches, or use tournament totalRounds
+    const roundsFromMatches = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
+    const totalRounds = tournamentData.tournament.totalRounds || 5;
+    
+    // If we have matches, use those rounds; otherwise show all rounds up to totalRounds
+    if (roundsFromMatches.length > 0) {
+      return roundsFromMatches;
+    }
+    
+    // Generate rounds 1 through totalRounds
+    return Array.from({ length: totalRounds }, (_, i) => i + 1);
+  }, [tournamentData?.tournament, matchesByRound]);
 
   // Get selected round matches - memoized (MUST be before any returns)
   const selectedRoundMatches = useMemo(() => {
@@ -216,12 +233,18 @@ const WEC2025Results = () => {
   };
 
   // Helper function to determine round from heat number (used in both API and fallback)
+  // Round mapping based on user specification:
+  // Round 1: Heats 1-16 (first 16 heats)
+  // Round 2: Heats 17-23 (next 7 heats)
+  // Round 3: Heats 24-27 (next 4 heats)
+  // Round 4: Heats 28-29 (2 heats - semifinals)
+  // Round 5: Heat 30+ (Final)
   const getRoundFromHeatNumber = (heatNumber: number): number => {
-    if (heatNumber >= 1 && heatNumber <= 16) return 1;  // Round 1 - Round of 32: Heats 1-16
-    if (heatNumber >= 17 && heatNumber <= 24) return 2; // Round 2 - Round of 16: Heats 17-24
-    if (heatNumber >= 25 && heatNumber <= 28) return 3; // Round 3 - Quarterfinals: Heats 25-28
-    if (heatNumber >= 29 && heatNumber <= 30) return 4; // Round 4 - Semifinals: Heats 29-30
-    if (heatNumber === 31) return 5;                    // Final: Heat 31
+    if (heatNumber >= 1 && heatNumber <= 16) return 1;  // Round 1 - First 16 heats
+    if (heatNumber >= 17 && heatNumber <= 23) return 2; // Round 2 - Next 7 heats
+    if (heatNumber >= 24 && heatNumber <= 27) return 3; // Round 3 - Next 4 heats
+    if (heatNumber >= 28 && heatNumber <= 29) return 4; // Round 4 - 2 heats (Semifinals)
+    if (heatNumber >= 30) return 5;                      // Round 5 - Final
     return 1; // Default fallback
   };
 
@@ -253,14 +276,14 @@ const WEC2025Results = () => {
       })),
       matches: data.matches.map((m: any) => ({
         id: m.id,
-        round: getRoundFromHeatNumber(m.heatNumber), // Correct round based on heat number
+        round: m.round || getRoundFromHeatNumber(m.heatNumber), // Use database round field, fallback to heat number calculation
         heatNumber: m.heatNumber,
         status: m.status,
         startTime: m.startTime,
         endTime: m.endTime,
-        competitor1Id: m.competitor1Id,
-        competitor2Id: m.competitor2Id,
-        winnerId: m.winnerId,
+        competitor1Id: m.competitor1Id || m.competitor1RegistrationId,
+        competitor2Id: m.competitor2Id || m.competitor2RegistrationId,
+        winnerId: m.winnerId || m.winnerRegistrationId,
         competitor1Name: m.competitor1Name || 'Unknown',
         competitor2Name: m.competitor2Name || null
       })),
@@ -392,11 +415,11 @@ const WEC2025Results = () => {
   // Get round display name - must be before early returns
   const getRoundDisplayName = (round: number) => {
     const roundNames: Record<number, string> = {
-      1: 'Round 1 - Round of 32',
-      2: 'Round 2 - Round of 16', 
-      3: 'Round 3 - Quarterfinals',
-      4: 'Round 4 - Semifinals',
-      5: 'Final - Championship'
+      1: 'Round 1 - First 16 Heats',
+      2: 'Round 2 - Next 7 Heats', 
+      3: 'Round 3 - Next 4 Heats',
+      4: 'Round 4 - Semifinals (2 Heats)',
+      5: 'Round 5 - Final'
     };
     return roundNames[round] || `Round ${round}`;
   };
