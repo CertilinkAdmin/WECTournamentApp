@@ -27,41 +27,41 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, sc
   };
 
   return (
-    <Card className={`min-h-[140px] transition-all duration-300 ${isFinal ? 'ring-4 ring-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-50 shadow-xl' : isWinner ? 'ring-2 ring-green-400 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg' : 'hover:shadow-xl hover:scale-105'}`}>
-      <CardContent className="p-4 h-full flex flex-col justify-center">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
-            <span className="text-lg font-bold">Heat {heatNumber}</span>
+    <Card className={`min-h-[120px] transition-all duration-300 ${isFinal ? 'ring-4 ring-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-50 shadow-xl' : isWinner ? 'ring-2 ring-green-400 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg' : 'hover:shadow-xl hover:scale-105'}`}>
+      <CardContent className="p-3 h-full flex flex-col justify-center">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Trophy className="h-4 w-4 text-primary" />
+            <span className="text-sm font-bold">Heat {heatNumber}</span>
           </div>
-          <Badge className={`${getStationColor(station)} text-sm font-medium`}>
-            Station {station}
+          <Badge className={`${getStationColor(station)} text-xs font-medium px-1.5 py-0.5`}>
+            {station}
           </Badge>
         </div>
         
-        <div className="space-y-3">
-          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor1 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
-            <div className="flex justify-between items-center">
-              <div className="font-semibold text-base text-slate-800">
+        <div className="space-y-2">
+          <div className={`p-2 rounded-lg border-2 transition-all duration-200 ${competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor1 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
+            <div className="flex justify-between items-center gap-2">
+              <div className="font-semibold text-xs text-slate-800 truncate flex-1">
                 {competitor1}
               </div>
-              {score1 !== undefined && (
-                <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
+              {score1 !== undefined && score1 !== null && (
+                <div className="text-sm font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
                   {score1}
                 </div>
               )}
             </div>
           </div>
           
-          <div className="text-center text-slate-600 font-bold text-sm tracking-wider">VS</div>
+          <div className="text-center text-slate-600 font-bold text-xs tracking-wider">VS</div>
           
-          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor2 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
-            <div className="flex justify-between items-center">
-              <div className="font-semibold text-base text-slate-800">
+          <div className={`p-2 rounded-lg border-2 transition-all duration-200 ${competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor2 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
+            <div className="flex justify-between items-center gap-2">
+              <div className="font-semibold text-xs text-slate-800 truncate flex-1">
                 {competitor2}
               </div>
-              {score2 !== undefined && (
-                <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
+              {score2 !== undefined && score2 !== null && (
+                <div className="text-sm font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
                   {score2}
                 </div>
               )}
@@ -70,17 +70,17 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, sc
         </div>
         
         {winner && (
-          <div className="mt-4 text-center">
-            <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-bold px-4 py-2 shadow-lg">
-              🏆 Winner: {winner}
+          <div className="mt-2 text-center">
+            <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold px-2 py-1 shadow-lg">
+              🏆 {winner}
             </Badge>
           </div>
         )}
         
         {isFinal && (
-          <div className="mt-4 text-center">
-            <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-sm font-bold px-4 py-2 shadow-lg animate-pulse">
-              🏆 CHAMPIONSHIP FINAL
+          <div className="mt-2 text-center">
+            <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-xs font-bold px-2 py-1 shadow-lg animate-pulse">
+              🏆 FINAL
             </Badge>
           </div>
         )}
