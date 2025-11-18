@@ -20,8 +20,8 @@ interface BracketPosition {
   competitor1: string;
   competitor2: string;
   winner: string;
-  score1: number;
-  score2: number;
+  score1: number | null; // null for BYE heats
+  score2: number | null; // null for BYE heats
   judges?: JudgeScore[];
   leftCupCode?: string;
   rightCupCode?: string;
@@ -57,8 +57,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Penny", 
     competitor2: "BYE", 
     winner: "Penny", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "P1",
     rightCupCode: "BYE"
   },
@@ -68,8 +68,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Erland", 
     competitor2: "BYE", 
     winner: "Erland", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "E2",
     rightCupCode: "BYE"
   },
@@ -79,8 +79,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Felix", 
     competitor2: "BYE", 
     winner: "Felix", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "F3",
     rightCupCode: "BYE"
   },
@@ -90,8 +90,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Aga", 
     competitor2: "BYE", 
     winner: "Aga", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "A4",
     rightCupCode: "BYE"
   },
@@ -101,8 +101,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Julian", 
     competitor2: "BYE", 
     winner: "Julian", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "J5",
     rightCupCode: "BYE"
   },
@@ -112,8 +112,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Artur", 
     competitor2: "BYE", 
     winner: "Artur", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "A6",
     rightCupCode: "BYE"
   },
@@ -123,8 +123,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Hojat", 
     competitor2: "BYE", 
     winner: "Hojat", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "H7",
     rightCupCode: "BYE"
   },
@@ -134,8 +134,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "SCRATCHED", 
     competitor2: "BYE", 
     winner: "BYE", 
-    score1: 0, 
-    score2: 33,
+    score1: null, 
+    score2: null,
     leftCupCode: "SCRATCHED",
     rightCupCode: "BYE"
   },
@@ -145,8 +145,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Faiz", 
     competitor2: "BYE", 
     winner: "Faiz", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "F9",
     rightCupCode: "BYE"
   },
@@ -156,8 +156,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Christos", 
     competitor2: "BYE", 
     winner: "Christos", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "C10",
     rightCupCode: "BYE"
   },
@@ -167,8 +167,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Daniele", 
     competitor2: "BYE", 
     winner: "Daniele", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "D11",
     rightCupCode: "BYE"
   },
@@ -316,8 +316,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Bill", 
     competitor2: "BYE", 
     winner: "Bill", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "B15",
     rightCupCode: "BYE"
   },
@@ -327,8 +327,8 @@ export const WEC25_BRACKET_POSITIONS: BracketPosition[] = [
     competitor1: "Engi", 
     competitor2: "BYE", 
     winner: "Engi", 
-    score1: 33, 
-    score2: 0,
+    score1: null, 
+    score2: null,
     leftCupCode: "E16",
     rightCupCode: "BYE"
   },

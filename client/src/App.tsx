@@ -8,6 +8,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import LiveLayout from './pages/live/LiveLayout';
 import TournamentList from './pages/live/TournamentList';
+import Championships from './pages/championships/Championships';
 import ResultsLayout from './pages/results/ResultsLayout';
 import ResultsTournamentList from './pages/results/ResultsTournamentList';
 import WEC2025Results from './pages/results/WEC2025Results';

@@ -32,6 +32,7 @@ interface CategoryConsensus {
 
 export default function JudgeConsensus({ judges }: JudgeConsensusProps) {
   const consensus = useMemo(() => {
+    // Only show consensus for Visual Latte Art
     const categories: CategoryConsensus[] = [
       {
         category: 'Visual Latte Art',
@@ -43,58 +44,6 @@ export default function JudgeConsensus({ judges }: JudgeConsensusProps) {
         judgeVotes: judges.map(j => ({
           judgeName: j.judgeName,
           vote: j.visualLatteArt,
-          isInMajority: false,
-        })),
-      },
-      {
-        category: 'Taste',
-        leftVotes: judges.filter(j => j.taste === 'left').length,
-        rightVotes: judges.filter(j => j.taste === 'right').length,
-        majority: 'left',
-        majorityCount: 0,
-        totalJudges: judges.length,
-        judgeVotes: judges.map(j => ({
-          judgeName: j.judgeName,
-          vote: j.taste,
-          isInMajority: false,
-        })),
-      },
-      {
-        category: 'Tactile',
-        leftVotes: judges.filter(j => j.tactile === 'left').length,
-        rightVotes: judges.filter(j => j.tactile === 'right').length,
-        majority: 'left',
-        majorityCount: 0,
-        totalJudges: judges.length,
-        judgeVotes: judges.map(j => ({
-          judgeName: j.judgeName,
-          vote: j.tactile,
-          isInMajority: false,
-        })),
-      },
-      {
-        category: 'Flavour',
-        leftVotes: judges.filter(j => j.flavour === 'left').length,
-        rightVotes: judges.filter(j => j.flavour === 'right').length,
-        majority: 'left',
-        majorityCount: 0,
-        totalJudges: judges.length,
-        judgeVotes: judges.map(j => ({
-          judgeName: j.judgeName,
-          vote: j.flavour,
-          isInMajority: false,
-        })),
-      },
-      {
-        category: 'Overall',
-        leftVotes: judges.filter(j => j.overall === 'left').length,
-        rightVotes: judges.filter(j => j.overall === 'right').length,
-        majority: 'left',
-        majorityCount: 0,
-        totalJudges: judges.length,
-        judgeVotes: judges.map(j => ({
-          judgeName: j.judgeName,
-          vote: j.overall,
           isInMajority: false,
         })),
       },

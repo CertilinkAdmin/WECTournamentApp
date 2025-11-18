@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { 
-  persons, tournaments, tournamentRegistrations, tournamentRoundTimes,
+  persons, users, tournaments, tournamentRegistrations, tournamentRoundTimes,
   stations, matches, heatSegments, heatJudges, heatScores,
   judgeDetailedScores,
   type Person, type InsertPerson,
@@ -77,23 +77,72 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // Person methods (formerly User)
+  // Using users table since persons table doesn't exist yet
   async getPerson(id: number): Promise<Person | undefined> {
-    const result = await db.select().from(persons).where(eq(persons.id, id)).limit(1);
-    return result[0];
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    if (result[0]) {
+      return {
+        id: result[0].id,
+        externalProfileId: null,
+        name: result[0].name,
+        email: result[0].email,
+        phone: null,
+        createdAt: result[0].createdAt,
+        updatedAt: result[0].createdAt,
+      };
+    }
+    return undefined;
   }
 
   async getPersonByEmail(email: string): Promise<Person | undefined> {
-    const result = await db.select().from(persons).where(eq(persons.email, email)).limit(1);
-    return result[0];
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (result[0]) {
+      return {
+        id: result[0].id,
+        externalProfileId: null,
+        name: result[0].name,
+        email: result[0].email,
+        phone: null,
+        createdAt: result[0].createdAt,
+        updatedAt: result[0].createdAt,
+      };
+    }
+    return undefined;
   }
 
   async createPerson(person: InsertPerson): Promise<Person> {
-    const result = await db.insert(persons).values(person).returning();
-    return result[0];
+    // Insert into users table (legacy schema)
+    const result = await db.insert(users).values({
+      name: person.name,
+      email: person.email,
+      role: 'BARISTA', // Default role
+      approved: false,
+    }).returning();
+    
+    return {
+      id: result[0].id,
+      externalProfileId: null,
+      name: result[0].name,
+      email: result[0].email,
+      phone: null,
+      createdAt: result[0].createdAt,
+      updatedAt: result[0].createdAt,
+    };
   }
 
   async getAllPersons(): Promise<Person[]> {
-    return await db.select().from(persons);
+    // Use users table since persons table doesn't exist yet
+    const userRows = await db.select().from(users);
+    // Map users to Person format
+    return userRows.map(u => ({
+      id: u.id,
+      externalProfileId: null,
+      name: u.name,
+      email: u.email,
+      phone: null,
+      createdAt: u.createdAt,
+      updatedAt: u.createdAt, // users table doesn't have updatedAt
+    }));
   }
 
   async updatePerson(id: number, data: Partial<InsertPerson>): Promise<Person | undefined> {

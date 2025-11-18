@@ -313,7 +313,8 @@ const JudgeScorecardsResults: React.FC = () => {
                     {(() => {
                       if (!currentHeat.judges) return null;
                       
-                      const getConsensus = (category: 'visualLatteArt' | 'taste' | 'tactile' | 'flavour' | 'overall'): 'left' | 'right' | 'tie' => {
+                      // Only calculate consensus for Visual Latte Art
+                      const getConsensus = (category: 'visualLatteArt'): 'left' | 'right' | 'tie' => {
                         const votes = currentHeat.judges!.map(j => j[category]);
                         const leftVotes = votes.filter(v => v === 'left').length;
                         const rightVotes = votes.filter(v => v === 'right').length;
@@ -322,13 +323,7 @@ const JudgeScorecardsResults: React.FC = () => {
                         return 'tie';
                       };
                       
-                      const consensus: Record<'visualLatteArt' | 'taste' | 'tactile' | 'flavour' | 'overall', 'left' | 'right' | 'tie'> = {
-                        visualLatteArt: getConsensus('visualLatteArt'),
-                        taste: getConsensus('taste'),
-                        tactile: getConsensus('tactile'),
-                        flavour: getConsensus('flavour'),
-                        overall: getConsensus('overall'),
-                      };
+                      const visualLatteArtConsensus = getConsensus('visualLatteArt');
                       
                       const isInMajority = (judgeVote: 'left' | 'right' | null, categoryConsensus: 'left' | 'right' | 'tie') => {
                         if (!judgeVote || categoryConsensus === 'tie') return true;
@@ -358,38 +353,58 @@ const JudgeScorecardsResults: React.FC = () => {
                               label: string
                             ) => {
                               const judgeVote = judge[category];
-                              const categoryConsensus = consensus[category];
-                              const inMajority = isInMajority(judgeVote, categoryConsensus);
+                              // Only show consensus for Visual Latte Art
+                              const isVisualLatteArt = category === 'visualLatteArt';
+                              const categoryConsensus = isVisualLatteArt ? visualLatteArtConsensus : null;
+                              const inMajority = isVisualLatteArt && categoryConsensus 
+                                ? isInMajority(judgeVote, categoryConsensus)
+                                : null;
                               
                               return (
                                 <div 
                                   key={category}
-                                  className={`grid grid-cols-3 items-center p-3 rounded-lg text-sm border transition-all ${
-                                    inMajority
-                                      ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20'
-                                      : 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20'
+                                  className={`relative grid grid-cols-3 items-center p-3 rounded-lg text-sm border transition-all ${
+                                    isVisualLatteArt && inMajority !== null
+                                      ? inMajority
+                                        ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20'
+                                        : 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20'
+                                      : 'border-primary/30 bg-secondary/20'
                                   }`}
                                 >
+                                  {/* Consensus indicator - positioned absolutely at top right */}
+                                  {isVisualLatteArt && judgeVote && inMajority !== null && (
+                                    <div className="absolute top-1 right-1 z-10 flex items-center gap-1">
+                                      {inMajority ? (
+                                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                      ) : (
+                                        <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                      )}
+                                      <Badge 
+                                        variant="outline" 
+                                        className={`text-xs h-5 px-1.5 ${
+                                          inMajority 
+                                            ? 'border-green-500 text-green-700 dark:text-green-400' 
+                                            : 'border-red-500 text-red-700 dark:text-red-400'
+                                        }`}
+                                      >
+                                        {judgeVote === 'left' ? 'L' : 'R'}
+                                      </Badge>
+                                    </div>
+                                  )}
                                   <label className="flex items-center gap-2 justify-start">
                                     <input 
                                       type="checkbox" 
                                       checked={judgeVote === 'left'} 
                                       readOnly 
                                       className={`h-4 w-4 accent-[color:oklch(var(--foreground))] ${
-                                        inMajority && judgeVote === 'left' ? 'ring-2 ring-green-500' : ''
+                                        isVisualLatteArt && inMajority && judgeVote === 'left' ? 'ring-2 ring-green-500' : ''
                                       }`}
                                     />
                                     <span className="text-xs text-muted-foreground">Left</span>
-                                    {judgeVote === 'left' && !inMajority && (
-                                      <XCircle className="h-3 w-3 text-red-500" />
-                                    )}
-                                    {judgeVote === 'left' && inMajority && (
-                                      <CheckCircle2 className="h-3 w-3 text-green-500" />
-                                    )}
                                   </label>
                                   <div className="text-center font-semibold text-primary flex items-center justify-center gap-1">
                                     {label}
-                                    {categoryConsensus !== 'tie' && (
+                                    {isVisualLatteArt && categoryConsensus && categoryConsensus !== 'tie' && (
                                       <Badge variant="outline" className="text-xs">
                                         {categoryConsensus === 'left' ? 'L' : 'R'} Majority
                                       </Badge>
@@ -402,15 +417,9 @@ const JudgeScorecardsResults: React.FC = () => {
                                       checked={judgeVote === 'right'} 
                                       readOnly 
                                       className={`h-4 w-4 accent-[color:oklch(var(--foreground))] ${
-                                        inMajority && judgeVote === 'right' ? 'ring-2 ring-green-500' : ''
+                                        isVisualLatteArt && inMajority && judgeVote === 'right' ? 'ring-2 ring-green-500' : ''
                                       }`}
                                     />
-                                    {judgeVote === 'right' && !inMajority && (
-                                      <XCircle className="h-3 w-3 text-red-500" />
-                                    )}
-                                    {judgeVote === 'right' && inMajority && (
-                                      <CheckCircle2 className="h-3 w-3 text-green-500" />
-                                    )}
                                   </label>
                                 </div>
                               );

@@ -1,0 +1,26 @@
+{
+  "task": "Fix BYE heats - Remove scores and display BYE text",
+  "steps": [
+    {
+      "id": 1,
+      "description": "Update WEC25BracketData.tsx to remove scores from BYE heats (1-11, 15-16, 20) and set score1/score2 to null",
+      "test": "Verify BYE heats have null scores in bracket data"
+    },
+    {
+      "id": 2,
+      "description": "Update bracket display components to show 'BYE' text instead of scores for heats with null scores",
+      "test": "Verify BYE text displays correctly in UI"
+    },
+    {
+      "id": 3,
+      "description": "Verify database matches for BYE heats have correct status (PENDING) and no scores",
+      "test": "Query database to confirm no scores exist for BYE heats"
+    },
+    {
+      "id": 4,
+      "description": "Check heats that advance from BYE heats (17, 22, 25) have correct scores",
+      "test": "Verify scores for advancing heats are correct"
+    }
+  ]
+}
+

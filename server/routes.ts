@@ -1115,5 +1115,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ADMIN ROUTES =====
+  
+  // System monitoring stats
+  app.get("/api/admin/system-stats", async (req, res) => {
+    try {
+      // Get basic system stats
+      const uptime = process.uptime();
+      const memoryUsage = process.memoryUsage();
+      const memoryUsagePercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
+      
+      // Get database stats
+      const dbStats = await sql`
+        SELECT 
+          pg_database_size(current_database()) as db_size,
+          (SELECT count(*) FROM persons) as user_count,
+          (SELECT count(*) FROM tournaments) as tournament_count,
+          (SELECT count(*) FROM matches) as match_count
+      `;
+      
+      res.json({
+        uptime: Math.floor(uptime),
+        memoryUsage: memoryUsagePercent,
+        cpuUsage: 0, // Would need system monitoring library for real CPU usage
+        activeConnections: io.sockets.sockets.size,
+        databaseSize: Number(dbStats[0].db_size) || 0,
+        userCount: Number(dbStats[0].user_count) || 0,
+        tournamentCount: Number(dbStats[0].tournament_count) || 0,
+        matchCount: Number(dbStats[0].match_count) || 0,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Tournament pause/resume
+  app.post("/api/admin/tournaments/:id/pause", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const { paused } = req.body;
+      
+      // Update tournament with pause status (we'll add an isPaused field or use a custom status)
+      // For now, we can store this in a separate table or add a field
+      // This is a placeholder - you may want to add an isPaused column to tournaments table
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+      
+      // Emit pause/resume event
+      io.to(`tournament:${tournamentId}`).emit("tournament:paused", { tournamentId, paused });
+      
+      res.json({ success: true, paused });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Carousel image management
+  app.get("/api/admin/carousel", async (req, res) => {
+    try {
+      // For now, return from config file
+      // Later, this can be stored in database
+      const { wecPhotoAlbum } = await import("../client/src/config/photoAlbum");
+      res.json(wecPhotoAlbum);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/carousel", async (req, res) => {
+    try {
+      const { imageUrl } = req.body;
+      if (!imageUrl) {
+        return res.status(400).json({ error: "Image URL is required" });
+      }
+      
+      // For now, this is a placeholder
+      // You would need to store carousel images in database or config file
+      // TODO: Implement carousel image storage
+      
+      res.json({ success: true, imageUrl });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/admin/carousel", async (req, res) => {
+    try {
+      const { imageUrl } = req.body;
+      if (!imageUrl) {
+        return res.status(400).json({ error: "Image URL is required" });
+      }
+      
+      // For now, this is a placeholder
+      // You would need to remove from database or config file
+      // TODO: Implement carousel image removal
+      
+      res.json({ success: true, imageUrl });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
