@@ -60,6 +60,44 @@ const AdminDashboard: React.FC = () => {
     queryKey: ['/api/tournaments'],
   });
 
+  // Fetch scorecard lock status
+  const { data: scorecardLockStatus } = useQuery<{ locked: boolean }>({
+    queryKey: ['/api/admin/scorecard-lock'],
+    refetchInterval: 2000, // Check every 2 seconds
+  });
+  const scorecardLocked = scorecardLockStatus?.locked ?? false;
+
+  // Mutation to update scorecard lock status
+  const updateScorecardLockMutation = useMutation({
+    mutationFn: async (locked: boolean) => {
+      const response = await fetch('/api/admin/scorecard-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locked }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update scorecard lock status');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['/api/admin/scorecard-lock'], data);
+      toast({
+        title: data.locked ? 'Scorecards Locked' : 'Scorecards Unlocked',
+        description: data.locked 
+          ? 'Scorecard editing is now disabled' 
+          : 'Judges can now edit scorecards',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Fetch photo carousel images
   const { data: carouselImages = [] } = useQuery<string[]>({
     queryKey: ['/api/admin/carousel'],
@@ -500,6 +538,36 @@ const AdminDashboard: React.FC = () => {
 
           {/* Tournaments Tab */}
           <TabsContent value="tournaments" className="space-y-4 mt-6">
+            {/* Scorecard Lock Toggle */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Scorecard Controls
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="scorecard-lock" className="text-base font-semibold">
+                      Judge Scorecard Editing
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {scorecardLocked ? 'Scorecards are locked - editing disabled' : 'Scorecards are unlocked - editing enabled'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="scorecard-lock"
+                    checked={!scorecardLocked}
+                    disabled={updateScorecardLockMutation.isPending}
+                    onCheckedChange={(checked) => {
+                      updateScorecardLockMutation.mutate(!checked);
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Tournament Controls</CardTitle>

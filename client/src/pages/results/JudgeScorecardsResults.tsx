@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trophy, Users, Coffee, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react';
+import { Trophy, Users, Coffee, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, XCircle, Lock, Unlock } from 'lucide-react';
 import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
 import JudgeConsensus from '@/components/JudgeConsensus';
+import { useToast } from '@/hooks/use-toast';
 
 const JudgeScorecardsResults: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedHeat, setSelectedHeat] = useState<number | null>(null);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
@@ -20,6 +24,92 @@ const JudgeScorecardsResults: React.FC = () => {
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [selectedJudgeTab, setSelectedJudgeTab] = useState<string>('');
   const [showConsensus, setShowConsensus] = useState(false);
+  const [localJudgeScores, setLocalJudgeScores] = useState<Record<string, any>>({});
+
+  // Fetch scorecard lock status
+  const { data: scorecardLockStatus } = useQuery<{ locked: boolean }>({
+    queryKey: ['/api/admin/scorecard-lock'],
+    refetchInterval: 2000, // Check every 2 seconds
+  });
+  const scorecardLocked = scorecardLockStatus?.locked ?? false;
+
+  // Fetch tournament data to get matches and matchIds
+  const { data: tournamentData } = useQuery<any>({
+    queryKey: ['/api/tournaments/1'], // Assuming tournament ID 1 for WEC2025
+  });
+  const matches = tournamentData?.matches || [];
+
+  // Helper to get matchId from heatNumber
+  const getMatchIdFromHeatNumber = (heatNumber: number): number | null => {
+    const match = matches.find((m: any) => m.heatNumber === heatNumber);
+    return match?.id || null;
+  };
+
+  // Handler to update judge score
+  const handleScoreUpdate = async (
+    heatNumber: number,
+    judgeName: string,
+    category: 'visualLatteArt' | 'taste' | 'tactile' | 'flavour' | 'overall',
+    value: 'left' | 'right'
+  ) => {
+    if (scorecardLocked) {
+      toast({
+        title: 'Scorecards Locked',
+        description: 'Scorecard editing is currently disabled. Please contact an administrator.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const matchId = getMatchIdFromHeatNumber(heatNumber);
+    if (!matchId) {
+      toast({
+        title: 'Error',
+        description: `Could not find match for Heat ${heatNumber}`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/matches/${matchId}/detailed-scores`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          judgeName,
+          [category]: value,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update score');
+      }
+
+      // Update local state immediately for better UX
+      const key = `${heatNumber}-${judgeName}`;
+      setLocalJudgeScores(prev => ({
+        ...prev,
+        [key]: {
+          ...prev[key],
+          [category]: value,
+        },
+      }));
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments/1'] });
+      
+      toast({
+        title: 'Score Updated',
+        description: `${judgeName}'s ${category} updated to ${value}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
 
   const allHeats = [
     ...WEC25_BRACKET_POSITIONS,
@@ -124,6 +214,20 @@ const JudgeScorecardsResults: React.FC = () => {
           <p className="text-xl text-muted-foreground">
             Complete judge scorecards and detailed scoring breakdown for all heats
           </p>
+          {/* Lock Status Indicator */}
+          <div className="mt-4 flex items-center justify-center gap-2">
+            {scorecardLocked ? (
+              <Badge variant="destructive" className="px-4 py-2">
+                <Lock className="h-4 w-4 mr-2" />
+                Scorecards Locked - Editing Disabled
+              </Badge>
+            ) : (
+              <Badge variant="default" className="px-4 py-2 bg-green-500">
+                <Unlock className="h-4 w-4 mr-2" />
+                Scorecards Unlocked - Click checkboxes to edit
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Streamlined Search and Filters - Inline */}
@@ -352,7 +456,11 @@ const JudgeScorecardsResults: React.FC = () => {
                               category: 'visualLatteArt' | 'taste' | 'tactile' | 'flavour' | 'overall',
                               label: string
                             ) => {
-                              const judgeVote = judge[category];
+                              // Use local state if available, otherwise use original judge data
+                              const key = `${currentHeat.heatNumber}-${judge.judgeName}`;
+                              const localScore = localJudgeScores[key];
+                              const judgeVote = localScore?.[category] || judge[category];
+                              
                               // Only show consensus for Visual Latte Art
                               const isVisualLatteArt = category === 'visualLatteArt';
                               const categoryConsensus = isVisualLatteArt ? visualLatteArtConsensus : null;
@@ -369,8 +477,18 @@ const JudgeScorecardsResults: React.FC = () => {
                                         ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20'
                                         : 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20'
                                       : 'border-primary/30 bg-secondary/20'
-                                  }`}
+                                  } ${!scorecardLocked ? 'hover:bg-secondary/40 cursor-pointer' : ''}`}
                                 >
+                                  {/* Lock/Unlock indicator */}
+                                  {!scorecardLocked && (
+                                    <div className="absolute top-1 left-1 z-10">
+                                      <Badge variant="outline" className="text-xs bg-green-500/10 border-green-500 text-green-700">
+                                        <Unlock className="h-3 w-3 mr-1" />
+                                        Editable
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  
                                   {/* Consensus indicator - positioned absolutely at top right */}
                                   {isVisualLatteArt && judgeVote && inMajority !== null && (
                                     <div className="absolute top-1 right-1 z-10 flex items-center gap-1">
@@ -391,14 +509,29 @@ const JudgeScorecardsResults: React.FC = () => {
                                       </Badge>
                                     </div>
                                   )}
-                                  <label className="flex items-center gap-2 justify-start">
+                                  <label className={`flex items-center gap-2 justify-start ${!scorecardLocked ? 'cursor-pointer' : ''}`}>
                                     <input 
-                                      type="checkbox" 
+                                      type="radio" 
+                                      name={`${currentHeat.heatNumber}-${judge.judgeName}-${category}`}
                                       checked={judgeVote === 'left'} 
-                                      readOnly 
+                                      readOnly={scorecardLocked}
+                                      disabled={scorecardLocked}
+                                      onChange={() => {
+                                        if (!scorecardLocked && judgeVote !== 'left') {
+                                          handleScoreUpdate(currentHeat.heatNumber, judge.judgeName, category, 'left');
+                                        }
+                                      }}
+                                      onClick={(e) => {
+                                        if (!scorecardLocked) {
+                                          e.preventDefault();
+                                          if (judgeVote !== 'left') {
+                                            handleScoreUpdate(currentHeat.heatNumber, judge.judgeName, category, 'left');
+                                          }
+                                        }
+                                      }}
                                       className={`h-4 w-4 accent-[color:oklch(var(--foreground))] ${
                                         isVisualLatteArt && inMajority && judgeVote === 'left' ? 'ring-2 ring-green-500' : ''
-                                      }`}
+                                      } ${!scorecardLocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                                     />
                                     <span className="text-xs text-muted-foreground">Left</span>
                                   </label>
@@ -410,15 +543,30 @@ const JudgeScorecardsResults: React.FC = () => {
                                       </Badge>
                                     )}
                                   </div>
-                                  <label className="flex items-center gap-2 justify-end">
+                                  <label className={`flex items-center gap-2 justify-end ${!scorecardLocked ? 'cursor-pointer' : ''}`}>
                                     <span className="text-xs text-muted-foreground">Right</span>
                                     <input 
-                                      type="checkbox" 
+                                      type="radio" 
+                                      name={`${currentHeat.heatNumber}-${judge.judgeName}-${category}`}
                                       checked={judgeVote === 'right'} 
-                                      readOnly 
+                                      readOnly={scorecardLocked}
+                                      disabled={scorecardLocked}
+                                      onChange={() => {
+                                        if (!scorecardLocked && judgeVote !== 'right') {
+                                          handleScoreUpdate(currentHeat.heatNumber, judge.judgeName, category, 'right');
+                                        }
+                                      }}
+                                      onClick={(e) => {
+                                        if (!scorecardLocked) {
+                                          e.preventDefault();
+                                          if (judgeVote !== 'right') {
+                                            handleScoreUpdate(currentHeat.heatNumber, judge.judgeName, category, 'right');
+                                          }
+                                        }
+                                      }}
                                       className={`h-4 w-4 accent-[color:oklch(var(--foreground))] ${
                                         isVisualLatteArt && inMajority && judgeVote === 'right' ? 'ring-2 ring-green-500' : ''
-                                      }`}
+                                      } ${!scorecardLocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                                     />
                                   </label>
                                 </div>
