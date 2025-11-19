@@ -1,34 +1,163 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Trophy, ArrowLeft } from 'lucide-react';
-import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
+import { Users, Trophy, ArrowLeft, Loader2 } from 'lucide-react';
+import { findTournamentBySlug } from '@/utils/tournamentUtils';
+
+interface Match {
+  id: number;
+  round: number;
+  heatNumber: number;
+  status: string;
+  competitor1Id: number | null;
+  competitor2Id: number | null;
+  winnerId: number | null;
+  competitor1Name: string;
+  competitor2Name: string;
+}
+
+interface JudgeDetailedScore {
+  matchId: number;
+  judgeName: string;
+  leftCupCode: string;
+  rightCupCode: string;
+  sensoryBeverage: string;
+  visualLatteArt: 'left' | 'right';
+  taste: 'left' | 'right';
+  tactile: 'left' | 'right';
+  flavour: 'left' | 'right';
+  overall: 'left' | 'right';
+}
+
+interface TournamentData {
+  tournament: any;
+  matches: Match[];
+  detailedScores: JudgeDetailedScore[];
+}
 
 const JudgeScorecardsDetail: React.FC = () => {
   const { judgeName, tournamentSlug } = useParams<{ judgeName: string; tournamentSlug?: string }>();
   const navigate = useNavigate();
   const tournament = tournamentSlug || 'WEC2025';
   const [currentHeatIndex, setCurrentHeatIndex] = useState(0);
+  const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const decodedJudgeName = judgeName ? decodeURIComponent(judgeName) : '';
 
-  const allHeats = [
-    ...WEC25_BRACKET_POSITIONS,
-    ...WEC25_ROUND2_POSITIONS,
-    ...WEC25_ROUND3_POSITIONS,
-    ...WEC25_ROUND4_POSITIONS,
-    ...WEC25_FINAL_POSITION
-  ];
+  // Fetch tournament data from API
+  useEffect(() => {
+    const fetchTournamentData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Get tournament ID from slug using the same utility as other components
+        const tournamentsResponse = await fetch('/api/tournaments');
+        if (!tournamentsResponse.ok) {
+          throw new Error('Failed to fetch tournaments list');
+        }
+        
+        const tournaments = await tournamentsResponse.json();
+        const wecTournament = findTournamentBySlug(tournaments, tournament);
+        
+        if (!wecTournament) {
+          // Fallback: try to find by name containing 'wec' or 'world espresso'
+          const fallbackTournament = tournaments.find((t: any) => 
+            t.name?.toLowerCase().includes('wec') || 
+            t.name?.toLowerCase().includes('world espresso') ||
+            t.name?.toLowerCase().includes('2025')
+          );
+          
+          if (!fallbackTournament) {
+            console.error('Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
+            throw new Error(`Tournament not found. Looking for: ${tournament}`);
+          }
+          
+          const tournamentId = fallbackTournament.id;
+          const response = await fetch(`/api/tournaments/${tournamentId}`);
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch tournament data');
+          }
+          
+          const data = await response.json();
+          setTournamentData(data);
+          return;
+        }
 
-  // Get all heats where this judge participated
-  const judgeHeats = allHeats.filter(heat => 
-    heat.judges?.some(judge => judge.judgeName === decodedJudgeName)
-  );
+        const tournamentId = wecTournament.id;
+        const response = await fetch(`/api/tournaments/${tournamentId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch tournament data');
+        }
+        
+        const data = await response.json();
+        setTournamentData(data);
+      } catch (err: any) {
+        console.error('Error fetching tournament data:', err);
+        console.error('Tournament slug:', tournament);
+        console.error('Error details:', err);
+        setError(err.message || 'Failed to load tournament data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTournamentData();
+  }, [tournament]);
+
+  // Get all heats where this judge participated, from database
+  const judgeHeats = useMemo(() => {
+    if (!tournamentData?.detailedScores || !tournamentData?.matches) return [];
+
+    // Get unique match IDs where this judge has scores
+    const judgeMatchIds = new Set(
+      tournamentData.detailedScores
+        .filter(score => score.judgeName === decodedJudgeName)
+        .map(score => score.matchId)
+    );
+
+    // Get matches and attach judge scorecard data
+    return tournamentData.matches
+      .filter(match => judgeMatchIds.has(match.id))
+      .map(match => {
+        const judgeScore = tournamentData.detailedScores.find(
+          score => score.matchId === match.id && score.judgeName === decodedJudgeName
+        );
+        
+        return {
+          id: match.id,
+          heatNumber: match.heatNumber,
+          round: match.round,
+          competitor1: match.competitor1Name,
+          competitor2: match.competitor2Name,
+          winner: match.winnerId === match.competitor1Id ? match.competitor1Name : 
+                  match.winnerId === match.competitor2Id ? match.competitor2Name : null,
+          station: 'A', // Default, could be fetched from match if available
+          judgeScorecard: judgeScore ? {
+            judgeName: judgeScore.judgeName,
+            leftCupCode: judgeScore.leftCupCode,
+            rightCupCode: judgeScore.rightCupCode,
+            sensoryBeverage: judgeScore.sensoryBeverage,
+            visualLatteArt: judgeScore.visualLatteArt,
+            taste: judgeScore.taste,
+            tactile: judgeScore.tactile,
+            flavour: judgeScore.flavour,
+            overall: judgeScore.overall,
+          } : null
+        };
+      })
+      .filter(heat => heat.judgeScorecard !== null)
+      .sort((a, b) => a.heatNumber - b.heatNumber);
+  }, [tournamentData, decodedJudgeName]);
 
   const currentHeat = judgeHeats[currentHeatIndex];
-  const currentJudgeScorecard = currentHeat?.judges?.find(j => j.judgeName === decodedJudgeName);
+  const currentJudgeScorecard = currentHeat?.judgeScorecard;
 
   const nextHeat = () => {
     if (currentHeatIndex < judgeHeats.length - 1) {
@@ -42,6 +171,35 @@ const JudgeScorecardsDetail: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen p-6 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Loading judge scorecards...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen p-6 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => navigate(`/results/${tournament}/judges`)}>Back to Judges</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!decodedJudgeName || judgeHeats.length === 0) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
@@ -50,7 +208,7 @@ const JudgeScorecardsDetail: React.FC = () => {
             <CardTitle>Judge Not Found</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">No scorecards found for this judge.</p>
+            <p className="text-muted-foreground mb-4">No scorecards found for {decodedJudgeName}.</p>
             <Button onClick={() => navigate(`/results/${tournament}/judges`)}>Back to Judges</Button>
           </CardContent>
         </Card>
@@ -152,9 +310,9 @@ const JudgeScorecardsDetail: React.FC = () => {
                   <div className="font-bold text-xl mb-3">
                     {currentHeat.competitor1}
                   </div>
-                  {currentHeat.leftCupCode && (
+                  {currentJudgeScorecard?.leftCupCode && (
                     <div className="text-sm text-gray-500 mb-2 font-mono bg-gray-100 px-2 py-1 rounded">
-                      Cup: {currentHeat.leftCupCode}
+                      Cup: {currentJudgeScorecard.leftCupCode}
                     </div>
                   )}
                 </div>
@@ -166,11 +324,11 @@ const JudgeScorecardsDetail: React.FC = () => {
                 }`}>
                   <div className="font-medium text-sm text-gray-600 mb-2">Right Competitor</div>
                   <div className="font-bold text-xl mb-3">
-                    {currentHeat.competitor2}
+                    {currentHeat.competitor2 || '—'}
                   </div>
-                  {currentHeat.rightCupCode && (
+                  {currentJudgeScorecard?.rightCupCode && (
                     <div className="text-sm text-gray-500 mb-2 font-mono bg-gray-100 px-2 py-1 rounded">
-                      Cup: {currentHeat.rightCupCode}
+                      Cup: {currentJudgeScorecard.rightCupCode}
                     </div>
                   )}
                 </div>
@@ -198,13 +356,13 @@ const JudgeScorecardsDetail: React.FC = () => {
                       <div className="text-center">
                         <div className="text-xs text-slate-600 font-medium">Left Cup</div>
                         <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
-                          {currentJudgeScorecard.leftCupCode}
+                          {currentJudgeScorecard?.leftCupCode || '—'}
                         </div>
                       </div>
                       <div className="text-center">
                         <div className="text-xs text-slate-600 font-medium">Right Cup</div>
                         <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
-                          {currentJudgeScorecard.rightCupCode}
+                          {currentJudgeScorecard?.rightCupCode || '—'}
                         </div>
                       </div>
                     </div>
@@ -212,74 +370,74 @@ const JudgeScorecardsDetail: React.FC = () => {
                     {/* Scoring Categories */}
                     <div className="space-y-3">
                       {/* Visual Latte Art */}
-                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-amber-500 bg-card text-foreground">
+                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
-                          <input type="checkbox" checked={currentJudgeScorecard.visualLatteArt === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.visualLatteArt === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
                         </label>
-                        <div className="text-center font-semibold">Visual Latte Art</div>
+                        <div className="text-center font-semibold text-primary">Visual Latte Art</div>
                         <label className="flex items-center gap-2 justify-end">
                           <span className="text-xs text-muted-foreground">Right</span>
-                          <input type="checkbox" checked={currentJudgeScorecard.visualLatteArt === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.visualLatteArt === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                         </label>
                       </div>
 
                       {/* Sensory */}
                       <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
                         <div></div>
-                        <div className="text-center font-semibold text-primary">{`Sensory ${currentJudgeScorecard.sensoryBeverage}`}</div>
+                        <div className="text-center font-semibold text-primary">{`Sensory ${currentJudgeScorecard?.sensoryBeverage || '—'}`}</div>
                         <div></div>
                       </div>
 
                       {/* Taste */}
-                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-amber-500 bg-card text-foreground">
+                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
-                          <input type="checkbox" checked={currentJudgeScorecard.taste === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.taste === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
                         </label>
-                        <div className="text-center font-semibold">Taste</div>
+                        <div className="text-center font-semibold text-primary">Taste</div>
                         <label className="flex items-center gap-2 justify-end">
                           <span className="text-xs text-muted-foreground">Right</span>
-                          <input type="checkbox" checked={currentJudgeScorecard.taste === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.taste === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                         </label>
                       </div>
 
                       {/* Tactile */}
                       <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
-                          <input type="checkbox" checked={currentJudgeScorecard.tactile === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.tactile === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
                         </label>
                         <div className="text-center font-semibold text-primary">Tactile</div>
                         <label className="flex items-center gap-2 justify-end">
                           <span className="text-xs text-muted-foreground">Right</span>
-                          <input type="checkbox" checked={currentJudgeScorecard.tactile === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.tactile === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                         </label>
                       </div>
 
                       {/* Flavour */}
-                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-amber-500 bg-card text-foreground">
+                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
-                          <input type="checkbox" checked={currentJudgeScorecard.flavour === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.flavour === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
                         </label>
-                        <div className="text-center font-semibold">Flavour</div>
+                        <div className="text-center font-semibold text-primary">Flavour</div>
                         <label className="flex items-center gap-2 justify-end">
                           <span className="text-xs text-muted-foreground">Right</span>
-                          <input type="checkbox" checked={currentJudgeScorecard.flavour === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.flavour === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                         </label>
                       </div>
 
                       {/* Overall */}
                       <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
-                          <input type="checkbox" checked={currentJudgeScorecard.overall === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.overall === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
                         </label>
                         <div className="text-center font-semibold text-primary">Overall</div>
                         <label className="flex items-center gap-2 justify-end">
                           <span className="text-xs text-muted-foreground">Right</span>
-                          <input type="checkbox" checked={currentJudgeScorecard.overall === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
+                          <input type="checkbox" checked={currentJudgeScorecard?.overall === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                         </label>
                       </div>
                     </div>

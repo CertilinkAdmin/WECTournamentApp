@@ -56,14 +56,27 @@ async function createHeats15And16() {
     `;
 
     if (existing15.length > 0) {
-      console.log(`✅ Heat 15 already exists (ID: ${existing15[0].id}), skipping...\n`);
+      // Update existing heat to ensure winner is set and no scores exist
+      await sql`
+        UPDATE matches 
+        SET competitor1_id = ${billId},
+            competitor2_id = NULL,
+            winner_id = ${billId},
+            status = 'DONE',
+            updated_at = NOW()
+        WHERE id = ${existing15[0].id}
+      `;
+      // Ensure no scores exist for BYE matches
+      await sql`DELETE FROM judge_detailed_scores WHERE match_id = ${existing15[0].id}`;
+      await sql`DELETE FROM heat_scores WHERE match_id = ${existing15[0].id}`;
+      console.log(`✅ Heat 15 updated: Bill vs BYE (Match ID: ${existing15[0].id}) - Winner: Bill, No scores\n`);
     } else {
       const [match15] = await sql`
-        INSERT INTO matches (tournament_id, round, heat_number, station_id, status, competitor1_id, competitor2_id, created_at, updated_at)
-        VALUES (${tournamentId}, 1, 15, ${stationId}, 'PENDING', ${billId}, NULL, NOW(), NOW())
+        INSERT INTO matches (tournament_id, round, heat_number, station_id, status, competitor1_id, competitor2_id, winner_id, start_time, end_time, created_at, updated_at)
+        VALUES (${tournamentId}, 1, 15, ${stationId}, 'DONE', ${billId}, NULL, ${billId}, NOW(), NOW(), NOW(), NOW())
         RETURNING id
       `;
-      console.log(`✅ Created Heat 15: Bill vs BYE (Match ID: ${match15.id})\n`);
+      console.log(`✅ Created Heat 15: Bill vs BYE (Match ID: ${match15.id}) - Winner: Bill, No scores\n`);
     }
 
     // Create Heat 16 (Engi vs BYE)
@@ -76,14 +89,27 @@ async function createHeats15And16() {
     `;
 
     if (existing16.length > 0) {
-      console.log(`✅ Heat 16 already exists (ID: ${existing16[0].id}), skipping...\n`);
+      // Update existing heat to ensure winner is set and no scores exist
+      await sql`
+        UPDATE matches 
+        SET competitor1_id = ${engiId},
+            competitor2_id = NULL,
+            winner_id = ${engiId},
+            status = 'DONE',
+            updated_at = NOW()
+        WHERE id = ${existing16[0].id}
+      `;
+      // Ensure no scores exist for BYE matches
+      await sql`DELETE FROM judge_detailed_scores WHERE match_id = ${existing16[0].id}`;
+      await sql`DELETE FROM heat_scores WHERE match_id = ${existing16[0].id}`;
+      console.log(`✅ Heat 16 updated: Engi vs BYE (Match ID: ${existing16[0].id}) - Winner: Engi, No scores\n`);
     } else {
       const [match16] = await sql`
-        INSERT INTO matches (tournament_id, round, heat_number, station_id, status, competitor1_id, competitor2_id, created_at, updated_at)
-        VALUES (${tournamentId}, 1, 16, ${stationId}, 'PENDING', ${engiId}, NULL, NOW(), NOW())
+        INSERT INTO matches (tournament_id, round, heat_number, station_id, status, competitor1_id, competitor2_id, winner_id, start_time, end_time, created_at, updated_at)
+        VALUES (${tournamentId}, 1, 16, ${stationId}, 'DONE', ${engiId}, NULL, ${engiId}, NOW(), NOW(), NOW(), NOW())
         RETURNING id
       `;
-      console.log(`✅ Created Heat 16: Engi vs BYE (Match ID: ${match16.id})\n`);
+      console.log(`✅ Created Heat 16: Engi vs BYE (Match ID: ${match16.id}) - Winner: Engi, No scores\n`);
     }
 
     console.log(`✅ Heats 15 and 16 completed successfully!`);

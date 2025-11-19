@@ -97,12 +97,12 @@ export default function JudgeConsensus({ judges }: JudgeConsensusProps) {
         {consensus.map((cat) => (
           <div key={cat.category} className="space-y-2">
             {/* Category Header with Vote Counts */}
-            <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg border border-primary/20">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-primary">{cat.category}</span>
+            <div className="flex items-center justify-between p-2 bg-secondary/30 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-primary text-sm">{cat.category}</span>
                 {cat.majority !== 'tie' && (
                   <Badge 
-                    variant={cat.majority === 'left' ? 'default' : 'secondary'}
+                    variant="outline"
                     className="text-xs"
                   >
                     Majority: {cat.majority === 'left' ? 'Left' : 'Right'} ({cat.majorityCount}/{cat.totalJudges})
@@ -114,47 +114,33 @@ export default function JudgeConsensus({ judges }: JudgeConsensusProps) {
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span>Left: {cat.leftVotes}</span>
-                <span>Right: {cat.rightVotes}</span>
-              </div>
             </div>
 
-            {/* Judge Votes */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {/* Judge Votes - Compact Layout */}
+            <div className="flex flex-wrap gap-2">
               {cat.judgeVotes.map((jv) => (
                 <div
                   key={`${cat.category}-${jv.judgeName}`}
-                  className={`flex items-center justify-between p-2 rounded-md border transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-sm transition-all ${
                     jv.isInMajority
                       ? 'bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-700'
                       : 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-700'
                   }`}
                 >
-                  <span className="text-sm font-medium truncate">{jv.judgeName}</span>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {jv.vote ? (
-                      <>
-                        {jv.isInMajority ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                        )}
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${
-                            jv.isInMajority 
-                              ? 'border-green-500 text-green-700 dark:text-green-400' 
-                              : 'border-red-500 text-red-700 dark:text-red-400'
-                          }`}
-                        >
-                          {jv.vote === 'left' ? 'L' : 'R'}
-                        </Badge>
-                      </>
+                  <span className="font-medium text-xs">{jv.judgeName}</span>
+                  {jv.vote ? (
+                    jv.isInMajority ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </div>
+                      <span className={`text-xs font-semibold ${
+                        jv.vote === 'left' ? 'text-red-600 dark:text-red-400' : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {jv.vote === 'left' ? 'L' : 'R'}
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </div>
               ))}
             </div>

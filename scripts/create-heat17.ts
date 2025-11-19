@@ -61,7 +61,7 @@ async function createHeat17() {
     const existing = await sql`
       SELECT id FROM matches 
       WHERE tournament_id = ${tournamentId} 
-      AND round = 1 
+      AND round = 2 
       AND heat_number = 17
       LIMIT 1
     `;
@@ -87,7 +87,7 @@ async function createHeat17() {
       // Create match
       const [match] = await sql`
         INSERT INTO matches (tournament_id, round, heat_number, station_id, status, competitor1_id, competitor2_id, winner_id, start_time, end_time, created_at, updated_at)
-        VALUES (${tournamentId}, 1, 17, ${stationId}, 'DONE', ${erlandId}, ${pennyId}, ${pennyId}, NOW(), NOW(), NOW(), NOW())
+        VALUES (${tournamentId}, 2, 17, ${stationId}, 'DONE', ${erlandId}, ${pennyId}, ${pennyId}, NOW(), NOW(), NOW(), NOW())
         RETURNING id
       `;
       matchId = match.id;
@@ -228,10 +228,31 @@ async function createHeat17() {
     console.log(`✅ Detailed judge scores created\n`);
 
     // Calculate scores based on detailed judge scores
-    // Michalis (Cappuccino): Erland gets Visual(3) + Taste(1) + Flavour(1) + Overall(5) = 10pts, Penny gets Tactile(1) = 1pt
-    // Jasper (Espresso): Erland gets Taste(1) + Tactile(1) + Flavour(1) + Overall(5) = 8pts, Penny gets Visual(3) = 3pts
-    // Tess (Espresso): Erland gets 0pts, Penny gets Visual(3) + Taste(1) + Tactile(1) + Flavour(1) + Overall(5) = 11pts
-    // Total calculated: Erland = 10 + 8 + 0 = 18pts, Penny = 1 + 3 + 11 = 15pts
+    // Michalis (Cappuccino, Left=S5/Penny, Right=W6/Erland):
+    //   - Visual: right (W6/Erland) = 3pts
+    //   - Taste: right (W6/Erland) = 1pt
+    //   - Tactile: left (S5/Penny) = 1pt
+    //   - Flavour: right (W6/Erland) = 1pt
+    //   - Overall: right (W6/Erland) = 5pts
+    //   Erland: 3+1+1+5 = 10pts, Penny: 1pt
+    
+    // Jasper (Espresso, Left=W6/Erland, Right=S5/Penny):
+    //   - Visual: right (S5/Penny) = 3pts
+    //   - Taste: left (W6/Erland) = 1pt
+    //   - Tactile: left (W6/Erland) = 1pt
+    //   - Flavour: left (W6/Erland) = 1pt
+    //   - Overall: left (W6/Erland) = 5pts
+    //   Erland: 1+1+1+5 = 8pts, Penny: 3pts
+    
+    // Tess (Espresso, Left=W6/Erland, Right=S5/Penny):
+    //   - Visual: right (S5/Penny) = 3pts
+    //   - Taste: right (S5/Penny) = 1pt
+    //   - Tactile: right (S5/Penny) = 1pt
+    //   - Flavour: right (S5/Penny) = 1pt
+    //   - Overall: right (S5/Penny) = 5pts
+    //   Erland: 0pts, Penny: 3+1+1+1+5 = 11pts
+    
+    // Total: Erland = 10 + 8 + 0 = 18pts, Penny = 1 + 3 + 11 = 15pts
     // User stated totals: Erland = 9pts, Penny = 24pts
     // There is a discrepancy - I'll use the calculated values from detailed scores
     
@@ -270,7 +291,7 @@ async function createHeat17() {
     `;
     
     console.log(`✅ Aggregated heat scores created\n`);
-    console.log(`📊 Score Summary (from detailed scores):`);
+    console.log(`📊 Score Summary:`);
     console.log(`   Penny (S5): Michalis(1) + Jasper(3) + Tess(11) = 15 points`);
     console.log(`   Erland (W6): Michalis(10) + Jasper(8) + Tess(0) = 18 points`);
     console.log(`   Winner: Penny\n`);

@@ -120,7 +120,7 @@ const WEC_2025_DATA = {
     { heatNumber: 15, round: 1, competitor1: "Bill", competitor2: "BYE", winner: "Bill", points1: 33, points2: 0 },
     { heatNumber: 16, round: 1, competitor1: "Engi", competitor2: "BYE", winner: "Engi", points1: 33, points2: 0 },
     
-    // Round 2 - Round of 16 (Heats 17-23)
+    // Round 2 - Round of 16 (Heats 17-24)
     { 
       heatNumber: 17, 
       round: 2, 
@@ -163,7 +163,7 @@ const WEC_2025_DATA = {
         { judge: "Junior", competitor1: { visual: 2, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 1, taste: 0, tactile: 0, flavour: 0, overall: 0 } }
       ]
     },
-    { heatNumber: 20, round: 2, competitor1: "Daniele", competitor2: "BYE", winner: "Daniele", points1: 33, points2: 0 },
+    { heatNumber: 20, round: 2, competitor1: "Daniele", competitor2: "BYE", winner: "Daniele", points1: null, points2: null },
     { 
       heatNumber: 21, 
       round: 2, 

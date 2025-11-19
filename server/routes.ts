@@ -5,11 +5,11 @@ import { Server as SocketIOServer } from "socket.io";
 import { BracketGenerator } from "./bracketGenerator";
 import tournamentRoutes from "./routes/tournament";
 import { registerBracketRoutes } from "./routes/bracket";
-import { 
-  insertTournamentSchema, insertTournamentParticipantSchema,
+import {
+  insertTournamentSchema, insertTournamentRegistrationSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
-  insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
-  tournamentParticipants
+  insertPersonSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
+  tournamentRegistrations, persons, users
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -38,39 +38,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Client disconnected:", socket.id);
     });
 
-    socket.on("join:tournament", (tournamentId: number) => {
+    socket.on("join:tournament", (tournamentId: string) => {
       socket.join(`tournament:${tournamentId}`);
       console.log(`Socket ${socket.id} joined tournament ${tournamentId}`);
     });
   });
 
-  // ===== USER ROUTES =====
-  app.post("/api/users", async (req, res) => {
+  // ===== PERSON ROUTES (formerly User) =====
+  app.post("/api/persons", async (req, res) => {
     try {
-      const userData = insertUserSchema.parse(req.body);
-      const user = await storage.createUser(userData);
-      res.json(user);
+      const personData = insertPersonSchema.parse(req.body);
+      const person = await storage.createPerson(personData);
+      res.json(person);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });
 
-  app.get("/api/users", async (req, res) => {
-    const users = await storage.getAllUsers();
-    res.json(users);
+  app.get("/api/persons", async (req, res) => {
+    const persons = await storage.getAllPersons();
+    res.json(persons);
   });
 
-  app.patch("/api/users", async (req, res) => {
+  app.patch("/api/persons", async (req, res) => {
     try {
       const { id, ...updateData } = req.body;
       if (!id) {
-        return res.status(400).json({ error: 'User id is required' });
+        return res.status(400).json({ error: 'Person id is required' });
       }
-      const user = await storage.updateUser(id, updateData);
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+      const person = await storage.updatePerson(id, updateData);
+      if (!person) {
+        return res.status(404).json({ error: 'Person not found' });
       }
-      res.json(user);
+      res.json(person);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
@@ -85,10 +85,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tournamentData = insertTournamentSchema.parse(req.body);
       const tournament = await storage.createTournament(tournamentData);
       
-      // Create default stations
-      await storage.createStation({ name: "A", status: "AVAILABLE", nextAvailableAt: new Date() });
-      await storage.createStation({ name: "B", status: "AVAILABLE", nextAvailableAt: new Date() });
-      await storage.createStation({ name: "C", status: "AVAILABLE", nextAvailableAt: new Date() });
+      // Create default stations for this tournament
+      await storage.createStation({ tournamentId: tournament.id, name: "A", status: "AVAILABLE", nextAvailableAt: new Date() });
+      await storage.createStation({ tournamentId: tournament.id, name: "B", status: "AVAILABLE", nextAvailableAt: new Date() });
+      await storage.createStation({ tournamentId: tournament.id, name: "C", status: "AVAILABLE", nextAvailableAt: new Date() });
       
       io.emit("tournament:created", tournament);
       res.json(tournament);
@@ -104,7 +104,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tournaments/:id", async (req, res) => {
     try {
-      const tournamentId = parseInt(req.params.id);
+      const tournamentId = parseInt(req.params.id); // Parse as integer
+      if (isNaN(tournamentId)) {
+        return res.status(400).json({ error: "Invalid tournament ID" });
+      }
       console.log('Fetching tournament with ID:', tournamentId);
       
       const tournament = await storage.getTournament(tournamentId);
@@ -112,35 +115,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Tournament not found" });
       }
       
-      // Get participants with user info
-      const participants = await storage.getTournamentParticipants(tournamentId);
-      const allUsers = await storage.getAllUsers();
-      const participantsWithInfo = participants.map((p) => {
-        const user = allUsers.find(u => u.id === p.userId);
+      // Get registrations with person info
+      const registrations = await storage.getTournamentRegistrations(tournamentId);
+      const allPersons = await storage.getAllPersons();
+      const registrationsWithInfo = registrations.map((reg) => {
+        const person = allPersons.find(p => p.id === reg.personId);
         return {
-          id: p.id,
-          seed: p.seed,
-          finalRank: p.finalRank,
-          userId: p.userId,
-          name: user?.name || '',
-          email: user?.email || ''
+          id: reg.id,
+          seed: reg.seed,
+          finalRank: reg.finalRank,
+          personId: reg.personId,
+          role: reg.role,
+          verificationStatus: reg.verificationStatus,
+          name: person?.name || '',
+          email: person?.email || ''
         };
       });
       
-      // Get matches with competitor names
+      // Get all users for name lookups (current DB uses users table, not persons)
+      const allUsers = await db.select().from(users);
+      
+      // Get matches with competitor names (current DB uses competitor1Id/competitor2Id, not registration IDs)
       const matches = await storage.getTournamentMatches(tournamentId);
       const matchesWithNames = matches.map((m) => {
         let competitor1Name = '';
         let competitor2Name = '';
         
         if (m.competitor1Id) {
-          const comp1 = allUsers.find(u => u.id === m.competitor1Id);
-          competitor1Name = comp1?.name || '';
+          const user1 = allUsers.find(u => u.id === m.competitor1Id);
+          competitor1Name = user1?.name || '';
         }
         
         if (m.competitor2Id) {
-          const comp2 = allUsers.find(u => u.id === m.competitor2Id);
-          competitor2Name = comp2?.name || '';
+          const user2 = allUsers.find(u => u.id === m.competitor2Id);
+          competitor2Name = user2?.name || '';
         }
         
         return {
@@ -150,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
       
-      // Get scores with judge names for all matches
+      // Get scores with judge names (current DB uses judgeId/competitorId, not registration IDs)
       const scoresPromises = matches.map(m => storage.getMatchScores(m.id));
       const scoresArrays = await Promise.all(scoresPromises);
       const allMatchScores = scoresArrays.flat();
@@ -169,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         tournament,
-        participants: participantsWithInfo,
+        registrations: registrationsWithInfo,
         matches: matchesWithNames,
         scores: scoresWithJudgeNames,
         detailedScores: detailedScoresForTournament
@@ -182,7 +190,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/tournaments/:id", async (req, res) => {
     try {
-      const tournament = await storage.updateTournament(parseInt(req.params.id), req.body);
+      const tournamentId = parseInt(req.params.id);
+      if (isNaN(tournamentId)) {
+        return res.status(400).json({ error: "Invalid tournament ID" });
+      }
+      const tournament = await storage.updateTournament(tournamentId, req.body);
       if (!tournament) {
         return res.status(404).json({ error: "Tournament not found" });
       }
@@ -193,16 +205,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== PARTICIPANT ROUTES =====
-  app.post("/api/tournaments/:id/participants", async (req, res) => {
+  // ===== REGISTRATION ROUTES (formerly Participant) =====
+  app.post("/api/tournaments/:id/registrations", async (req, res) => {
     try {
-      const participantData = insertTournamentParticipantSchema.parse({
+      const tournamentId = parseInt(req.params.id);
+      if (isNaN(tournamentId)) {
+        return res.status(400).json({ error: "Invalid tournament ID" });
+      }
+      const registrationData = insertTournamentRegistrationSchema.parse({
         ...req.body,
-        tournamentId: parseInt(req.params.id)
+        tournamentId
       });
-      const participant = await storage.addParticipant(participantData);
-      io.to(`tournament:${participant.tournamentId}`).emit("participant:added", participant);
-      res.json(participant);
+      const registration = await storage.addRegistration(registrationData);
+      io.to(`tournament:${registration.tournamentId}`).emit("registration:added", registration);
+      res.json(registration);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
@@ -1094,6 +1110,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       io.to(`tournament:${tournamentId}`).emit("bracket:seeded", matches);
       
       res.json({ success: true, matches });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ===== ADMIN ROUTES =====
+  
+  // System monitoring stats
+  app.get("/api/admin/system-stats", async (req, res) => {
+    try {
+      // Get basic system stats
+      const uptime = process.uptime();
+      const memoryUsage = process.memoryUsage();
+      const memoryUsagePercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
+      
+      // Get database stats
+      const dbStats = await sql`
+        SELECT 
+          pg_database_size(current_database()) as db_size,
+          (SELECT count(*) FROM persons) as user_count,
+          (SELECT count(*) FROM tournaments) as tournament_count,
+          (SELECT count(*) FROM matches) as match_count
+      `;
+      
+      res.json({
+        uptime: Math.floor(uptime),
+        memoryUsage: memoryUsagePercent,
+        cpuUsage: 0, // Would need system monitoring library for real CPU usage
+        activeConnections: io.sockets.sockets.size,
+        databaseSize: Number(dbStats[0].db_size) || 0,
+        userCount: Number(dbStats[0].user_count) || 0,
+        tournamentCount: Number(dbStats[0].tournament_count) || 0,
+        matchCount: Number(dbStats[0].match_count) || 0,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Tournament pause/resume
+  app.post("/api/admin/tournaments/:id/pause", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const { paused } = req.body;
+      
+      // Update tournament with pause status (we'll add an isPaused field or use a custom status)
+      // For now, we can store this in a separate table or add a field
+      // This is a placeholder - you may want to add an isPaused column to tournaments table
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+      
+      // Emit pause/resume event
+      io.to(`tournament:${tournamentId}`).emit("tournament:paused", { tournamentId, paused });
+      
+      res.json({ success: true, paused });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Carousel image management
+  app.get("/api/admin/carousel", async (req, res) => {
+    try {
+      // For now, return from config file
+      // Later, this can be stored in database
+      const { wecPhotoAlbum } = await import("../client/src/config/photoAlbum");
+      res.json(wecPhotoAlbum);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/carousel", async (req, res) => {
+    try {
+      const { imageUrl } = req.body;
+      if (!imageUrl) {
+        return res.status(400).json({ error: "Image URL is required" });
+      }
+      
+      // For now, this is a placeholder
+      // You would need to store carousel images in database or config file
+      // TODO: Implement carousel image storage
+      
+      res.json({ success: true, imageUrl });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/admin/carousel", async (req, res) => {
+    try {
+      const { imageUrl } = req.body;
+      if (!imageUrl) {
+        return res.status(400).json({ error: "Image URL is required" });
+      }
+      
+      // For now, this is a placeholder
+      // You would need to remove from database or config file
+      // TODO: Implement carousel image removal
+      
+      res.json({ success: true, imageUrl });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

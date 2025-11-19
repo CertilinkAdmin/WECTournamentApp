@@ -62,24 +62,24 @@ function SortableHeat({ heat, isSmall = false, stationColors }: SortableHeatProp
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <Card
-        className={`hover-elevate cursor-grab active:cursor-grabbing ${isSmall ? "p-2" : "p-2.5"}`}
+        className={`hover-elevate cursor-grab active:cursor-grabbing ${isSmall ? "p-2" : "p-3"}`}
         data-testid={`bracket-heat-${heat.heatNumber}`}
       >
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5">
-            <span className={`${isSmall ? "text-sm" : "text-base"} font-heading font-bold`}>
+          <div className="flex items-center gap-2">
+            <span className={`${isSmall ? "text-lg" : "text-xl"} font-heading font-bold`}>
               {heat.heatNumber}
             </span>
-            <Badge className={`${stationColors[heat.station]} text-white text-[10px] px-1 py-0.5`}>
+            <Badge className={`${stationColors[heat.station]} text-white text-xs`}>
               {heat.station}
             </Badge>
           </div>
-          <div className="space-y-0.5">
-            <div className={`text-xs truncate ${heat.winner === heat.competitor1 ? "font-bold" : ""}`}>
+          <div className="space-y-1">
+            <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor1 ? "font-bold" : ""}`}>
               {heat.competitor1 || "—"}
             </div>
-            <div className="text-[10px] text-muted-foreground text-center">vs</div>
-            <div className={`text-xs truncate ${heat.winner === heat.competitor2 ? "font-bold" : ""}`}>
+            <div className={`${isSmall ? "text-xs" : "text-sm"} text-muted-foreground`}>vs</div>
+            <div className={`${isSmall ? "text-xs" : "text-sm"} ${heat.winner === heat.competitor2 ? "font-bold" : ""}`}>
               {heat.competitor2 || "—"}
             </div>
           </div>
@@ -268,48 +268,48 @@ export default function TournamentBracket() {
       }`}
       data-testid={`bracket-heat-${heat.heatNumber}`}
     >
-      <div className="p-3 h-full flex flex-col justify-center">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <Trophy className="h-4 w-4 text-primary" />
-            <span className="text-sm font-bold">Heat {heat.heatNumber}</span>
+      <div className="p-4 h-full flex flex-col justify-center">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            <span className="text-lg font-bold">Heat {heat.heatNumber}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Badge className={`${stationColors[heat.station]} text-white text-xs font-medium px-1.5 py-0.5`}>
-              {heat.station}
+          <div className="flex items-center gap-2">
+            <Badge className={`${stationColors[heat.station]} text-white text-sm font-medium`}>
+              Station {heat.station}
             </Badge>
             {heat.status && (
-              <Badge variant={heat.status === 'RUNNING' ? 'default' : heat.status === 'DONE' ? 'secondary' : 'outline'} className="text-[10px] px-1 py-0.5">
+              <Badge variant={heat.status === 'RUNNING' ? 'default' : heat.status === 'DONE' ? 'secondary' : 'outline'} className="text-xs">
                 {heat.status}
               </Badge>
             )}
           </div>
         </div>
         
-        <div className="space-y-1.5">
-          <div className={`p-1.5 rounded-md border ${
+        <div className="space-y-2">
+          <div className={`p-2 rounded-md border ${
             heat.competitor1Name === 'BYE' || heat.competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-white'
           } ${heat.winner === heat.competitor1 ? 'ring-2 ring-green-400' : ''}`}>
-            <div className="font-medium text-xs truncate">
+            <div className="font-medium text-sm">
               {heat.competitor1Name || heat.competitor1 || "—"}
             </div>
           </div>
           
-          <div className="text-center text-muted-foreground font-bold text-xs">VS</div>
+          <div className="text-center text-muted-foreground font-bold">VS</div>
           
-          <div className={`p-1.5 rounded-md border ${
+          <div className={`p-2 rounded-md border ${
             heat.competitor2Name === 'BYE' || heat.competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-white'
           } ${heat.winner === heat.competitor2 ? 'ring-2 ring-green-400' : ''}`}>
-            <div className="font-medium text-xs truncate">
+            <div className="font-medium text-sm">
               {heat.competitor2Name || heat.competitor2 || "—"}
             </div>
           </div>
         </div>
         
         {heat.winnerName && (
-          <div className="mt-2 text-center">
-            <Badge className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5">
-              🏆 {heat.winnerName}
+          <div className="mt-3 text-center">
+            <Badge className="bg-green-500 text-white text-xs font-bold">
+              Winner: {heat.winnerName}
             </Badge>
           </div>
         )}

@@ -61,7 +61,7 @@ async function createHeat24() {
     const existing = await sql`
       SELECT id FROM matches 
       WHERE tournament_id = ${tournamentId} 
-      AND round = 1 
+      AND round = 2 
       AND heat_number = 24
       LIMIT 1
     `;
@@ -87,7 +87,7 @@ async function createHeat24() {
       // Create match
       const [match] = await sql`
         INSERT INTO matches (tournament_id, round, heat_number, station_id, status, competitor1_id, competitor2_id, winner_id, start_time, end_time, created_at, updated_at)
-        VALUES (${tournamentId}, 1, 24, ${stationId}, 'DONE', ${engiId}, ${billId}, ${engiId}, NOW(), NOW(), NOW(), NOW())
+        VALUES (${tournamentId}, 2, 24, ${stationId}, 'DONE', ${engiId}, ${billId}, ${engiId}, NOW(), NOW(), NOW(), NOW())
         RETURNING id
       `;
       matchId = match.id;
@@ -182,11 +182,11 @@ async function createHeat24() {
       leftCupCode: 'E3', // Engi
       rightCupCode: 'M1', // Bill
       sensoryBeverage: 'Espresso',
-      visualLatteArt: 'right', // M1 (Bill) wins - wait, this says right cup, which is M1/Bill
-      taste: 'right', // M1 (Bill) wins
-      tactile: 'right', // M1 (Bill) wins
-      flavour: 'right', // M1 (Bill) wins
-      overall: 'right' // M1 (Bill) wins
+      visualLatteArt: 'right', // Right cup = M1 (Bill) wins
+      taste: 'right', // Right cup = M1 (Bill) wins
+      tactile: 'right', // Right cup = M1 (Bill) wins
+      flavour: 'right', // Right cup = M1 (Bill) wins
+      overall: 'right' // Right cup = M1 (Bill) wins
     };
 
     // Wait, let me re-check Jasper's scores. The user says:

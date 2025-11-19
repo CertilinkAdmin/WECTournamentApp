@@ -7,9 +7,9 @@ if (!connectionString) {
 
 const sql = postgres(connectionString);
 
-async function createHeat28() {
+async function createHeat27() {
   try {
-    console.log('🏆 Creating Heat 28: Jae vs Engi...\n');
+    console.log('🏆 Creating Heat 27: Christos vs Stevo...\n');
 
     const tournaments = await sql`
       SELECT id FROM tournaments 
@@ -23,29 +23,29 @@ async function createHeat28() {
     const tournamentId = tournaments[0].id;
     console.log(`✅ Tournament ID: ${tournamentId}\n`);
 
-    const jae = await sql`SELECT id FROM users WHERE LOWER(name) = 'jae' LIMIT 1`;
-    const engi = await sql`SELECT id FROM users WHERE LOWER(name) = 'engi' LIMIT 1`;
+    const christos = await sql`SELECT id FROM users WHERE LOWER(name) = 'christos' LIMIT 1`;
+    const stevo = await sql`SELECT id FROM users WHERE LOWER(name) = 'stevo' LIMIT 1`;
     
-    if (jae.length === 0 || engi.length === 0) {
+    if (christos.length === 0 || stevo.length === 0) {
       throw new Error('Competitors not found');
     }
     
-    const jaeId = jae[0].id;
-    const engiId = engi[0].id;
-    console.log(`✅ Jae ID: ${jaeId}, Engi ID: ${engiId}\n`);
+    const christosId = christos[0].id;
+    const stevoId = stevo[0].id;
+    console.log(`✅ Christos ID: ${christosId}, Stevo ID: ${stevoId}\n`);
 
-    const michalis = await sql`SELECT id FROM users WHERE LOWER(name) = 'michalis' LIMIT 1`;
-    const tess = await sql`SELECT id FROM users WHERE LOWER(name) = 'tess' LIMIT 1`;
+    const shinsaku = await sql`SELECT id FROM users WHERE LOWER(name) = 'shinsaku' LIMIT 1`;
+    const korn = await sql`SELECT id FROM users WHERE LOWER(name) = 'korn' LIMIT 1`;
     const junior = await sql`SELECT id FROM users WHERE LOWER(name) = 'junior' LIMIT 1`;
     
-    if (michalis.length === 0 || tess.length === 0 || junior.length === 0) {
+    if (shinsaku.length === 0 || korn.length === 0 || junior.length === 0) {
       throw new Error('Judges not found');
     }
     
-    const michalisId = michalis[0].id;
-    const tessId = tess[0].id;
+    const shinsakuId = shinsaku[0].id;
+    const kornId = korn[0].id;
     const juniorId = junior[0].id;
-    console.log(`✅ Judges: Michalis (${michalisId}), Tess (${tessId}), Junior (${juniorId})\n`);
+    console.log(`✅ Judges: Shinsaku (${shinsakuId}), Korn (${kornId}), Junior (${juniorId})\n`);
 
     const stations = await sql`SELECT id FROM stations LIMIT 1`;
     if (stations.length === 0) {
@@ -57,20 +57,20 @@ async function createHeat28() {
       SELECT id FROM matches 
       WHERE tournament_id = ${tournamentId} 
       AND round = 3 
-      AND heat_number = 28
+      AND heat_number = 27
       LIMIT 1
     `;
 
     let matchId: number;
     if (existing.length > 0) {
       matchId = existing[0].id;
-      console.log(`✅ Heat 28 already exists (ID: ${matchId}), updating...\n`);
+      console.log(`✅ Heat 27 already exists (ID: ${matchId}), updating...\n`);
       
       await sql`
         UPDATE matches 
-        SET competitor1_id = ${jaeId},
-            competitor2_id = ${engiId},
-            winner_id = ${jaeId},
+        SET competitor1_id = ${christosId},
+            competitor2_id = ${stevoId},
+            winner_id = ${christosId},
             status = 'DONE',
             start_time = NOW(),
             end_time = NOW(),
@@ -80,11 +80,11 @@ async function createHeat28() {
     } else {
       const [match] = await sql`
         INSERT INTO matches (tournament_id, round, heat_number, station_id, status, competitor1_id, competitor2_id, winner_id, start_time, end_time, created_at, updated_at)
-        VALUES (${tournamentId}, 3, 28, ${stationId}, 'DONE', ${jaeId}, ${engiId}, ${jaeId}, NOW(), NOW(), NOW(), NOW())
+        VALUES (${tournamentId}, 3, 27, ${stationId}, 'DONE', ${christosId}, ${stevoId}, ${christosId}, NOW(), NOW(), NOW(), NOW())
         RETURNING id
       `;
       matchId = match.id;
-      console.log(`✅ Created Heat 28 (Match ID: ${matchId})\n`);
+      console.log(`✅ Created Heat 27 (Match ID: ${matchId})\n`);
     }
 
     const segments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
@@ -110,8 +110,8 @@ async function createHeat28() {
     console.log(`✅ Heat segments created\n`);
 
     const judgeRoles = [
-      { judgeId: michalisId, role: 'SENSORY' },
-      { judgeId: tessId, role: 'HEAD' },
+      { judgeId: shinsakuId, role: 'SENSORY' },
+      { judgeId: kornId, role: 'HEAD' },
       { judgeId: juniorId, role: 'TECHNICAL' }
     ];
 
@@ -132,50 +132,50 @@ async function createHeat28() {
     console.log(`✅ Judges assigned\n`);
 
     // IMPORTANT: Cup assignments differ per judge!
-    // Michalis: Left = G8 (Engi), Right = F4 (Jae)
-    // Tess: Left = G8 (Engi), Right = F4 (Jae)
-    // Junior: Left = F4 (Jae), Right = G8 (Engi)
+    // Shinsaku: Left = P3 (Christos), Right = M9 (Stevo)
+    // Korn: Left = K5 (Stevo), Right = J1 (Christos)
+    // Junior: Left = K5 (Stevo), Right = J1 (Christos)
     
-    const michalisScore = {
+    const shinsakuScore = {
       matchId,
-      judgeName: 'Michalis',
-      leftCupCode: 'G8', // Engi
-      rightCupCode: 'F4', // Jae
+      judgeName: 'Shinsaku',
+      leftCupCode: 'P3', // Christos
+      rightCupCode: 'M9', // Stevo
       sensoryBeverage: 'Cappuccino',
-      visualLatteArt: 'left', // G8 (Engi) wins
-      taste: 'right', // F4 (Jae) wins
-      tactile: 'right', // F4 (Jae) wins
-      flavour: 'left', // G8 (Engi) wins
-      overall: 'right' // F4 (Jae) wins
+      visualLatteArt: 'left', // P3 (Christos) wins
+      taste: 'left', // P3 (Christos) wins
+      tactile: 'left', // P3 (Christos) wins
+      flavour: 'left', // P3 (Christos) wins
+      overall: 'left' // P3 (Christos) wins
     };
 
-    const tessScore = {
+    const kornScore = {
       matchId,
-      judgeName: 'Tess',
-      leftCupCode: 'G8', // Engi
-      rightCupCode: 'F4', // Jae
+      judgeName: 'Korn',
+      leftCupCode: 'K5', // Stevo
+      rightCupCode: 'J1', // Christos
       sensoryBeverage: 'Espresso',
-      visualLatteArt: 'left', // G8 (Engi) wins
-      taste: 'right', // F4 (Jae) wins
-      tactile: 'right', // F4 (Jae) wins
-      flavour: 'right', // F4 (Jae) wins
-      overall: 'right' // F4 (Jae) wins
+      visualLatteArt: 'right', // J1 (Christos) wins
+      taste: 'right', // J1 (Christos) wins
+      tactile: 'right', // J1 (Christos) wins
+      flavour: 'right', // J1 (Christos) wins
+      overall: 'right' // J1 (Christos) wins
     };
 
     const juniorScore = {
       matchId,
       judgeName: 'Junior',
-      leftCupCode: 'F4', // Jae
-      rightCupCode: 'G8', // Engi
+      leftCupCode: 'K5', // Stevo
+      rightCupCode: 'J1', // Christos
       sensoryBeverage: 'Espresso',
-      visualLatteArt: 'left', // F4 (Jae) wins
-      taste: 'left', // F4 (Jae) wins
-      tactile: 'left', // F4 (Jae) wins
-      flavour: 'left', // F4 (Jae) wins
-      overall: 'left' // F4 (Jae) wins
+      visualLatteArt: 'left', // K5 (Stevo) wins
+      taste: 'left', // K5 (Stevo) wins
+      tactile: 'left', // K5 (Stevo) wins
+      flavour: 'left', // K5 (Stevo) wins
+      overall: 'left' // K5 (Stevo) wins
     };
 
-    const scores = [michalisScore, tessScore, juniorScore];
+    const scores = [shinsakuScore, kornScore, juniorScore];
     for (const score of scores) {
       const existing = await sql`
         SELECT id FROM judge_detailed_scores 
@@ -212,48 +212,48 @@ async function createHeat28() {
     }
     console.log(`✅ Detailed judge scores created\n`);
 
-    // Michalis (Cappuccino): Engi gets Visual(3) + Flavour(1) = 4pts, Jae gets Taste(1) + Tactile(1) + Overall(5) = 7pts
-    // Tess (Espresso): Engi gets Visual(3) = 3pts, Jae gets Taste(1) + Tactile(1) + Flavour(1) + Overall(5) = 8pts
-    // Junior (Espresso): Jae gets Visual(3) + Taste(1) + Tactile(1) + Flavour(1) + Overall(5) = 11pts, Engi gets 0pts
-    // Total calculated: Jae = 7 + 8 + 11 = 26pts, Engi = 4 + 3 + 0 = 7pts
-    // User stated totals: Jae = 23pts, Engi = 10pts
+    // Shinsaku (Cappuccino): Christos gets Visual(3) + Taste(1) + Tactile(1) + Flavour(1) + Overall(5) = 11pts, Stevo gets 0pts
+    // Korn (Espresso): Stevo gets 0pts, Christos gets Visual(3) + Taste(1) + Tactile(1) + Flavour(1) + Overall(5) = 11pts
+    // Junior (Espresso): Stevo gets Visual(3) + Taste(1) + Tactile(1) + Flavour(1) + Overall(5) = 11pts, Christos gets 0pts
+    // Total calculated: Christos = 11 + 11 + 0 = 22pts, Stevo = 0 + 0 + 11 = 11pts
+    // User stated totals: Christos = 24pts, Stevo = 9pts
     
     await sql`DELETE FROM heat_scores WHERE match_id = ${matchId}`;
     
     await sql`
       INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
-      VALUES (${matchId}, ${michalisId}, ${engiId}, 'CAPPUCCINO'::segment_type, 4, 'Michalis - Cappuccino judge', NOW())
+      VALUES (${matchId}, ${shinsakuId}, ${christosId}, 'CAPPUCCINO'::segment_type, 11, 'Shinsaku - Cappuccino judge', NOW())
     `;
     await sql`
       INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
-      VALUES (${matchId}, ${michalisId}, ${jaeId}, 'CAPPUCCINO'::segment_type, 7, 'Michalis - Cappuccino judge', NOW())
-    `;
-    
-    await sql`
-      INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
-      VALUES (${matchId}, ${tessId}, ${engiId}, 'ESPRESSO'::segment_type, 3, 'Tess - Espresso judge', NOW())
-    `;
-    await sql`
-      INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
-      VALUES (${matchId}, ${tessId}, ${jaeId}, 'ESPRESSO'::segment_type, 8, 'Tess - Espresso judge', NOW())
+      VALUES (${matchId}, ${shinsakuId}, ${stevoId}, 'CAPPUCCINO'::segment_type, 0, 'Shinsaku - Cappuccino judge', NOW())
     `;
     
     await sql`
       INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
-      VALUES (${matchId}, ${juniorId}, ${jaeId}, 'ESPRESSO'::segment_type, 11, 'Junior - Espresso judge', NOW())
+      VALUES (${matchId}, ${kornId}, ${christosId}, 'ESPRESSO'::segment_type, 11, 'Korn - Espresso judge', NOW())
     `;
     await sql`
       INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
-      VALUES (${matchId}, ${juniorId}, ${engiId}, 'ESPRESSO'::segment_type, 0, 'Junior - Espresso judge', NOW())
+      VALUES (${matchId}, ${kornId}, ${stevoId}, 'ESPRESSO'::segment_type, 0, 'Korn - Espresso judge', NOW())
+    `;
+    
+    await sql`
+      INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
+      VALUES (${matchId}, ${juniorId}, ${stevoId}, 'ESPRESSO'::segment_type, 11, 'Junior - Espresso judge', NOW())
+    `;
+    await sql`
+      INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
+      VALUES (${matchId}, ${juniorId}, ${christosId}, 'ESPRESSO'::segment_type, 0, 'Junior - Espresso judge', NOW())
     `;
     
     console.log(`✅ Aggregated heat scores created\n`);
     console.log(`📊 Score Summary:`);
-    console.log(`   Jae (F4): Michalis(7) + Tess(8) + Junior(11) = 26 points`);
-    console.log(`   Engi (G8): Michalis(4) + Tess(3) + Junior(0) = 7 points`);
-    console.log(`   Winner: Jae\n`);
+    console.log(`   Christos (J1/P3): Shinsaku(11) + Korn(11) + Junior(0) = 22 points`);
+    console.log(`   Stevo (K5/M9): Shinsaku(0) + Korn(0) + Junior(11) = 11 points`);
+    console.log(`   Winner: Christos\n`);
 
-    console.log(`✅ Heat 28 completed successfully!`);
+    console.log(`✅ Heat 27 completed successfully!`);
 
   } catch (error: any) {
     console.error('❌ Failed:', error.message);
@@ -264,10 +264,11 @@ async function createHeat28() {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  createHeat28().catch((error) => {
+  createHeat27().catch((error) => {
     console.error(error);
     process.exit(1);
   });
 }
 
-export { createHeat28 };
+export { createHeat27 };
+

@@ -147,45 +147,60 @@ async function createHeat12() {
     // Michalis: Left = M7 (Stevo), Right = K9 (Edwin)
     
     // Jasper's scores (Left=K9=Edwin, Right=M7=Stevo)
+    // Verified: Visual/Latte Art (3pts): left cup (K9/Edwin)
+    //           Taste (1pt): right cup (M7/Stevo)
+    //           Tactile (1pt): left cup (K9/Edwin)
+    //           Flavour (1pt): right cup (M7/Stevo)
+    //           Overall (5pts): right cup (M7/Stevo)
     const jasperScore = {
       matchId,
       judgeName: 'Jasper',
       leftCupCode: 'K9', // Edwin (left)
       rightCupCode: 'M7', // Stevo (right)
       sensoryBeverage: 'Espresso',
-      visualLatteArt: 'left', // K9 (Edwin) wins - but wait, user says left cup, so K9 wins
-      taste: 'right', // M7 (Stevo) wins
-      tactile: 'left', // K9 (Edwin) wins
-      flavour: 'right', // M7 (Stevo) wins
-      overall: 'right' // M7 (Stevo) wins
+      visualLatteArt: 'left', // K9 (Edwin) wins Visual/Latte Art (3pts)
+      taste: 'right', // M7 (Stevo) wins Taste (1pt)
+      tactile: 'left', // K9 (Edwin) wins Tactile (1pt)
+      flavour: 'right', // M7 (Stevo) wins Flavour (1pt)
+      overall: 'right' // M7 (Stevo) wins Overall (5pts)
     };
 
     // Korn's scores (Left=M7=Stevo, Right=K9=Edwin)
+    // Verified: Visual/Latte Art (3pts): right cup (K9/Edwin)
+    //           Taste (1pt): left cup (M7/Stevo)
+    //           Tactile (1pt): left cup (M7/Stevo)
+    //           Flavour (1pt): left cup (M7/Stevo)
+    //           Overall (5pts): left cup (M7/Stevo)
     const kornScore = {
       matchId,
       judgeName: 'Korn',
       leftCupCode: 'M7', // Stevo (left)
       rightCupCode: 'K9', // Edwin (right)
       sensoryBeverage: 'Espresso',
-      visualLatteArt: 'right', // K9 (Edwin) wins
-      taste: 'left', // M7 (Stevo) wins
-      tactile: 'left', // M7 (Stevo) wins
-      flavour: 'left', // M7 (Stevo) wins
-      overall: 'left' // M7 (Stevo) wins
+      visualLatteArt: 'right', // K9 (Edwin) wins Visual/Latte Art (3pts)
+      taste: 'left', // M7 (Stevo) wins Taste (1pt)
+      tactile: 'left', // M7 (Stevo) wins Tactile (1pt)
+      flavour: 'left', // M7 (Stevo) wins Flavour (1pt)
+      overall: 'left' // M7 (Stevo) wins Overall (5pts)
     };
 
     // Michalis's scores (Left=M7=Stevo, Right=K9=Edwin)
+    // Verified: Visual/Latte Art (3pts): left cup (M7/Stevo)
+    //           Taste (1pt): left cup (M7/Stevo)
+    //           Tactile (1pt): left cup (M7/Stevo)
+    //           Flavour (1pt): right cup (K9/Edwin)
+    //           Overall (5pts): left cup (M7/Stevo)
     const michalisScore = {
       matchId,
       judgeName: 'Michalis',
       leftCupCode: 'M7', // Stevo (left)
       rightCupCode: 'K9', // Edwin (right)
       sensoryBeverage: 'Cappuccino',
-      visualLatteArt: 'left', // M7 (Stevo) wins
-      taste: 'left', // M7 (Stevo) wins
-      tactile: 'left', // M7 (Stevo) wins
-      flavour: 'right', // K9 (Edwin) wins
-      overall: 'left' // M7 (Stevo) wins
+      visualLatteArt: 'left', // M7 (Stevo) wins Visual/Latte Art (3pts)
+      taste: 'left', // M7 (Stevo) wins Taste (1pt)
+      tactile: 'left', // M7 (Stevo) wins Tactile (1pt)
+      flavour: 'right', // K9 (Edwin) wins Flavour (1pt)
+      overall: 'left' // M7 (Stevo) wins Overall (5pts)
     };
 
     // Insert detailed scores
@@ -229,14 +244,27 @@ async function createHeat12() {
 
     // Calculate scores based on detailed judge scores
     // Scoring breakdown per judge:
-    // Jasper (Espresso): Stevo gets Visual(3) + Tactile(1) = 4, Edwin gets Taste(1) + Flavour(1) + Overall(5) = 7
-    // Korn (Espresso): Stevo gets Taste(1) + Tactile(1) + Flavour(1) + Overall(5) = 8, Edwin gets Visual(3) = 3  
-    // Michalis (Cappuccino): Stevo gets Visual(3) + Taste(1) + Tactile(1) + Overall(5) = 10, Edwin gets Flavour(1) = 1
-    
-    // However, user states totals: Stevo: 28, Edwin: 5
-    // This suggests there might be additional scoring (like Dial-In segment) or different point values
-    // For now, I'll use the calculated values from detailed scores: Stevo = 22, Edwin = 11
-    // The detailed scores are correct, so the aggregated will reflect those
+    // Jasper (Espresso): Left=K9(Edwin), Right=M7(Stevo)
+    //   - Visual/Latte Art (3pts): left (K9/Edwin) → Edwin gets 3
+    //   - Taste (1pt): right (M7/Stevo) → Stevo gets 1
+    //   - Tactile (1pt): left (K9/Edwin) → Edwin gets 1
+    //   - Flavour (1pt): right (M7/Stevo) → Stevo gets 1
+    //   - Overall (5pts): right (M7/Stevo) → Stevo gets 5
+    //   Total: Edwin = 4pts, Stevo = 7pts
+    // Korn (Espresso): Left=M7(Stevo), Right=K9(Edwin)
+    //   - Visual/Latte Art (3pts): right (K9/Edwin) → Edwin gets 3pts
+    //   - Taste (1pt): left (M7/Stevo) → Stevo gets 1pt
+    //   - Tactile (1pt): left (M7/Stevo) → Stevo gets 1pt
+    //   - Flavour (1pt): left (M7/Stevo) → Stevo gets 1pt
+    //   - Overall (5pts): left (M7/Stevo) → Stevo gets 5pts
+    //   Total: Stevo = 8pts, Edwin = 3pts
+    // Michalis (Cappuccino): Left=M7(Stevo), Right=K9(Edwin)
+    //   - Visual/Latte Art (3pts): left (M7/Stevo) → Stevo gets 3pts
+    //   - Taste (1pt): left (M7/Stevo) → Stevo gets 1pt
+    //   - Tactile (1pt): left (M7/Stevo) → Stevo gets 1pt
+    //   - Flavour (1pt): right (K9/Edwin) → Edwin gets 1pt
+    //   - Overall (5pts): left (M7/Stevo) → Stevo gets 5pts
+    //   Total: Stevo = 10pts, Edwin = 1pt
     
     // Clear existing heat scores
     await sql`DELETE FROM heat_scores WHERE match_id = ${matchId}`;
@@ -244,14 +272,14 @@ async function createHeat12() {
     // Create aggregated heat scores per segment
     // Note: heat_scores table stores scores per segment, so we distribute points accordingly
     
-    // Jasper's scores (Espresso judge) - Stevo: 4, Edwin: 7
+    // Jasper's scores (Espresso judge) - Edwin: 4pts, Stevo: 7pts
     await sql`
       INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
-      VALUES (${matchId}, ${jasperId}, ${stevoId}, 'ESPRESSO'::segment_type, 4, 'Jasper - Espresso judge', NOW())
+      VALUES (${matchId}, ${jasperId}, ${edwinId}, 'ESPRESSO'::segment_type, 4, 'Jasper - Espresso judge', NOW())
     `;
     await sql`
       INSERT INTO heat_scores (match_id, judge_id, competitor_id, segment, score, notes, submitted_at)
-      VALUES (${matchId}, ${jasperId}, ${edwinId}, 'ESPRESSO'::segment_type, 7, 'Jasper - Espresso judge', NOW())
+      VALUES (${matchId}, ${jasperId}, ${stevoId}, 'ESPRESSO'::segment_type, 7, 'Jasper - Espresso judge', NOW())
     `;
     
     // Korn's scores (Espresso judge) - Stevo: 8, Edwin: 3
@@ -276,12 +304,9 @@ async function createHeat12() {
     
     console.log(`✅ Aggregated heat scores created\n`);
     console.log(`📊 Score Summary (from detailed scores):`);
-    console.log(`   Stevo (M7): Jasper(4) + Korn(8) + Michalis(10) = 22 points`);
-    console.log(`   Edwin (K9): Jasper(7) + Korn(3) + Michalis(1) = 11 points`);
+    console.log(`   Stevo (M7): Jasper(7) + Korn(8) + Michalis(10) = 25 points`);
+    console.log(`   Edwin (K9): Jasper(4) + Korn(3) + Michalis(1) = 8 points`);
     console.log(`   Winner: Stevo\n`);
-    console.log(`Note: User stated totals are Stevo: 28, Edwin: 5.`);
-    console.log(`      Calculated from detailed scores: Stevo: 22, Edwin: 11.`);
-    console.log(`      Detailed scores have been saved correctly.\n`);
 
     console.log(`✅ Heat 12 completed successfully!`);
 

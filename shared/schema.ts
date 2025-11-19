@@ -9,9 +9,14 @@ export const segmentTypeEnum = pgEnum('segment_type', ['DIAL_IN', 'CAPPUCCINO', 
 export const segmentStatusEnum = pgEnum('segment_status', ['IDLE', 'RUNNING', 'ENDED']);
 export const stationStatusEnum = pgEnum('station_status', ['AVAILABLE', 'BUSY', 'OFFLINE']);
 export const judgeRoleEnum = pgEnum('judge_role', ['HEAD', 'TECHNICAL', 'SENSORY']);
+export const personRoleEnum = pgEnum('person_role', ['JUDGE', 'BARISTA', 'VOLUNTEER', 'PARTNER']);
+export const verificationStatusEnum = pgEnum('verification_status', ['UNVERIFIED', 'VERIFIED', 'REJECTED']);
 export const userRoleEnum = pgEnum('user_role', ['ADMIN', 'JUDGE', 'BARISTA', 'STATION_LEAD', 'PUBLIC']);
 
-// Tournament Users table
+// ============================================================================
+// USERS - Legacy table (still exists in current DB)
+// ============================================================================
+// TODO: Migrate to persons table when migration is applied
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -21,15 +26,36 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-
-// Tournaments table
-export const tournaments = pgTable("tournaments", {
+// ============================================================================
+// PERSONS - Permanent Pool (Top Level Class 1)
+// ============================================================================
+// This table stores all persons from the parent app's profile system
+// They exist in a permanent pool and can register for multiple tournaments
+export const persons = pgTable("persons", {
   id: serial("id").primaryKey(),
+  // Reference to external profile system (parent app)
+  externalProfileId: text("external_profile_id").unique(),
   name: text("name").notNull(),
-  location: text("location"),
+  email: text("email").notNull().unique(),
+  // Optional: store basic info that might be useful across tournaments
+  phone: text("phone"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertPersonSchema = createInsertSchema(persons).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertPerson = z.infer<typeof insertPersonSchema>;
+export type Person = typeof persons.$inferSelect;
+
+// ============================================================================
+// TOURNAMENTS - Tournament Hierarchy (Top Level Class 2)
+// ============================================================================
+// Tournament ID is composite: location + year (e.g., "WEC2025")
+// Hierarchy: Tournament → Rounds → Heats → Stations
+export const tournaments = pgTable("tournaments", {
+  id: serial("id").primaryKey(), // Integer ID (legacy schema - will be migrated to text later)
+  name: text("name").notNull(),
+  location: text("location"), // e.g., "WEC" (nullable in current DB)
   status: tournamentStatusEnum("status").notNull().default('SETUP'),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
@@ -39,26 +65,40 @@ export const tournaments = pgTable("tournaments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTournamentSchema = createInsertSchema(tournaments).omit({ createdAt: true, updatedAt: true });
 export type InsertTournament = z.infer<typeof insertTournamentSchema>;
 export type Tournament = typeof tournaments.$inferSelect;
 
-// Tournament Participants
-export const tournamentParticipants = pgTable("tournament_participants", {
+// ============================================================================
+// TOURNAMENT REGISTRATIONS - Links Persons to Tournaments
+// ============================================================================
+// When a person registers for a tournament, they're added here as UNVERIFIED
+// Once admin verifies them, status becomes VERIFIED and they're in the tournament roles pool
+export const tournamentRegistrations = pgTable("tournament_registrations", {
   id: serial("id").primaryKey(),
   tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
-  userId: integer("user_id").notNull().references(() => users.id),
-  seed: integer("seed").notNull(),
-  eliminatedRound: integer("eliminated_round"),
-  finalRank: integer("final_rank"),
+  personId: integer("person_id").notNull().references(() => persons.id),
+  role: personRoleEnum("role").notNull(), // JUDGE, BARISTA, VOLUNTEER, PARTNER
+  verificationStatus: verificationStatusEnum("verification_status").notNull().default('UNVERIFIED'),
+  // For competitors/baristas: bracket-related fields
+  seed: integer("seed"), // Only for verified BARISTA role
+  eliminatedRound: integer("eliminated_round"), // Only for verified BARISTA role
+  finalRank: integer("final_rank"), // Only for verified BARISTA role
+  // Metadata
+  registeredAt: timestamp("registered_at").defaultNow().notNull(),
+  verifiedAt: timestamp("verified_at"),
+  verifiedBy: integer("verified_by").references(() => persons.id), // Admin person_id who verified
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertTournamentParticipantSchema = createInsertSchema(tournamentParticipants).omit({ id: true, createdAt: true });
-export type InsertTournamentParticipant = z.infer<typeof insertTournamentParticipantSchema>;
-export type TournamentParticipant = typeof tournamentParticipants.$inferSelect;
+export const insertTournamentRegistrationSchema = createInsertSchema(tournamentRegistrations).omit({ id: true, createdAt: true, updatedAt: true, registeredAt: true });
+export type InsertTournamentRegistration = z.infer<typeof insertTournamentRegistrationSchema>;
+export type TournamentRegistration = typeof tournamentRegistrations.$inferSelect;
 
-// Tournament Round Times
+// ============================================================================
+// TOURNAMENT ROUND TIMES - Configuration for each round's timing
+// ============================================================================
 export const tournamentRoundTimes = pgTable("tournament_round_times", {
   id: serial("id").primaryKey(),
   tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
@@ -73,21 +113,31 @@ export const insertTournamentRoundTimeSchema = createInsertSchema(tournamentRoun
 export type InsertTournamentRoundTime = z.infer<typeof insertTournamentRoundTimeSchema>;
 export type TournamentRoundTime = typeof tournamentRoundTimes.$inferSelect;
 
-// Stations
+// ============================================================================
+// STATIONS - Tournament-specific stations (A, B, C for data grouping)
+// ============================================================================
+// Stations belong to tournaments and are used for grouping heats
 export const stations = pgTable("stations", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  location: text("location"),
+  // tournamentId: integer("tournament_id"), // Not in current DB schema yet
+  name: text("name").notNull(), // "A", "B", "C" or more descriptive names
+  location: text("location"), // Legacy field in current DB
   status: stationStatusEnum("status").notNull().default('AVAILABLE'),
   nextAvailableAt: timestamp("next_available_at").defaultNow().notNull(),
-  currentMatchId: integer("current_match_id"),
+  currentMatchId: integer("current_match_id"), // References matches.id
+  // createdAt: timestamp("created_at"), // Not in current DB schema
+  // updatedAt: timestamp("updated_at"), // Not in current DB schema
 });
 
 export const insertStationSchema = createInsertSchema(stations).omit({ id: true });
 export type InsertStation = z.infer<typeof insertStationSchema>;
 export type Station = typeof stations.$inferSelect;
 
-// Matches (Heats)
+// ============================================================================
+// MATCHES (HEATS) - Individual matches within rounds
+// ============================================================================
+// Hierarchy: Tournament → Round → Heat (Match) → Station
+// References tournament registrations (not persons directly) for competitors
 export const matches = pgTable("matches", {
   id: serial("id").primaryKey(),
   tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
@@ -95,9 +145,11 @@ export const matches = pgTable("matches", {
   heatNumber: integer("heat_number").notNull(),
   stationId: integer("station_id").references(() => stations.id),
   status: matchStatusEnum("status").notNull().default('PENDING'),
-  competitor1Id: integer("competitor1_id").references(() => users.id),
-  competitor2Id: integer("competitor2_id").references(() => users.id),
-  winnerId: integer("winner_id").references(() => users.id),
+  // Current DB schema uses competitor1_id/competitor2_id (references users table)
+  // TODO: Migrate to competitor1RegistrationId/competitor2RegistrationId when migration is applied
+  competitor1Id: integer("competitor1_id"), // References users.id in current schema
+  competitor2Id: integer("competitor2_id"), // References users.id in current schema
+  winnerId: integer("winner_id"), // References users.id in current schema
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -123,24 +175,32 @@ export const insertHeatSegmentSchema = createInsertSchema(heatSegments).omit({ i
 export type InsertHeatSegment = z.infer<typeof insertHeatSegmentSchema>;
 export type HeatSegment = typeof heatSegments.$inferSelect;
 
-// Heat Judges
+// ============================================================================
+// HEAT JUDGES - Judge assignments to matches
+// ============================================================================
+// Current DB schema uses judge_id (references users.id)
+// TODO: Migrate to judgeRegistrationId when migration is applied
 export const heatJudges = pgTable("heat_judges", {
   id: serial("id").primaryKey(),
   matchId: integer("match_id").notNull().references(() => matches.id),
-  judgeId: integer("judge_id").notNull().references(() => users.id),
-  role: judgeRoleEnum("role").notNull(),
+  judgeId: integer("judge_id").notNull(), // References users.id in current schema
+  role: judgeRoleEnum("role").notNull(), // HEAD, TECHNICAL, SENSORY
 });
 
 export const insertHeatJudgeSchema = createInsertSchema(heatJudges).omit({ id: true });
 export type InsertHeatJudge = z.infer<typeof insertHeatJudgeSchema>;
 export type HeatJudge = typeof heatJudges.$inferSelect;
 
-// Heat Scores (Simple aggregated scores)
+// ============================================================================
+// HEAT SCORES - Scoring records for matches
+// ============================================================================
+// Current DB schema uses judge_id and competitor_id (references users.id)
+// TODO: Migrate to judgeRegistrationId/competitorRegistrationId when migration is applied
 export const heatScores = pgTable("heat_scores", {
   id: serial("id").primaryKey(),
   matchId: integer("match_id").notNull().references(() => matches.id),
-  judgeId: integer("judge_id").notNull().references(() => users.id),
-  competitorId: integer("competitor_id").notNull().references(() => users.id),
+  judgeId: integer("judge_id").notNull(), // References users.id in current schema
+  competitorId: integer("competitor_id").notNull(), // References users.id in current schema
   segment: segmentTypeEnum("segment").notNull(),
   score: integer("score").notNull(),
   notes: text("notes"),

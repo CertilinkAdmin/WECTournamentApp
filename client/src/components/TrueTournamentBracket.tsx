@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Trophy, Medal, Award, Star, Coffee, Zap, Maximize2, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from './WEC25BracketData';
 
 interface TrueTournamentBracketProps {
@@ -42,7 +41,6 @@ interface BracketRound {
 }
 
 const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamentBracketProps) => {
-  const navigate = useNavigate();
   const [animatedMatches, setAnimatedMatches] = useState<Set<number>>(new Set());
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedHeat, setSelectedHeat] = useState<BracketMatch | null>(null);
@@ -277,113 +275,76 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
           
           {selectedHeat && (
             <div className="space-y-4 sm:space-y-6 py-2 sm:py-4">
-              {/* Competitor Cards - Matching Style */}
-              <div className="relative grid grid-cols-2 gap-3 sm:gap-4">
-                {/* Competitor 1 */}
-                <Card 
-                  className={`p-4 sm:p-5 cursor-pointer transition-all hover:shadow-md border-2 ${
-                    selectedHeat.winner === selectedHeat.competitor1 
-                      ? 'border-green-500 bg-green-50/50 dark:bg-green-950/20' 
-                      : 'border-border bg-card'
-                  }`} 
-                  data-testid={`competitor-${selectedHeat.competitor1}`}
-                  onClick={() => navigate(`/results/WEC2025/baristas/${encodeURIComponent(selectedHeat.competitor1)}`)}
-                >
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="text-base sm:text-lg font-bold truncate flex-1 cursor-pointer hover:text-primary transition-colors">{selectedHeat.competitor1}</h3>
-                      {selectedHeat.winner === selectedHeat.competitor1 && (
-                        <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+              {/* Competitor 1 */}
+              <Card className={`p-4 sm:p-6 ${selectedHeat.winner === selectedHeat.competitor1 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : ''}`} data-testid={`competitor-${selectedHeat.competitor1}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2 truncate">{selectedHeat.competitor1}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">{selectedHeat.leftCupCode}</Badge>
                       {selectedHeat.winner === selectedHeat.competitor1 && (
-                        <Badge className="bg-green-500 text-white text-xs">Winner</Badge>
+                        <Badge className="bg-accent text-primary text-xs">Winner</Badge>
                       )}
                     </div>
-                    <div className="mt-auto">
-                      <div className={`text-2xl sm:text-3xl font-black ${
-                        selectedHeat.winner === selectedHeat.competitor1 ? 'text-green-600' : 'text-muted-foreground'
-                      }`}>
-                        {selectedHeat.score1}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">Points</div>
-                    </div>
                   </div>
-                </Card>
-
-                {/* VS Divider - Centered between cards */}
-                <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                  <div className="bg-primary text-primary-foreground px-2 sm:px-3 py-1 rounded-full font-bold text-xs sm:text-sm shadow-lg">
-                    VS
+                  <div className="text-right flex-shrink-0">
+                    <div className={`text-3xl sm:text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor1 ? 'text-accent' : 'text-muted-foreground'}`}>
+                      {selectedHeat.score1}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">Points</div>
                   </div>
                 </div>
+              </Card>
 
-                {/* Competitor 2 */}
-                <Card 
-                  className={`p-4 sm:p-5 cursor-pointer transition-all hover:shadow-md border-2 ${
-                    selectedHeat.winner === selectedHeat.competitor2 
-                      ? 'border-green-500 bg-green-50/50 dark:bg-green-950/20' 
-                      : 'border-border bg-card'
-                  }`} 
-                  data-testid={`competitor-${selectedHeat.competitor2}`}
-                  onClick={() => navigate(`/results/WEC2025/baristas/${encodeURIComponent(selectedHeat.competitor2)}`)}
-                >
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="text-base sm:text-lg font-bold truncate flex-1 cursor-pointer hover:text-primary transition-colors">{selectedHeat.competitor2}</h3>
-                      {selectedHeat.winner === selectedHeat.competitor2 && (
-                        <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                      <Badge variant="outline" className="text-xs">{selectedHeat.rightCupCode}</Badge>
-                      {selectedHeat.winner === selectedHeat.competitor2 && (
-                        <Badge className="bg-green-500 text-white text-xs">Winner</Badge>
-                      )}
-                    </div>
-                    <div className="mt-auto">
-                      <div className={`text-2xl sm:text-3xl font-black ${
-                        selectedHeat.winner === selectedHeat.competitor2 ? 'text-green-600' : 'text-muted-foreground'
-                      }`}>
-                        {selectedHeat.score2}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">Points</div>
-                    </div>
-                  </div>
-                </Card>
+              {/* VS Divider */}
+              <div className="flex items-center justify-center">
+                <div className="bg-primary text-primary-foreground px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-sm sm:text-base">
+                  VS
+                </div>
               </div>
 
-              {/* Results Section - Visually Distinct */}
-              <Card className="bg-muted/30 border-2 border-dashed border-muted-foreground/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-muted-foreground" />
-                    Heat Results
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
-                    <div>
-                      <div className="text-muted-foreground text-xs mb-1">Heat Number</div>
-                      <div className="font-semibold text-sm sm:text-base">{selectedHeat.heatNumber}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground text-xs mb-1">Station</div>
-                      <div className="font-semibold text-sm sm:text-base">{selectedHeat.station}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground text-xs mb-1">Final Score</div>
-                      <div className="font-semibold text-sm sm:text-base">{selectedHeat.score1} - {selectedHeat.score2}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground text-xs mb-1">Winner</div>
-                      <div className="font-semibold text-green-600 text-sm sm:text-base truncate">{selectedHeat.winner}</div>
+              {/* Competitor 2 */}
+              <Card className={`p-4 sm:p-6 ${selectedHeat.winner === selectedHeat.competitor2 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : ''}`} data-testid={`competitor-${selectedHeat.competitor2}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2 truncate">{selectedHeat.competitor2}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-xs">{selectedHeat.rightCupCode}</Badge>
+                      {selectedHeat.winner === selectedHeat.competitor2 && (
+                        <Badge className="bg-accent text-primary text-xs">Winner</Badge>
+                      )}
                     </div>
                   </div>
-                </CardContent>
+                  <div className="text-right flex-shrink-0">
+                    <div className={`text-3xl sm:text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor2 ? 'text-accent' : 'text-muted-foreground'}`}>
+                      {selectedHeat.score2}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">Points</div>
+                  </div>
+                </div>
               </Card>
+
+              {/* Match Info */}
+              <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
+                  <div>
+                    <div className="text-muted-foreground text-xs mb-1">Heat Number</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedHeat.heatNumber}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-xs mb-1">Station</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedHeat.station}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-xs mb-1">Final Score</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedHeat.score1} - {selectedHeat.score2}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-xs mb-1">Winner</div>
+                    <div className="font-semibold text-accent text-sm sm:text-base truncate">{selectedHeat.winner}</div>
+                  </div>
+                </div>
+              </div>
 
               {/* Judges Section */}
               <div className="border-t pt-4">

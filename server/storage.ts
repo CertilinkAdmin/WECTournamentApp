@@ -1,11 +1,11 @@
 import { db } from "./db";
 import { 
-  users, tournaments, tournamentParticipants, tournamentRoundTimes,
+  persons, users, tournaments, tournamentRegistrations, tournamentRoundTimes,
   stations, matches, heatSegments, heatJudges, heatScores,
   judgeDetailedScores,
-  type User, type InsertUser,
+  type Person, type InsertPerson,
   type Tournament, type InsertTournament,
-  type TournamentParticipant, type InsertTournamentParticipant,
+  type TournamentRegistration, type InsertTournamentRegistration,
   type TournamentRoundTime, type InsertTournamentRoundTime,
   type Station, type InsertStation,
   type Match, type InsertMatch,
@@ -17,23 +17,23 @@ import {
 import { eq, and, desc, inArray } from "drizzle-orm";
 
 export interface IStorage {
-  // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  getAllUsers(): Promise<User[]>;
-  updateUser(id: number, data: Partial<InsertUser>): Promise<User | undefined>;
+  // Person methods (formerly User)
+  getPerson(id: number): Promise<Person | undefined>;
+  getPersonByEmail(email: string): Promise<Person | undefined>;
+  createPerson(person: InsertPerson): Promise<Person>;
+  getAllPersons(): Promise<Person[]>;
+  updatePerson(id: number, data: Partial<InsertPerson>): Promise<Person | undefined>;
 
-  // Tournament methods
+  // Tournament methods (ID is integer in current DB schema)
   createTournament(tournament: InsertTournament): Promise<Tournament>;
   getTournament(id: number): Promise<Tournament | undefined>;
   getAllTournaments(): Promise<Tournament[]>;
   updateTournament(id: number, data: Partial<InsertTournament>): Promise<Tournament | undefined>;
 
-  // Tournament Participants
-  addParticipant(participant: InsertTournamentParticipant): Promise<TournamentParticipant>;
-  getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]>;
-  updateParticipantSeed(participantId: number, seed: number): Promise<TournamentParticipant | undefined>;
+  // Tournament Registrations (formerly Participants)
+  addRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration>;
+  getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]>;
+  updateRegistrationSeed(registrationId: number, seed: number): Promise<TournamentRegistration | undefined>;
 
   // Stations
   createStation(station: InsertStation): Promise<Station>;
@@ -76,35 +76,84 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
+  // Person methods (formerly User)
+  // Using users table since persons table doesn't exist yet
+  async getPerson(id: number): Promise<Person | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    return result[0];
+    if (result[0]) {
+      return {
+        id: result[0].id,
+        externalProfileId: null,
+        name: result[0].name,
+        email: result[0].email,
+        phone: null,
+        createdAt: result[0].createdAt,
+        updatedAt: result[0].createdAt,
+      };
+    }
+    return undefined;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
+  async getPersonByEmail(email: string): Promise<Person | undefined> {
     const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    return result[0];
+    if (result[0]) {
+      return {
+        id: result[0].id,
+        externalProfileId: null,
+        name: result[0].name,
+        email: result[0].email,
+        phone: null,
+        createdAt: result[0].createdAt,
+        updatedAt: result[0].createdAt,
+      };
+    }
+    return undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser).returning();
-    return result[0];
+  async createPerson(person: InsertPerson): Promise<Person> {
+    // Insert into users table (legacy schema)
+    const result = await db.insert(users).values({
+      name: person.name,
+      email: person.email,
+      role: 'BARISTA', // Default role
+      approved: false,
+    }).returning();
+    
+    return {
+      id: result[0].id,
+      externalProfileId: null,
+      name: result[0].name,
+      email: result[0].email,
+      phone: null,
+      createdAt: result[0].createdAt,
+      updatedAt: result[0].createdAt,
+    };
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+  async getAllPersons(): Promise<Person[]> {
+    // Use users table since persons table doesn't exist yet
+    const userRows = await db.select().from(users);
+    // Map users to Person format
+    return userRows.map(u => ({
+      id: u.id,
+      externalProfileId: null,
+      name: u.name,
+      email: u.email,
+      phone: null,
+      createdAt: u.createdAt,
+      updatedAt: u.createdAt, // users table doesn't have updatedAt
+    }));
   }
 
-  async updateUser(id: number, data: Partial<InsertUser>): Promise<User | undefined> {
-    const result = await db.update(users)
-      .set(data)
-      .where(eq(users.id, id))
+  async updatePerson(id: number, data: Partial<InsertPerson>): Promise<Person | undefined> {
+    const result = await db.update(persons)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(persons.id, id))
       .returning();
     return result[0];
   }
 
-  // Tournament methods
+  // Tournament methods (ID is now text)
   async createTournament(tournament: InsertTournament): Promise<Tournament> {
     const result = await db.insert(tournaments).values(tournament).returning();
     return result[0];
@@ -127,22 +176,22 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  // Tournament Participants
-  async addParticipant(participant: InsertTournamentParticipant): Promise<TournamentParticipant> {
-    const result = await db.insert(tournamentParticipants).values(participant).returning();
+  // Tournament Registrations (formerly Participants)
+  async addRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration> {
+    const result = await db.insert(tournamentRegistrations).values(registration).returning();
     return result[0];
   }
 
-  async getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]> {
+  async getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]> {
     return await db.select()
-      .from(tournamentParticipants)
-      .where(eq(tournamentParticipants.tournamentId, tournamentId));
+      .from(tournamentRegistrations)
+      .where(eq(tournamentRegistrations.tournamentId, tournamentId));
   }
 
-  async updateParticipantSeed(participantId: number, seed: number): Promise<TournamentParticipant | undefined> {
-    const result = await db.update(tournamentParticipants)
-      .set({ seed })
-      .where(eq(tournamentParticipants.id, participantId))
+  async updateRegistrationSeed(registrationId: number, seed: number): Promise<TournamentRegistration | undefined> {
+    const result = await db.update(tournamentRegistrations)
+      .set({ seed, updatedAt: new Date() })
+      .where(eq(tournamentRegistrations.id, registrationId))
       .returning();
     return result[0];
   }
@@ -307,7 +356,7 @@ export class DatabaseStorage implements IStorage {
     
     // Delete tournament-specific data
     await db.delete(tournamentRoundTimes).where(eq(tournamentRoundTimes.tournamentId, tournamentId));
-    await db.delete(tournamentParticipants).where(eq(tournamentParticipants.tournamentId, tournamentId));
+    await db.delete(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, tournamentId));
   }
 }
 

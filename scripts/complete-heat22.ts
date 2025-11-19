@@ -54,7 +54,7 @@ async function completeHeat22() {
     const matches = await sql`
       SELECT id FROM matches 
       WHERE tournament_id = ${tournamentId} 
-      AND round = 1 
+      AND round = 2 
       AND heat_number = 22
       LIMIT 1
     `;

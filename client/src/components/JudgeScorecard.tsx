@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trophy } from "lucide-react";
 
 interface Competitor {
@@ -17,60 +19,85 @@ interface JudgeScorecardProps {
   onSubmit?: (scores: any) => void;
 }
 
+const CATEGORY_POINTS = {
+  visualLatteArt: 3,
+  taste: 1,
+  tactile: 1,
+  flavour: 1,
+  overall: 5,
+};
+
 export default function JudgeScorecard({ heatNumber, competitors, onSubmit }: JudgeScorecardProps) {
-  // Latte Art scores (LEFT judge for cappuccino, RIGHT for espresso)
-  const [latteArt, setLatteArt] = useState({
-    cappuLeft: 0,
-    cappuRight: 0,
-    espresso1Left: 0,
-    espresso1Right: 0,
-    espresso2Left: 0,
-    espresso2Right: 0,
-  });
+  // Judge information
+  const [judgeName, setJudgeName] = useState("");
+  const [sensoryBeverage, setSensoryBeverage] = useState<"Cappuccino" | "Espresso">("Cappuccino");
+  
+  // Cup code selections
+  const [leftCupCode, setLeftCupCode] = useState("");
+  const [rightCupCode, setRightCupCode] = useState("");
 
-  // Sensory scores for LEFT competitor
-  const [leftSensory, setLeftSensory] = useState({
-    cappuTaste: 0,
-    cappuTactile: 0,
-    cappuFlavour: 0,
-    cappuOverall: 0,
-    esp1Taste: 0,
-    esp1Tactile: 0,
-    esp1Flavour: 0,
-    esp1Overall: 0,
-    esp2Taste: 0,
-    esp2Overall: 0,
-  });
+  // Scoring selections - which cup won each category
+  const [visualLatteArt, setVisualLatteArt] = useState<"left" | "right" | null>(null);
+  const [taste, setTaste] = useState<"left" | "right" | null>(null);
+  const [tactile, setTactile] = useState<"left" | "right" | null>(null);
+  const [flavour, setFlavour] = useState<"left" | "right" | null>(null);
+  const [overall, setOverall] = useState<"left" | "right" | null>(null);
 
-  // Sensory scores for RIGHT competitor
-  const [rightSensory, setRightSensory] = useState({
-    cappuTaste: 0,
-    cappuTactile: 0,
-    cappuFlavour: 0,
-    cappuOverall: 0,
-    esp1Taste: 0,
-    esp1Overall: 0,
-    esp2Tactile: 0,
-    esp2Flavour: 0,
-    esp2Overall: 0,
-  });
+  // Calculate scores based on which cup won each category
+  const calculateScores = () => {
+    let leftPoints = 0;
+    let rightPoints = 0;
 
-  const latteArtSubtotal = 
-    latteArt.cappuLeft + latteArt.cappuRight + 
-    latteArt.espresso1Left + latteArt.espresso1Right +
-    latteArt.espresso2Left + latteArt.espresso2Right;
+    if (visualLatteArt === "left") leftPoints += CATEGORY_POINTS.visualLatteArt;
+    if (visualLatteArt === "right") rightPoints += CATEGORY_POINTS.visualLatteArt;
 
-  const leftSensorySubtotal = Object.values(leftSensory).reduce((a, b) => a + b, 0);
-  const rightSensorySubtotal = Object.values(rightSensory).reduce((a, b) => a + b, 0);
+    if (taste === "left") leftPoints += CATEGORY_POINTS.taste;
+    if (taste === "right") rightPoints += CATEGORY_POINTS.taste;
 
-  const leftTotal = (latteArtSubtotal / 2) + leftSensorySubtotal;
-  const rightTotal = (latteArtSubtotal / 2) + rightSensorySubtotal;
+    if (tactile === "left") leftPoints += CATEGORY_POINTS.tactile;
+    if (tactile === "right") rightPoints += CATEGORY_POINTS.tactile;
 
-  const winner = leftTotal > rightTotal ? "left" : rightTotal > leftTotal ? "right" : null;
+    if (flavour === "left") leftPoints += CATEGORY_POINTS.flavour;
+    if (flavour === "right") rightPoints += CATEGORY_POINTS.flavour;
+
+    if (overall === "left") leftPoints += CATEGORY_POINTS.overall;
+    if (overall === "right") rightPoints += CATEGORY_POINTS.overall;
+
+    return { leftPoints, rightPoints };
+  };
+
+  const { leftPoints, rightPoints } = calculateScores();
+  const winner = leftPoints > rightPoints ? "left" : rightPoints > leftPoints ? "right" : null;
 
   const handleSubmit = () => {
-    onSubmit?.({ latteArt, leftSensory, rightSensory, leftTotal, rightTotal, winner });
-    console.log("Scorecard submitted", { leftTotal, rightTotal, winner });
+    onSubmit?.({ 
+      judgeName,
+      sensoryBeverage,
+      leftCupCode, 
+      rightCupCode,
+      visualLatteArt,
+      taste,
+      tactile,
+      flavour,
+      overall,
+      leftPoints,
+      rightPoints,
+      winner 
+    });
+    console.log("Scorecard submitted", { 
+      judgeName,
+      sensoryBeverage,
+      leftCupCode, 
+      rightCupCode,
+      visualLatteArt,
+      taste,
+      tactile,
+      flavour,
+      overall,
+      leftPoints,
+      rightPoints,
+      winner 
+    });
   };
 
   return (
@@ -86,176 +113,225 @@ export default function JudgeScorecard({ heatNumber, competitors, onSubmit }: Ju
         <Trophy className="h-8 w-8 text-primary" />
       </div>
 
-      {/* Latte Art Section */}
-      <Card data-testid="card-latte-art">
-        <CardHeader className="bg-primary/10">
-          <CardTitle className="text-primary">Latte Art</CardTitle>
+      {/* Judge Information and Cup Code Selection */}
+      <Card>
+        <CardHeader className="bg-secondary/10">
+          <CardTitle className="text-sm">Judge Information</CardTitle>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-sm font-medium">Judge:</div>
-            <div className="text-center text-sm font-medium">LEFT</div>
-            <div className="text-center text-sm font-medium">RIGHT</div>
-
-            <div className="text-sm">Cappuccino Judge:</div>
+        <CardContent className="p-6 space-y-4">
+          <div>
+            <Label htmlFor="judge-name">Judge Name</Label>
             <Input
-              type="number"
-              min="0"
-              max="3"
-              value={latteArt.cappuLeft}
-              onChange={(e) => setLatteArt({ ...latteArt, cappuLeft: Number(e.target.value) })}
-              className="text-center font-mono"
-              data-testid="input-cappu-left"
-            />
-            <Input
-              type="number"
-              min="0"
-              max="3"
-              value={latteArt.cappuRight}
-              onChange={(e) => setLatteArt({ ...latteArt, cappuRight: Number(e.target.value) })}
-              className="text-center font-mono"
-              data-testid="input-cappu-right"
-            />
-
-            <div className="text-sm">Espresso Judge 1:</div>
-            <Input
-              type="number"
-              min="0"
-              max="3"
-              value={latteArt.espresso1Left}
-              onChange={(e) => setLatteArt({ ...latteArt, espresso1Left: Number(e.target.value) })}
-              className="text-center font-mono"
-              data-testid="input-esp1-left"
-            />
-            <Input
-              type="number"
-              min="0"
-              max="3"
-              value={latteArt.espresso1Right}
-              onChange={(e) => setLatteArt({ ...latteArt, espresso1Right: Number(e.target.value) })}
-              className="text-center font-mono"
-              data-testid="input-esp1-right"
-            />
-
-            <div className="text-sm">Espresso Judge 2:</div>
-            <Input
-              type="number"
-              min="0"
-              max="3"
-              value={latteArt.espresso2Left}
-              onChange={(e) => setLatteArt({ ...latteArt, espresso2Left: Number(e.target.value) })}
-              className="text-center font-mono"
-              data-testid="input-esp2-left"
-            />
-            <Input
-              type="number"
-              min="0"
-              max="3"
-              value={latteArt.espresso2Right}
-              onChange={(e) => setLatteArt({ ...latteArt, espresso2Right: Number(e.target.value) })}
-              className="text-center font-mono"
-              data-testid="input-esp2-right"
+              id="judge-name"
+              value={judgeName}
+              onChange={(e) => setJudgeName(e.target.value)}
+              placeholder="Enter judge name"
+              className="mt-1"
+              data-testid="input-judge-name"
             />
           </div>
-          <div className="mt-4 pt-4 border-t">
-            <div className="text-sm font-medium">
-              Latte Art Sub-Total (A): <span className="font-mono text-lg ml-2" data-testid="text-latte-subtotal">{latteArtSubtotal}</span>
+          <div>
+            <Label htmlFor="sensory-beverage">Sensory Beverage</Label>
+            <Select
+              value={sensoryBeverage}
+              onValueChange={(value: "Cappuccino" | "Espresso") => setSensoryBeverage(value)}
+            >
+              <SelectTrigger id="sensory-beverage" className="mt-1" data-testid="select-sensory-beverage">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Cappuccino">Cappuccino</SelectItem>
+                <SelectItem value="Espresso">Espresso</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="left-cup-code">Left Cup Code</Label>
+              <Input
+                id="left-cup-code"
+                value={leftCupCode}
+                onChange={(e) => setLeftCupCode(e.target.value.toUpperCase())}
+                placeholder="e.g., C6"
+                maxLength={3}
+                className="font-mono mt-1"
+                data-testid="input-left-cup-code"
+              />
+            </div>
+            <div>
+              <Label htmlFor="right-cup-code">Right Cup Code</Label>
+              <Input
+                id="right-cup-code"
+                value={rightCupCode}
+                onChange={(e) => setRightCupCode(e.target.value.toUpperCase())}
+                placeholder="e.g., L4"
+                maxLength={3}
+                className="font-mono mt-1"
+                data-testid="input-right-cup-code"
+              />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Sensory Evaluation Section */}
-      <Card data-testid="card-sensory">
+      {/* Scoring Categories */}
+      <Card data-testid="card-scoring">
         <CardHeader className="bg-primary/10">
-          <CardTitle className="text-primary">Sensory Evaluation</CardTitle>
+          <CardTitle className="text-primary">Scoring Categories</CardTitle>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div className="font-medium"></div>
-            <div className="text-center font-medium">LEFT</div>
-            <div className="text-center font-medium">RIGHT</div>
-
-            <div>Taste (1 point)</div>
-            <Input
-              type="number"
-              min="0"
-              max="1"
-              value={leftSensory.cappuTaste}
-              onChange={(e) => setLeftSensory({ ...leftSensory, cappuTaste: Number(e.target.value) })}
-              className="text-center font-mono"
-            />
-            <Input
-              type="number"
-              min="0"
-              max="1"
-              value={rightSensory.cappuTaste}
-              onChange={(e) => setRightSensory({ ...rightSensory, cappuTaste: Number(e.target.value) })}
-              className="text-center font-mono"
-            />
-
-            <div>Tactile (1 point)</div>
-            <Input
-              type="number"
-              min="0"
-              max="1"
-              value={leftSensory.cappuTactile}
-              onChange={(e) => setLeftSensory({ ...leftSensory, cappuTactile: Number(e.target.value) })}
-              className="text-center font-mono"
-            />
-            <Input
-              type="number"
-              min="0"
-              max="1"
-              value={rightSensory.cappuTactile}
-              onChange={(e) => setRightSensory({ ...rightSensory, cappuTactile: Number(e.target.value) })}
-              className="text-center font-mono"
-            />
-
-            <div>Flavour (1 point)</div>
-            <Input
-              type="number"
-              min="0"
-              max="1"
-              value={leftSensory.cappuFlavour}
-              onChange={(e) => setLeftSensory({ ...leftSensory, cappuFlavour: Number(e.target.value) })}
-              className="text-center font-mono"
-            />
-            <Input
-              type="number"
-              min="0"
-              max="1"
-              value={rightSensory.cappuFlavour}
-              onChange={(e) => setRightSensory({ ...rightSensory, cappuFlavour: Number(e.target.value) })}
-              className="text-center font-mono"
-            />
-
-            <div>Overall (5 points)</div>
-            <Input
-              type="number"
-              min="0"
-              max="5"
-              value={leftSensory.cappuOverall}
-              onChange={(e) => setLeftSensory({ ...leftSensory, cappuOverall: Number(e.target.value) })}
-              className="text-center font-mono"
-            />
-            <Input
-              type="number"
-              min="0"
-              max="5"
-              value={rightSensory.cappuOverall}
-              onChange={(e) => setRightSensory({ ...rightSensory, cappuOverall: Number(e.target.value) })}
-              className="text-center font-mono"
-            />
+        <CardContent className="p-6 space-y-4">
+          {/* Visual/Latte Art (3 points) */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Visual/Latte Art (3 points)</span>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={visualLatteArt === "left"}
+                  onCheckedChange={(checked) => {
+                    setVisualLatteArt(checked ? "left" : null);
+                  }}
+                  data-testid="checkbox-visual-left"
+                />
+                <Label className="text-sm cursor-pointer" onClick={() => setVisualLatteArt("left")}>Left</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={visualLatteArt === "right"}
+                  onCheckedChange={(checked) => {
+                    setVisualLatteArt(checked ? "right" : null);
+                  }}
+                  data-testid="checkbox-visual-right"
+                />
+                <Label className="text-sm cursor-pointer" onClick={() => setVisualLatteArt("right")}>Right</Label>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t grid grid-cols-3 gap-4">
-            <div className="font-medium">Sensory Subtotal (B):</div>
-            <div className="text-center font-mono text-lg font-bold" data-testid="text-left-sensory">
-              {leftSensorySubtotal}
+          {/* Sensory Beverage Header */}
+          <div className="flex items-center justify-between p-3 border rounded-lg bg-secondary/20">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Sensory {sensoryBeverage}</span>
             </div>
-            <div className="text-center font-mono text-lg font-bold" data-testid="text-right-sensory">
-              {rightSensorySubtotal}
+            <Badge variant="outline" className="font-medium">
+              {sensoryBeverage}
+            </Badge>
+          </div>
+
+          {/* Taste (1 point) */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Taste (1 point)</span>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={taste === "left"}
+                  onCheckedChange={(checked) => {
+                    setTaste(checked ? "left" : null);
+                  }}
+                  data-testid="checkbox-taste-left"
+                />
+                <Label className="text-sm cursor-pointer" onClick={() => setTaste("left")}>Left</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={taste === "right"}
+                  onCheckedChange={(checked) => {
+                    setTaste(checked ? "right" : null);
+                  }}
+                  data-testid="checkbox-taste-right"
+                />
+                <Label className="text-sm cursor-pointer" onClick={() => setTaste("right")}>Right</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Tactile (1 point) */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Tactile (1 point)</span>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={tactile === "left"}
+                  onCheckedChange={(checked) => {
+                    setTactile(checked ? "left" : null);
+                  }}
+                  data-testid="checkbox-tactile-left"
+                />
+                <Label className="text-sm cursor-pointer" onClick={() => setTactile("left")}>Left</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={tactile === "right"}
+                  onCheckedChange={(checked) => {
+                    setTactile(checked ? "right" : null);
+                  }}
+                  data-testid="checkbox-tactile-right"
+                />
+                <Label className="text-sm cursor-pointer" onClick={() => setTactile("right")}>Right</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Flavour (1 point) */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Flavour (1 point)</span>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={flavour === "left"}
+                  onCheckedChange={(checked) => {
+                    setFlavour(checked ? "left" : null);
+                  }}
+                  data-testid="checkbox-flavour-left"
+                />
+                <Label className="text-sm cursor-pointer" onClick={() => setFlavour("left")}>Left</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={flavour === "right"}
+                  onCheckedChange={(checked) => {
+                    setFlavour(checked ? "right" : null);
+                  }}
+                  data-testid="checkbox-flavour-right"
+                />
+                <Label className="text-sm cursor-pointer" onClick={() => setFlavour("right")}>Right</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Overall (5 points) */}
+          <div className="flex items-center justify-between p-3 border rounded-lg bg-primary/5">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">Overall (5 points)</span>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={overall === "left"}
+                  onCheckedChange={(checked) => {
+                    setOverall(checked ? "left" : null);
+                  }}
+                  data-testid="checkbox-overall-left"
+                />
+                <Label className="text-sm font-medium cursor-pointer" onClick={() => setOverall("left")}>Left</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={overall === "right"}
+                  onCheckedChange={(checked) => {
+                    setOverall(checked ? "right" : null);
+                  }}
+                  data-testid="checkbox-overall-right"
+                />
+                <Label className="text-sm font-medium cursor-pointer" onClick={() => setOverall("right")}>Right</Label>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -265,12 +341,24 @@ export default function JudgeScorecard({ heatNumber, competitors, onSubmit }: Ju
       <Card className="bg-muted/50">
         <CardContent className="p-6">
           <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="font-medium">Competitor Code:</div>
+            <div className="font-medium">Cup Code:</div>
             <div className="text-center">
-              <Badge variant="secondary" className="font-mono">{competitors[0].code}</Badge>
+              <Badge variant="secondary" className="font-mono">
+                {leftCupCode || competitors[0].code}
+              </Badge>
             </div>
             <div className="text-center">
-              <Badge variant="secondary" className="font-mono">{competitors[1].code}</Badge>
+              <Badge variant="secondary" className="font-mono">
+                {rightCupCode || competitors[1].code}
+              </Badge>
+            </div>
+
+            <div className="font-medium">Competitor Code:</div>
+            <div className="text-center">
+              <Badge variant="outline" className="font-mono text-xs">{competitors[0].code}</Badge>
+            </div>
+            <div className="text-center">
+              <Badge variant="outline" className="font-mono text-xs">{competitors[1].code}</Badge>
             </div>
 
             <div className="font-medium">Competitor Name:</div>

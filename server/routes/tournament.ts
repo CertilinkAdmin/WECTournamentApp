@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, inArray } from 'drizzle-orm';
 import { 
   tournaments, 
   tournamentParticipants, 
@@ -94,6 +94,7 @@ router.get('/:id', async (req, res) => {
           })
           .from(heatScores)
           .leftJoin(users, eq(heatScores.judgeId, users.id))
+          .where(inArray(heatScores.matchId, matchIds))
       : [];
 
     // Get detailed scores for this tournament's matches  
@@ -101,6 +102,7 @@ router.get('/:id', async (req, res) => {
       ? await db
           .select()
           .from(judgeDetailedScores)
+          .where(inArray(judgeDetailedScores.matchId, matchIds))
       : [];
 
     res.json({

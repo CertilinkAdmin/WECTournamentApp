@@ -235,16 +235,16 @@ const WEC2025Results = () => {
   // Helper function to determine round from heat number (used in both API and fallback)
   // Round mapping based on user specification:
   // Round 1: Heats 1-16 (first 16 heats)
-  // Round 2: Heats 17-23 (next 7 heats)
-  // Round 3: Heats 24-27 (next 4 heats)
-  // Round 4: Heats 28-29 (2 heats - semifinals)
-  // Round 5: Heat 30+ (Final)
+  // Round 2: Heats 17-24 (next 8 heats)
+  // Round 3: Heats 25-28 (next 4 heats)
+  // Round 4: Heats 29-30 (2 heats - semifinals)
+  // Round 5: Heat 31+ (Final)
   const getRoundFromHeatNumber = (heatNumber: number): number => {
     if (heatNumber >= 1 && heatNumber <= 16) return 1;  // Round 1 - First 16 heats
-    if (heatNumber >= 17 && heatNumber <= 23) return 2; // Round 2 - Next 7 heats
-    if (heatNumber >= 24 && heatNumber <= 27) return 3; // Round 3 - Next 4 heats
-    if (heatNumber >= 28 && heatNumber <= 29) return 4; // Round 4 - 2 heats (Semifinals)
-    if (heatNumber >= 30) return 5;                      // Round 5 - Final
+    if (heatNumber >= 17 && heatNumber <= 24) return 2; // Round 2 - Next 8 heats
+    if (heatNumber >= 25 && heatNumber <= 28) return 3; // Round 3 - Next 4 heats
+    if (heatNumber >= 29 && heatNumber <= 30) return 4; // Round 4 - 2 heats (Semifinals)
+    if (heatNumber >= 31) return 5;                      // Round 5 - Final
     return 1; // Default fallback
   };
 
@@ -416,7 +416,7 @@ const WEC2025Results = () => {
   const getRoundDisplayName = (round: number) => {
     const roundNames: Record<number, string> = {
       1: 'Round 1 - First 16 Heats',
-      2: 'Round 2 - Next 7 Heats', 
+      2: 'Round 2 - Next 8 Heats', 
       3: 'Round 3 - Next 4 Heats',
       4: 'Round 4 - Semifinals (2 Heats)',
       5: 'Round 5 - Final'
@@ -488,32 +488,59 @@ const WEC2025Results = () => {
                   <h3 className="round-card-title">{getRoundDisplayName(round)}</h3>
                   <div className="round-card-bracket">
                     {heatCount > 0 ? (
-                      <svg viewBox="0 0 160 200" className="bracket-svg">
-                        {roundMatches.slice(0, 8).map((match, idx) => {
-                          const y = 20 + (idx * 22);
+                      <svg viewBox="0 0 180 220" className="bracket-svg" style={{ width: '100%', height: '100%' }}>
+                        {roundMatches.map((match, heatIdx) => {
+                          // Two-column bracket view: left column vs right column
+                          // Increased spacing for larger display
+                          const y = 15 + (heatIdx * 13); // 13px spacing per heat (larger)
                           const hasWinner = match.winnerId > 0;
+                          const competitor1Wins = hasWinner && match.winnerId === match.competitor1Id;
+                          const competitor2Wins = hasWinner && match.winnerId === match.competitor2Id;
+                          
                           return (
                             <g key={match.id}>
-                              {/* Match line */}
+                              {/* Left competitor name */}
+                              <text
+                                x="8"
+                                y={y + 4}
+                                fontSize="9"
+                                fill="currentColor"
+                                className={competitor1Wins ? "text-golden" : "text-muted-foreground"}
+                                style={{ fontFamily: 'system-ui, sans-serif', fontWeight: '500' }}
+                              >
+                                {match.competitor1Name || '—'}
+                              </text>
+                              {/* Left competitor line extending right */}
                               <line
-                                x1="10"
-                                y1={y}
-                                x2="150"
-                                y2={y}
+                                x1="8"
+                                y1={y + 7}
+                                x2="75"
+                                y2={y + 7}
                                 stroke="currentColor"
                                 strokeWidth="2"
-                                className={hasWinner ? "text-golden" : "text-muted-foreground"}
+                                className={competitor1Wins ? "text-golden" : "text-muted-foreground"}
                               />
-                              {/* Winner indicator dot */}
-                              {hasWinner && (
-                                <circle
-                                  cx="155"
-                                  cy={y}
-                                  r="3"
-                                  fill="currentColor"
-                                  className="text-golden"
-                                />
-                              )}
+                              {/* Right competitor name */}
+                              <text
+                                x="172"
+                                y={y + 4}
+                                fontSize="9"
+                                fill="currentColor"
+                                className={competitor2Wins ? "text-golden" : "text-muted-foreground"}
+                                style={{ fontFamily: 'system-ui, sans-serif', textAnchor: 'end', fontWeight: '500' }}
+                              >
+                                {match.competitor2Name || 'BYE'}
+                              </text>
+                              {/* Right competitor line extending left */}
+                              <line
+                                x1="105"
+                                y1={y + 7}
+                                x2="172"
+                                y2={y + 7}
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                className={competitor2Wins ? "text-golden" : "text-muted-foreground"}
+                              />
                             </g>
                           );
                         })}

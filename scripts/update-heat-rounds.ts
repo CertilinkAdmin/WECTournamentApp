@@ -27,17 +27,17 @@ async function updateHeatRounds() {
 
     // Round mapping based on user specification:
     // Round 1: Heats 1-16 (first 16 heats)
-    // Round 2: Heats 17-23 (next 7 heats)
-    // Round 3: Heats 24-27 (next 4 heats)
-    // Round 4: Heats 28-29 (2 heats - semifinals)
-    // Round 5: Heat 30+ (Final)
+    // Round 2: Heats 17-24 (next 8 heats)
+    // Round 3: Heats 25-28 (next 4 heats)
+    // Round 4: Heats 29-30 (2 heats - semifinals)
+    // Round 5: Heat 31+ (Final)
 
     const roundUpdates = [
       { round: 1, minHeat: 1, maxHeat: 16, description: 'Round 1 - First 16 heats' },
-      { round: 2, minHeat: 17, maxHeat: 23, description: 'Round 2 - Next 7 heats' },
-      { round: 3, minHeat: 24, maxHeat: 27, description: 'Round 3 - Next 4 heats' },
-      { round: 4, minHeat: 28, maxHeat: 29, description: 'Round 4 - 2 heats (Semifinals)' },
-      { round: 5, minHeat: 30, maxHeat: 999, description: 'Round 5 - Final' },
+      { round: 2, minHeat: 17, maxHeat: 24, description: 'Round 2 - Next 8 heats' },
+      { round: 3, minHeat: 25, maxHeat: 28, description: 'Round 3 - Next 4 heats' },
+      { round: 4, minHeat: 29, maxHeat: 30, description: 'Round 4 - 2 heats (Semifinals)' },
+      { round: 5, minHeat: 31, maxHeat: 999, description: 'Round 5 - Final' },
     ];
 
     let totalUpdated = 0;

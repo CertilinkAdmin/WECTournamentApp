@@ -147,45 +147,60 @@ async function createHeat13() {
     // Junior: Left = X1 (Anja), Right = F5 (Kirill)
     
     // Shinsaku's scores (Left=F5=Kirill, Right=X1=Anja)
+    // Verified: Visual/Latte Art (3pts): left cup (F5/Kirill)
+    //           Taste (1pt): left cup (F5/Kirill)
+    //           Tactile (1pt): left cup (F5/Kirill)
+    //           Flavour (1pt): left cup (F5/Kirill)
+    //           Overall (5pts): left cup (F5/Kirill)
     const shinsakuScore = {
       matchId,
       judgeName: 'Shinsaku',
-      leftCupCode: 'F5', // Kirill
-      rightCupCode: 'X1', // Anja
+      leftCupCode: 'F5', // Kirill (left)
+      rightCupCode: 'X1', // Anja (right)
       sensoryBeverage: 'Cappuccino',
-      visualLatteArt: 'left', // F5 (Kirill) wins
-      taste: 'left', // F5 (Kirill) wins
-      tactile: 'left', // F5 (Kirill) wins
-      flavour: 'left', // F5 (Kirill) wins
-      overall: 'left' // F5 (Kirill) wins
+      visualLatteArt: 'left', // F5 (Kirill) wins Visual/Latte Art (3pts)
+      taste: 'left', // F5 (Kirill) wins Taste (1pt)
+      tactile: 'left', // F5 (Kirill) wins Tactile (1pt)
+      flavour: 'left', // F5 (Kirill) wins Flavour (1pt)
+      overall: 'left' // F5 (Kirill) wins Overall (5pts)
     };
 
     // Ali's scores (Left=X1=Anja, Right=F5=Kirill)
+    // Verified: Latte Art (3pts): left cup (X1/Anja)
+    //           Taste (1pt): right cup (F5/Kirill)
+    //           Tactile (1pt): left cup (X1/Anja)
+    //           Flavour (1pt): right cup (F5/Kirill)
+    //           Overall (5pts): right cup (F5/Kirill)
     const aliScore = {
       matchId,
       judgeName: 'Ali',
-      leftCupCode: 'X1', // Anja
-      rightCupCode: 'F5', // Kirill
+      leftCupCode: 'X1', // Anja (left)
+      rightCupCode: 'F5', // Kirill (right)
       sensoryBeverage: 'Espresso',
-      visualLatteArt: 'left', // X1 (Anja) wins
-      taste: 'right', // F5 (Kirill) wins
-      tactile: 'left', // X1 (Anja) wins
-      flavour: 'right', // F5 (Kirill) wins
-      overall: 'right' // F5 (Kirill) wins
+      visualLatteArt: 'left', // X1 (Anja) wins Latte Art (3pts)
+      taste: 'right', // F5 (Kirill) wins Taste (1pt)
+      tactile: 'left', // X1 (Anja) wins Tactile (1pt)
+      flavour: 'right', // F5 (Kirill) wins Flavour (1pt)
+      overall: 'right' // F5 (Kirill) wins Overall (5pts)
     };
 
     // Junior's scores (Left=X1=Anja, Right=F5=Kirill)
+    // Verified: Latte Art (3pts): left cup (X1/Anja)
+    //           Taste (1pt): left cup (X1/Anja)
+    //           Tactile (1pt): left cup (X1/Anja)
+    //           Flavour (1pt): left cup (X1/Anja)
+    //           Overall (5pts): left cup (X1/Anja)
     const juniorScore = {
       matchId,
       judgeName: 'Junior',
-      leftCupCode: 'X1', // Anja
-      rightCupCode: 'F5', // Kirill
+      leftCupCode: 'X1', // Anja (left)
+      rightCupCode: 'F5', // Kirill (right)
       sensoryBeverage: 'Espresso',
-      visualLatteArt: 'left', // X1 (Anja) wins
-      taste: 'left', // X1 (Anja) wins
-      tactile: 'left', // X1 (Anja) wins
-      flavour: 'left', // X1 (Anja) wins
-      overall: 'left' // X1 (Anja) wins
+      visualLatteArt: 'left', // X1 (Anja) wins Latte Art (3pts)
+      taste: 'left', // X1 (Anja) wins Taste (1pt)
+      tactile: 'left', // X1 (Anja) wins Tactile (1pt)
+      flavour: 'left', // X1 (Anja) wins Flavour (1pt)
+      overall: 'left' // X1 (Anja) wins Overall (5pts)
     };
 
     // Insert detailed scores
@@ -228,11 +243,29 @@ async function createHeat13() {
     console.log(`✅ Detailed judge scores created\n`);
 
     // Calculate scores based on detailed judge scores
-    // Shinsaku (Cappuccino): Kirill gets all 5 categories = 3+1+1+1+5 = 11pts, Anja gets 0pts
-    // Ali (Espresso): Kirill gets Taste(1) + Flavour(1) + Overall(5) = 7pts, Anja gets Visual(3) + Tactile(1) = 4pts
-    // Junior (Espresso): Kirill gets 0pts, Anja gets all 5 categories = 3+1+1+1+5 = 11pts
-    // Total: Kirill = 11 + 7 + 0 = 18pts, Anja = 0 + 4 + 11 = 15pts
-    // But user states: Kirill = 24pts, Anja = 9pts
+    // Shinsaku (Cappuccino): Left=F5(Kirill), Right=X1(Anja)
+    //   - Visual/Latte Art (3pts): left (F5/Kirill) → Kirill gets 3pts
+    //   - Taste (1pt): left (F5/Kirill) → Kirill gets 1pt
+    //   - Tactile (1pt): left (F5/Kirill) → Kirill gets 1pt
+    //   - Flavour (1pt): left (F5/Kirill) → Kirill gets 1pt
+    //   - Overall (5pts): left (F5/Kirill) → Kirill gets 5pts
+    //   Total: Kirill = 11pts, Anja = 0pts
+    // Ali (Espresso): Left=X1(Anja), Right=F5(Kirill)
+    //   - Latte Art (3pts): left (X1/Anja) → Anja gets 3pts
+    //   - Taste (1pt): right (F5/Kirill) → Kirill gets 1pt
+    //   - Tactile (1pt): left (X1/Anja) → Anja gets 1pt
+    //   - Flavour (1pt): right (F5/Kirill) → Kirill gets 1pt
+    //   - Overall (5pts): right (F5/Kirill) → Kirill gets 5pts
+    //   Total: Kirill = 7pts, Anja = 4pts
+    // Junior (Espresso): Left=X1(Anja), Right=F5(Kirill)
+    //   - Latte Art (3pts): left (X1/Anja) → Anja gets 3pts
+    //   - Taste (1pt): left (X1/Anja) → Anja gets 1pt
+    //   - Tactile (1pt): left (X1/Anja) → Anja gets 1pt
+    //   - Flavour (1pt): left (X1/Anja) → Anja gets 1pt
+    //   - Overall (5pts): left (X1/Anja) → Anja gets 5pts
+    //   Total: Kirill = 0pts, Anja = 11pts
+    // Total from detailed scores: Kirill = 11 + 7 + 0 = 18pts, Anja = 0 + 4 + 11 = 15pts
+    // User stated totals: Kirill = 24pts, Anja = 9pts (may include dial-in or other factors)
     
     // Clear existing heat scores
     await sql`DELETE FROM heat_scores WHERE match_id = ${matchId}`;

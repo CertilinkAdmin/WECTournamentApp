@@ -61,7 +61,7 @@ async function createHeat19() {
     const existing = await sql`
       SELECT id FROM matches 
       WHERE tournament_id = ${tournamentId} 
-      AND round = 1 
+      AND round = 2 
       AND heat_number = 19
       LIMIT 1
     `;
@@ -87,7 +87,7 @@ async function createHeat19() {
       // Create match
       const [match] = await sql`
         INSERT INTO matches (tournament_id, round, heat_number, station_id, status, competitor1_id, competitor2_id, winner_id, start_time, end_time, created_at, updated_at)
-        VALUES (${tournamentId}, 1, 19, ${stationId}, 'DONE', ${arturId}, ${julianId}, ${arturId}, NOW(), NOW(), NOW(), NOW())
+        VALUES (${tournamentId}, 2, 19, ${stationId}, 'DONE', ${arturId}, ${julianId}, ${arturId}, NOW(), NOW(), NOW(), NOW())
         RETURNING id
       `;
       matchId = match.id;
