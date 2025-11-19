@@ -1,0 +1,231 @@
+{
+  "chainName": "Tournament Data Migration - Complete Database Integration",
+  "description": "Migrate all tournament result views from static data to database-driven API calls, ensuring all data views populate correctly with tournament results",
+  "version": "1.0.0",
+  "prompts": [
+    {
+      "id": "prompt-1",
+      "step": 1,
+      "title": "Migrate JudgeScorecardsResults.tsx to Database",
+      "description": "Replace static WEC25BracketData imports with API fetch from /api/tournaments/:id, following the pattern from JudgeScorecardsDetail.tsx",
+      "testFirst": true,
+      "testDescription": "Write tests verifying JudgeScorecardsResults fetches data from API, displays all heats correctly, and shows judge scorecards with consensus indicators",
+      "implementationSteps": [
+        "1. Remove imports of WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, etc.",
+        "2. Add tournament data fetching using findTournamentBySlug pattern from JudgeScorecardsDetail.tsx",
+        "3. Transform API match data to match component's expected heat structure",
+        "4. Transform detailedScores to match judge scorecard structure",
+        "5. Preserve all existing UI/UX features (tabs, consensus, search, filters)",
+        "6. Add loading and error states",
+        "7. Ensure consensus indicators work correctly with database data"
+      ],
+      "acceptanceCriteria": [
+        "Component fetches tournament data from /api/tournaments/:id",
+        "All heats display correctly from database",
+        "Judge scorecards show correct data from detailedScores",
+        "Consensus indicators work correctly",
+        "Search and filter functionality preserved",
+        "No static data imports remain"
+      ],
+      "filesToModify": [
+        "client/src/pages/results/JudgeScorecardsResults.tsx"
+      ],
+      "dependencies": [],
+      "nextPromptId": "prompt-2"
+    },
+    {
+      "id": "prompt-2",
+      "step": 2,
+      "title": "Migrate HeatResults.tsx to Database",
+      "description": "Replace static bracket data with API fetch, transform match data to heat structure",
+      "testFirst": true,
+      "testDescription": "Write tests verifying HeatResults fetches heat data from API by heatId, displays competitor info, scores, and judge scorecards correctly",
+      "implementationSteps": [
+        "1. Remove static WEC25BracketData imports",
+        "2. Add tournament data fetching using findTournamentBySlug",
+        "3. Find match by heatNumber from URL params",
+        "4. Transform match and detailedScores to heat structure",
+        "5. Calculate scores from detailedScores",
+        "6. Preserve all UI components (competitors, judge scorecards, round info)",
+        "7. Add loading and error states"
+      ],
+      "acceptanceCriteria": [
+        "Component fetches tournament data from API",
+        "Heat found by heatNumber from URL",
+        "Competitor information displays correctly",
+        "Judge scorecards display from detailedScores",
+        "Round information calculated correctly",
+        "Error handling for missing heat"
+      ],
+      "filesToModify": [
+        "client/src/pages/results/HeatResults.tsx"
+      ],
+      "dependencies": ["prompt-1"],
+      "nextPromptId": "prompt-3"
+    },
+    {
+      "id": "prompt-3",
+      "step": 3,
+      "title": "Migrate BaristaDetail.tsx to Database",
+      "description": "Replace static bracket data with API fetch, filter matches by barista name, calculate scores from detailedScores",
+      "testFirst": true,
+      "testDescription": "Write tests verifying BaristaDetail fetches tournament data, filters matches by barista name, calculates category scores correctly, and displays all heats",
+      "implementationSteps": [
+        "1. Remove static WEC25BracketData imports",
+        "2. Add tournament data fetching using findTournamentBySlug",
+        "3. Filter matches where barista is competitor1 or competitor2",
+        "4. Transform matches to heat structure with scores calculated from detailedScores",
+        "5. Calculate category scores (latteArt, taste, tactile, flavor, overall) from judge votes",
+        "6. Calculate total points per heat and overall totals",
+        "7. Preserve navigation, summary table, and all UI features",
+        "8. Add loading and error states"
+      ],
+      "acceptanceCriteria": [
+        "Component fetches tournament data from API",
+        "Matches filtered correctly by barista name",
+        "Category scores calculated correctly from detailedScores",
+        "Total points calculated correctly",
+        "All heats summary table displays correctly",
+        "Navigation between heats works",
+        "Overall tournament totals calculated correctly"
+      ],
+      "filesToModify": [
+        "client/src/pages/results/BaristaDetail.tsx"
+      ],
+      "dependencies": ["prompt-2"],
+      "nextPromptId": "prompt-4"
+    },
+    {
+      "id": "prompt-4",
+      "step": 4,
+      "title": "Add Consensus Indicators to JudgeScorecardsDetail.tsx",
+      "description": "Add Visual Latte Art consensus indicators (green checkmark for majority, L/R for minority) matching JudgeScorecardsResults.tsx",
+      "testFirst": true,
+      "testDescription": "Write tests verifying consensus indicators show correctly for Visual Latte Art category, showing green checkmark for majority votes and L/R for minority",
+      "implementationSteps": [
+        "1. Add consensus calculation function for Visual Latte Art",
+        "2. Determine majority/minority for each judge's vote",
+        "3. Add CheckCircle2 icon for majority votes (green)",
+        "4. Add L/R text indicators for minority votes (red)",
+        "5. Match styling from JudgeScorecardsResults.tsx",
+        "6. Only show for Visual Latte Art category (not other categories)"
+      ],
+      "acceptanceCriteria": [
+        "Consensus indicators display for Visual Latte Art",
+        "Green checkmark shows for majority votes",
+        "L/R indicators show for minority votes",
+        "Styling matches JudgeScorecardsResults.tsx",
+        "Other categories unchanged"
+      ],
+      "filesToModify": [
+        "client/src/pages/results/JudgeScorecardsDetail.tsx"
+      ],
+      "dependencies": ["prompt-1"],
+      "nextPromptId": "prompt-5"
+    },
+    {
+      "id": "prompt-5",
+      "step": 5,
+      "title": "Remove Static Data Fallback from WEC2025Results.tsx",
+      "description": "Replace static data fallback with proper error UI when API fetch fails",
+      "testFirst": true,
+      "testDescription": "Write tests verifying WEC2025Results shows error UI instead of fallback data when API fails",
+      "implementationSteps": [
+        "1. Remove buildFallbackData function",
+        "2. Remove static WEC25BracketData imports",
+        "3. Update handleError to set error state instead of fallback",
+        "4. Add proper error UI component",
+        "5. Ensure error message is user-friendly",
+        "6. Add retry functionality"
+      ],
+      "acceptanceCriteria": [
+        "No static data fallback on error",
+        "Error UI displays when API fails",
+        "Error message is clear and actionable",
+        "Retry functionality works",
+        "No static data imports remain"
+      ],
+      "filesToModify": [
+        "client/src/pages/results/WEC2025Results.tsx"
+      ],
+      "dependencies": [],
+      "nextPromptId": "prompt-6"
+    },
+    {
+      "id": "prompt-6",
+      "step": 6,
+      "title": "Add Score Validation Utility",
+      "description": "Create utility function to verify detailed scores sum to aggregated scores, log discrepancies",
+      "testFirst": true,
+      "testDescription": "Write tests verifying score validation function correctly sums detailed scores, compares to aggregated scores, and logs discrepancies",
+      "implementationSteps": [
+        "1. Create scoreValidation.ts utility file",
+        "2. Add function to sum detailed scores by matchId, competitorId, segment",
+        "3. Add function to compare with aggregated heatScores",
+        "4. Add logging for discrepancies",
+        "5. Add validation call in WEC2025Results after data fetch",
+        "6. Add console warnings for mismatches"
+      ],
+      "acceptanceCriteria": [
+        "Validation utility created",
+        "Detailed scores correctly summed",
+        "Comparison with aggregated scores works",
+        "Discrepancies logged to console",
+        "Validation called after data fetch"
+      ],
+      "filesToModify": [
+        "client/src/utils/scoreValidation.ts",
+        "client/src/pages/results/WEC2025Results.tsx"
+      ],
+      "dependencies": ["prompt-5"],
+      "nextPromptId": "prompt-7"
+    },
+    {
+      "id": "prompt-7",
+      "step": 7,
+      "title": "Fetch Station from Match Data in JudgeScorecardsDetail.tsx",
+      "description": "Replace hardcoded station 'A' with actual station from match data if available",
+      "testFirst": true,
+      "testDescription": "Write tests verifying JudgeScorecardsDetail displays correct station from match data when available",
+      "implementationSteps": [
+        "1. Check if match has stationId field",
+        "2. Fetch station name from stations API if stationId exists",
+        "3. Use station name or fallback to 'A' if not available",
+        "4. Update display to show correct station",
+        "5. Handle loading state for station fetch"
+      ],
+      "acceptanceCriteria": [
+        "Station fetched from match data when available",
+        "Station name displays correctly",
+        "Falls back to 'A' if station not available",
+        "Loading state handled correctly"
+      ],
+      "filesToModify": [
+        "client/src/pages/results/JudgeScorecardsDetail.tsx"
+      ],
+      "dependencies": ["prompt-4"],
+      "nextPromptId": null
+    }
+  ],
+  "executionOrder": [
+    "prompt-1",
+    "prompt-2",
+    "prompt-3",
+    "prompt-4",
+    "prompt-5",
+    "prompt-6",
+    "prompt-7"
+  ],
+  "testStrategy": "TDD - Write tests first for each prompt, then implement functionality to pass tests",
+  "validationChecklist": [
+    "All components fetch from database API",
+    "No static data imports remain",
+    "Error handling implemented",
+    "Loading states added",
+    "Consensus indicators work correctly",
+    "Score validation implemented",
+    "All tests pass",
+    "UI/UX features preserved"
+  ]
+}
+
