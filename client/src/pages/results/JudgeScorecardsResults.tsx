@@ -1,17 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trophy, Users, Coffee, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react';
-import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
+import { Trophy, Users, Coffee, Search, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { findTournamentBySlug } from '@/utils/tournamentUtils';
+import { transformTournamentData } from '@/utils/tournamentDataTransform';
+import { stationIdToLetter } from '@/utils/stationUtils';
 import JudgeConsensus from '@/components/JudgeConsensus';
+
+interface Match {
+  id: number;
+  round: number;
+  heatNumber: number;
+  status: string;
+  competitor1Id: number | null;
+  competitor2Id: number | null;
+  winnerId: number | null;
+  competitor1Name: string;
+  competitor2Name: string;
+  stationId?: number | null;
+}
+
+interface JudgeDetailedScore {
+  matchId: number;
+  judgeName: string;
+  leftCupCode: string;
+  rightCupCode: string;
+  sensoryBeverage: string;
+  visualLatteArt: 'left' | 'right';
+  taste: 'left' | 'right';
+  tactile: 'left' | 'right';
+  flavour: 'left' | 'right';
+  overall: 'left' | 'right';
+}
+
+interface TournamentData {
+  tournament: any;
+  matches: Match[];
+  detailedScores: JudgeDetailedScore[];
+}
+
+interface Heat {
+  heatNumber: number;
+  competitor1: string;
+  competitor2: string;
+  winner: string | null;
+  station: string;
+  leftCupCode?: string;
+  rightCupCode?: string;
+  score1?: number;
+  score2?: number;
+  judges: Array<{
+    judgeName: string;
+    leftCupCode: string;
+    rightCupCode: string;
+    sensoryBeverage: string;
+    visualLatteArt: 'left' | 'right';
+    taste: 'left' | 'right';
+    tactile: 'left' | 'right';
+    flavour: 'left' | 'right';
+    overall: 'left' | 'right';
+  }>;
+}
 
 const JudgeScorecardsResults: React.FC = () => {
   const navigate = useNavigate();
+  const { tournamentSlug } = useParams<{ tournamentSlug?: string }>();
+  const tournament = tournamentSlug || 'WEC2025';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedHeat, setSelectedHeat] = useState<number | null>(null);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
@@ -20,42 +79,199 @@ const JudgeScorecardsResults: React.FC = () => {
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [selectedJudgeTab, setSelectedJudgeTab] = useState<string>('');
   const [showConsensus, setShowConsensus] = useState(false);
+  const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const allHeats = [
-    ...WEC25_BRACKET_POSITIONS,
-    ...WEC25_ROUND2_POSITIONS,
-    ...WEC25_ROUND3_POSITIONS,
-    ...WEC25_ROUND4_POSITIONS,
-    ...WEC25_FINAL_POSITION
-  ];
+  // Fetch tournament data from API
+  useEffect(() => {
+    const fetchTournamentData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const tournamentsResponse = await fetch('/api/tournaments');
+        if (!tournamentsResponse.ok) {
+          const errorText = await tournamentsResponse.text();
+          console.error('Failed to fetch tournaments:', errorText);
+          throw new Error(`Failed to fetch tournaments list: ${tournamentsResponse.status} ${tournamentsResponse.statusText}`);
+        }
+        
+        const tournaments = await tournamentsResponse.json();
+        console.log('Fetched tournaments:', tournaments);
+        
+        const wecTournament = findTournamentBySlug(tournaments, tournament);
+        
+        if (!wecTournament) {
+          const fallbackTournament = tournaments.find((t: any) => 
+            t.name?.toLowerCase().includes('wec') || 
+            t.name?.toLowerCase().includes('world espresso') ||
+            t.name?.toLowerCase().includes('2025')
+          );
+          
+          if (!fallbackTournament) {
+            console.error('No tournament found. Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
+            throw new Error(`Tournament not found. Looking for: ${tournament}. Available: ${tournaments.map((t: any) => t.name).join(', ')}`);
+          }
+          
+          const tournamentId = fallbackTournament.id;
+          console.log('Using fallback tournament:', fallbackTournament.name, 'ID:', tournamentId);
+          const response = await fetch(`/api/tournaments/${tournamentId}`);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to fetch tournament data:', errorText);
+            throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          console.log('Fetched tournament data:', { 
+            tournament: data.tournament?.name, 
+            matchesCount: data.matches?.length, 
+            detailedScoresCount: data.detailedScores?.length 
+          });
+          
+          const transformedData = transformTournamentData(data);
+          setTournamentData(transformedData);
+          return;
+        }
+
+        const tournamentId = wecTournament.id;
+        console.log('Using tournament:', wecTournament.name, 'ID:', tournamentId);
+        const response = await fetch(`/api/tournaments/${tournamentId}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Failed to fetch tournament data:', errorText);
+          throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Fetched tournament data:', { 
+          tournament: data.tournament?.name, 
+          matchesCount: data.matches?.length, 
+          detailedScoresCount: data.detailedScores?.length 
+        });
+        
+        const transformedData = transformTournamentData(data);
+        setTournamentData(transformedData);
+      } catch (err: any) {
+        console.error('Error fetching tournament data:', err);
+        setError(err.message || 'Failed to load tournament data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTournamentData();
+  }, [tournament]);
+
+  // Transform API data to heat structure
+  const allHeats = useMemo(() => {
+    if (!tournamentData?.matches || !tournamentData?.detailedScores) return [];
+
+    return tournamentData.matches
+      .map(match => {
+        // Get all judge scorecards for this match
+        const judgeScores = tournamentData.detailedScores.filter(
+          score => score.matchId === match.id
+        );
+
+        // If no judge scores, skip this match
+        if (judgeScores.length === 0) return null;
+
+        // Get first judge's cup codes (they should be consistent across judges)
+        const firstJudge = judgeScores[0];
+        const leftCupCode = firstJudge.leftCupCode;
+        const rightCupCode = firstJudge.rightCupCode;
+
+        // Determine winner
+        const winner = match.winnerId === match.competitor1Id 
+          ? match.competitor1Name 
+          : match.winnerId === match.competitor2Id 
+          ? match.competitor2Name 
+          : null;
+
+        // Determine station
+        const station = stationIdToLetter(match.stationId);
+
+        // Transform judge scores to expected format
+        const judges = judgeScores.map(score => ({
+          judgeName: score.judgeName,
+          leftCupCode: score.leftCupCode,
+          rightCupCode: score.rightCupCode,
+          sensoryBeverage: score.sensoryBeverage,
+          visualLatteArt: score.visualLatteArt,
+          taste: score.taste,
+          tactile: score.tactile,
+          flavour: score.flavour,
+          overall: score.overall,
+        }));
+
+        return {
+          heatNumber: match.heatNumber,
+          competitor1: match.competitor1Name || '',
+          competitor2: match.competitor2Name || '',
+          winner,
+          station,
+          leftCupCode,
+          rightCupCode,
+          judges,
+        } as Heat;
+      })
+      .filter((heat): heat is Heat => heat !== null)
+      .sort((a, b) => a.heatNumber - b.heatNumber);
+  }, [tournamentData]);
 
 
-  // Helper function to determine round from heat number
-  const getRoundFromHeatNumber = (heatNumber: number): number => {
+  // Helper function to determine round from heat number (fallback if round not in data)
+  const getRoundFromHeatNumber = (heatNumber: number, round?: number): number => {
+    if (round !== undefined) return round;
     if (heatNumber >= 1 && heatNumber <= 16) return 1;  // Round 1: Heats 1-16
     if (heatNumber >= 17 && heatNumber <= 24) return 2; // Round 2: Heats 17-24
     if (heatNumber >= 25 && heatNumber <= 28) return 3; // Round 3: Heats 25-28
     if (heatNumber >= 29 && heatNumber <= 30) return 4; // Round 4: Heats 29-30
-    if (heatNumber === 31) return 5;                    // Final: Heat 31
+    if (heatNumber >= 31) return 5;                      // Final: Heat 31+
     return 1; // Default fallback
   };
 
-  // Get available rounds
-  const availableRounds = Array.from(new Set(allHeats.map(h => getRoundFromHeatNumber(h.heatNumber)))).sort((a, b) => a - b);
+  // Get available rounds from database or calculate
+  const availableRounds = useMemo(() => {
+    if (!tournamentData?.matches) return [];
+    const rounds = tournamentData.matches
+      .map(m => m.round)
+      .filter((round): round is number => round !== undefined && round !== null);
+    return Array.from(new Set(rounds)).sort((a, b) => a - b);
+  }, [tournamentData]);
+
+  // Get round for each heat from database
+  const getHeatRound = useMemo(() => {
+    if (!tournamentData?.matches) return new Map<number, number>();
+    const roundMap = new Map<number, number>();
+    tournamentData.matches.forEach(match => {
+      if (match.round !== undefined && match.round !== null) {
+        roundMap.set(match.heatNumber, match.round);
+      }
+    });
+    return roundMap;
+  }, [tournamentData]);
 
   // Filter heats based on search and filters
-  const filteredHeats = allHeats.filter(heat => {
-    const matchesSearch = !searchTerm || 
-      heat.competitor1.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      heat.competitor2.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      heat.winner?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesHeat = !selectedHeat || heat.heatNumber === selectedHeat;
-    
-    const matchesRound = !selectedRound || getRoundFromHeatNumber(heat.heatNumber) === selectedRound;
-    
-    return matchesSearch && matchesHeat && matchesRound;
-  });
+  const filteredHeats = useMemo(() => {
+    return allHeats.filter(heat => {
+      const matchesSearch = !searchTerm || 
+        heat.competitor1.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        heat.competitor2.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        heat.winner?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesHeat = !selectedHeat || heat.heatNumber === selectedHeat;
+      
+      const heatRound = getHeatRound.get(heat.heatNumber);
+      const matchesRound = !selectedRound || getRoundFromHeatNumber(heat.heatNumber, heatRound) === selectedRound;
+      
+      return matchesSearch && matchesHeat && matchesRound;
+    });
+  }, [allHeats, searchTerm, selectedHeat, selectedRound, getHeatRound]);
 
   // Reset current index when filters change
   useEffect(() => {
@@ -111,6 +327,35 @@ const JudgeScorecardsResults: React.FC = () => {
   }, [currentHeat]);
 
 
+  if (loading) {
+    return (
+      <div className="min-h-screen tournament-bracket-bg p-6 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Loading judge scorecards...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen tournament-bracket-bg p-6 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen tournament-bracket-bg p-6">
       <div className="max-w-7xl mx-auto">
@@ -148,7 +393,10 @@ const JudgeScorecardsResults: React.FC = () => {
             <SelectContent>
               <SelectItem value="all">All Rounds</SelectItem>
               {availableRounds.map(round => {
-                const roundHeats = allHeats.filter(h => getRoundFromHeatNumber(h.heatNumber) === round);
+                const roundHeats = allHeats.filter(h => {
+                  const heatRound = getHeatRound.get(h.heatNumber);
+                  return getRoundFromHeatNumber(h.heatNumber, heatRound) === round;
+                });
                 const roundName = round === 5 ? 'Final' : round === 4 ? 'Semi-Finals' : `Round ${round}`;
                 return (
                   <SelectItem key={round} value={round.toString()}>
@@ -166,7 +414,10 @@ const JudgeScorecardsResults: React.FC = () => {
           >
             <option value="">All Heats</option>
             {(selectedRound 
-              ? allHeats.filter(h => getRoundFromHeatNumber(h.heatNumber) === selectedRound)
+              ? allHeats.filter(h => {
+                  const heatRound = getHeatRound.get(h.heatNumber);
+                  return getRoundFromHeatNumber(h.heatNumber, heatRound) === selectedRound;
+                })
               : allHeats
             ).map(heat => (
               <option key={heat.heatNumber} value={heat.heatNumber}>
@@ -214,7 +465,8 @@ const JudgeScorecardsResults: React.FC = () => {
               {currentHeat && (
                 <div className="text-xs text-primary/70 font-medium mt-1">
                   {(() => {
-                    const round = getRoundFromHeatNumber(currentHeat.heatNumber);
+                    const heatRound = getHeatRound.get(currentHeat.heatNumber);
+                    const round = getRoundFromHeatNumber(currentHeat.heatNumber, heatRound);
                     const roundName = round === 5 ? 'Final' : round === 4 ? 'Semi-Finals' : `Round ${round}`;
                     return roundName;
                   })()}

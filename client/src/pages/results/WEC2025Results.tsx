@@ -6,10 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Trophy, Coffee, ArrowLeft } from 'lucide-react';
+import { X, Trophy, Coffee, ArrowLeft, Loader2 } from 'lucide-react';
 import CompetitorScorecard from '@/components/CompetitorScorecard';
 import SensoryEvaluationCard from '@/components/SensoryEvaluationCard';
-import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
+import { validateScores, logScoreDiscrepancies } from '@/utils/scoreValidation';
 import './WEC2025Results.css';
 
 interface Tournament {
@@ -62,6 +62,7 @@ interface JudgeDetailedScore {
   sensoryBeverage: string;
   visualLatteArt: "left" | "right";
   taste: "left" | "right";
+  tactile: "left" | "right";
   flavour: "left" | "right";
   overall: "left" | "right";
 }
@@ -134,101 +135,9 @@ const WEC2025Results = () => {
     return matchesByRound[selectedRound] || [];
   }, [matchesByRound, selectedRound]);
 
-  // Define all functions used by hooks BEFORE early returns
-  // Build a minimal TournamentData from the local WEC25 data used elsewhere
-  const buildFallbackData = (): TournamentData | null => {
-    try {
-      const heats = [
-        ...WEC25_BRACKET_POSITIONS,
-        ...WEC25_ROUND2_POSITIONS,
-        ...WEC25_ROUND3_POSITIONS,
-        ...WEC25_ROUND4_POSITIONS,
-        ...WEC25_FINAL_POSITION,
-      ];
-
-      // Participants (unique names)
-      const nameSet = new Set<string>();
-      heats.forEach((h: any) => {
-        if (h.competitor1) nameSet.add(h.competitor1);
-        if (h.competitor2) nameSet.add(h.competitor2);
-        if (h.winner) nameSet.add(h.winner);
-      });
-      const participants = Array.from(nameSet).map((name, idx) => ({
-        id: idx + 1,
-        seed: idx + 1,
-        finalRank: null,
-        userId: idx + 1,
-        name,
-        email: ''
-      }));
-
-      // Helper to map a competitor name to id
-      const nameToId = new Map(participants.map(p => [p.name, p.id]));
-
-      // Matches from heats
-      const matches = heats.map((h: any, i: number) => ({
-        id: i + 1,
-        round: getRoundFromHeatNumber(h.heatNumber),
-        heatNumber: h.heatNumber,
-        status: h.winner ? 'DONE' : 'PENDING',
-        startTime: '',
-        endTime: '',
-        competitor1Id: nameToId.get(h.competitor1) || 0,
-        competitor2Id: nameToId.get(h.competitor2) || 0,
-        winnerId: nameToId.get(h.winner) || 0,
-        competitor1Name: h.competitor1 || '',
-        competitor2Name: h.competitor2 || ''
-      }));
-
-      // Detailed scores (judge decisions) for dialog cards
-      const detailedScores = heats.flatMap((h: any) => {
-        const match = matches.find(m => m.heatNumber === h.heatNumber);
-        if (!match || !h.judges) return [] as JudgeDetailedScore[];
-        return h.judges.map((j: any) => ({
-          matchId: match.id,
-          judgeName: j.judgeName,
-          leftCupCode: j.leftCupCode,
-          rightCupCode: j.rightCupCode,
-          sensoryBeverage: j.sensoryBeverage,
-          visualLatteArt: j.visualLatteArt,
-          taste: j.taste,
-          flavour: j.flavour,
-          overall: j.overall,
-        } as JudgeDetailedScore));
-      });
-
-      const data: TournamentData = {
-        tournament: {
-          id: 1,
-          name: 'World Espresso Championships 2025 Milano',
-          status: 'COMPLETED',
-          startDate: '',
-          endDate: '',
-          totalRounds: 5,  // Round 1-4 + Final
-          currentRound: 5, // Tournament is completed
-        },
-        participants,
-        matches,
-        scores: [],
-        detailedScores,
-      };
-      return data;
-    } catch (e) {
-      console.error('Failed to build fallback results data', e);
-      return null;
-    }
-  };
-
   const handleError = (err: any) => {
     console.error('Error fetching tournament data:', err);
-    // Fallback to local static bracket data so the page remains interactive
-    const fallback = buildFallbackData();
-    if (fallback) {
-      setTournamentData(fallback);
-      setError(null);
-    } else {
-      setError('Failed to load tournament data');
-    }
+    setError(err.message || 'Failed to load tournament data. Please try again later.');
     setLoading(false);
   };
 
@@ -312,6 +221,16 @@ const WEC2025Results = () => {
     setTournamentData(transformedData);
     setLoading(false);
     setError(null);
+
+    // Validate scores after data is loaded
+    if (transformedData.detailedScores.length > 0 && transformedData.scores.length > 0) {
+      const discrepancies = validateScores(
+        transformedData.detailedScores,
+        transformedData.scores,
+        transformedData.matches
+      );
+      logScoreDiscrepancies(discrepancies);
+    }
   };
 
   const fetchByName = async () => {

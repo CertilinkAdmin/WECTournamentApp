@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Trophy, ArrowLeft, Loader2 } from 'lucide-react';
+import { Users, Trophy, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { findTournamentBySlug } from '@/utils/tournamentUtils';
+import { stationIdToLetter } from '@/utils/stationUtils';
+import { transformTournamentData } from '@/utils/tournamentDataTransform';
 
 interface Match {
   id: number;
@@ -16,6 +18,7 @@ interface Match {
   winnerId: number | null;
   competitor1Name: string;
   competitor2Name: string;
+  stationId?: number | null;
 }
 
 interface JudgeDetailedScore {
@@ -58,10 +61,14 @@ const JudgeScorecardsDetail: React.FC = () => {
         // Get tournament ID from slug using the same utility as other components
         const tournamentsResponse = await fetch('/api/tournaments');
         if (!tournamentsResponse.ok) {
-          throw new Error('Failed to fetch tournaments list');
+          const errorText = await tournamentsResponse.text();
+          console.error('Failed to fetch tournaments:', errorText);
+          throw new Error(`Failed to fetch tournaments list: ${tournamentsResponse.status} ${tournamentsResponse.statusText}`);
         }
         
         const tournaments = await tournamentsResponse.json();
+        console.log('Fetched tournaments:', tournaments);
+        
         const wecTournament = findTournamentBySlug(tournaments, tournament);
         
         if (!wecTournament) {
@@ -73,31 +80,51 @@ const JudgeScorecardsDetail: React.FC = () => {
           );
           
           if (!fallbackTournament) {
-            console.error('Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
-            throw new Error(`Tournament not found. Looking for: ${tournament}`);
+            console.error('No tournament found. Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
+            throw new Error(`Tournament not found. Looking for: ${tournament}. Available: ${tournaments.map((t: any) => t.name).join(', ')}`);
           }
           
           const tournamentId = fallbackTournament.id;
+          console.log('Using fallback tournament:', fallbackTournament.name, 'ID:', tournamentId);
           const response = await fetch(`/api/tournaments/${tournamentId}`);
           
           if (!response.ok) {
-            throw new Error('Failed to fetch tournament data');
+            const errorText = await response.text();
+            console.error('Failed to fetch tournament data:', errorText);
+            throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}`);
           }
           
           const data = await response.json();
-          setTournamentData(data);
+          console.log('Fetched tournament data:', { 
+            tournament: data.tournament?.name, 
+            matchesCount: data.matches?.length, 
+            detailedScoresCount: data.detailedScores?.length 
+          });
+          
+          const transformedData = transformTournamentData(data);
+          setTournamentData(transformedData);
           return;
         }
 
         const tournamentId = wecTournament.id;
+        console.log('Using tournament:', wecTournament.name, 'ID:', tournamentId);
         const response = await fetch(`/api/tournaments/${tournamentId}`);
         
         if (!response.ok) {
-          throw new Error('Failed to fetch tournament data');
+          const errorText = await response.text();
+          console.error('Failed to fetch tournament data:', errorText);
+          throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
-        setTournamentData(data);
+        console.log('Fetched tournament data:', { 
+          tournament: data.tournament?.name, 
+          matchesCount: data.matches?.length, 
+          detailedScoresCount: data.detailedScores?.length 
+        });
+        
+        const transformedData = transformTournamentData(data);
+        setTournamentData(transformedData);
       } catch (err: any) {
         console.error('Error fetching tournament data:', err);
         console.error('Tournament slug:', tournament);
@@ -130,6 +157,9 @@ const JudgeScorecardsDetail: React.FC = () => {
           score => score.matchId === match.id && score.judgeName === decodedJudgeName
         );
         
+        // Determine station from match data
+        const station = stationIdToLetter(match.stationId);
+        
         return {
           id: match.id,
           heatNumber: match.heatNumber,
@@ -138,7 +168,7 @@ const JudgeScorecardsDetail: React.FC = () => {
           competitor2: match.competitor2Name,
           winner: match.winnerId === match.competitor1Id ? match.competitor1Name : 
                   match.winnerId === match.competitor2Id ? match.competitor2Name : null,
-          station: 'A', // Default, could be fetched from match if available
+          station,
           judgeScorecard: judgeScore ? {
             judgeName: judgeScore.judgeName,
             leftCupCode: judgeScore.leftCupCode,
@@ -158,6 +188,34 @@ const JudgeScorecardsDetail: React.FC = () => {
 
   const currentHeat = judgeHeats[currentHeatIndex];
   const currentJudgeScorecard = currentHeat?.judgeScorecard;
+
+  // Calculate consensus for Visual Latte Art for current heat
+  const visualLatteArtConsensus = useMemo(() => {
+    if (!currentHeat || !tournamentData?.detailedScores) return null;
+    
+    // Get all judge scores for this heat
+    const allJudgeScores = tournamentData.detailedScores.filter(
+      score => score.matchId === currentHeat.id
+    );
+    
+    if (allJudgeScores.length === 0) return null;
+    
+    // Count votes
+    const votes = allJudgeScores.map(score => score.visualLatteArt);
+    const leftVotes = votes.filter(v => v === 'left').length;
+    const rightVotes = votes.filter(v => v === 'right').length;
+    
+    if (leftVotes > rightVotes) return 'left';
+    if (rightVotes > leftVotes) return 'right';
+    return 'tie';
+  }, [currentHeat, tournamentData]);
+
+  // Check if current judge's vote is in majority
+  const isInMajority = useMemo(() => {
+    if (!visualLatteArtConsensus || !currentJudgeScorecard) return null;
+    if (visualLatteArtConsensus === 'tie') return true;
+    return currentJudgeScorecard.visualLatteArt === visualLatteArtConsensus;
+  }, [visualLatteArtConsensus, currentJudgeScorecard]);
 
   const nextHeat = () => {
     if (currentHeatIndex < judgeHeats.length - 1) {
@@ -374,9 +432,23 @@ const JudgeScorecardsDetail: React.FC = () => {
                         <label className="flex items-center gap-2 justify-start">
                           <input type="checkbox" checked={currentJudgeScorecard?.visualLatteArt === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
+                          {currentJudgeScorecard?.visualLatteArt === 'left' && visualLatteArtConsensus && (
+                            isInMajority ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            ) : (
+                              <span className="text-xs font-semibold text-red-600 dark:text-red-400">L</span>
+                            )
+                          )}
                         </label>
                         <div className="text-center font-semibold text-primary">Visual Latte Art</div>
                         <label className="flex items-center gap-2 justify-end">
+                          {currentJudgeScorecard?.visualLatteArt === 'right' && visualLatteArtConsensus && (
+                            isInMajority ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            ) : (
+                              <span className="text-xs font-semibold text-red-600 dark:text-red-400">R</span>
+                            )
+                          )}
                           <span className="text-xs text-muted-foreground">Right</span>
                           <input type="checkbox" checked={currentJudgeScorecard?.visualLatteArt === 'right'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                         </label>

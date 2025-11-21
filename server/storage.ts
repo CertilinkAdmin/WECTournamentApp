@@ -183,9 +183,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]> {
-    return await db.select()
-      .from(tournamentRegistrations)
-      .where(eq(tournamentRegistrations.tournamentId, tournamentId));
+    try {
+      return await db.select()
+        .from(tournamentRegistrations)
+        .where(eq(tournamentRegistrations.tournamentId, tournamentId));
+    } catch (error: any) {
+      // Handle case where tournament_registrations table doesn't exist
+      if (error.message?.includes('does not exist') || error.message?.includes('relation')) {
+        console.warn('tournament_registrations table does not exist, returning empty array');
+        return [];
+      }
+      throw error;
+    }
   }
 
   async updateRegistrationSeed(registrationId: number, seed: number): Promise<TournamentRegistration | undefined> {

@@ -1,10 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { User, Trophy, ArrowLeft } from 'lucide-react';
-import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
+import { User, Trophy, ArrowLeft, Loader2 } from 'lucide-react';
+import { findTournamentBySlug } from '@/utils/tournamentUtils';
+import { stationIdToLetter } from '@/utils/stationUtils';
+import { transformTournamentData } from '@/utils/tournamentDataTransform';
+
+interface Match {
+  id: number;
+  round: number;
+  heatNumber: number;
+  status: string;
+  competitor1Id: number | null;
+  competitor2Id: number | null;
+  winnerId: number | null;
+  competitor1Name: string;
+  competitor2Name: string;
+  stationId?: number | null;
+}
+
+interface JudgeDetailedScore {
+  matchId: number;
+  judgeName: string;
+  leftCupCode: string;
+  rightCupCode: string;
+  sensoryBeverage: string;
+  visualLatteArt: 'left' | 'right';
+  taste: 'left' | 'right';
+  tactile: 'left' | 'right';
+  flavour: 'left' | 'right';
+  overall: 'left' | 'right';
+}
+
+interface TournamentData {
+  tournament: any;
+  matches: Match[];
+  detailedScores: JudgeDetailedScore[];
+}
 
 interface CategoryScores {
   latteArt: number;
@@ -51,6 +85,9 @@ const BaristaDetail: React.FC = () => {
   const navigate = useNavigate();
   const tournament = tournamentSlug || 'WEC2025';
   const [currentHeatIndex, setCurrentHeatIndex] = useState(0);
+  const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Get heat number from URL query params if navigating from a heat
   const searchParams = new URLSearchParams(window.location.search);
@@ -58,75 +95,143 @@ const BaristaDetail: React.FC = () => {
 
   const decodedBaristaName = baristaName ? decodeURIComponent(baristaName) : '';
 
-  const allHeats = [
-    ...WEC25_BRACKET_POSITIONS,
-    ...WEC25_ROUND2_POSITIONS,
-    ...WEC25_ROUND3_POSITIONS,
-    ...WEC25_ROUND4_POSITIONS,
-    ...WEC25_FINAL_POSITION
-  ];
+  // Fetch tournament data from API
+  useEffect(() => {
+    const fetchTournamentData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const tournamentsResponse = await fetch('/api/tournaments');
+        if (!tournamentsResponse.ok) {
+          const errorText = await tournamentsResponse.text();
+          console.error('Failed to fetch tournaments:', errorText);
+          throw new Error(`Failed to fetch tournaments list: ${tournamentsResponse.status} ${tournamentsResponse.statusText}`);
+        }
+        
+        const tournaments = await tournamentsResponse.json();
+        console.log('Fetched tournaments:', tournaments);
+        
+        const wecTournament = findTournamentBySlug(tournaments, tournament);
+        
+        if (!wecTournament) {
+          const fallbackTournament = tournaments.find((t: any) => 
+            t.name?.toLowerCase().includes('wec') || 
+            t.name?.toLowerCase().includes('world espresso') ||
+            t.name?.toLowerCase().includes('2025')
+          );
+          
+          if (!fallbackTournament) {
+            console.error('No tournament found. Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
+            throw new Error(`Tournament not found. Looking for: ${tournament}. Available: ${tournaments.map((t: any) => t.name).join(', ')}`);
+          }
+          
+          const tournamentId = fallbackTournament.id;
+          console.log('Using fallback tournament:', fallbackTournament.name, 'ID:', tournamentId);
+          const response = await fetch(`/api/tournaments/${tournamentId}`);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to fetch tournament data:', errorText);
+            throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          console.log('Fetched tournament data:', { 
+            tournament: data.tournament?.name, 
+            matchesCount: data.matches?.length, 
+            detailedScoresCount: data.detailedScores?.length 
+          });
+          
+          const transformedData = transformTournamentData(data);
+          setTournamentData(transformedData);
+          return;
+        }
+
+        const tournamentId = wecTournament.id;
+        console.log('Using tournament:', wecTournament.name, 'ID:', tournamentId);
+        const response = await fetch(`/api/tournaments/${tournamentId}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Failed to fetch tournament data:', errorText);
+          throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Fetched tournament data:', { 
+          tournament: data.tournament?.name, 
+          matchesCount: data.matches?.length, 
+          detailedScoresCount: data.detailedScores?.length 
+        });
+        
+        const transformedData = transformTournamentData(data);
+        setTournamentData(transformedData);
+      } catch (err: any) {
+        console.error('Error fetching tournament data:', err);
+        setError(err.message || 'Failed to load tournament data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTournamentData();
+  }, [tournament]);
+
+  // Helper function to match barista name
+  const matchesBarista = (name: string, baristaNameLower: string): boolean => {
+    if (!name) return false;
+    const nameLower = name.toLowerCase().trim();
+    return (
+      nameLower === baristaNameLower ||
+      nameLower.startsWith(baristaNameLower) ||
+      nameLower.split(' ')[0] === baristaNameLower
+    );
+  };
 
   // Get all heats where this barista participated
-  const baristaHeats = allHeats
-    .filter(heat => {
-      const comp1 = heat.competitor1?.trim();
-      const comp2 = heat.competitor2?.trim();
-      const baristaNameLower = decodedBaristaName.toLowerCase();
-      
-      // Check if barista matches by first name or full name
-      const matchesComp1 = comp1 && (
-        comp1.toLowerCase() === baristaNameLower ||
-        comp1.toLowerCase().startsWith(baristaNameLower) ||
-        comp1.split(' ')[0].toLowerCase() === baristaNameLower
-      );
-      const matchesComp2 = comp2 && comp2 !== 'BYE' && (
-        comp2.toLowerCase() === baristaNameLower ||
-        comp2.toLowerCase().startsWith(baristaNameLower) ||
-        comp2.split(' ')[0].toLowerCase() === baristaNameLower
-      );
-      
-      return matchesComp1 || matchesComp2;
-    })
-    .map(heat => {
-      // Determine which position the barista was in (left/right)
-      const comp1 = heat.competitor1?.trim() || '';
-      const comp2 = heat.competitor2?.trim() || '';
-      const baristaNameLower = decodedBaristaName.toLowerCase();
-      
-      const isCompetitor1 = comp1 && (
-        comp1.toLowerCase() === baristaNameLower ||
-        comp1.toLowerCase().startsWith(baristaNameLower) ||
-        comp1.split(' ')[0].toLowerCase() === baristaNameLower
-      );
-      const isCompetitor2 = comp2 && comp2 !== 'BYE' && (
-        comp2.toLowerCase() === baristaNameLower ||
-        comp2.toLowerCase().startsWith(baristaNameLower) ||
-        comp2.split(' ')[0].toLowerCase() === baristaNameLower
-      );
-      
-      // Determine cup code and position
-      let cupCode = '';
-      let competitorPosition: 'left' | 'right' = 'left';
-      
-      if (isCompetitor1) {
-        cupCode = heat.leftCupCode || '';
-        competitorPosition = 'left';
-      } else if (isCompetitor2) {
-        cupCode = heat.rightCupCode || '';
-        competitorPosition = 'right';
-      }
-      
-      // Calculate category scores from judges
-      const categoryScores: CategoryScores = {
-        latteArt: 0,
-        taste: 0,
-        tactile: 0,
-        flavor: 0,
-        overall: 0,
-      };
-      
-      if (heat.judges) {
-        heat.judges.forEach(judge => {
+  const baristaHeats = useMemo(() => {
+    if (!tournamentData?.matches || !tournamentData?.detailedScores || !decodedBaristaName) return [];
+
+    const baristaNameLower = decodedBaristaName.toLowerCase();
+
+    return tournamentData.matches
+      .filter(match => {
+        const comp1 = match.competitor1Name?.trim() || '';
+        const comp2 = match.competitor2Name?.trim() || '';
+        return matchesBarista(comp1, baristaNameLower) || matchesBarista(comp2, baristaNameLower);
+      })
+      .map(match => {
+        const comp1 = match.competitor1Name?.trim() || '';
+        const comp2 = match.competitor2Name?.trim() || '';
+        
+        const isCompetitor1 = matchesBarista(comp1, baristaNameLower);
+        const isCompetitor2 = matchesBarista(comp2, baristaNameLower);
+        
+        // Determine cup code and position
+        const competitorPosition: 'left' | 'right' = isCompetitor1 ? 'left' : 'right';
+        
+        // Get judge scores for this match
+        const judgeScores = tournamentData.detailedScores.filter(
+          score => score.matchId === match.id
+        );
+        
+        // Get cup code from first judge
+        const firstJudge = judgeScores[0];
+        const cupCode = isCompetitor1 
+          ? (firstJudge?.leftCupCode || '')
+          : (firstJudge?.rightCupCode || '');
+        
+        // Calculate category scores from judges
+        const categoryScores: CategoryScores = {
+          latteArt: 0,
+          taste: 0,
+          tactile: 0,
+          flavor: 0,
+          overall: 0,
+        };
+        
+        judgeScores.forEach(judge => {
           const wonLatteArt = judge.visualLatteArt === competitorPosition;
           const wonTaste = judge.taste === competitorPosition;
           const wonTactile = judge.tactile === competitorPosition;
@@ -139,23 +244,34 @@ const BaristaDetail: React.FC = () => {
           if (wonFlavor) categoryScores.flavor += CATEGORY_POINTS.flavour;
           if (wonOverall) categoryScores.overall += CATEGORY_POINTS.overall;
         });
-      }
-      
-      const totalPoints = categoryScores.latteArt + categoryScores.taste + 
-                         categoryScores.tactile + categoryScores.flavor + 
-                         categoryScores.overall;
-      
-      return {
-        heatNumber: heat.heatNumber,
-        station: heat.station,
-        competitor1: heat.competitor1,
-        competitor2: heat.competitor2,
-        winner: heat.winner,
-        cupCode: cupCode || '',
-        categoryScores,
-        totalPoints,
-      } as HeatScore;
-    });
+        
+        const totalPoints = categoryScores.latteArt + categoryScores.taste + 
+                           categoryScores.tactile + categoryScores.flavor + 
+                           categoryScores.overall;
+        
+        // Determine winner
+        const winner = match.winnerId === match.competitor1Id 
+          ? match.competitor1Name 
+          : match.winnerId === match.competitor2Id 
+          ? match.competitor2Name 
+          : null;
+        
+        // Determine station
+        const station = stationIdToLetter(match.stationId);
+        
+        return {
+          heatNumber: match.heatNumber,
+          station,
+          competitor1: match.competitor1Name || '',
+          competitor2: match.competitor2Name || '',
+          winner: winner || '',
+          cupCode: cupCode || '',
+          categoryScores,
+          totalPoints,
+        } as HeatScore;
+      })
+      .sort((a, b) => a.heatNumber - b.heatNumber);
+  }, [tournamentData, decodedBaristaName]);
 
   // Set initial heat index if navigating from a specific heat
   useEffect(() => {
@@ -181,6 +297,35 @@ const BaristaDetail: React.FC = () => {
       setCurrentHeatIndex(prev => prev - 1);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen tournament-bracket-bg p-6 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Loading barista data...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen tournament-bracket-bg p-6 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!decodedBaristaName || baristaHeats.length === 0) {
     return (

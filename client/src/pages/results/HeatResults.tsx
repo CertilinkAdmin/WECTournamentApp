@@ -1,26 +1,354 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Users, Coffee, Award, ArrowLeft, Clock, MapPin } from 'lucide-react';
-import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from '../../components/WEC25BracketData';
+import { Trophy, Users, Coffee, Award, ArrowLeft, Clock, MapPin, Loader2 } from 'lucide-react';
+import { findTournamentBySlug } from '@/utils/tournamentUtils';
+import { stationIdToLetter } from '@/utils/stationUtils';
+import { transformTournamentData } from '@/utils/tournamentDataTransform';
+
+interface Match {
+  id: number;
+  round: number;
+  heatNumber: number;
+  status: string;
+  competitor1Id: number | null;
+  competitor2Id: number | null;
+  winnerId: number | null;
+  competitor1Name: string;
+  competitor2Name: string;
+  stationId?: number | null;
+}
+
+interface JudgeDetailedScore {
+  matchId: number;
+  judgeName: string;
+  leftCupCode: string;
+  rightCupCode: string;
+  sensoryBeverage: string;
+  visualLatteArt: 'left' | 'right';
+  taste: 'left' | 'right';
+  tactile: 'left' | 'right';
+  flavour: 'left' | 'right';
+  overall: 'left' | 'right';
+}
+
+interface TournamentData {
+  tournament: any;
+  matches: Match[];
+  detailedScores: JudgeDetailedScore[];
+}
+
+interface Heat {
+  heatNumber: number;
+  competitor1: string;
+  competitor2: string;
+  winner: string | null;
+  station: string;
+  leftCupCode?: string;
+  rightCupCode?: string;
+  score1?: number;
+  score2?: number;
+  judges: Array<{
+    judgeName: string;
+    leftCupCode: string;
+    rightCupCode: string;
+    sensoryBeverage: string;
+    visualLatteArt: 'left' | 'right';
+    taste: 'left' | 'right';
+    tactile: 'left' | 'right';
+    flavour: 'left' | 'right';
+    overall: 'left' | 'right';
+  }>;
+  round: number;
+}
 
 const HeatResults: React.FC = () => {
   const { heatId, tournamentSlug } = useParams<{ heatId: string; tournamentSlug?: string }>();
   const heatNumber = heatId ? parseInt(heatId) : 0;
   const tournament = tournamentSlug || 'WEC2025';
+  const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const allHeats = [
-    ...WEC25_BRACKET_POSITIONS,
-    ...WEC25_ROUND2_POSITIONS,
-    ...WEC25_ROUND3_POSITIONS,
-    ...WEC25_ROUND4_POSITIONS,
-    ...WEC25_FINAL_POSITION
-  ];
+  // Fetch tournament data from API
+  useEffect(() => {
+    const fetchTournamentData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('[HeatResults] Step 1: Fetching tournaments list from /api/tournaments');
+        let tournamentsResponse: Response;
+        try {
+          tournamentsResponse = await fetch('/api/tournaments');
+        } catch (fetchErr: any) {
+          console.error('[HeatResults] Network error fetching tournaments:', fetchErr);
+          throw new Error(`Network error: ${fetchErr?.message || 'Failed to connect to server'}`);
+        }
+        
+        console.log('[HeatResults] Step 2: Tournaments response status:', tournamentsResponse.status, tournamentsResponse.statusText);
+        if (!tournamentsResponse.ok) {
+          const errorText = await tournamentsResponse.text();
+          console.error('[HeatResults] Failed to fetch tournaments:', errorText);
+          throw new Error(`Failed to fetch tournaments list: ${tournamentsResponse.status} ${tournamentsResponse.statusText}. Response: ${errorText}`);
+        }
+        
+        console.log('[HeatResults] Step 3: Parsing tournaments JSON');
+        let tournaments: any[];
+        try {
+          tournaments = await tournamentsResponse.json();
+        } catch (jsonErr: any) {
+          console.error('[HeatResults] JSON parse error:', jsonErr);
+          const responseText = await tournamentsResponse.text();
+          console.error('[HeatResults] Response text:', responseText);
+          throw new Error(`Invalid JSON response: ${jsonErr?.message || 'Unknown parse error'}`);
+        }
+        console.log('Fetched tournaments:', tournaments);
+        
+        const wecTournament = findTournamentBySlug(tournaments, tournament);
+        
+        if (!wecTournament) {
+          const fallbackTournament = tournaments.find((t: any) => 
+            t.name?.toLowerCase().includes('wec') || 
+            t.name?.toLowerCase().includes('world espresso') ||
+            t.name?.toLowerCase().includes('2025')
+          );
+          
+          if (!fallbackTournament) {
+            console.error('No tournament found. Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
+            throw new Error(`Tournament not found. Looking for: ${tournament}. Available: ${tournaments.map((t: any) => t.name).join(', ')}`);
+          }
+          
+          const tournamentId = fallbackTournament.id;
+          console.log('[HeatResults] Step 4: Using fallback tournament:', fallbackTournament.name, 'ID:', tournamentId);
+          console.log('[HeatResults] Step 5: Fetching tournament data from /api/tournaments/' + tournamentId);
+          let response: Response;
+          try {
+            response = await fetch(`/api/tournaments/${tournamentId}`);
+          } catch (fetchErr: any) {
+            console.error('[HeatResults] Network error fetching tournament:', fetchErr);
+            throw new Error(`Network error: ${fetchErr?.message || 'Failed to connect to server'}`);
+          }
+          
+          console.log('[HeatResults] Step 6: Tournament response status:', response.status, response.statusText);
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[HeatResults] Failed to fetch tournament data:', errorText);
+            throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}. Response: ${errorText}`);
+          }
+          
+          console.log('[HeatResults] Step 7: Parsing tournament JSON');
+          let data: any;
+          try {
+            data = await response.json();
+          } catch (jsonErr: any) {
+            console.error('[HeatResults] JSON parse error:', jsonErr);
+            const responseText = await response.text();
+            console.error('[HeatResults] Response text:', responseText);
+            throw new Error(`Invalid JSON response: ${jsonErr?.message || 'Unknown parse error'}`);
+          }
+          console.log('[HeatResults] Step 8: Fetched tournament data:', { 
+            tournament: data.tournament?.name, 
+            matchesCount: data.matches?.length, 
+            detailedScoresCount: data.detailedScores?.length,
+            dataKeys: Object.keys(data)
+          });
+          
+          console.log('[HeatResults] Step 9: Transforming tournament data');
+          let transformedData: TournamentData;
+          try {
+            transformedData = transformTournamentData(data);
+            console.log('[HeatResults] Step 10: Transformation successful:', {
+              matchesCount: transformedData.matches?.length,
+              detailedScoresCount: transformedData.detailedScores?.length
+            });
+          } catch (transformErr: any) {
+            console.error('[HeatResults] Transformation error:', transformErr);
+            console.error('[HeatResults] Transform error stack:', transformErr?.stack);
+            throw new Error(`Data transformation failed: ${transformErr?.message || 'Unknown error'}`);
+          }
+          
+          setTournamentData(transformedData);
+          return;
+        }
 
-  const heat = allHeats.find(h => h.heatNumber === heatNumber);
+        const tournamentId = wecTournament.id;
+        console.log('[HeatResults] Step 4: Using tournament:', wecTournament.name, 'ID:', tournamentId);
+        console.log('[HeatResults] Step 5: Fetching tournament data from /api/tournaments/' + tournamentId);
+        let response: Response;
+        try {
+          response = await fetch(`/api/tournaments/${tournamentId}`);
+        } catch (fetchErr: any) {
+          console.error('[HeatResults] Network error fetching tournament:', fetchErr);
+          throw new Error(`Network error: ${fetchErr?.message || 'Failed to connect to server'}`);
+        }
+        
+        console.log('[HeatResults] Step 6: Tournament response status:', response.status, response.statusText);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[HeatResults] Failed to fetch tournament data:', errorText);
+          throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}. Response: ${errorText}`);
+        }
+        
+        console.log('[HeatResults] Step 7: Parsing tournament JSON');
+        let data: any;
+        try {
+          data = await response.json();
+        } catch (jsonErr: any) {
+          console.error('[HeatResults] JSON parse error:', jsonErr);
+          const responseText = await response.text();
+          console.error('[HeatResults] Response text:', responseText);
+          throw new Error(`Invalid JSON response: ${jsonErr?.message || 'Unknown parse error'}`);
+        }
+        console.log('[HeatResults] Step 8: Fetched tournament data:', { 
+          tournament: data.tournament?.name, 
+          matchesCount: data.matches?.length, 
+          detailedScoresCount: data.detailedScores?.length,
+          dataKeys: Object.keys(data)
+        });
+        
+        console.log('[HeatResults] Step 9: Transforming tournament data');
+        let transformedData: TournamentData;
+        try {
+          transformedData = transformTournamentData(data);
+          console.log('[HeatResults] Step 10: Transformation successful:', {
+            matchesCount: transformedData.matches?.length,
+            detailedScoresCount: transformedData.detailedScores?.length
+          });
+        } catch (transformErr: any) {
+          console.error('[HeatResults] Transformation error:', transformErr);
+          console.error('[HeatResults] Transform error stack:', transformErr?.stack);
+          throw new Error(`Data transformation failed: ${transformErr?.message || 'Unknown error'}`);
+        }
+        
+        setTournamentData(transformedData);
+      } catch (err: any) {
+        // Enhanced error logging
+        console.error('=== Error fetching tournament data ===');
+        console.error('Error type:', typeof err);
+        console.error('Error constructor:', err?.constructor?.name);
+        console.error('Error message:', err?.message);
+        console.error('Error stack:', err?.stack);
+        console.error('Full error object:', err);
+        console.error('Error keys:', err ? Object.keys(err) : 'null/undefined');
+        
+        // Try to extract more details
+        let errorMessage = 'Failed to load tournament data';
+        if (err?.message) {
+          errorMessage = err.message;
+        } else if (typeof err === 'string') {
+          errorMessage = err;
+        } else if (err?.toString && err.toString() !== '[object Object]') {
+          errorMessage = err.toString();
+        } else {
+          // Try to stringify the error
+          try {
+            const errorStr = JSON.stringify(err, Object.getOwnPropertyNames(err));
+            if (errorStr !== '{}') {
+              errorMessage = `Error: ${errorStr}`;
+            }
+          } catch (stringifyErr) {
+            console.error('Failed to stringify error:', stringifyErr);
+          }
+        }
+        
+        console.error('Final error message:', errorMessage);
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchTournamentData();
+  }, [tournament]);
+
+  // Transform API data to heat structure and find the specific heat
+  const heat = useMemo(() => {
+    if (!tournamentData?.matches || !tournamentData?.detailedScores || !heatNumber) return null;
+
+    const match = tournamentData.matches.find(m => m.heatNumber === heatNumber);
+    if (!match) return null;
+
+    // Get all judge scorecards for this match
+    const judgeScores = tournamentData.detailedScores.filter(
+      score => score.matchId === match.id
+    );
+
+    // Get first judge's cup codes
+    const firstJudge = judgeScores[0];
+    const leftCupCode = firstJudge?.leftCupCode;
+    const rightCupCode = firstJudge?.rightCupCode;
+
+    // Determine winner
+    const winner = match.winnerId === match.competitor1Id 
+      ? match.competitor1Name 
+      : match.winnerId === match.competitor2Id 
+      ? match.competitor2Name 
+      : null;
+
+    // Determine station
+    const station = stationIdToLetter(match.stationId);
+
+    // Transform judge scores to expected format
+    const judges = judgeScores.map(score => ({
+      judgeName: score.judgeName,
+      leftCupCode: score.leftCupCode,
+      rightCupCode: score.rightCupCode,
+      sensoryBeverage: score.sensoryBeverage,
+      visualLatteArt: score.visualLatteArt,
+      taste: score.taste,
+      tactile: score.tactile,
+      flavour: score.flavour,
+      overall: score.overall,
+    }));
+
+    return {
+      heatNumber: match.heatNumber,
+      competitor1: match.competitor1Name || '',
+      competitor2: match.competitor2Name || '',
+      winner,
+      station,
+      leftCupCode,
+      rightCupCode,
+      judges,
+      round: match.round || 1,
+    } as Heat;
+  }, [tournamentData, heatNumber]);
+
+  // Check loading state first - before validating data
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Loading heat data...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check error state second - before validating data
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Only check if heat exists after loading is complete and there's no error
   if (!heat) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -43,15 +371,18 @@ const HeatResults: React.FC = () => {
     );
   }
 
-  const getRoundInfo = (heatNumber: number) => {
-    if (heatNumber <= 16) return { round: 1, title: "Round 1 - Preliminary Heats" };
-    if (heatNumber <= 24) return { round: 2, title: "Round 2 - Quarterfinals" };
-    if (heatNumber <= 28) return { round: 3, title: "Round 3 - Semifinals" };
-    if (heatNumber <= 30) return { round: 4, title: "Round 4 - Finals" };
-    return { round: 5, title: "Final - Championship" };
+  const getRoundInfo = (round: number) => {
+    const roundTitles: Record<number, string> = {
+      1: "Round 1 - Preliminary Heats",
+      2: "Round 2 - Quarterfinals",
+      3: "Round 3 - Semifinals",
+      4: "Round 4 - Finals",
+      5: "Final - Championship"
+    };
+    return { round, title: roundTitles[round] || `Round ${round}` };
   };
 
-  const roundInfo = getRoundInfo(heatNumber);
+  const roundInfo = getRoundInfo(heat.round);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
