@@ -545,7 +545,7 @@ const JudgeScorecardsResults: React.FC = () => {
                         <CardTitle className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Users className="h-5 w-5 text-primary" />
-                            <span>Judge Consensus Overview</span>
+                            <span className="text-[#ab4c0c] dark:text-[hsl(40_30%_95%)]">Judge Consensus Overview</span>
                           </div>
                           {showConsensus ? (
                             <ChevronUp className="h-5 w-5 text-muted-foreground" />
