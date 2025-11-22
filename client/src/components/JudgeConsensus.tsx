@@ -85,10 +85,10 @@ export default function JudgeConsensus({ judges }: JudgeConsensusProps) {
   return (
     <Card className="mb-6 border-2 border-primary/20">
       <CardHeader className="pb-3 dark:bg-[#2D1B12]">
-        <CardTitle className="flex items-center gap-2 text-lg dark:text-[hsl(40_30%_95%)]">
+        <CardTitle className="flex items-center gap-2 text-lg text-[hsl(20_85%_30%)] dark:text-[hsl(40_30%_95%)]">
           <TrendingUp className="h-5 w-5 text-primary dark:text-[hsl(40_50%_72%)]" />
           <span>Judge Consensus</span>
-          <Badge variant="outline" className="ml-auto dark:text-[hsl(40_50%_72%)] dark:border-[hsl(40_50%_65%)]">
+          <Badge variant="outline" className="ml-auto text-[hsl(20_85%_30%)] dark:text-[hsl(40_50%_72%)] dark:border-[hsl(40_50%_65%)]">
             {judges.length} judges
           </Badge>
         </CardTitle>
@@ -99,7 +99,7 @@ export default function JudgeConsensus({ judges }: JudgeConsensusProps) {
             {/* Category Header with Vote Counts */}
             <div className="flex items-center justify-between p-2 bg-secondary/30 dark:bg-[#2D1B12] rounded-lg border border-primary/20 dark:border-[hsl(40_50%_65%)]">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-primary dark:text-[hsl(40_30%_95%)] text-sm">{cat.category}</span>
+                <span className="font-semibold text-primary text-[hsl(20_85%_30%)] dark:text-[hsl(40_30%_95%)] text-sm">{cat.category}</span>
                 {cat.majority !== 'tie' && (
                   <Badge 
                     variant="outline"
