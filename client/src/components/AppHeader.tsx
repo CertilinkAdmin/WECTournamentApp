@@ -50,9 +50,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ className = '', logoSize = 'small
         
         {/* Right: Theme Toggle */}
         <div className="w-20 flex items-center justify-end">
-          <div className="p-2 hover:bg-white/20 active:bg-white/30 rounded-lg transition-all hover:border border-transparent hover:border-white/30">
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </div>
       </div>
     </header>

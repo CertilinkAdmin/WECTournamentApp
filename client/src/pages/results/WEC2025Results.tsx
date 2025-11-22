@@ -387,7 +387,7 @@ const WEC2025Results = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8 bg-gradient-to-br from-secondary/30 via-background to-secondary/20">
       <div className="max-w-4xl mx-auto">
         {/* Round Selection Cards */}
         {!selectedRound ? (
@@ -505,13 +505,13 @@ const WEC2025Results = () => {
                 />
               </button>
 
-              <div className="text-center flex-1 bg-gradient-to-br from-cinnamon-brown/20 to-cinnamon-brown/30 rounded-xl py-4 px-6 border-2 border-cinnamon-brown/40 shadow-lg backdrop-blur-sm">
+              <div className="text-center flex-1 bg-gradient-to-br from-primary/90 to-primary/80 dark:from-cinnamon-brown/20 dark:to-cinnamon-brown/30 rounded-xl py-4 px-6 border-2 border-primary/50 dark:border-cinnamon-brown/40 shadow-lg backdrop-blur-sm">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Select
                     value={selectedRound.toString()}
                     onValueChange={(value) => setSelectedRound(parseInt(value))}
                   >
-                    <SelectTrigger className="w-auto min-w-[200px] bg-transparent border-cinnamon-brown/50 text-white">
+                    <SelectTrigger className="w-auto min-w-[200px] bg-white/20 dark:bg-transparent border-white/40 dark:border-cinnamon-brown/50 text-white dark:text-white backdrop-blur-sm">
                       <SelectValue>
                         {getRoundDisplayName(selectedRound)}
                       </SelectValue>
@@ -532,7 +532,7 @@ const WEC2025Results = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <p className="text-sm font-semibold text-white/90">
+                <p className="text-sm font-semibold text-white dark:text-white/90">
                   {selectedRoundMatches.length} Heat{selectedRoundMatches.length !== 1 ? 's' : ''} • Round {availableRounds.indexOf(selectedRound) + 1} of {availableRounds.length}
                 </p>
               </div>

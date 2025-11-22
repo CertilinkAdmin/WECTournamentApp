@@ -52,9 +52,7 @@ export default function Header({
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="p-2 hover:bg-primary-foreground/20 active:bg-primary-foreground/30 rounded-lg transition-all hover:border border-transparent hover:border-primary-foreground/30">
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
