@@ -615,7 +615,7 @@ const JudgeScorecardsResults: React.FC = () => {
                               return (
                                 <div 
                                   key={category}
-                                  className="relative grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20 transition-all"
+                                  className="relative grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]"
                                 >
                                   <label className="flex items-center gap-2 justify-start">
                                     <input 
@@ -691,7 +691,7 @@ const JudgeScorecardsResults: React.FC = () => {
                                       {renderCategoryRow('visualLatteArt', 'Visual Latte Art')}
                                       
                                       {/* Sensory Beverage (no left/right) */}
-                                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-[#2d1b12]">
                                         <div></div>
                                         <div className="text-center font-semibold text-primary">{`Sensory ${judge.sensoryBeverage}`}</div>
                                         <div></div>
