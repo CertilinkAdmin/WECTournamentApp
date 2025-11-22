@@ -17,41 +17,42 @@ const AppHeader: React.FC<AppHeaderProps> = ({ className = '', logoSize = 'small
     large: 'h-20'
   }[logoSize];
 
-  // Cinnamon orange color for light mode: #BD5426
+  // More vibrant orange for light mode - using primary color
   const headerBgColor = theme === 'light' 
-    ? 'bg-[#BD5426]/80' 
+    ? 'bg-primary' 
     : 'bg-primary/80';
 
   return (
     <header 
       className={`${headerBgColor} backdrop-blur-sm text-primary-foreground border-b border-primary-border/50 ${className}`}
-      style={theme === 'light' ? { backgroundColor: 'rgba(189, 84, 38, 0.8)' } : undefined}
     >
       <div className="px-4 py-4 flex items-center justify-between">
         {/* Left: Home Button */}
         <div className="w-20 flex items-center">
           <Link
             to="/"
-            className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded-md transition-colors"
+            className="flex items-center gap-2 px-3 py-2.5 hover:bg-white/20 active:bg-white/30 rounded-lg transition-all border border-white/20 hover:border-white/30"
             data-testid="link-home"
           >
-            <Home className="w-4 h-4" />
-            <span className="text-sm font-medium hidden sm:inline">Home</span>
+            <Home className="w-5 h-5 text-white" />
+            <span className="text-sm font-semibold hidden sm:inline text-white">Home</span>
           </Link>
         </div>
         
-        {/* Center: White WEC Logo */}
+        {/* Center: White WEC Logo - Bigger */}
         <div className="flex-1 flex justify-center">
           <img 
             src="/wec_logo_wht.png" 
             alt="WEC Championships" 
-            className={`${logoHeight} w-auto`}
+            className={`${logoSize === 'small' ? 'h-16' : logoSize === 'medium' ? 'h-20' : 'h-24'} w-auto`}
           />
         </div>
         
         {/* Right: Theme Toggle */}
         <div className="w-20 flex items-center justify-end">
-          <ThemeToggle />
+          <div className="p-2 hover:bg-white/20 active:bg-white/30 rounded-lg transition-all hover:border border-transparent hover:border-white/30">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>
