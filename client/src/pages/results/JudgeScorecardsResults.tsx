@@ -529,9 +529,9 @@ const JudgeScorecardsResults: React.FC = () => {
                 {/* Judge Scorecards - Now First */}
                 {currentHeat.judges && currentHeat.judges.length > 0 ? (
                   <div className="space-y-6 mb-8">
-                    <h3 className="text-xl font-bold flex items-center gap-3 bg-secondary/30 p-4 rounded-xl border border-primary/20">
-                      <Users className="h-6 w-6 text-primary animate-pulse" />
-                      <span className="text-primary">
+                    <h3 className="text-xl font-bold flex items-center gap-3 bg-secondary/30 dark:bg-[#2D1B12] p-4 rounded-xl border border-primary/20 dark:border-[hsl(40_50%_65%)]">
+                      <Users className="h-6 w-6 text-primary dark:text-[hsl(40_50%_72%)] animate-pulse" />
+                      <span className="text-primary dark:text-[hsl(40_30%_95%)]">
                         Judge Scorecards ({currentHeat.judges.length} judges)
                       </span>
                     </h3>
