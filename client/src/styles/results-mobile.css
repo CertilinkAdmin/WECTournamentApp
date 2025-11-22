@@ -1,6 +1,11 @@
 /* Results Page Mobile Light Mode Contrast Improvements */
 
 @media (max-width: 768px) {
+  /* MOBILE RESULTS PAGE - Espresso Brown Background */
+  .min-h-screen {
+    background-color: #2D1B12 !important;
+  }
+
   /* Light mode only - improve contrast */
   .light .results-layout,
   .light [class*="results"] {
@@ -13,7 +18,7 @@
 
   /* Results page containers - darker background for better contrast */
   .light .min-h-screen.bg-background {
-    background-color: hsl(40 15% 94%) !important;
+    background-color: #2D1B12 !important;
   }
 
   /* Cards - stronger borders and backgrounds */
