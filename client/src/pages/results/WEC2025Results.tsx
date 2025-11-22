@@ -522,7 +522,7 @@ const WEC2025Results = () => {
                     value={selectedRound.toString()}
                     onValueChange={(value) => setSelectedRound(parseInt(value))}
                   >
-                    <SelectTrigger className="w-auto min-w-[200px] dark:bg-transparent border-white/40 dark:border-cinnamon-brown/50 text-white dark:text-white backdrop-blur-sm bg-[#2d1b12]">
+                    <SelectTrigger className="w-auto min-w-[200px] bg-[#dcccb6] dark:bg-[#2d1b12] border-[#9a4828]/50 dark:border-cinnamon-brown/50 text-[#2d1b12] dark:text-white backdrop-blur-sm">
                       <SelectValue>
                         {getRoundDisplayName(selectedRound)}
                       </SelectValue>
@@ -601,7 +601,7 @@ const WEC2025Results = () => {
                               navigate(`/results/${tournamentSlug}/baristas/${encodedName}?heat=${match.heatNumber}`);
                             }
                           }}
-                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1"
+                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1 text-[#2d1b12] dark:text-white"
                           disabled={!match.competitor1Name || match.competitor1Name === 'BYE' || match.competitor1Name === 'SCRATCHED'}
                         >
                           {match.competitor1Name || '—'}
@@ -631,7 +631,7 @@ const WEC2025Results = () => {
                               navigate(`/results/${tournamentSlug}/baristas/${encodedName}?heat=${match.heatNumber}`);
                             }
                           }}
-                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1"
+                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1 text-[#2d1b12] dark:text-white"
                           disabled={!match.competitor2Name || match.competitor2Name === 'BYE' || match.competitor2Name === 'SCRATCHED'}
                         >
                           {match.competitor2Name || '—'}
