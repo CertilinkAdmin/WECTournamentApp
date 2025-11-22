@@ -618,7 +618,7 @@ const WEC2025Results = () => {
                       <div
                         className={`flex items-center justify-between p-2 rounded-md border-2 ${
                           match.winnerId === match.competitor2Id
-                            ? 'bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-800 border-primary/30'
+                            ? 'bg-[#e9d8ba] dark:bg-green-950 dark:border-green-800 border-primary/30'
                             : 'bg-[#a24111] dark:bg-muted/50 border-primary/20 dark:border-border'
                         }`}
                         data-testid={`competitor-2-${match.id}`}
