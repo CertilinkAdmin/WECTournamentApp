@@ -11,6 +11,8 @@
   overflow-x: auto;
   overflow-y: visible;
   scroll-behavior: smooth;
+  border: none;
+  outline: none;
 }
 
 .round-card {
@@ -119,15 +121,25 @@
 
 /* Dark mode */
 .dark .round-card {
-  background-color: hsl(17 59% 20%);
+  background: linear-gradient(135deg, hsl(25 35% 15%) 0%, hsl(25 35% 20%) 100%);
+  border: 3px solid hsl(25 35% 25%);
+  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.6);
+}
+
+.dark .round-card:hover {
+  background: linear-gradient(135deg, hsl(25 35% 17%) 0%, hsl(25 35% 22%) 100%);
+  border-color: hsl(25 35% 30%);
+  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.7);
 }
 
 .dark .round-card-title {
-  color: hsl(var(--foreground));
+  color: hsl(40 44% 85%);
+  font-weight: 600;
 }
 
 .dark .round-card-heat-count-small {
-  color: hsl(30 60% 65%);
+  color: hsl(40 44% 75%);
+  font-weight: 600;
 }
 
 /* Responsive */
