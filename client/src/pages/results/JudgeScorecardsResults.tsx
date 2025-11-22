@@ -674,13 +674,13 @@ const JudgeScorecardsResults: React.FC = () => {
                                     <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
                                       <div className="text-center">
                                         <div className="text-xs text-slate-600 font-medium">Left Cup</div>
-                                        <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
+                                        <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[#2d1b12]">
                                           {judge.leftCupCode}
                                         </div>
                                       </div>
                                       <div className="text-center">
                                         <div className="text-xs text-slate-600 font-medium">Right Cup</div>
-                                        <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
+                                        <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[#2d1b12]">
                                           {judge.rightCupCode}
                                         </div>
                                       </div>
