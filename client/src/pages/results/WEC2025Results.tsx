@@ -573,7 +573,7 @@ const WEC2025Results = () => {
                   onClick={() => setSelectedHeat(match)}
                   data-testid={`card-heat-${match.id}`}
                 >
-                  <CardHeader className="pb-3 bg-primary/5 dark:bg-transparent rounded-t-lg border-b border-primary/20">
+                  <CardHeader className="pb-3 dark:bg-transparent rounded-t-lg border-b border-primary/20 bg-[#f2e6d3]">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-primary dark:text-cinnamon-brown">
                         Heat {match.heatNumber}
