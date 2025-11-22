@@ -6,6 +6,11 @@
     background-color: #2D1B12 !important;
   }
 
+  /* Tournament selection area - dark background */
+  .min-h-screen.bg-background {
+    background-color: #2D1B12 !important;
+  }
+
   /* Light mode only - improve contrast */
   .light .results-layout,
   .light [class*="results"] {
