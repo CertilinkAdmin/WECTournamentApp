@@ -280,7 +280,7 @@ function StationHeatCard({ match, users, getInitials }: StationHeatCardProps) {
         
         <div className="space-y-2">
           <div className={`p-2 rounded-md border ${
-            !competitor1 ? 'bg-gray-100 text-gray-500' : 'bg-white'
+            !competitor1 ? 'bg-gray-100 text-gray-500' : 'bg-secondary dark:bg-white'
           } ${winner?.id === competitor1?.id ? 'ring-2 ring-green-400' : ''}`}>
             <div className="font-medium text-sm">
               {competitor1?.name || "TBD"}
@@ -290,7 +290,7 @@ function StationHeatCard({ match, users, getInitials }: StationHeatCardProps) {
           <div className="text-center text-muted-foreground font-bold">VS</div>
           
           <div className={`p-2 rounded-md border ${
-            !competitor2 ? 'bg-gray-100 text-gray-500' : 'bg-white'
+            !competitor2 ? 'bg-gray-100 text-gray-500' : 'bg-secondary dark:bg-white'
           } ${winner?.id === competitor2?.id ? 'ring-2 ring-green-400' : ''}`}>
             <div className="font-medium text-sm">
               {competitor2?.name || "TBD"}

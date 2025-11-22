@@ -1139,12 +1139,12 @@ export default function JudgesScorecards() {
                   </div>
                 </CardTitle>
                 <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="text-center p-3 bg-white rounded-lg">
+                  <div className="text-center p-3 bg-secondary dark:bg-white rounded-lg">
                     <div className="font-semibold text-slate-600">{heat.leftCompetitor}</div>
                     <div className="text-2xl font-bold text-primary">{heat.leftCupCode}</div>
                     <div className="text-lg font-bold text-green-600">{heat.leftScore} points</div>
                   </div>
-                  <div className="text-center p-3 bg-white rounded-lg">
+                  <div className="text-center p-3 bg-secondary dark:bg-white rounded-lg">
                     <div className="font-semibold text-slate-600">{heat.rightCompetitor}</div>
                     <div className="text-2xl font-bold text-primary">{heat.rightCupCode}</div>
                     <div className="text-lg font-bold text-green-600">{heat.rightScore} points</div>

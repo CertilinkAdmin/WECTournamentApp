@@ -250,7 +250,7 @@ const AdminDashboard: React.FC = () => {
 
         <Tabs defaultValue="monitoring" className="w-full">
           <div className="relative mb-6">
-            <TabsList className="relative flex flex-wrap gap-2 h-auto p-2 bg-muted/30 rounded-lg border border-border/50">
+            <TabsList className="relative flex flex-wrap gap-2 h-auto p-2 bg-muted/50 dark:bg-muted/30 rounded-lg border border-border/70 dark:border-border/50">
               <TabsTrigger 
                 value="monitoring" 
                 className="relative flex items-center gap-2 px-4 py-2.5 z-[5] transform transition-all hover:scale-105 data-[state=active]:z-[6] data-[state=active]:shadow-lg"
@@ -308,18 +308,18 @@ const AdminDashboard: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Memory Usage</CardTitle>
-                  <HardDrive className="h-4 w-4 text-muted-foreground" />
+              <Card className="border-2 border-primary/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 bg-primary/5 dark:bg-transparent rounded-t-lg">
+                  <CardTitle className="text-sm font-medium text-primary dark:text-foreground">Memory Usage</CardTitle>
+                  <HardDrive className="h-4 w-4 text-primary/70 dark:text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{systemStats.memoryUsage.toFixed(1)}%</div>
-                  <div className="w-full bg-secondary rounded-full h-2 mt-2">
+                  <div className="text-2xl font-bold text-primary dark:text-foreground">{systemStats.memoryUsage.toFixed(1)}%</div>
+                  <div className="w-full bg-secondary/60 dark:bg-secondary rounded-full h-2 mt-2 border border-secondary/40">
                     <div 
                       className={`h-2 rounded-full ${
-                        systemStats.memoryUsage > 80 ? 'bg-red-500' : 
-                        systemStats.memoryUsage > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                        systemStats.memoryUsage > 80 ? 'bg-red-600 dark:bg-red-500' : 
+                        systemStats.memoryUsage > 60 ? 'bg-yellow-600 dark:bg-yellow-500' : 'bg-green-600 dark:bg-green-500'
                       }`}
                       style={{ width: `${systemStats.memoryUsage}%` }}
                     />
@@ -327,18 +327,18 @@ const AdminDashboard: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">CPU Usage</CardTitle>
-                  <Cpu className="h-4 w-4 text-muted-foreground" />
+              <Card className="border-2 border-primary/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 bg-primary/5 dark:bg-transparent rounded-t-lg">
+                  <CardTitle className="text-sm font-medium text-primary dark:text-foreground">CPU Usage</CardTitle>
+                  <Cpu className="h-4 w-4 text-primary/70 dark:text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{systemStats.cpuUsage.toFixed(1)}%</div>
-                  <div className="w-full bg-secondary rounded-full h-2 mt-2">
+                  <div className="text-2xl font-bold text-primary dark:text-foreground">{systemStats.cpuUsage.toFixed(1)}%</div>
+                  <div className="w-full bg-secondary/60 dark:bg-secondary rounded-full h-2 mt-2 border border-secondary/40">
                     <div 
                       className={`h-2 rounded-full ${
-                        systemStats.cpuUsage > 80 ? 'bg-red-500' : 
-                        systemStats.cpuUsage > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                        systemStats.cpuUsage > 80 ? 'bg-red-600 dark:bg-red-500' : 
+                        systemStats.cpuUsage > 60 ? 'bg-yellow-600 dark:bg-yellow-500' : 'bg-green-600 dark:bg-green-500'
                       }`}
                       style={{ width: `${systemStats.cpuUsage}%` }}
                     />
@@ -346,39 +346,39 @@ const AdminDashboard: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Active Connections</CardTitle>
-                  <Wifi className="h-4 w-4 text-muted-foreground" />
+              <Card className="border-2 border-primary/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 bg-primary/5 dark:bg-transparent rounded-t-lg">
+                  <CardTitle className="text-sm font-medium text-primary dark:text-foreground">Active Connections</CardTitle>
+                  <Wifi className="h-4 w-4 text-primary/70 dark:text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{systemStats.activeConnections}</div>
+                  <div className="text-2xl font-bold text-primary dark:text-foreground">{systemStats.activeConnections}</div>
                   <p className="text-xs text-muted-foreground mt-1">WebSocket connections</p>
                 </CardContent>
               </Card>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Database Statistics</CardTitle>
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <CardTitle className="text-primary dark:text-foreground">Database Statistics</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <div className="text-sm text-muted-foreground">Database Size</div>
-                    <div className="text-lg font-semibold">{formatBytes(systemStats.databaseSize)}</div>
+                  <div className="p-3 bg-secondary/40 dark:bg-secondary/20 rounded-lg border border-secondary/50">
+                    <div className="text-sm text-muted-foreground font-medium">Database Size</div>
+                    <div className="text-lg font-semibold text-primary dark:text-foreground">{formatBytes(systemStats.databaseSize)}</div>
                   </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Total Users</div>
-                    <div className="text-lg font-semibold">{users.length}</div>
+                  <div className="p-3 bg-secondary/40 dark:bg-secondary/20 rounded-lg border border-secondary/50">
+                    <div className="text-sm text-muted-foreground font-medium">Total Users</div>
+                    <div className="text-lg font-semibold text-primary dark:text-foreground">{users.length}</div>
                   </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Total Tournaments</div>
-                    <div className="text-lg font-semibold">{tournaments.length}</div>
+                  <div className="p-3 bg-secondary/40 dark:bg-secondary/20 rounded-lg border border-secondary/50">
+                    <div className="text-sm text-muted-foreground font-medium">Total Tournaments</div>
+                    <div className="text-lg font-semibold text-primary dark:text-foreground">{tournaments.length}</div>
                   </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Active Tournaments</div>
-                    <div className="text-lg font-semibold">
+                  <div className="p-3 bg-secondary/40 dark:bg-secondary/20 rounded-lg border border-secondary/50">
+                    <div className="text-sm text-muted-foreground font-medium">Active Tournaments</div>
+                    <div className="text-lg font-semibold text-primary dark:text-foreground">
                       {tournaments.filter(t => t.status === 'ACTIVE').length}
                     </div>
                   </div>
@@ -389,9 +389,9 @@ const AdminDashboard: React.FC = () => {
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create New User</CardTitle>
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <CardTitle className="text-primary dark:text-foreground">Create New User</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -424,9 +424,9 @@ const AdminDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>All Users ({users.length})</CardTitle>
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <CardTitle className="text-primary dark:text-foreground">All Users ({users.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -450,7 +450,7 @@ const AdminDashboard: React.FC = () => {
                         </thead>
                         <tbody>
                           {users.map((user) => (
-                            <tr key={user.id} className="border-b hover:bg-secondary/50">
+                            <tr key={user.id} className="border-b hover:bg-secondary/60 dark:hover:bg-secondary/50">
                               <td className="p-2">{user.id}</td>
                               <td className="p-2 font-medium">{user.name}</td>
                               <td className="p-2 text-sm text-muted-foreground">{user.email}</td>
@@ -501,9 +501,9 @@ const AdminDashboard: React.FC = () => {
 
           {/* Tournaments Tab */}
           <TabsContent value="tournaments" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tournament Controls</CardTitle>
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <CardTitle className="text-primary dark:text-foreground">Tournament Controls</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -580,9 +580,9 @@ const AdminDashboard: React.FC = () => {
 
           {/* Database Tab */}
           <TabsContent value="database" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Database Operations</CardTitle>
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <CardTitle className="text-primary dark:text-foreground">Database Operations</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -631,9 +631,9 @@ const AdminDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Test Data Seeding</CardTitle>
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <CardTitle className="text-primary dark:text-foreground">Test Data Seeding</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
@@ -680,9 +680,9 @@ const AdminDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Database Tables</CardTitle>
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <CardTitle className="text-primary dark:text-foreground">Database Tables</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -704,9 +704,9 @@ const AdminDashboard: React.FC = () => {
 
           {/* Carousel Tab */}
           <TabsContent value="carousel" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Photo Carousel Management</CardTitle>
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <CardTitle className="text-primary dark:text-foreground">Photo Carousel Management</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>

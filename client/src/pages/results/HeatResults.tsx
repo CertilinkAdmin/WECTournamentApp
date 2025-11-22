@@ -523,7 +523,7 @@ const HeatResults: React.FC = () => {
 
                       {/* Scoring Categories */}
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-secondary/60 dark:bg-secondary/50 rounded-lg border border-secondary/50">
                           <div className="flex items-center gap-2">
                             <Coffee className="h-4 w-4 text-primary" />
                             <span className="font-medium text-primary">Visual Latte Art</span>

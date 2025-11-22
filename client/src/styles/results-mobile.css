@@ -28,11 +28,30 @@
 
   /* Text elements - darker for better readability */
   .light .text-muted-foreground {
-    color: hsl(25 15% 35%) !important;
+    color: hsl(25 20% 35%) !important;
   }
 
   .light .text-foreground {
-    color: hsl(25 15% 10%) !important;
+    color: hsl(25 20% 10%) !important;
+  }
+  
+  /* Enhanced card colors */
+  .light [class*="Card"] {
+    background-color: hsl(30 12% 99%) !important;
+    border-color: hsl(40 18% 80%) !important;
+    box-shadow: 0 2px 4px rgba(25, 20, 15, 0.08) !important;
+  }
+  
+  /* More vibrant buttons */
+  .light button[class*="primary"] {
+    background-color: hsl(17 65% 35%) !important;
+    border-color: hsl(17 65% 30%) !important;
+  }
+  
+  .light button[class*="secondary"] {
+    background-color: hsl(40 50% 72%) !important;
+    color: hsl(17 55% 25%) !important;
+    border-color: hsl(40 45% 65%) !important;
   }
 
   /* Heat cards and match cards - improved contrast */

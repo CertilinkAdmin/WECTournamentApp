@@ -8,8 +8,8 @@
 
 /* LIGHT MODE */
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(0,0,0, .20);
+  --badge-outline: rgba(0,0,0, .15);
 
   /* Automatic computation of border around primary / danger buttons */
   --opaque-button-border-intensity: -8; /* In terms of percentages */
@@ -18,24 +18,24 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  /* Core Colors - WEC Light Theme */
-  --background: 40 25% 97%;  /* #F5F0E8 - Soft sand background */
+  /* Core Colors - WEC Light Theme - Enhanced Contrast */
+  --background: 40 20% 96%;  /* Slightly darker for better contrast */
 
-  --foreground: 25 15% 15%;  /* Dark text */
+  --foreground: 25 20% 10%;  /* Darker text for better readability */
 
-  --border: 40 12% 88%;  /* Light sand/taupe border - matches brand colors */
+  --border: 40 15% 82%;  /* More visible borders */
 
-  --card: 30 20% 98%;  /* Card backgrounds */
+  --card: 30 15% 99%;  /* Slightly off-white card backgrounds */
 
-  --card-foreground: 25 15% 15%;  /* Card text */
+  --card-foreground: 25 20% 10%;  /* Darker card text */
 
-  --card-border: 40 8% 92%;
+  --card-border: 40 12% 85%;  /* More visible card borders */
 
-  --sidebar: 40 20% 96%;
+  --sidebar: 40 18% 94%;
 
-  --sidebar-foreground: 25 35% 15%;
+  --sidebar-foreground: 25 30% 12%;
 
-  --sidebar-border: 40 12% 90%;
+  --sidebar-border: 40 15% 85%;
 
   --sidebar-primary: 17 59% 38%;
 
@@ -47,50 +47,50 @@
 
   --sidebar-ring: 17 59% 38%;
 
-  --popover: 40 22% 94%;
+  --popover: 40 18% 96%;
 
-  --popover-foreground: 17 40% 20%;
+  --popover-foreground: 25 25% 15%;
 
-  --popover-border: 40 15% 88%;
+  --popover-border: 40 15% 82%;
 
-  /* Interactive Colors */
-  --primary: 17 59% 38%;  /* #994D27 - Cinnamon Brown primary */
+  /* Interactive Colors - More Vibrant */
+  --primary: 17 65% 35%;  /* Slightly more saturated Cinnamon Brown */
 
   --primary-foreground: 0 0% 100%;  /* White text */
   
   /* Dark accent for light theme */
-  --primary-dark: 17 59% 25%;  /* #6B3419 - Darker Cinnamon Brown accent */
+  --primary-dark: 17 65% 22%;  /* Darker Cinnamon Brown accent */
 
-  --secondary: 40 44% 76%;  /* #DECCA7 - Light Sand secondary */
+  --secondary: 40 50% 72%;  /* More vibrant Light Sand */
 
-  --secondary-foreground: 17 45% 30%;  /* #7A3D1F - Darker brown text */
+  --secondary-foreground: 17 55% 25%;  /* Darker brown text for better contrast */
 
-  --muted: 40 15% 91%;
+  --muted: 40 12% 88%;  /* Slightly darker muted background */
 
-  --muted-foreground: 17 20% 45%;
+  --muted-foreground: 25 25% 35%;  /* Darker muted text for better readability */
 
-  --accent: 40 44% 76%;
+  --accent: 30 55% 65%;  /* More vibrant golden accent */
 
-  --accent-foreground: 17 50% 25%;
+  --accent-foreground: 17 60% 20%;  /* Darker accent text */
 
-  /* Functional Colors */
-  --destructive: 0 70% 50%;  /* #DC2626 - Error states */
+  /* Functional Colors - More Vibrant */
+  --destructive: 0 75% 48%;  /* More vibrant red for errors */
 
   --destructive-foreground: 0 0% 100%;
 
-  --success: 142 71% 45%;  /* #16A34A - Success states */
+  --success: 142 75% 42%;  /* More vibrant green for success */
 
-  --warning: 30 60% 50%;  /* Golden brown - Warning states */
+  --warning: 35 70% 48%;  /* More vibrant golden brown - Warning states */
 
-  --info: 17 59% 38%;  /* #994D27 - Cinnamon Brown for info states */
+  --info: 17 65% 35%;  /* More vibrant Cinnamon Brown for info states */
 
-  --input: 0 0% 98%;  /* #F9FAFB - Input background */
-  --ring: 17 59% 38%;  /* Cinnamon Brown for focus ring */
-  --chart-1: 17 59% 38%;  /* Cinnamon Brown */
-  --chart-2: 30 60% 50%;  /* Golden Brown */
-  --chart-3: 40 44% 76%;  /* Light Sand */
-  --chart-4: 17 59% 25%;  /* Dark Cinnamon Brown */
-  --chart-5: 40 20% 50%;  /* Medium Sand */
+  --input: 40 15% 95%;  /* Slightly tinted input background */
+  --ring: 17 65% 35%;  /* More vibrant Cinnamon Brown for focus ring */
+  --chart-1: 17 65% 35%;  /* Cinnamon Brown */
+  --chart-2: 35 70% 48%;  /* Golden Brown */
+  --chart-3: 40 50% 72%;  /* Light Sand */
+  --chart-4: 17 65% 22%;  /* Dark Cinnamon Brown */
+  --chart-5: 30 45% 55%;  /* Medium Sand */
 
   /* WEC Brand Colors - Official Style Guide */
   /* Primary Colors */
@@ -128,14 +128,14 @@
   --font-montserrat: 'Montserrat', sans-serif;
   --font-mono: 'JetBrains Mono', Menlo, monospace;
   --radius: .5rem; /* 8px */
-  --shadow-2xs: 0px 2px 0px 0px hsl(25 15% 30% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(25 15% 30% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(25 15% 30% / 0.00), 0px 1px 2px -1px hsl(25 15% 30% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(25 15% 30% / 0.00), 0px 1px 2px -1px hsl(25 15% 30% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(25 15% 30% / 0.00), 0px 2px 4px -1px hsl(25 15% 30% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(25 15% 30% / 0.00), 0px 4px 6px -1px hsl(25 15% 30% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(25 15% 30% / 0.00), 0px 8px 10px -1px hsl(25 15% 30% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(25 15% 30% / 0.00);
+  --shadow-2xs: 0px 2px 0px 0px hsl(25 20% 20% / 0.05);
+  --shadow-xs: 0px 2px 0px 0px hsl(25 20% 20% / 0.08);
+  --shadow-sm: 0px 2px 0px 0px hsl(25 20% 20% / 0.10), 0px 1px 2px -1px hsl(25 20% 20% / 0.12);
+  --shadow: 0px 2px 0px 0px hsl(25 20% 20% / 0.12), 0px 1px 2px -1px hsl(25 20% 20% / 0.15);
+  --shadow-md: 0px 2px 0px 0px hsl(25 20% 20% / 0.15), 0px 2px 4px -1px hsl(25 20% 20% / 0.18);
+  --shadow-lg: 0px 2px 0px 0px hsl(25 20% 20% / 0.18), 0px 4px 6px -1px hsl(25 20% 20% / 0.20);
+  --shadow-xl: 0px 2px 0px 0px hsl(25 20% 20% / 0.20), 0px 8px 10px -1px hsl(25 20% 20% / 0.22);
+  --shadow-2xl: 0px 2px 0px 0px hsl(25 20% 20% / 0.25);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
   
@@ -663,5 +663,70 @@ html, body, #root, .App {
   .admin-layout,
   .live-layout {
     padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0));
+  }
+}
+
+/* ========== LIGHT MODE ENHANCEMENTS ========== */
+@layer utilities {
+  /* Enhanced contrast for light mode text */
+  :root .text-muted-foreground {
+    color: hsl(25 20% 35%);
+  }
+  
+  :root .text-foreground {
+    color: hsl(25 20% 10%);
+  }
+  
+  /* Enhanced card styling in light mode */
+  :root [class*="Card"] {
+    border-color: hsl(40 18% 80%);
+    box-shadow: 0 1px 3px rgba(25, 20, 15, 0.06), 0 1px 2px rgba(25, 20, 15, 0.04);
+  }
+  
+  /* More vibrant buttons in light mode */
+  :root button:not([class*="ghost"]):not([class*="link"]):not([class*="primary"]):not([class*="destructive"]) {
+    border-width: 1px;
+    border-color: hsl(40 15% 75%);
+  }
+  
+  /* Enhanced badges in light mode */
+  :root [class*="Badge"]:not([class*="destructive"]) {
+    border-width: 1px;
+    border-color: hsl(40 20% 70%);
+    font-weight: 500;
+  }
+  
+  /* Better input contrast */
+  :root input,
+  :root textarea,
+  :root select {
+    border-color: hsl(40 18% 75%);
+    background-color: hsl(40 10% 98%);
+  }
+  
+  /* Enhanced table styling */
+  :root table {
+    border-color: hsl(40 18% 80%);
+  }
+  
+  :root table th {
+    background-color: hsl(40 15% 94%);
+    color: hsl(25 25% 12%);
+    font-weight: 600;
+    border-color: hsl(40 18% 80%);
+  }
+  
+  :root table td {
+    border-color: hsl(40 15% 88%);
+  }
+  
+  /* Enhanced borders throughout */
+  :root [class*="border"] {
+    border-color: hsl(40 15% 82%);
+  }
+  
+  /* More visible shadows in light mode */
+  :root [class*="shadow"] {
+    box-shadow: 0 1px 3px rgba(25, 20, 15, 0.08), 0 1px 2px rgba(25, 20, 15, 0.06);
   }
 }

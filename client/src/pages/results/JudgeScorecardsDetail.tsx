@@ -232,7 +232,7 @@ const JudgeScorecardsDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
-        <Card className="max-w-md">
+        <Card className="max-w-md border-2 border-primary/20 bg-secondary/30 dark:bg-card shadow-md">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
             <p className="text-muted-foreground">Loading judge scorecards...</p>
@@ -245,8 +245,8 @@ const JudgeScorecardsDetail: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
+        <Card className="max-w-md border-2 border-destructive/30 bg-secondary/30 dark:bg-card shadow-md">
+          <CardHeader className="bg-destructive/5 dark:bg-transparent rounded-t-lg">
             <CardTitle className="text-destructive">Error</CardTitle>
           </CardHeader>
           <CardContent>
@@ -261,9 +261,9 @@ const JudgeScorecardsDetail: React.FC = () => {
   if (!decodedJudgeName || judgeHeats.length === 0) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Judge Not Found</CardTitle>
+        <Card className="max-w-md border-2 border-primary/20 bg-secondary/30 dark:bg-card shadow-md">
+          <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+            <CardTitle className="text-primary dark:text-foreground">Judge Not Found</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">No scorecards found for {decodedJudgeName}.</p>
@@ -335,9 +335,9 @@ const JudgeScorecardsDetail: React.FC = () => {
 
         {/* Judge Scorecard Display */}
         {currentHeat && currentJudgeScorecard && (
-          <Card className="min-h-[600px] relative border border-primary/30 bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+          <Card className="min-h-[600px] relative border-2 border-primary/30 dark:border-primary/20 bg-secondary/30 dark:bg-card shadow-lg">
+            <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg border-b border-primary/20">
+              <CardTitle className="flex items-center justify-between text-primary dark:text-foreground">
                 <div className="flex items-center gap-3">
                   <Trophy className="h-6 w-6 text-primary" />
                   <span className="text-2xl font-bold text-primary">
@@ -361,15 +361,15 @@ const JudgeScorecardsDetail: React.FC = () => {
               <div className="grid grid-cols-2 gap-6 mb-8">
                 <div className={`p-6 rounded-xl border-2 ${
                   currentHeat.winner === currentHeat.competitor1 
-                    ? 'border-primary bg-secondary' 
-                    : 'border-border bg-card'
+                    ? 'border-primary bg-secondary/60 dark:bg-secondary shadow-md' 
+                    : 'border-primary/30 dark:border-border bg-secondary/40 dark:bg-card'
                 }`}>
-                  <div className="font-medium text-sm text-gray-600 mb-2">Left Competitor</div>
-                  <div className="font-bold text-xl mb-3">
+                  <div className="font-medium text-sm text-muted-foreground mb-2">Left Competitor</div>
+                  <div className="font-bold text-xl mb-3 text-primary dark:text-foreground">
                     {currentHeat.competitor1}
                   </div>
                   {currentJudgeScorecard?.leftCupCode && (
-                    <div className="text-sm text-gray-500 mb-2 font-mono bg-gray-100 px-2 py-1 rounded">
+                    <div className="text-sm text-muted-foreground mb-2 font-mono bg-secondary/60 dark:bg-gray-100 px-2 py-1 rounded border border-primary/20">
                       Cup: {currentJudgeScorecard.leftCupCode}
                     </div>
                   )}
@@ -377,15 +377,15 @@ const JudgeScorecardsDetail: React.FC = () => {
                 
                 <div className={`p-6 rounded-xl border-2 ${
                   currentHeat.winner === currentHeat.competitor2 
-                    ? 'border-primary bg-secondary' 
-                    : 'border-border bg-card'
+                    ? 'border-primary bg-secondary/60 dark:bg-secondary shadow-md' 
+                    : 'border-primary/30 dark:border-border bg-secondary/40 dark:bg-card'
                 }`}>
-                  <div className="font-medium text-sm text-gray-600 mb-2">Right Competitor</div>
-                  <div className="font-bold text-xl mb-3">
+                  <div className="font-medium text-sm text-muted-foreground mb-2">Right Competitor</div>
+                  <div className="font-bold text-xl mb-3 text-primary dark:text-foreground">
                     {currentHeat.competitor2 || '—'}
                   </div>
                   {currentJudgeScorecard?.rightCupCode && (
-                    <div className="text-sm text-gray-500 mb-2 font-mono bg-gray-100 px-2 py-1 rounded">
+                    <div className="text-sm text-muted-foreground mb-2 font-mono bg-secondary/60 dark:bg-gray-100 px-2 py-1 rounded border border-primary/20">
                       Cup: {currentJudgeScorecard.rightCupCode}
                     </div>
                   )}
@@ -394,23 +394,23 @@ const JudgeScorecardsDetail: React.FC = () => {
 
               {/* Judge Scorecard */}
               <div className="space-y-6">
-                <h3 className="text-xl font-bold flex items-center gap-3 bg-secondary/30 p-4 rounded-xl border border-primary/20">
+                <h3 className="text-xl font-bold flex items-center gap-3 bg-secondary/50 dark:bg-secondary/30 p-4 rounded-xl border-2 border-primary/30 dark:border-primary/20">
                   <Users className="h-6 w-6 text-primary" />
                   <span className="text-primary">
                     {decodedJudgeName}'s Scorecard
                   </span>
                 </h3>
                 
-                <Card className="border-l-4 border-l-primary bg-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
+                <Card className="border-l-4 border-l-primary bg-secondary/20 dark:bg-card border-2 border-primary/20 shadow-sm">
+                  <CardHeader className="pb-3 bg-primary/5 dark:bg-transparent rounded-t-lg">
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary dark:text-foreground">
                       <Users className="h-5 w-5" />
                       <span className="font-bold">{decodedJudgeName}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {/* Cup Codes */}
-                    <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
+                    <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/40 dark:bg-secondary/20 rounded-lg border-2 border-secondary/50 dark:border-secondary/40">
                       <div className="text-center">
                         <div className="text-xs text-slate-600 font-medium">Left Cup</div>
                         <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
@@ -428,7 +428,7 @@ const JudgeScorecardsDetail: React.FC = () => {
                     {/* Scoring Categories */}
                     <div className="space-y-3">
                       {/* Visual Latte Art */}
-                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border-2 border-primary/40 dark:border-primary/30 bg-secondary/40 dark:bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
                           <input type="checkbox" checked={currentJudgeScorecard?.visualLatteArt === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
@@ -455,14 +455,14 @@ const JudgeScorecardsDetail: React.FC = () => {
                       </div>
 
                       {/* Sensory */}
-                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border-2 border-primary/40 dark:border-primary/30 bg-secondary/40 dark:bg-secondary/20">
                         <div></div>
                         <div className="text-center font-semibold text-primary">{`Sensory ${currentJudgeScorecard?.sensoryBeverage || '—'}`}</div>
                         <div></div>
                       </div>
 
                       {/* Taste */}
-                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border-2 border-primary/40 dark:border-primary/30 bg-secondary/40 dark:bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
                           <input type="checkbox" checked={currentJudgeScorecard?.taste === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
@@ -475,7 +475,7 @@ const JudgeScorecardsDetail: React.FC = () => {
                       </div>
 
                       {/* Tactile */}
-                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border-2 border-primary/40 dark:border-primary/30 bg-secondary/40 dark:bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
                           <input type="checkbox" checked={currentJudgeScorecard?.tactile === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
@@ -488,7 +488,7 @@ const JudgeScorecardsDetail: React.FC = () => {
                       </div>
 
                       {/* Flavour */}
-                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border-2 border-primary/40 dark:border-primary/30 bg-secondary/40 dark:bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
                           <input type="checkbox" checked={currentJudgeScorecard?.flavour === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>
@@ -501,7 +501,7 @@ const JudgeScorecardsDetail: React.FC = () => {
                       </div>
 
                       {/* Overall */}
-                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-secondary/20">
+                      <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border-2 border-primary/40 dark:border-primary/30 bg-secondary/40 dark:bg-secondary/20">
                         <label className="flex items-center gap-2 justify-start">
                           <input type="checkbox" checked={currentJudgeScorecard?.overall === 'left'} readOnly className="h-4 w-4 accent-[color:oklch(var(--foreground))]" />
                           <span className="text-xs text-muted-foreground">Left</span>

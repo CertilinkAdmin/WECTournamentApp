@@ -355,8 +355,8 @@ const WEC2025Results = () => {
   if (error && !tournamentData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader>
+        <Card className="max-w-md w-full border-2 border-destructive/30 bg-secondary/20 dark:bg-card shadow-md">
+          <CardHeader className="bg-destructive/5 dark:bg-transparent rounded-t-lg">
             <CardTitle className="text-destructive">Error Loading Results</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -424,7 +424,7 @@ const WEC2025Results = () => {
                                 y={y + 4}
                                 fontSize="9"
                                 fill="currentColor"
-                                className={competitor1Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground"}
+                                className={competitor1Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground dark:text-foreground"}
                                 style={{ fontFamily: 'system-ui, sans-serif', fontWeight: '500' }}
                               >
                                 {match.competitor1Name || '—'}
@@ -437,7 +437,7 @@ const WEC2025Results = () => {
                                 y2={y + 7}
                                 stroke="currentColor"
                                 strokeWidth="2"
-                                className={competitor1Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground"}
+                                className={competitor1Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground dark:text-foreground"}
                               />
                               {/* Right competitor name */}
                               <text
@@ -445,7 +445,7 @@ const WEC2025Results = () => {
                                 y={y + 4}
                                 fontSize="9"
                                 fill="currentColor"
-                                className={competitor2Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground"}
+                                className={competitor2Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground dark:text-foreground"}
                                 style={{ fontFamily: 'system-ui, sans-serif', textAnchor: 'end', fontWeight: '500' }}
                               >
                                 {match.competitor2Name || 'BYE'}
@@ -458,7 +458,7 @@ const WEC2025Results = () => {
                                 y2={y + 7}
                                 stroke="currentColor"
                                 strokeWidth="2"
-                                className={competitor2Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground"}
+                                className={competitor2Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground dark:text-foreground"}
                               />
                             </g>
                           );
@@ -558,16 +558,16 @@ const WEC2025Results = () => {
                 selectedRoundMatches.map(match => (
                 <Card
                   key={match.id}
-                  className="cursor-pointer hover-elevate active-elevate-2 transition-all"
+                  className="cursor-pointer hover-elevate active-elevate-2 transition-all border-2 border-primary/30 dark:border-primary/20 hover:border-primary/50 dark:hover:border-primary/40 bg-secondary/20 dark:bg-card shadow-md"
                   onClick={() => setSelectedHeat(match)}
                   data-testid={`card-heat-${match.id}`}
                 >
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 bg-primary/5 dark:bg-transparent rounded-t-lg border-b border-primary/20">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-cinnamon-brown">
+                      <span className="font-semibold text-primary dark:text-cinnamon-brown">
                         Heat {match.heatNumber}
                       </span>
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs border border-primary/30">
                         Round {match.round}
                       </Badge>
                     </div>
@@ -575,10 +575,10 @@ const WEC2025Results = () => {
                   <CardContent className="space-y-3">
                     <div className="space-y-2">
                       <div
-                        className={`flex items-center justify-between p-2 rounded-md border ${
+                        className={`flex items-center justify-between p-2 rounded-md border-2 ${
                           match.winnerId === match.competitor1Id
-                            ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
-                            : 'bg-muted/50 border-border'
+                            ? 'bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-800 border-primary/30'
+                            : 'bg-secondary/40 dark:bg-muted/50 border-primary/20 dark:border-border'
                         }`}
                         data-testid={`competitor-1-${match.id}`}
                       >
@@ -605,10 +605,10 @@ const WEC2025Results = () => {
                       </div>
 
                       <div
-                        className={`flex items-center justify-between p-2 rounded-md border ${
+                        className={`flex items-center justify-between p-2 rounded-md border-2 ${
                           match.winnerId === match.competitor2Id
-                            ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
-                            : 'bg-muted/50 border-border'
+                            ? 'bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-800 border-primary/30'
+                            : 'bg-secondary/40 dark:bg-muted/50 border-primary/20 dark:border-border'
                         }`}
                         data-testid={`competitor-2-${match.id}`}
                       >
@@ -648,7 +648,7 @@ const WEC2025Results = () => {
                 </Card>
               ))
           ) : (
-            <Card>
+            <Card className="border-2 border-primary/20 dark:border-border bg-secondary/20 dark:bg-card shadow-md">
               <CardContent className="text-center py-8 text-muted-foreground">
                 No heats found for this round.
               </CardContent>

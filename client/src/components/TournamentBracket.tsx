@@ -288,7 +288,7 @@ export default function TournamentBracket() {
         
         <div className="space-y-2">
           <div className={`p-2 rounded-md border ${
-            heat.competitor1Name === 'BYE' || heat.competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-white'
+            heat.competitor1Name === 'BYE' || heat.competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-secondary dark:bg-white'
           } ${heat.winner === heat.competitor1 ? 'ring-2 ring-green-400' : ''}`}>
             <div className="font-medium text-sm">
               {heat.competitor1Name || heat.competitor1 || "—"}
@@ -298,7 +298,7 @@ export default function TournamentBracket() {
           <div className="text-center text-muted-foreground font-bold">VS</div>
           
           <div className={`p-2 rounded-md border ${
-            heat.competitor2Name === 'BYE' || heat.competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-white'
+            heat.competitor2Name === 'BYE' || heat.competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-secondary dark:bg-white'
           } ${heat.winner === heat.competitor2 ? 'ring-2 ring-green-400' : ''}`}>
             <div className="font-medium text-sm">
               {heat.competitor2Name || heat.competitor2 || "—"}

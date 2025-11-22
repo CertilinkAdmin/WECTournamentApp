@@ -870,7 +870,7 @@ export default function PublicDisplay() {
         .main-card {
           width: 100%;
           height: 100%;
-          background: linear-gradient(135deg, #F5F5DC 0%, #FAEBD7 50%, #FFF8DC 100%);
+          background: linear-gradient(135deg, #DECCA7 0%, #E8D5B7 50%, #F0E0C7 100%);
           border-radius: 12px;
           position: relative;
           overflow: hidden;
@@ -1193,7 +1193,7 @@ export default function PublicDisplay() {
         .cup-item {
           flex: 1;
           text-align: center;
-          background: linear-gradient(135deg, rgba(245, 245, 220, 0.8), rgba(250, 235, 215, 0.6));
+          background: linear-gradient(135deg, rgba(222, 204, 167, 0.8), rgba(232, 213, 183, 0.6));
           border-radius: 8px;
           padding: 0.5rem;
           border: 1px solid rgba(210, 105, 30, 0.4);
@@ -1211,7 +1211,7 @@ export default function PublicDisplay() {
           align-items: center;
           padding: 0.4rem 0.6rem;
           margin: 0.3rem 0;
-          background: linear-gradient(135deg, rgba(245, 245, 220, 0.4), rgba(250, 235, 215, 0.3));
+          background: linear-gradient(135deg, rgba(222, 204, 167, 0.4), rgba(232, 213, 183, 0.3));
           border-radius: 6px;
           border: 1px solid rgba(210, 105, 30, 0.3);
         }

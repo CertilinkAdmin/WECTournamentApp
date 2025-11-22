@@ -301,7 +301,7 @@ const BaristaDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen tournament-bracket-bg p-6 flex items-center justify-center">
-        <Card className="max-w-md">
+        <Card className="max-w-md border-2 border-primary/20 bg-secondary/30 dark:bg-card shadow-md">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
             <p className="text-muted-foreground">Loading barista data...</p>
@@ -330,9 +330,9 @@ const BaristaDetail: React.FC = () => {
   if (!decodedBaristaName || baristaHeats.length === 0) {
     return (
       <div className="min-h-screen tournament-bracket-bg p-6 flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle>Barista Not Found</CardTitle>
+        <Card className="max-w-md w-full border-2 border-primary/20 bg-secondary/30 dark:bg-card shadow-md">
+          <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+            <CardTitle className="text-primary dark:text-foreground">Barista Not Found</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">No heats found for this barista.</p>
@@ -383,9 +383,9 @@ const BaristaDetail: React.FC = () => {
         </div>
 
         {/* Overall Summary Card */}
-        <Card className="mb-8 bg-gradient-to-r from-primary/10 to-chart-3/10 border-primary/20">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Overall Tournament Totals</CardTitle>
+        <Card className="mb-8 bg-gradient-to-r from-primary/10 to-chart-3/10 border-2 border-primary/30 dark:border-primary/20 shadow-lg">
+          <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+            <CardTitle className="text-2xl text-center text-primary dark:text-foreground">Overall Tournament Totals</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -453,10 +453,10 @@ const BaristaDetail: React.FC = () => {
 
         {/* Current Heat Scores */}
         {currentHeat && (
-          <Card className="mb-6">
-            <CardHeader>
+          <Card className="mb-6 border-2 border-primary/20 dark:border-border shadow-md bg-secondary/30 dark:bg-card">
+            <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg border-b border-primary/20">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">Heat {currentHeat.heatNumber} Details</CardTitle>
+                <CardTitle className="text-xl text-primary dark:text-foreground">Heat {currentHeat.heatNumber} Details</CardTitle>
                 <Badge variant="default" className="text-lg px-4 py-1">
                   Station {currentHeat.station}
                 </Badge>
@@ -464,7 +464,7 @@ const BaristaDetail: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Matchup */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/60 dark:bg-muted/50 rounded-lg border border-border/60">
                 <div className={`text-center p-4 rounded-lg ${
                   (() => {
                     const comp1Lower = currentHeat.competitor1.toLowerCase();
@@ -517,11 +517,11 @@ const BaristaDetail: React.FC = () => {
 
               {/* Category Scores */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold mb-4 text-center">Scores by Category</h3>
+                <h3 className="text-lg font-semibold mb-4 text-center text-primary dark:text-foreground">Scores by Category</h3>
                 
                 {/* Cappuccino Section */}
                 <div className="space-y-3">
-                  <div className="bg-secondary text-secondary-foreground rounded-lg px-4 py-2 text-center font-bold text-lg" data-testid="section-cappuccino">
+                  <div className="bg-secondary/90 dark:bg-secondary text-secondary-foreground rounded-lg px-4 py-2 text-center font-bold text-lg border border-secondary/40" data-testid="section-cappuccino">
                     CAPPUCCINO
                   </div>
                   
@@ -537,7 +537,7 @@ const BaristaDetail: React.FC = () => {
 
                 {/* Espresso Section */}
                 <div className="space-y-3 mt-6">
-                  <div className="bg-secondary text-secondary-foreground rounded-lg px-4 py-2 text-center font-bold text-lg" data-testid="section-espresso">
+                  <div className="bg-secondary/90 dark:bg-secondary text-secondary-foreground rounded-lg px-4 py-2 text-center font-bold text-lg border border-secondary/40" data-testid="section-espresso">
                     ESPRESSO
                   </div>
                   
@@ -579,7 +579,7 @@ const BaristaDetail: React.FC = () => {
                 </div>
 
                 {/* Total Score */}
-                <div className="bg-secondary text-secondary-foreground rounded-lg px-6 py-4 text-center mt-6" data-testid="total-score">
+                <div className="bg-secondary/90 dark:bg-secondary text-secondary-foreground rounded-lg px-6 py-4 text-center mt-6 border-2 border-secondary/50 shadow-md" data-testid="total-score">
                   <div className="text-3xl font-bold">
                     {currentHeat.totalPoints} / 33 <span className="ml-4">
                       {currentHeat.totalPoints > 16 ? 'WIN' : currentHeat.totalPoints === 16 ? 'TIE' : 'LOSS'}
@@ -589,9 +589,9 @@ const BaristaDetail: React.FC = () => {
               </div>
 
               {/* Total Points for Heat */}
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t border-primary/20">
                 <div className="flex items-center justify-between">
-                  <div className="text-lg font-semibold">Heat Total Points</div>
+                  <div className="text-lg font-semibold text-primary dark:text-foreground">Heat Total Points</div>
                   <div className="text-3xl font-bold text-primary">{currentHeat.totalPoints}</div>
                 </div>
               </div>
@@ -624,31 +624,31 @@ const BaristaDetail: React.FC = () => {
         )}
 
         {/* All Heats Summary Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All Heats Summary</CardTitle>
+        <Card className="border-2 border-primary/20 dark:border-border shadow-md bg-secondary/30 dark:bg-card">
+          <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg border-b border-primary/20">
+            <CardTitle className="text-primary dark:text-foreground">All Heats Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Heat</th>
-                    <th className="text-center p-2">Station</th>
-                    <th className="text-center p-2">Latte Art</th>
-                    <th className="text-center p-2">Taste</th>
-                    <th className="text-center p-2">Tactile</th>
-                    <th className="text-center p-2">Flavor</th>
-                    <th className="text-center p-2">Overall</th>
-                    <th className="text-center p-2">Total</th>
-                    <th className="text-center p-2">Result</th>
+                  <tr className="border-b border-primary/20">
+                    <th className="text-left p-2 bg-secondary/40 dark:bg-muted text-primary dark:text-foreground font-semibold">Heat</th>
+                    <th className="text-center p-2 bg-secondary/40 dark:bg-muted text-primary dark:text-foreground font-semibold">Station</th>
+                    <th className="text-center p-2 bg-secondary/40 dark:bg-muted text-primary dark:text-foreground font-semibold">Latte Art</th>
+                    <th className="text-center p-2 bg-secondary/40 dark:bg-muted text-primary dark:text-foreground font-semibold">Taste</th>
+                    <th className="text-center p-2 bg-secondary/40 dark:bg-muted text-primary dark:text-foreground font-semibold">Tactile</th>
+                    <th className="text-center p-2 bg-secondary/40 dark:bg-muted text-primary dark:text-foreground font-semibold">Flavor</th>
+                    <th className="text-center p-2 bg-secondary/40 dark:bg-muted text-primary dark:text-foreground font-semibold">Overall</th>
+                    <th className="text-center p-2 bg-secondary/40 dark:bg-muted text-primary dark:text-foreground font-semibold">Total</th>
+                    <th className="text-center p-2 bg-secondary/40 dark:bg-muted text-primary dark:text-foreground font-semibold">Result</th>
                   </tr>
                 </thead>
                 <tbody>
                   {baristaHeats.map((heat, idx) => (
                     <tr 
                       key={heat.heatNumber} 
-                      className={`border-b cursor-pointer hover:bg-muted/50 ${idx === currentHeatIndex ? 'bg-primary/10' : ''}`}
+                      className={`border-b border-primary/10 cursor-pointer hover:bg-secondary/50 dark:hover:bg-muted/50 ${idx === currentHeatIndex ? 'bg-primary/20 dark:bg-primary/10' : 'bg-secondary/20 dark:bg-card'}`}
                       onClick={() => setCurrentHeatIndex(idx)}
                     >
                       <td className="p-2 font-semibold">{heat.heatNumber}</td>

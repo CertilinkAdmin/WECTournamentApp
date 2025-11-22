@@ -167,19 +167,19 @@ const HeatCarouselDemo: React.FC = () => {
         <div className="mt-12 text-center">
           <h2 className="text-2xl font-bold mb-4">How to Use</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="p-4 bg-white dark:bg-slate-800 rounded-lg shadow">
+            <div className="p-4 bg-secondary dark:bg-slate-800 rounded-lg shadow">
               <h3 className="font-semibold mb-2">1. Heat Information</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 The rear card shows heat details, scores, and judge information
               </p>
             </div>
-            <div className="p-4 bg-white dark:bg-slate-800 rounded-lg shadow">
+            <div className="p-4 bg-secondary dark:bg-slate-800 rounded-lg shadow">
               <h3 className="font-semibold mb-2">2. Competitor Cards</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Front cards display individual competitor details and scores
               </p>
             </div>
-            <div className="p-4 bg-white dark:bg-slate-800 rounded-lg shadow">
+            <div className="p-4 bg-secondary dark:bg-slate-800 rounded-lg shadow">
               <h3 className="font-semibold mb-2">3. Navigation</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Use arrow buttons to cycle through heat info and competitors

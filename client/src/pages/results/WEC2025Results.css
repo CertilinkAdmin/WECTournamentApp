@@ -91,13 +91,13 @@
 /* Light mode adjustments */
 :root .round-card {
   background: hsl(40 25% 92%);
-  border: 3px solid hsl(30 60% 55%);
-  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.1);
+  border: 3px solid hsl(17 65% 35%);
+  box-shadow: -1rem 0 3rem rgba(17, 65, 35, 0.2);
 }
 
 :root .round-card:hover {
-  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.15);
-  border-color: hsl(30 60% 65%);
+  box-shadow: -1rem 0 3rem rgba(17, 65, 35, 0.3);
+  border-color: hsl(17 65% 40%);
 }
 
 :root .round-card-title {

@@ -40,7 +40,7 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, sc
         </div>
         
         <div className="space-y-3">
-          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor1 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
+          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-secondary to-secondary/80 dark:from-white dark:to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor1 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
             <div className="flex justify-between items-center">
               <div className="font-semibold text-base text-slate-800">
                 {competitor1}
@@ -55,7 +55,7 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, sc
           
           <div className="text-center text-slate-600 font-bold text-sm tracking-wider">VS</div>
           
-          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-white to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor2 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
+          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-secondary to-secondary/80 dark:from-white dark:to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor2 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
             <div className="flex justify-between items-center">
               <div className="font-semibold text-base text-slate-800">
                 {competitor2}
@@ -138,7 +138,7 @@ export default function WEC25BracketDisplay() {
         </div>
 
         {/* Bracket Display */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-secondary dark:bg-white rounded-lg shadow-lg p-6">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             
             {/* Round 1 */}
