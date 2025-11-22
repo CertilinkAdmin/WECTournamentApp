@@ -397,17 +397,28 @@ const WEC2025Results = () => {
               const heatCount = roundMatches.length;
               const progress = heatCount > 0 ? 100 : 0; // Full progress if heats exist
 
+              // Dynamic sizing based on heat count
+              const baseHeight = 120; // Minimum height for header and footer
+              const heatHeight = 13; // Height per heat match
+              const dynamicHeight = Math.max(200, baseHeight + (heatCount * heatHeight) + 60); // 60px padding
+              const svgHeight = Math.max(120, heatCount * heatHeight + 30); // 30px padding for SVG
+
               return (
                 <div
                   key={round}
                   className="round-card"
                   onClick={() => setSelectedRound(round)}
                   data-testid={`card-round-${round}`}
+                  style={{ height: `${dynamicHeight}px` }}
                 >
                   <h3 className="round-card-title">{getRoundDisplayName(round)}</h3>
                   <div className="round-card-bracket">
                     {heatCount > 0 ? (
-                      <svg viewBox="0 0 180 220" className="bracket-svg" style={{ width: '100%', height: '100%' }}>
+                      <svg 
+                        viewBox={`0 0 180 ${svgHeight}`} 
+                        className="bracket-svg" 
+                        style={{ width: '100%', height: '100%' }}
+                      >
                         {roundMatches.map((match, heatIdx) => {
                           // Two-column bracket view: left column vs right column
                           // Increased spacing for larger display
