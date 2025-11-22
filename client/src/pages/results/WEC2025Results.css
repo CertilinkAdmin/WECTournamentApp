@@ -13,6 +13,8 @@
   scroll-behavior: smooth;
   border: none;
   outline: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 .round-card {
