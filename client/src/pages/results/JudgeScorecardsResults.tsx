@@ -357,7 +357,7 @@ const JudgeScorecardsResults: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen tournament-bracket-bg p-6">
+    <div className="min-h-screen tournament-bracket-bg p-6 bg-[#dcccb6]">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
