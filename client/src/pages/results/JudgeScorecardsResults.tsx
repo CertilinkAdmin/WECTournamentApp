@@ -366,7 +366,7 @@ const JudgeScorecardsResults: React.FC = () => {
             <h1 className="text-4xl font-bold text-primary">WEC25 Judge Scorecards</h1>
             <Users className="h-12 w-12 text-primary" />
           </div>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-xl text-[#d9d4d1]">
             Complete judge scorecards and detailed scoring breakdown for all heats
           </p>
         </div>
