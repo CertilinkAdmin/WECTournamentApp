@@ -191,56 +191,56 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  /* WEC Dark Theme - Cinnamon Brown Dominant */
-  --background: 17 59% 38%;  /* #994D27 - Cinnamon Brown */
+  /* WEC Dark Theme - Proper Dark Layout */
+  --background: 20 14% 8%;  /* Very dark brown background */
 
-  --foreground: 0 0% 100%;  /* White text */
+  --foreground: 40 30% 92%;  /* Light sand text */
 
-  --border: 17 50% 45%;  /* #B85A2F - Lighter Cinnamon */
+  --border: 20 20% 18%;  /* Dark brown borders */
 
-  --card: 20 36% 10%;  /* #1A0F0A - Dark cards */
+  --card: 20 18% 12%;  /* Dark card backgrounds */
 
-  --card-foreground: 40 44% 76%;  /* #DECCA7 - Light Sand text */
+  --card-foreground: 40 25% 88%;  /* Light text on cards */
 
-  --card-border: 17 40% 20%;
+  --card-border: 20 15% 20%;
 
-  --sidebar: 25 14% 16%;
+  --sidebar: 20 16% 10%;
 
-  --sidebar-foreground: 40 10% 95%;
+  --sidebar-foreground: 40 20% 90%;
 
-  --sidebar-border: 25 12% 22%;
+  --sidebar-border: 20 12% 18%;
 
   --sidebar-primary: 17 59% 38%;
 
   --sidebar-primary-foreground: 40 44% 76%;
 
-  --sidebar-accent: 17 30% 24%;
+  --sidebar-accent: 20 20% 16%;
 
-  --sidebar-accent-foreground: 40 44% 90%;
+  --sidebar-accent-foreground: 40 30% 85%;
 
   --sidebar-ring: 17 59% 38%;
 
-  --popover: 17 20% 20%;
+  --popover: 20 16% 14%;
 
-  --popover-foreground: 40 44% 95%;
+  --popover-foreground: 40 25% 90%;
 
-  --popover-border: 17 15% 26%;
+  --popover-border: 20 12% 20%;
 
-  --primary: 40 44% 76%;  /* #DECCA7 - Light Sand for primary actions in dark */
+  --primary: 17 59% 38%;  /* Cinnamon brown for primary actions */
 
-  --primary-foreground: 17 59% 38%;  /* #994D27 - Cinnamon Brown text */
+  --primary-foreground: 40 44% 96%;  /* Light text on primary */
 
-  --secondary: 17 45% 30%;  /* #7A3D1F - Darker Cinnamon Brown */
+  --secondary: 20 20% 16%;  /* Dark secondary backgrounds */
 
-  --secondary-foreground: 0 0% 100%;  /* White */
+  --secondary-foreground: 40 25% 88%;  /* Light secondary text */
 
-  --muted: 20 30% 18%;
+  --muted: 20 16% 16%;
 
-  --muted-foreground: 40 30% 65%;
+  --muted-foreground: 40 20% 65%;
 
-  --accent: 17 45% 30%;
+  --accent: 20 20% 16%;
 
-  --accent-foreground: 40 44% 90%;
+  --accent-foreground: 40 25% 88%;
 
   /* Functional Colors - Dark Mode */
   --destructive: 0 84% 60%;  /* #EF4444 */
