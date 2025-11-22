@@ -108,57 +108,57 @@ export default function SensoryEvaluationCard({
             </thead>
             <tbody>
               {/* Taste Row */}
-              <tr className="border-b">
-                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-slate-900">
+              <tr className="border-b dark:bg-[hsl(20_14%_12%)]">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-[hsl(20_14%_12%)] dark:text-[hsl(40_30%_90%)]">
                   Taste (1 point)
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`taste-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary border-l border-r">
+                  <td key={`taste-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)] border-l border-r dark:border-[hsl(20_20%_20%)]">
                     {getCellValue(judge.taste, "left")}
                   </td>,
-                  <td key={`taste-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary">
+                  <td key={`taste-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)]">
                     {getCellValue(judge.taste, "right")}
                   </td>
                 ])}
               </tr>
               {/* Tactile Row */}
-              <tr className="border-b">
-                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-slate-900">
+              <tr className="border-b dark:bg-[hsl(20_14%_12%)]">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-[hsl(20_14%_12%)] dark:text-[hsl(40_30%_90%)]">
                   Tactile (1 point)
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`tactile-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary border-l border-r">
+                  <td key={`tactile-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)] border-l border-r dark:border-[hsl(20_20%_20%)]">
                     {getCellValue(judge.tactile, "left")}
                   </td>,
-                  <td key={`tactile-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary">
+                  <td key={`tactile-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)]">
                     {getCellValue(judge.tactile, "right")}
                   </td>
                 ])}
               </tr>
               {/* Flavour Row */}
-              <tr className="border-b">
-                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-slate-900">
+              <tr className="border-b dark:bg-[hsl(20_14%_12%)]">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-[hsl(20_14%_12%)] dark:text-[hsl(40_30%_90%)]">
                   Flavour (1 point)
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`flavour-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary border-l border-r">
+                  <td key={`flavour-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)] border-l border-r dark:border-[hsl(20_20%_20%)]">
                     {getCellValue(judge.flavour, "left")}
                   </td>,
-                  <td key={`flavour-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary">
+                  <td key={`flavour-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)]">
                     {getCellValue(judge.flavour, "right")}
                   </td>
                 ])}
               </tr>
               {/* Overall Row */}
-              <tr className="border-b">
-                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-slate-900">
+              <tr className="border-b dark:bg-[hsl(20_14%_12%)]">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-[hsl(20_14%_12%)] dark:text-[hsl(40_30%_90%)]">
                   Overall (5 points)
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`overall-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary border-l border-r">
+                  <td key={`overall-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)] border-l border-r dark:border-[hsl(20_20%_20%)]">
                     {getOverallCellValue(judge.overall, "left")}
                   </td>,
-                  <td key={`overall-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary">
+                  <td key={`overall-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)]">
                     {getOverallCellValue(judge.overall, "right")}
                   </td>
                 ])}
