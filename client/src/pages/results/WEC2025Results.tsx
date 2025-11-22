@@ -387,11 +387,11 @@ const WEC2025Results = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 bg-gradient-to-br from-secondary/30 via-background to-secondary/20">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8 bg-secondary dark:bg-[hsl(20_85%_40%)] overflow-visible">
+      <div className="max-w-4xl mx-auto overflow-visible">
         {/* Round Selection Cards */}
         {!selectedRound ? (
-          <div className="round-cards-container">
+          <div className="round-cards-container" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
             {availableRounds.map((round) => {
               const roundMatches = matchesByRound[round] || [];
               const heatCount = roundMatches.length;
@@ -516,7 +516,7 @@ const WEC2025Results = () => {
                 />
               </button>
 
-              <div className="text-center flex-1 bg-gradient-to-br from-primary/90 to-primary/80 dark:from-cinnamon-brown/20 dark:to-cinnamon-brown/30 rounded-xl py-4 px-6 border-2 border-primary/50 dark:border-cinnamon-brown/40 shadow-lg backdrop-blur-sm">
+              <div className="text-center flex-1 bg-gradient-to-br from-primary/90 to-primary/80 dark:bg-primary/40 rounded-xl py-4 px-6 border-2 border-primary/50 dark:border-cinnamon-brown/40 shadow-lg backdrop-blur-sm">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Select
                     value={selectedRound.toString()}

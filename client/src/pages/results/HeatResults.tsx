@@ -320,7 +320,7 @@ const HeatResults: React.FC = () => {
   // Check loading state first - before validating data
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:bg-[hsl(20_85%_40%)] p-6 flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
@@ -334,7 +334,7 @@ const HeatResults: React.FC = () => {
   // Check error state second - before validating data
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:bg-[hsl(20_85%_40%)] p-6 flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle className="text-destructive">Error</CardTitle>
@@ -351,7 +351,7 @@ const HeatResults: React.FC = () => {
   // Only check if heat exists after loading is complete and there's no error
   if (!heat) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:bg-[hsl(20_85%_40%)] p-6">
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardContent className="text-center p-8">

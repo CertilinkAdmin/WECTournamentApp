@@ -120,7 +120,11 @@
 
 /* Tournament Bracket Specific Styles */
 .tournament-bracket-bg {
-  background: linear-gradient(135deg, hsl(var(--espresso-brown-dark)) 0%, hsl(var(--espresso-brown)) 100%);
+  background: hsl(var(--background));
+}
+
+.dark .tournament-bracket-bg {
+  background: hsl(20 85% 40%);
 }
 
 .tournament-bracket-bg-light {
