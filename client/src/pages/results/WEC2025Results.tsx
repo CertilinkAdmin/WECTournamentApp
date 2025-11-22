@@ -522,7 +522,7 @@ const WEC2025Results = () => {
                     value={selectedRound.toString()}
                     onValueChange={(value) => setSelectedRound(parseInt(value))}
                   >
-                    <SelectTrigger className="w-auto min-w-[200px] bg-white/20 dark:bg-transparent border-white/40 dark:border-cinnamon-brown/50 text-white dark:text-white backdrop-blur-sm">
+                    <SelectTrigger className="w-auto min-w-[200px] dark:bg-transparent border-white/40 dark:border-cinnamon-brown/50 text-white dark:text-white backdrop-blur-sm bg-[#2d1b12]">
                       <SelectValue>
                         {getRoundDisplayName(selectedRound)}
                       </SelectValue>
