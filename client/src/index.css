@@ -18,18 +18,18 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  /* Core Colors - WEC Light Theme - Enhanced Contrast */
-  --background: 40 20% 96%;  /* Slightly darker for better contrast */
+  /* Core Colors - WEC Light Theme - Inverted Layer System */
+  --background: 40 30% 95%;  /* Light sand/cream background (Layer 1) */
 
-  --foreground: 25 20% 10%;  /* Darker text for better readability */
+  --foreground: 17 59% 25%;  /* Dark cinnamon text for readability */
 
-  --border: 40 15% 82%;  /* More visible borders */
+  --border: 17 59% 35%;  /* Cinnamon borders */
 
-  --card: 30 15% 99%;  /* Slightly off-white card backgrounds */
+  --card: 17 59% 38%;  /* Cinnamon brown cards (Layer 2) */
 
-  --card-foreground: 25 20% 10%;  /* Darker card text */
+  --card-foreground: 40 30% 95%;  /* Light sand text on cinnamon */
 
-  --card-border: 40 12% 85%;  /* More visible card borders */
+  --card-border: 40 50% 72%;  /* Sand beige borders */
 
   --sidebar: 40 18% 94%;
 
