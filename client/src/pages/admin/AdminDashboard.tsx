@@ -36,7 +36,6 @@ interface Tournament {
   id: number;
   name: string;
   status: string;
-  isPaused?: boolean;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -60,14 +59,15 @@ const AdminDashboard: React.FC = () => {
     queryKey: ['/api/tournaments'],
   });
 
+  // Fetch pause states for tournaments
+  const { data: pauseStates = {} } = useQuery<Record<number, boolean>>({
+    queryKey: ['/api/admin/tournaments/pause-states'],
+    enabled: tournaments.length > 0,
+  });
+
   // Fetch photo carousel images
   const { data: carouselImages = [] } = useQuery<string[]>({
     queryKey: ['/api/admin/carousel'],
-    queryFn: async () => {
-      // For now, return the static config - later this will come from API
-      const { wecPhotoAlbum } = await import('@/config/photoAlbum');
-      return wecPhotoAlbum;
-    },
   });
 
   // System monitoring refresh
@@ -122,6 +122,7 @@ const AdminDashboard: React.FC = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/tournaments/pause-states'] });
       toast({
         title: variables.paused ? 'Tournament paused' : 'Tournament resumed',
         description: `Tournament has been ${variables.paused ? 'paused' : 'resumed'}.`,
@@ -511,63 +512,66 @@ const AdminDashboard: React.FC = () => {
                   ) : tournaments.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">No tournaments found</div>
                   ) : (
-                    tournaments.map((tournament) => (
-                      <div
-                        key={tournament.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div>
-                          <h3 className="font-semibold">{tournament.name}</h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={tournament.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                              {tournament.status}
-                            </Badge>
-                            {tournament.isPaused && (
-                              <Badge variant="destructive">Paused</Badge>
+                    tournaments.map((tournament) => {
+                      const isPaused = pauseStates[tournament.id] || false;
+                      return (
+                        <div
+                          key={tournament.id}
+                          className="flex items-center justify-between p-4 border rounded-lg"
+                        >
+                          <div>
+                            <h3 className="font-semibold">{tournament.name}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant={tournament.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                                {tournament.status}
+                              </Badge>
+                              {isPaused && (
+                                <Badge variant="destructive">Paused</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor={`pause-${tournament.id}`}>Pause</Label>
+                              <Switch
+                                id={`pause-${tournament.id}`}
+                                checked={isPaused}
+                                onCheckedChange={(checked) => {
+                                  pauseTournamentMutation.mutate({
+                                    tournamentId: tournament.id,
+                                    paused: checked,
+                                  });
+                                }}
+                              />
+                            </div>
+                            {tournament.status === 'ACTIVE' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  pauseTournamentMutation.mutate({
+                                    tournamentId: tournament.id,
+                                    paused: !isPaused,
+                                  });
+                                }}
+                              >
+                                {isPaused ? (
+                                  <>
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Resume
+                                  </>
+                                ) : (
+                                  <>
+                                    <Pause className="h-4 w-4 mr-2" />
+                                    Pause
+                                  </>
+                                )}
+                              </Button>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor={`pause-${tournament.id}`}>Pause</Label>
-                            <Switch
-                              id={`pause-${tournament.id}`}
-                              checked={tournament.isPaused || false}
-                              onCheckedChange={(checked) => {
-                                pauseTournamentMutation.mutate({
-                                  tournamentId: tournament.id,
-                                  paused: checked,
-                                });
-                              }}
-                            />
-                          </div>
-                          {tournament.status === 'ACTIVE' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                pauseTournamentMutation.mutate({
-                                  tournamentId: tournament.id,
-                                  paused: !tournament.isPaused,
-                                });
-                              }}
-                            >
-                              {tournament.isPaused ? (
-                                <>
-                                  <Play className="h-4 w-4 mr-2" />
-                                  Resume
-                                </>
-                              ) : (
-                                <>
-                                  <Pause className="h-4 w-4 mr-2" />
-                                  Pause
-                                </>
-                              )}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </CardContent>
@@ -594,9 +598,83 @@ const AdminDashboard: React.FC = () => {
                     <div className="font-semibold mb-1">Clear Cache</div>
                     <div className="text-sm text-muted-foreground">Clear application cache</div>
                   </Button>
-                  <Button variant="destructive" className="h-auto flex-col items-start p-4">
+                  <Button 
+                    variant="destructive" 
+                    className="h-auto flex-col items-start p-4"
+                    onClick={async () => {
+                      if (confirm('Are you sure you want to clear all test tournament data? This cannot be undone.')) {
+                        try {
+                          const response = await fetch('/api/admin/clear-test-data', { method: 'DELETE' });
+                          if (response.ok) {
+                            queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+                            toast({
+                              title: 'Test Data Cleared',
+                              description: 'All test tournament data has been cleared.',
+                            });
+                          } else {
+                            throw new Error('Failed to clear test data');
+                          }
+                        } catch (error: any) {
+                          toast({
+                            title: 'Error',
+                            description: error.message,
+                            variant: 'destructive',
+                          });
+                        }
+                      }
+                    }}
+                  >
                     <div className="font-semibold mb-1">Reset Test Data</div>
                     <div className="text-sm text-muted-foreground">Clear all test tournament data</div>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Test Data Seeding</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Create test tournaments with sample baristas and judges for development and testing.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/admin/seed-test-data', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            tournamentName: 'Test Tournament',
+                            numBaristas: 16,
+                            numJudges: 9
+                          })
+                        });
+                        if (response.ok) {
+                          const data = await response.json();
+                          queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+                          queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+                          toast({
+                            title: 'Test Data Created',
+                            description: data.message || 'Test tournament created successfully.',
+                          });
+                        } else {
+                          const error = await response.json();
+                          throw new Error(error.error || 'Failed to create test data');
+                        }
+                      } catch (error: any) {
+                        toast({
+                          title: 'Error',
+                          description: error.message,
+                          variant: 'destructive',
+                        });
+                      }
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Test Tournament
                   </Button>
                 </div>
               </CardContent>

@@ -424,7 +424,7 @@ const WEC2025Results = () => {
                                 y={y + 4}
                                 fontSize="9"
                                 fill="currentColor"
-                                className={competitor1Wins ? "text-golden" : "text-muted-foreground"}
+                                className={competitor1Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground"}
                                 style={{ fontFamily: 'system-ui, sans-serif', fontWeight: '500' }}
                               >
                                 {match.competitor1Name || '—'}
@@ -437,7 +437,7 @@ const WEC2025Results = () => {
                                 y2={y + 7}
                                 stroke="currentColor"
                                 strokeWidth="2"
-                                className={competitor1Wins ? "text-golden" : "text-muted-foreground"}
+                                className={competitor1Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground"}
                               />
                               {/* Right competitor name */}
                               <text
@@ -445,7 +445,7 @@ const WEC2025Results = () => {
                                 y={y + 4}
                                 fontSize="9"
                                 fill="currentColor"
-                                className={competitor2Wins ? "text-golden" : "text-muted-foreground"}
+                                className={competitor2Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground"}
                                 style={{ fontFamily: 'system-ui, sans-serif', textAnchor: 'end', fontWeight: '500' }}
                               >
                                 {match.competitor2Name || 'BYE'}
@@ -458,7 +458,7 @@ const WEC2025Results = () => {
                                 y2={y + 7}
                                 stroke="currentColor"
                                 strokeWidth="2"
-                                className={competitor2Wins ? "text-golden" : "text-muted-foreground"}
+                                className={competitor2Wins ? "text-golden dark:text-amber-300" : "text-muted-foreground"}
                               />
                             </g>
                           );
@@ -590,12 +590,12 @@ const WEC2025Results = () => {
                               navigate(`/results/${tournamentSlug}/baristas/${encodedName}?heat=${match.heatNumber}`);
                             }
                           }}
-                          className="text-sm font-medium truncate hover:underline cursor-pointer text-left flex-1"
+                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1"
                           disabled={!match.competitor1Name || match.competitor1Name === 'BYE' || match.competitor1Name === 'SCRATCHED'}
                         >
                           {match.competitor1Name || '—'}
                         </button>
-                        <span className="text-lg font-bold text-golden ml-2">
+                        <span className="text-lg font-bold text-golden dark:text-amber-300 ml-2">
                           {getTotalScore(match.id, match.competitor1Id)}
                         </span>
                       </div>
@@ -620,12 +620,12 @@ const WEC2025Results = () => {
                               navigate(`/results/${tournamentSlug}/baristas/${encodedName}?heat=${match.heatNumber}`);
                             }
                           }}
-                          className="text-sm font-medium truncate hover:underline cursor-pointer text-left flex-1"
+                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1"
                           disabled={!match.competitor2Name || match.competitor2Name === 'BYE' || match.competitor2Name === 'SCRATCHED'}
                         >
                           {match.competitor2Name || '—'}
                         </button>
-                        <span className="text-lg font-bold text-golden ml-2">
+                        <span className="text-lg font-bold text-golden dark:text-amber-300 ml-2">
                           {getTotalScore(match.id, match.competitor2Id)}
                         </span>
                       </div>

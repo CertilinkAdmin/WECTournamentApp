@@ -165,14 +165,14 @@ export default function SensoryEvaluationCard({
               </tr>
               {/* Sensory Subtotal Row */}
               <tr className="border-b bg-amber-50 dark:bg-amber-950">
-                <td className="p-3 text-xs sm:text-sm font-bold">
+                <td className="p-3 text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-100">
                   Sensory Subtotal (B)
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`subtotal-left-${idx}`} className="p-3 text-center text-sm font-bold text-foreground border-l border-r">
+                  <td key={`subtotal-left-${idx}`} className="p-3 text-center text-sm font-bold text-amber-900 dark:text-amber-100 border-l border-r">
                     {getJudgeSubtotal(judge, "left")}
                   </td>,
-                  <td key={`subtotal-right-${idx}`} className="p-3 text-center text-sm font-bold text-foreground">
+                  <td key={`subtotal-right-${idx}`} className="p-3 text-center text-sm font-bold text-amber-900 dark:text-amber-100">
                     {getJudgeSubtotal(judge, "right")}
                   </td>
                 ])}
@@ -268,11 +268,11 @@ export default function SensoryEvaluationCard({
 
                 {/* Subtotal */}
                 <div className="grid grid-cols-3 gap-2 items-center pt-2 border-t bg-amber-50 dark:bg-amber-950 -mx-3 px-3 py-2">
-                  <div className="text-xs font-bold">Subtotal</div>
-                  <div className="text-center text-sm font-bold text-foreground">
+                  <div className="text-xs font-bold text-amber-900 dark:text-amber-100">Subtotal</div>
+                  <div className="text-center text-sm font-bold text-amber-900 dark:text-amber-100">
                     {getJudgeSubtotal(judge, "left")}
                   </div>
-                  <div className="text-center text-sm font-bold text-foreground">
+                  <div className="text-center text-sm font-bold text-amber-900 dark:text-amber-100">
                     {getJudgeSubtotal(judge, "right")}
                   </div>
                 </div>
@@ -298,13 +298,13 @@ export default function SensoryEvaluationCard({
 
         {/* Total Score Summary - Shared between mobile and desktop */}
         {judges.length > 0 && (
-          <div className="p-4 bg-cinnamon-brown/5 border-t-2 border-cinnamon-brown">
+          <div className="p-4 bg-cinnamon-brown/10 dark:bg-cinnamon-brown/20 border-t-2 border-cinnamon-brown">
             <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
               <div className="text-center">
                 <div className="text-xs text-muted-foreground mb-1">
                   {leftCompetitor}
                 </div>
-                <div className="text-2xl font-bold text-cinnamon-brown" data-testid="text-left-total">
+                <div className="text-2xl font-bold text-cinnamon-brown dark:text-amber-200" data-testid="text-left-total">
                   {leftSubtotal}
                 </div>
               </div>
@@ -312,7 +312,7 @@ export default function SensoryEvaluationCard({
                 <div className="text-xs text-muted-foreground mb-1">
                   {rightCompetitor}
                 </div>
-                <div className="text-2xl font-bold text-cinnamon-brown" data-testid="text-right-total">
+                <div className="text-2xl font-bold text-cinnamon-brown dark:text-amber-200" data-testid="text-right-total">
                   {rightSubtotal}
                 </div>
               </div>

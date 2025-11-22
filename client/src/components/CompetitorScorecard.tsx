@@ -97,7 +97,7 @@ export default function CompetitorScorecard({
                 <th className="p-2 text-center font-medium">Tactile (1)</th>
                 <th className="p-2 text-center font-medium">Flavour (1)</th>
                 <th className="p-2 text-center font-medium">Overall (5)</th>
-                <th className="p-2 text-center font-medium bg-amber-50 dark:bg-amber-950">Subtotal</th>
+                <th className="p-2 text-center font-medium bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-100">Subtotal</th>
               </tr>
             </thead>
             <tbody>
@@ -111,14 +111,14 @@ export default function CompetitorScorecard({
                   <td className="p-2 text-center font-bold text-primary">{score.tactile || '—'}</td>
                   <td className="p-2 text-center font-bold text-primary">{score.flavour || '—'}</td>
                   <td className="p-2 text-center font-bold text-primary">{score.overall || '—'}</td>
-                  <td className="p-2 text-center font-bold bg-amber-50 dark:bg-amber-950">
+                  <td className="p-2 text-center font-bold bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-100">
                     {score.subtotal}
                   </td>
                 </tr>
               ))}
               <tr className="border-t-2 font-bold">
-                <td colSpan={8} className="p-3 text-right">TOTAL SCORE:</td>
-                <td className="p-3 text-center text-lg bg-amber-100 dark:bg-amber-900" data-testid={`text-competitor-total-${position}`}>
+                <td colSpan={8} className="p-3 text-right text-foreground">TOTAL SCORE:</td>
+                <td className="p-3 text-center text-lg bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-50 font-bold" data-testid={`text-competitor-total-${position}`}>
                   {totalScore}
                 </td>
               </tr>
@@ -165,16 +165,16 @@ export default function CompetitorScorecard({
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t bg-amber-50 dark:bg-amber-950 -mx-3 px-3 py-2">
-                  <span className="font-semibold text-xs">Judge Subtotal:</span>
-                  <Badge className="bg-golden">{score.subtotal}</Badge>
+                  <span className="font-semibold text-xs text-amber-900 dark:text-amber-100">Judge Subtotal:</span>
+                  <Badge className="bg-golden text-white dark:text-amber-950 font-bold">{score.subtotal}</Badge>
                 </div>
               </CardContent>
             </Card>
           ))}
           
           <div className="flex justify-between items-center p-3 bg-amber-100 dark:bg-amber-900 rounded-md border-2 border-amber-200 dark:border-amber-800">
-            <span className="font-bold">TOTAL SCORE:</span>
-            <Badge className="text-lg bg-cinnamon-brown" data-testid={`text-competitor-total-mobile-${position}`}>
+            <span className="font-bold text-amber-900 dark:text-amber-50">TOTAL SCORE:</span>
+            <Badge className="text-lg bg-cinnamon-brown text-white dark:text-amber-50 font-bold" data-testid={`text-competitor-total-mobile-${position}`}>
               {totalScore}
             </Badge>
           </div>
