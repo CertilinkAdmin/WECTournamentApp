@@ -583,7 +583,7 @@ const WEC2025Results = () => {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-3 bg-[#f2e6d3]">
                     <div className="space-y-2">
                       <div
                         className={`flex items-center justify-between p-2 rounded-md border-2 ${
