@@ -192,17 +192,17 @@
   --elevate-2: rgba(255,255,255, .09);
 
   /* WEC Dark Theme - Proper Dark Layout */
-  --background: 20 14% 8%;  /* Very dark brown background */
+  --background: 20 14% 8%;  /* Very dark brown background - espresso */
 
   --foreground: 40 30% 92%;  /* Light sand text */
 
   --border: 20 20% 18%;  /* Dark brown borders */
 
-  --card: 20 18% 12%;  /* Dark card backgrounds */
+  --card: 17 59% 38%;  /* Cinnamon orange cards in dark mode */
 
-  --card-foreground: 40 25% 88%;  /* Light text on cards */
+  --card-foreground: 40 30% 95%;  /* Light sand text on cinnamon cards */
 
-  --card-border: 20 15% 20%;
+  --card-border: 40 50% 72%;  /* Sand beige borders on cinnamon cards */
 
   --sidebar: 20 16% 10%;
 

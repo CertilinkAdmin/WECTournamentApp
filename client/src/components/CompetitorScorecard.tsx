@@ -65,60 +65,60 @@ export default function CompetitorScorecard({
   const totalScore = judgeScores.reduce((sum, score) => sum + score.subtotal, 0);
 
   return (
-    <Card className="w-full" data-testid={`card-competitor-scorecard-${position}`}>
-      <CardHeader className={`pb-3 ${isWinner ? 'bg-chart-2/10' : 'bg-slate-50 dark:bg-slate-900'}`}>
-        <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+    <Card className="w-full dark:bg-[hsl(17_59%_38%)] dark:border-[hsl(40_50%_72%)]" data-testid={`card-competitor-scorecard-${position}`}>
+      <CardHeader className={`pb-3 ${isWinner ? 'bg-chart-2/10 dark:bg-[hsl(40_50%_65%)]' : 'bg-slate-50 dark:bg-[hsl(17_59%_35%)]'}`}>
+        <CardTitle className="flex items-center justify-between text-base sm:text-lg dark:text-[hsl(40_30%_95%)]">
           <div className="flex items-center gap-2">
-            <span className={isWinner ? 'text-chart-2' : 'text-cinnamon-brown'}>
+            <span className={isWinner ? 'text-chart-2 dark:text-[hsl(40_50%_72%)]' : 'text-cinnamon-brown dark:text-[hsl(40_50%_72%)]'}>
               {competitorName}
             </span>
-            {isWinner && <Trophy className="h-4 w-4 text-chart-2" />}
-            {isBye && <Badge variant="outline" className="text-xs">BYE</Badge>}
+            {isWinner && <Trophy className="h-4 w-4 text-chart-2 dark:text-[hsl(40_50%_72%)]" />}
+            {isBye && <Badge variant="outline" className="text-xs dark:text-[hsl(40_50%_72%)]">BYE</Badge>}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Total:</span>
-            <Badge className={`text-base font-bold ${isWinner ? 'bg-chart-2' : 'bg-cinnamon-brown'}`}>
+            <span className="text-xs text-muted-foreground dark:text-[hsl(40_30%_85%)]">Total:</span>
+            <Badge className={`text-base font-bold ${isWinner ? 'bg-chart-2' : 'dark:bg-[hsl(40_50%_72%)] dark:text-[#2D1B12]'}`}>
               {totalScore}
             </Badge>
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-4 dark:text-[hsl(40_30%_95%)]">
         {/* Desktop View - Table */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+          <table className="w-full border-collapse text-sm dark:text-[hsl(40_30%_90%)]">
             <thead>
-              <tr className="border-b bg-slate-50 dark:bg-slate-900">
-                <th className="p-2 text-left font-medium">Judge</th>
-                <th className="p-2 text-left font-medium">Beverage</th>
-                <th className="p-2 text-center font-medium">Cup Code</th>
-                <th className="p-2 text-center font-medium">Visual (3)</th>
-                <th className="p-2 text-center font-medium">Taste (1)</th>
-                <th className="p-2 text-center font-medium">Tactile (1)</th>
-                <th className="p-2 text-center font-medium">Flavour (1)</th>
-                <th className="p-2 text-center font-medium">Overall (5)</th>
-                <th className="p-2 text-center font-medium bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-100">Subtotal</th>
+              <tr className="border-b bg-slate-50 dark:bg-[hsl(17_59%_35%)] dark:border-[hsl(40_50%_65%)]">
+                <th className="p-2 text-left font-medium dark:text-[hsl(40_50%_72%)]">Judge</th>
+                <th className="p-2 text-left font-medium dark:text-[hsl(40_50%_72%)]">Beverage</th>
+                <th className="p-2 text-center font-medium dark:text-[hsl(40_50%_72%)]">Cup Code</th>
+                <th className="p-2 text-center font-medium dark:text-[hsl(40_50%_72%)]">Visual (3)</th>
+                <th className="p-2 text-center font-medium dark:text-[hsl(40_50%_72%)]">Taste (1)</th>
+                <th className="p-2 text-center font-medium dark:text-[hsl(40_50%_72%)]">Tactile (1)</th>
+                <th className="p-2 text-center font-medium dark:text-[hsl(40_50%_72%)]">Flavour (1)</th>
+                <th className="p-2 text-center font-medium dark:text-[hsl(40_50%_72%)]">Overall (5)</th>
+                <th className="p-2 text-center font-medium bg-amber-50 dark:bg-[hsl(40_50%_68%)] text-amber-900 dark:text-[#2D1B12]">Subtotal</th>
               </tr>
             </thead>
             <tbody>
               {judgeScores.map((score, idx) => (
-                <tr key={idx} className="border-b hover-elevate" data-testid={`row-judge-${idx}`}>
-                  <td className="p-2 font-medium">{score.judgeName}</td>
-                  <td className="p-2 text-muted-foreground">{score.sensoryBeverage}</td>
-                  <td className="p-2 text-center font-mono text-xs">{score.cupCode}</td>
-                  <td className="p-2 text-center font-bold text-primary">{score.visualLatteArt || '—'}</td>
-                  <td className="p-2 text-center font-bold text-primary">{score.taste || '—'}</td>
-                  <td className="p-2 text-center font-bold text-primary">{score.tactile || '—'}</td>
-                  <td className="p-2 text-center font-bold text-primary">{score.flavour || '—'}</td>
-                  <td className="p-2 text-center font-bold text-primary">{score.overall || '—'}</td>
-                  <td className="p-2 text-center font-bold bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-100">
+                <tr key={idx} className="border-b hover-elevate dark:border-[hsl(40_50%_50%)]" data-testid={`row-judge-${idx}`}>
+                  <td className="p-2 font-medium dark:text-[hsl(40_50%_72%)]">{score.judgeName}</td>
+                  <td className="p-2 text-muted-foreground dark:text-[hsl(40_30%_85%)]">{score.sensoryBeverage}</td>
+                  <td className="p-2 text-center font-mono text-xs dark:text-[hsl(40_50%_72%)]">{score.cupCode}</td>
+                  <td className="p-2 text-center font-bold text-primary dark:text-[hsl(40_50%_72%)]">{score.visualLatteArt || '—'}</td>
+                  <td className="p-2 text-center font-bold text-primary dark:text-[hsl(40_50%_72%)]">{score.taste || '—'}</td>
+                  <td className="p-2 text-center font-bold text-primary dark:text-[hsl(40_50%_72%)]">{score.tactile || '—'}</td>
+                  <td className="p-2 text-center font-bold text-primary dark:text-[hsl(40_50%_72%)]">{score.flavour || '—'}</td>
+                  <td className="p-2 text-center font-bold text-primary dark:text-[hsl(40_50%_72%)]">{score.overall || '—'}</td>
+                  <td className="p-2 text-center font-bold bg-amber-50 dark:bg-[hsl(40_50%_68%)] text-amber-900 dark:text-[#2D1B12]">
                     {score.subtotal}
                   </td>
                 </tr>
               ))}
-              <tr className="border-t-2 font-bold">
-                <td colSpan={8} className="p-3 text-right text-foreground">TOTAL SCORE:</td>
-                <td className="p-3 text-center text-lg bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-50 font-bold" data-testid={`text-competitor-total-${position}`}>
+              <tr className="border-t-2 font-bold dark:border-[hsl(40_50%_65%)]">
+                <td colSpan={8} className="p-3 text-right text-foreground dark:text-[hsl(40_50%_72%)]">TOTAL SCORE:</td>
+                <td className="p-3 text-center text-lg bg-amber-100 dark:bg-[hsl(40_50%_68%)] text-amber-900 dark:text-[#2D1B12] font-bold" data-testid={`text-competitor-total-${position}`}>
                   {totalScore}
                 </td>
               </tr>
