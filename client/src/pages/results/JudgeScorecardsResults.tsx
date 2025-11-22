@@ -722,7 +722,7 @@ const JudgeScorecardsResults: React.FC = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className={`group/competitor p-6 rounded-xl border-2 relative ${
                     currentHeat.winner === currentHeat.competitor1 
-                      ? 'border-primary bg-secondary' 
+                      ? 'border-primary bg-[#2d1b12]' 
                       : 'border-border bg-card'
                   }`}>
                     <div className="font-medium text-sm text-gray-600 mb-2">Left Competitor</div>
@@ -748,7 +748,7 @@ const JudgeScorecardsResults: React.FC = () => {
                   
                   <div className={`group/competitor p-6 rounded-xl border-2 relative ${
                     currentHeat.winner === currentHeat.competitor2 
-                      ? 'border-primary bg-secondary' 
+                      ? 'border-primary bg-[#2d1b12]' 
                       : 'border-border bg-card'
                   }`}>
                     <div className="font-medium text-sm text-gray-600 mb-2">Right Competitor</div>
