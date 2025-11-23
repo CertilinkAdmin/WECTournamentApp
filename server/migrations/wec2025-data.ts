@@ -18,10 +18,10 @@ const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:pass
 const sql = postgres(connectionString);
 const db = drizzle(sql, { schema });
 
-// WEC 2025 Tournament Data
+// Test Tournament Data
 const WEC_2025_DATA = {
   tournament: {
-    name: "World Espresso Championships 2025 Milano",
+    name: "Test Tournament 2025",
     status: "COMPLETED" as const,
     startDate: new Date("2025-01-15T08:00:00Z"),
     endDate: new Date("2025-01-17T18:00:00Z"),
@@ -190,7 +190,7 @@ const WEC_2025_DATA = {
       judgeScores: [
         { judge: "TEST JUDGE 4", competitor1: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 }, competitor2: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 } },
         { judge: "TEST JUDGE 7", competitor1: { visual: 0, taste: 0, tactile: 0, flavour: 0, overall: 0 }, competitor2: { visual: 3, taste: 1, tactile: 1, flavour: 1, overall: 5 } },
-        { judge: "TEST JUDGE 6", competitor1: { visual: 2, taste: 0, tactile: 0, flavour: 0, overall: 2 }, competitor2: { visual: 1, taste: 1, tactile: 1, flavour: 1, obvious: 4 } }
+        { judge: "TEST JUDGE 6", competitor1: { visual: 2, taste: 0, tactile: 0, flavour: 0, overall: 2 }, competitor2: { visual: 1, taste: 1, tactile: 1, flavour: 1, overall: 4 } }
       ]
     },
     { 
@@ -377,20 +377,24 @@ async function migrateWEC2025Data() {
     }
     console.log('✅ Tournament participants created');
 
-    // 4. Create stations
-    console.log('🏢 Creating stations...');
-    const stations_data = [
-      { name: "Station 1", location: "Main Stage" },
-      { name: "Station 2", location: "Side Stage" },
-      { name: "Station 3", location: "Practice Area" }
-    ];
-    
+    // 4. Get or create stations
+    console.log('🏢 Getting stations...');
+    const existingStations = await db.select().from(stations).limit(1);
     const stationMap = new Map<number, number>();
-    for (const station of stations_data) {
-      const [createdStation] = await db.insert(stations).values(station).returning();
-      stationMap.set(1, createdStation.id); // Use station 1 for all matches
+    
+    if (existingStations.length > 0) {
+      // Use first existing station for all matches
+      stationMap.set(1, existingStations[0].id);
+      console.log(`✅ Using existing station: ${existingStations[0].name} (ID: ${existingStations[0].id})`);
+    } else {
+      // Create a single station if none exist
+      const [createdStation] = await db.insert(stations).values({
+        name: "Station A",
+        location: "Main Stage"
+      }).returning();
+      stationMap.set(1, createdStation.id);
+      console.log(`✅ Created station: Station A (ID: ${createdStation.id})`);
     }
-    console.log('✅ Stations created');
 
     // 5. Create matches and scores
     console.log('⚔️ Creating matches and scores...');
