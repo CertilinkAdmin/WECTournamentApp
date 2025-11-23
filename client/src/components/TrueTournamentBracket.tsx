@@ -56,7 +56,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
     { title: "Round 2", matches: WEC25_ROUND2_POSITIONS },
     { title: "Round 3", matches: WEC25_ROUND3_POSITIONS },
     { title: "Semi-Finals", matches: WEC25_ROUND4_POSITIONS },
-    { title: "Final", matches: WEC25_FINAL_POSITION },
+    { title: "Finals", matches: WEC25_FINAL_POSITION },
   ];
 
   const rounds = wec25Rounds;
@@ -80,7 +80,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
   const getMedalIcon = (roundTitle: string, isWinner: boolean) => {
     if (!isWinner) return null;
     
-    if (roundTitle === "Final") {
+    if (roundTitle === "Finals") {
       return <Trophy className="h-3 w-3 text-accent" />;
     } else if (roundTitle === "Semi-Finals") {
       return <Medal className="h-3 w-3 text-primary" />;
@@ -94,7 +94,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
       case "Round 2": return <Zap className="h-4 w-4 text-accent" />;
       case "Round 3": return <Star className="h-4 w-4 text-primary" />;
       case "Semi-Finals": return <Award className="h-4 w-4 text-accent" />;
-      case "Final": return <Trophy className="h-5 w-5 text-accent" />;
+      case "Finals": return <Trophy className="h-5 w-5 text-accent" />;
       default: return null;
     }
   };
@@ -233,7 +233,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
                 {round.matches.map((match) => (
                   <div 
                     key={`${round.title}-${match.heatNumber}`} 
-                    className={`bracket-match-compact ${animatedMatches.has(match.heatNumber) ? 'animate-fade-in' : 'opacity-0'} ${round.title === 'Final' ? 'championship-compact' : ''}`}
+                    className={`bracket-match-compact ${animatedMatches.has(match.heatNumber) ? 'animate-fade-in' : 'opacity-0'} ${round.title === 'Finals' ? 'championship-compact' : ''}`}
                     onClick={() => setSelectedHeat(match)}
                     data-testid={`heat-${match.heatNumber}`}
                   >

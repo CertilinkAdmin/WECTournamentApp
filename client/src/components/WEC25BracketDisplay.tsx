@@ -210,10 +210,10 @@ export default function WEC25BracketDisplay() {
               </div>
             </div>
 
-            {/* Round 4 */}
+            {/* Semi-Finals */}
             <div className="space-y-4">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-primary mb-2">Round 4</h2>
+                <h2 className="text-2xl font-bold text-primary mb-2">Semi-Finals</h2>
                 <p className="text-sm text-muted-foreground">2 Heats</p>
               </div>
               
@@ -233,10 +233,10 @@ export default function WEC25BracketDisplay() {
               </div>
             </div>
 
-            {/* Final */}
+            {/* Finals */}
             <div className="space-y-4">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-primary mb-2">Final</h2>
+                <h2 className="text-2xl font-bold text-primary mb-2">Finals</h2>
                 <p className="text-sm text-muted-foreground">1 Heat</p>
               </div>
               
