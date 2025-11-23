@@ -78,7 +78,6 @@ interface TournamentData {
 const WEC2025Results = () => {
   const { tournamentSlug } = useParams<{ tournamentSlug?: string }>();
   const navigate = useNavigate();
-  console.log('[WEC2025Results] Component mounted/rendered, tournamentSlug:', tournamentSlug);
   const [tournamentData, setTournamentData] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(false); // Start as false to avoid initial spinner
   const [error, setError] = useState<string | null>(null);
@@ -133,13 +132,7 @@ const WEC2025Results = () => {
   // Get selected round matches - memoized (MUST be before any returns)
   const selectedRoundMatches = useMemo(() => {
     if (!selectedRound) return [];
-    const matches = matchesByRound[selectedRound] || [];
-    console.log(`[WEC2025Results] Selected round ${selectedRound}:`, {
-      matchesCount: matches.length,
-      availableRounds: Object.keys(matchesByRound),
-      matchesByRoundKeys: Object.keys(matchesByRound).map(Number)
-    });
-    return matches;
+    return matchesByRound[selectedRound] || [];
   }, [matchesByRound, selectedRound]);
 
   const handleError = (err: any) => {
@@ -170,13 +163,6 @@ const WEC2025Results = () => {
     }
 
     const data = await response.json();
-    console.log('[WEC2025Results] Raw API data:', {
-      tournament: data.tournament?.name,
-      matchesCount: data.matches?.length,
-      matches: data.matches?.slice(0, 5), // First 5 matches for debugging
-      scoresCount: data.scores?.length,
-      detailedScoresCount: data.detailedScores?.length
-    });
 
     // Transform the data to match our interface
     const transformedData: TournamentData = {
@@ -197,23 +183,19 @@ const WEC2025Results = () => {
         name: p.name || '',
         email: p.email || ''
       })),
-      matches: data.matches.map((m: any) => {
-        const round = m.round || getRoundFromHeatNumber(m.heatNumber);
-        console.log(`[WEC2025Results] Match ${m.id}: heatNumber=${m.heatNumber}, round=${m.round}, calculatedRound=${getRoundFromHeatNumber(m.heatNumber)}, finalRound=${round}`);
-        return {
-          id: m.id,
-          round: round, // Use database round field, fallback to heat number calculation
-          heatNumber: m.heatNumber,
-          status: m.status,
-          startTime: m.startTime,
-          endTime: m.endTime,
-          competitor1Id: m.competitor1Id || m.competitor1RegistrationId,
-          competitor2Id: m.competitor2Id || m.competitor2RegistrationId,
-          winnerId: m.winnerId || m.winnerRegistrationId,
-          competitor1Name: m.competitor1Name || 'Unknown',
-          competitor2Name: m.competitor2Name || null
-        };
-      }),
+      matches: data.matches.map((m: any) => ({
+        id: m.id,
+        round: m.round || getRoundFromHeatNumber(m.heatNumber), // Use database round field, fallback to heat number calculation
+        heatNumber: m.heatNumber,
+        status: m.status,
+        startTime: m.startTime,
+        endTime: m.endTime,
+        competitor1Id: m.competitor1Id || m.competitor1RegistrationId,
+        competitor2Id: m.competitor2Id || m.competitor2RegistrationId,
+        winnerId: m.winnerId || m.winnerRegistrationId,
+        competitor1Name: m.competitor1Name || 'Unknown',
+        competitor2Name: m.competitor2Name || null
+      })),
       scores: data.scores.map((s: any) => ({
         matchId: s.matchId,
         judgeId: s.judgeId,
@@ -235,19 +217,6 @@ const WEC2025Results = () => {
         overall: ds.overall
       }))
     };
-
-    const roundsInMatches = Array.from(new Set(transformedData.matches.map(m => m.round))).sort((a, b) => a - b);
-    const matchesByRoundCount = transformedData.matches.reduce((acc, m) => {
-      acc[m.round] = (acc[m.round] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>);
-    
-    console.log('[WEC2025Results] Transformed data:', {
-      tournament: transformedData.tournament?.name,
-      matchesCount: transformedData.matches.length,
-      roundsInMatches: roundsInMatches,
-      matchesByRound: Object.keys(matchesByRoundCount).map(Number)
-    });
 
     setTournamentData(transformedData);
     setLoading(false);
@@ -291,25 +260,21 @@ const WEC2025Results = () => {
 
   const fetchTournamentData = async () => {
     try {
-      console.log('[WEC2025Results] fetchTournamentData started, tournamentSlug:', tournamentSlug);
       setLoading(true);
 
       // First, get all tournaments to find by location/year
-      console.log('[WEC2025Results] Fetching tournaments list from /api/tournaments');
       const tournamentsResponse = await fetch('/api/tournaments');
       if (!tournamentsResponse.ok) {
         throw new Error('Failed to fetch tournaments');
       }
 
       const tournaments = await tournamentsResponse.json();
-      console.log('[WEC2025Results] Fetched tournaments:', tournaments.length, 'tournaments');
 
       // Find tournament by slug
       let tournamentId: number | null = null;
       if (tournamentSlug) {
         const tournament = findTournamentBySlug(tournaments, tournamentSlug);
         tournamentId = tournament?.id || null;
-        console.log('[WEC2025Results] Found tournament by slug:', tournamentSlug, 'ID:', tournamentId, 'Name:', tournament?.name);
       }
 
       // Fallback: try to find WEC 2025 Milano if no slug provided
@@ -318,16 +283,13 @@ const WEC2025Results = () => {
           t.name === 'World Espresso Championships 2025 Milano'
         );
         tournamentId = wec2025?.id || null;
-        console.log('[WEC2025Results] Using fallback WEC 2025 Milano, ID:', tournamentId);
       }
 
       if (!tournamentId) {
-        console.error('[WEC2025Results] Tournament not found! Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
         throw new Error('Tournament not found');
       }
 
       // Fetch tournament data by ID
-      console.log('[WEC2025Results] Fetching tournament data from /api/tournaments/' + tournamentId);
       const response = await fetch(`/api/tournaments/${tournamentId}`);
 
       await processResponse(response);
@@ -383,14 +345,9 @@ const WEC2025Results = () => {
 
   // Fetch tournament data on mount or when slug changes
   useEffect(() => {
-    console.log('[WEC2025Results] useEffect triggered, tournamentSlug:', tournamentSlug, 'tournamentData:', !!tournamentData);
     if (!tournamentData) {
-      console.log('[WEC2025Results] Calling fetchTournamentData...');
       fetchTournamentData();
-    } else {
-      console.log('[WEC2025Results] Tournament data already exists, skipping fetch');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournamentSlug]);
 
   // Always show round cards first - show them even while loading or if no data
@@ -428,8 +385,6 @@ const WEC2025Results = () => {
       setSelectedRound(availableRounds[currentIndex + 1]);
     }
   };
-
-  console.log('[WEC2025Results] Rendering, selectedRound:', selectedRound, 'tournamentData:', !!tournamentData, 'availableRounds:', availableRounds, 'matchesByRound keys:', Object.keys(matchesByRound));
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8 bg-[#2D1B12] dark:bg-[#2D1B12] overflow-visible">

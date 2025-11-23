@@ -184,13 +184,13 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
 
   return (
     <>
-      <div className="tournament-bracket-container-compact px-2 sm:px-4 md:px-6 bg-[#e8dac8]">
+      <div className="tournament-bracket-container-compact px-2 sm:px-4 md:px-6">
         <div className="text-center mb-4 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black mb-2 sm:mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent" 
               style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '1px' }}>
             WEC 2025 MILANO
           </h1>
-          <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 text-[#9a4828]" 
+          <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 text-accent" 
               style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '0.5px' }}>
             TOURNAMENT BRACKET
           </h2>
