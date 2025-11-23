@@ -358,7 +358,7 @@ const JudgeScorecardsResults: React.FC = () => {
 
   return (
     <div className="min-h-screen tournament-bracket-bg p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 lg:px-6 xl:px-8">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-4 mb-4">
@@ -507,7 +507,7 @@ const JudgeScorecardsResults: React.FC = () => {
                   </div>
                   
                   {/* Station and Winner badges - Grouped on right */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-3 lg:gap-4">
                     <Badge className={`text-base px-4 py-2 transition-all duration-300 hover:scale-105 ${
                       currentHeat.station === 'A' ? 'bg-primary shadow-lg shadow-primary/25' :
                       currentHeat.station === 'B' ? 'bg-chart-3 shadow-lg shadow-chart-3/25' :
@@ -719,7 +719,7 @@ const JudgeScorecardsResults: React.FC = () => {
                 )}
 
                 {/* Competitors - Now After Judges */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
                   <div className={`group/competitor p-6 rounded-xl border-2 relative ${
                     currentHeat.winner === currentHeat.competitor1 
                       ? 'border-primary bg-secondary' 

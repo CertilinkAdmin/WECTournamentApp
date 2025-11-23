@@ -359,7 +359,7 @@ const BaristaDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen tournament-bracket-bg p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 lg:px-6 xl:px-8">
         {/* Header */}
         <div className="mb-6">
           <Button
@@ -388,7 +388,7 @@ const BaristaDetail: React.FC = () => {
             <CardTitle className="text-2xl text-center text-primary dark:text-foreground">Overall Tournament Totals</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
               <div className="text-center">
                 <div className="text-sm text-muted-foreground mb-1">Latte Art</div>
                 <div className="text-2xl font-bold text-primary dark:text-foreground">{overallTotals.latteArt}</div>

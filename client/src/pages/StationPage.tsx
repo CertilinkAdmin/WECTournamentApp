@@ -148,7 +148,7 @@ export default function StationPage() {
                   <p className="text-muted-foreground">No heats scheduled for Station {station.name} yet</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
                   {stationMatches.map((match) => (
                     <StationHeatCard
                       key={match.id}

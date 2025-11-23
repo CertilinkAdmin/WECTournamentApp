@@ -106,7 +106,7 @@ export default function WEC25BracketDisplay() {
         </div>
 
         {/* Tournament Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 lg:gap-6 mb-8">
           <Card className="text-center">
             <CardContent className="p-4">
               <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
@@ -139,7 +139,7 @@ export default function WEC25BracketDisplay() {
 
         {/* Bracket Display */}
         <div className="bg-secondary dark:bg-card rounded-lg shadow-lg p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 lg:gap-8">
             
             {/* Round 1 */}
             <div className="space-y-4">

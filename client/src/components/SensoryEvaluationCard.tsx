@@ -76,7 +76,7 @@ export default function SensoryEvaluationCard({
       </CardHeader>
       <CardContent className="p-0">
         {/* Desktop View - Table Layout */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto lg:overflow-x-visible">
           <table className="w-full border-collapse">
             <thead>
               {/* Judges Header Row */}

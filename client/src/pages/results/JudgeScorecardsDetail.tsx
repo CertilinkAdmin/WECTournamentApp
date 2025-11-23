@@ -276,7 +276,7 @@ const JudgeScorecardsDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen tournament-bracket-bg p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 lg:px-6 xl:px-8">
         {/* Header */}
         <div className="mb-6">
             <Button

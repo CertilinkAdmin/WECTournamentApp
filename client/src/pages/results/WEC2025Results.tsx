@@ -388,7 +388,7 @@ const WEC2025Results = () => {
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8 bg-[#2D1B12] dark:bg-[#2D1B12] overflow-visible">
-      <div className="max-w-4xl mx-auto overflow-visible">
+      <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 lg:px-6 xl:px-8 overflow-visible">
         {/* Round Selection Cards */}
         {!selectedRound ? (
           <div className="round-cards-container" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
@@ -688,7 +688,7 @@ const WEC2025Results = () => {
 
       {/* Heat Details Dialog */}
       <Dialog open={!!selectedHeat} onOpenChange={(open) => { if (!open) setSelectedHeat(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span className="text-cinnamon-brown">

@@ -352,7 +352,7 @@ const HeatResults: React.FC = () => {
   if (!heat) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:bg-[hsl(20_85%_40%)] p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 lg:px-6">
           <Card>
             <CardContent className="text-center p-8">
               <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -386,7 +386,7 @@ const HeatResults: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl lg:max-w-7xl xl:max-w-[1400px] mx-auto px-4 lg:px-6 xl:px-8">
         {/* Header */}
         <div className="mb-8">
           <Link to={`/results/${tournament}/bracket`}>
@@ -415,7 +415,7 @@ const HeatResults: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 lg:gap-6">
               <div className="text-center p-4 bg-primary/10 rounded-lg">
                 <div className="text-2xl font-bold text-primary">Heat {heatNumber}</div>
                 <div className="text-sm text-muted-foreground">Heat Number</div>
@@ -445,7 +445,7 @@ const HeatResults: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 lg:gap-8">
               <div className={`p-6 rounded-lg border-2 ${
                 heat.winner === heat.competitor1 ? 'border-chart-3 bg-chart-3/20 dark:bg-chart-3/30' : 'border-border'
               }`}>
@@ -499,7 +499,7 @@ const HeatResults: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 lg:gap-8">
                 {heat.judges.map((judge, index) => (
                   <Card key={`judge-${index}`} className="border-l-4 border-l-primary">
                     <CardHeader className="pb-3">
