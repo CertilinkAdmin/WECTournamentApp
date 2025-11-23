@@ -336,7 +336,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
                   </div>
                   <div>
                     <div className="text-muted-foreground text-xs mb-1">Final Score</div>
-                    <div className="font-semibold text-sm sm:text-base">{selectedHeat.score1} - {selectedHeat.score2}</div>
+                    <div className="font-semibold text-sm sm:text-base text-[#d8d3ca]">{selectedHeat.score1} - {selectedHeat.score2}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground text-xs mb-1">Winner</div>
