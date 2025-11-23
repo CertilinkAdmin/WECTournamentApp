@@ -201,5 +201,8 @@ export default function ResultsTournamentList() {
               </p>
             </div>
           </div>
-
-          {searchResults.length > 0 && (
+        </div>
+      </div>
+    </div>
+  );
+}
