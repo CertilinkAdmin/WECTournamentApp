@@ -411,7 +411,7 @@ const WEC2025Results = () => {
                   data-testid={`card-round-${round}`}
                   style={{ height: `${dynamicHeight}px` }}
                 >
-                  <h3 className="round-card-title">{getRoundDisplayName(round)}</h3>
+                  <h3 className="round-card-title bg-[#fbfaf908]">{getRoundDisplayName(round)}</h3>
                   <div className="round-card-bracket">
                     {heatCount > 0 ? (
                       <svg 

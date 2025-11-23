@@ -617,7 +617,7 @@ const JudgeScorecardsResults: React.FC = () => {
                                   key={category}
                                   className="relative grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]"
                                 >
-                                  <label className="flex items-center gap-2 justify-start">
+                                  <label className="flex items-center gap-2 justify-start text-[#93401f]">
                                     <input 
                                       type="checkbox" 
                                       checked={judgeVote === 'left'} 
@@ -664,7 +664,7 @@ const JudgeScorecardsResults: React.FC = () => {
                               >
                                 <Card className="border-l-4 border-l-primary bg-card">
                                   <CardHeader className="pb-3 relative z-10">
-                                    <CardTitle className="text-lg flex items-center gap-2 group-hover/judge:text-primary transition-colors duration-300">
+                                    <CardTitle className="text-lg flex items-center gap-2 group-hover/judge:text-primary transition-colors duration-300 text-[#93401f]">
                                       <Users className="h-5 w-5" />
                                       <span className="font-bold">{judge.judgeName}</span>
                                     </CardTitle>
