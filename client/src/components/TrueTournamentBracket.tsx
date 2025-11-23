@@ -264,11 +264,11 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
       </div>
       {/* Expanded Heat Dialog - Mobile Optimized */}
       <Dialog open={!!selectedHeat} onOpenChange={() => setSelectedHeat(null)}>
-        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto bg-[#1f0e08]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl md:text-2xl">
               <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-accent flex-shrink-0" />
-              <span className="truncate">Heat {selectedHeat?.heatNumber} - Station {selectedHeat?.station}</span>
+              <span className="truncate text-[#9a4828]">Heat {selectedHeat?.heatNumber} - Station {selectedHeat?.station}</span>
             </DialogTitle>
           </DialogHeader>
           
