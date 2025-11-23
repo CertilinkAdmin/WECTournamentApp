@@ -42,13 +42,13 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Cup Codes */}
-        <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-lg">
+        <div className="grid grid-cols-2 gap-4 p-3 bg-muted dark:bg-muted rounded-lg">
           <div className="text-center">
-            <div className="font-semibold text-slate-600">Left Cup</div>
+            <div className="font-semibold text-muted-foreground">Left Cup</div>
             <div className="text-2xl font-bold text-primary">{judge.leftCupCode}</div>
           </div>
           <div className="text-center">
-            <div className="font-semibold text-slate-600">Right Cup</div>
+            <div className="font-semibold text-muted-foreground">Right Cup</div>
             <div className="text-2xl font-bold text-primary">{judge.rightCupCode}</div>
           </div>
         </div>
@@ -67,12 +67,12 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
           </div>
 
           {/* Sensory Beverage */}
-          <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-chart-3/20 dark:bg-chart-3/30 rounded-lg">
             <div className="flex items-center gap-2">
-              <Award className="h-4 w-4 text-green-600" />
-              <span className="font-medium text-green-900">Sensory Beverage</span>
+              <Award className="h-4 w-4 text-chart-3" />
+              <span className="font-medium text-foreground">Sensory Beverage</span>
             </div>
-            <Badge variant="outline" className="text-green-700">
+            <Badge variant="outline" className="text-chart-3">
               {judge.sensoryBeverage}
             </Badge>
           </div>
@@ -162,7 +162,7 @@ export default function HeatJudgesDisplay({
         {/* Competitors */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className={`p-3 rounded-lg border-2 ${
-            winner === leftCompetitor ? 'border-green-400 bg-green-50' : 'border-gray-200'
+            winner === leftCompetitor ? 'border-chart-3 bg-chart-3/20 dark:bg-chart-3/30' : 'border-border'
           }`}>
             <div className="font-medium text-sm text-gray-600">Left Competitor</div>
             <div className="font-bold text-lg">{leftCompetitor}</div>
@@ -177,7 +177,7 @@ export default function HeatJudgesDisplay({
           </div>
           
           <div className={`p-3 rounded-lg border-2 ${
-            winner === rightCompetitor ? 'border-green-400 bg-green-50' : 'border-gray-200'
+            winner === rightCompetitor ? 'border-chart-3 bg-chart-3/20 dark:bg-chart-3/30' : 'border-border'
           }`}>
             <div className="font-medium text-sm text-gray-600">Right Competitor</div>
             <div className="font-bold text-lg">{rightCompetitor}</div>

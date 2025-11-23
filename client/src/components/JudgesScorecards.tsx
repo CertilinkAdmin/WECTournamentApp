@@ -987,13 +987,13 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Cup Codes */}
-        <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-lg">
+        <div className="grid grid-cols-2 gap-4 p-3 bg-muted dark:bg-muted rounded-lg">
           <div className="text-center">
-            <div className="font-semibold text-slate-600">Left Cup</div>
+            <div className="font-semibold text-muted-foreground">Left Cup</div>
             <div className="text-2xl font-bold text-primary">{judge.leftCupCode}</div>
           </div>
           <div className="text-center">
-            <div className="font-semibold text-slate-600">Right Cup</div>
+            <div className="font-semibold text-muted-foreground">Right Cup</div>
             <div className="text-2xl font-bold text-primary">{judge.rightCupCode}</div>
           </div>
         </div>
@@ -1139,13 +1139,13 @@ export default function JudgesScorecards() {
                   </div>
                 </CardTitle>
                 <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="text-center p-3 bg-secondary dark:bg-white rounded-lg">
-                    <div className="font-semibold text-slate-600">{heat.leftCompetitor}</div>
+                  <div className="text-center p-3 bg-secondary dark:bg-card rounded-lg">
+                    <div className="font-semibold text-foreground dark:text-foreground">{heat.leftCompetitor}</div>
                     <div className="text-2xl font-bold text-primary">{heat.leftCupCode}</div>
-                    <div className="text-lg font-bold text-green-600">{heat.leftScore} points</div>
+                    <div className="text-lg font-bold text-green-600 dark:text-green-400">{heat.leftScore} points</div>
                   </div>
-                  <div className="text-center p-3 bg-secondary dark:bg-white rounded-lg">
-                    <div className="font-semibold text-slate-600">{heat.rightCompetitor}</div>
+                  <div className="text-center p-3 bg-secondary dark:bg-card rounded-lg">
+                    <div className="font-semibold text-foreground dark:text-foreground">{heat.rightCompetitor}</div>
                     <div className="text-2xl font-bold text-primary">{heat.rightCupCode}</div>
                     <div className="text-lg font-bold text-green-600">{heat.rightScore} points</div>
                   </div>

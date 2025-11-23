@@ -391,28 +391,28 @@ const BaristaDetail: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="text-center">
                 <div className="text-sm text-muted-foreground mb-1">Latte Art</div>
-                <div className="text-2xl font-bold text-primary">{overallTotals.latteArt}</div>
+                <div className="text-2xl font-bold text-primary dark:text-foreground">{overallTotals.latteArt}</div>
               </div>
               <div className="text-center">
                 <div className="text-sm text-muted-foreground mb-1">Taste</div>
-                <div className="text-2xl font-bold text-primary">{overallTotals.taste}</div>
+                <div className="text-2xl font-bold text-primary dark:text-foreground">{overallTotals.taste}</div>
               </div>
               <div className="text-center">
                 <div className="text-sm text-muted-foreground mb-1">Tactile</div>
-                <div className="text-2xl font-bold text-primary">{overallTotals.tactile}</div>
+                <div className="text-2xl font-bold text-primary dark:text-foreground">{overallTotals.tactile}</div>
               </div>
               <div className="text-center">
                 <div className="text-sm text-muted-foreground mb-1">Flavor</div>
-                <div className="text-2xl font-bold text-primary">{overallTotals.flavor}</div>
+                <div className="text-2xl font-bold text-primary dark:text-foreground">{overallTotals.flavor}</div>
               </div>
               <div className="text-center">
                 <div className="text-sm text-muted-foreground mb-1">Overall</div>
-                <div className="text-2xl font-bold text-primary">{overallTotals.overall}</div>
+                <div className="text-2xl font-bold text-primary dark:text-foreground">{overallTotals.overall}</div>
               </div>
             </div>
             <div className="mt-6 pt-6 border-t text-center">
               <div className="text-sm text-muted-foreground mb-1">Total Points</div>
-              <div className="text-4xl font-bold text-primary">{overallTotalPoints}</div>
+              <div className="text-4xl font-bold text-primary dark:text-foreground">{overallTotalPoints}</div>
             </div>
           </CardContent>
         </Card>

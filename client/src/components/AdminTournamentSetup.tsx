@@ -440,42 +440,42 @@ export default function AdminTournamentSetup() {
                   <div className="space-y-4">
                     <div className="border-l-4 border-blue-500 pl-4">
                       <h4 className="font-semibold text-blue-800">Step 1: Setup Tournament</h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Enter tournament name and number of competitors. Click "Create Tournament".
                       </p>
                     </div>
 
                     <div className="border-l-4 border-blue-500 pl-4">
                       <h4 className="font-semibold text-blue-800">Step 2: Select Baristas</h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Choose your baristas (minimum 2). Click "Add Baristas".
                       </p>
                     </div>
 
                     <div className="border-l-4 border-blue-500 pl-4">
                       <h4 className="font-semibold text-blue-800">Step 3: Select Judges</h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Choose your judges (minimum 3). Click "Add Judges".
                       </p>
                     </div>
 
                     <div className="border-l-4 border-blue-500 pl-4">
                       <h4 className="font-semibold text-blue-800">Step 4: Configure Segment Times</h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Set up round times and segment durations. Click "Save Segment Times".
                       </p>
                     </div>
 
                     <div className="border-l-4 border-blue-500 pl-4">
                       <h4 className="font-semibold text-blue-800">Step 5: Randomize Seeds</h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Shuffle competitor order randomly. Click "Randomize Seeds".
                       </p>
                     </div>
 
                     <div className="border-l-4 border-blue-500 pl-4">
                       <h4 className="font-semibold text-blue-800">Step 6: Generate Bracket</h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Create the tournament bracket with matches. Click "Generate Bracket".
                       </p>
                     </div>
@@ -483,7 +483,7 @@ export default function AdminTournamentSetup() {
 
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <h3 className="font-semibold text-amber-800 mb-2">⚠️ Common Issues & Solutions</h3>
-                    <div className="space-y-2 text-sm text-gray-800">
+                    <div className="space-y-2 text-sm text-foreground">
                       <div><strong>Issue:</strong> "Insufficient Baristas" → <strong>Fix:</strong> Add at least 2 baristas</div>
                       <div><strong>Issue:</strong> "Insufficient Judges" → <strong>Fix:</strong> Add at least 3 judges</div>
                       <div><strong>Issue:</strong> "No tournament selected" → <strong>Fix:</strong> Create tournament first</div>
@@ -827,12 +827,12 @@ export default function AdminTournamentSetup() {
                     <h3 className="font-semibold text-blue-600 mb-2">Station A</h3>
                     <div className="space-y-2">
                       {matches.filter(m => m.station === 'A').map((match, index) => (
-                        <div key={match.id} className="p-2 bg-blue-50 rounded text-sm">
-                          <div className="font-medium">Match {match.matchNumber}</div>
-                          <div className="text-gray-600">
+                        <div key={match.id} className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
+                          <div className="font-medium text-foreground">Match {match.matchNumber}</div>
+                          <div className="text-muted-foreground">
                             {match.competitor1Name} vs {match.competitor2Name || 'Bye'}
                           </div>
-                          <div className="text-xs text-gray-500">Round {match.round}</div>
+                          <div className="text-xs text-muted-foreground">Round {match.round}</div>
                         </div>
                       ))}
                     </div>
@@ -842,12 +842,12 @@ export default function AdminTournamentSetup() {
                     <h3 className="font-semibold text-green-600 mb-2">Station B</h3>
                     <div className="space-y-2">
                       {matches.filter(m => m.station === 'B').map((match, index) => (
-                        <div key={match.id} className="p-2 bg-green-50 rounded text-sm">
-                          <div className="font-medium">Match {match.matchNumber}</div>
-                          <div className="text-gray-600">
+                        <div key={match.id} className="p-2 bg-green-50 dark:bg-green-950 rounded text-sm">
+                          <div className="font-medium text-foreground">Match {match.matchNumber}</div>
+                          <div className="text-muted-foreground">
                             {match.competitor1Name} vs {match.competitor2Name || 'Bye'}
                           </div>
-                          <div className="text-xs text-gray-500">Round {match.round}</div>
+                          <div className="text-xs text-muted-foreground">Round {match.round}</div>
                         </div>
                       ))}
                     </div>
@@ -857,12 +857,12 @@ export default function AdminTournamentSetup() {
                     <h3 className="font-semibold text-purple-600 mb-2">Station C</h3>
                     <div className="space-y-2">
                       {matches.filter(m => m.station === 'C').map((match, index) => (
-                        <div key={match.id} className="p-2 bg-purple-50 rounded text-sm">
-                          <div className="font-medium">Match {match.matchNumber}</div>
-                          <div className="text-gray-600">
+                        <div key={match.id} className="p-2 bg-purple-50 dark:bg-purple-950 rounded text-sm">
+                          <div className="font-medium text-foreground">Match {match.matchNumber}</div>
+                          <div className="text-muted-foreground">
                             {match.competitor1Name} vs {match.competitor2Name || 'Bye'}
                           </div>
-                          <div className="text-xs text-gray-500">Round {match.round}</div>
+                          <div className="text-xs text-muted-foreground">Round {match.round}</div>
                         </div>
                       ))}
                     </div>

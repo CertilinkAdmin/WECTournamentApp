@@ -288,9 +288,9 @@ export default function TournamentBracket() {
         
         <div className="space-y-2">
           <div className={`p-2 rounded-md border ${
-            heat.competitor1Name === 'BYE' || heat.competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-secondary dark:bg-white'
-          } ${heat.winner === heat.competitor1 ? 'ring-2 ring-green-400' : ''}`}>
-            <div className="font-medium text-sm">
+            heat.competitor1Name === 'BYE' || heat.competitor1 === 'BYE' ? 'bg-muted text-muted-foreground' : 'bg-secondary dark:bg-card'
+          } ${heat.winner === heat.competitor1 ? 'ring-2 ring-chart-3' : ''}`}>
+            <div className="font-medium text-sm text-foreground">
               {heat.competitor1Name || heat.competitor1 || "—"}
             </div>
           </div>
@@ -298,8 +298,8 @@ export default function TournamentBracket() {
           <div className="text-center text-muted-foreground font-bold">VS</div>
           
           <div className={`p-2 rounded-md border ${
-            heat.competitor2Name === 'BYE' || heat.competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500' : 'bg-secondary dark:bg-white'
-          } ${heat.winner === heat.competitor2 ? 'ring-2 ring-green-400' : ''}`}>
+            heat.competitor2Name === 'BYE' || heat.competitor2 === 'BYE' ? 'bg-muted text-muted-foreground' : 'bg-secondary dark:bg-card'
+          } ${heat.winner === heat.competitor2 ? 'ring-2 ring-chart-3' : ''}`}>
             <div className="font-medium text-sm">
               {heat.competitor2Name || heat.competitor2 || "—"}
             </div>
@@ -308,7 +308,7 @@ export default function TournamentBracket() {
         
         {heat.winnerName && (
           <div className="mt-3 text-center">
-            <Badge className="bg-green-500 text-white text-xs font-bold">
+            <Badge className="bg-chart-3 text-foreground text-xs font-bold">
               Winner: {heat.winnerName}
             </Badge>
           </div>

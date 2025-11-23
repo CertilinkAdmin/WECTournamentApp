@@ -160,8 +160,8 @@ export default function HeatCarousel() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-300 overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-slate-100 shadow-2xl rounded-3xl">
+    <div className="min-h-screen bg-background dark:bg-background overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-card dark:bg-card shadow-2xl rounded-3xl">
         <div className="relative w-full h-full rounded-3xl overflow-hidden">
           {/* Main slide */}
           <div 
@@ -196,7 +196,7 @@ export default function HeatCarousel() {
                     {HEAT_CAROUSEL_DATA[currentIndex].leftCompetitor}
                   </div>
                   <div className="text-sm text-white/80 mb-3">Cup: {HEAT_CAROUSEL_DATA[currentIndex].leftCupCode}</div>
-                  <div className="text-4xl font-bold text-green-400">
+                  <div className="text-4xl font-bold text-chart-3">
                     {HEAT_CAROUSEL_DATA[currentIndex].leftScore} pts
                   </div>
                 </div>
@@ -214,7 +214,7 @@ export default function HeatCarousel() {
                     {HEAT_CAROUSEL_DATA[currentIndex].rightCompetitor}
                   </div>
                   <div className="text-sm text-white/80 mb-3">Cup: {HEAT_CAROUSEL_DATA[currentIndex].rightCupCode}</div>
-                  <div className="text-4xl font-bold text-green-400">
+                  <div className="text-4xl font-bold text-chart-3">
                     {HEAT_CAROUSEL_DATA[currentIndex].rightScore} pts
                   </div>
                 </div>
@@ -294,7 +294,7 @@ export default function HeatCarousel() {
           href="https://github.com/MDJAmin"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-slate-600 hover:text-black transition-colors duration-500 font-mono italic text-lg border-t border-b border-dashed border-slate-600 py-1"
+          className="text-muted-foreground hover:text-foreground transition-colors duration-500 font-mono italic text-lg border-t border-b border-dashed border-border py-1"
         >
           WEC25 Tournament
         </a>

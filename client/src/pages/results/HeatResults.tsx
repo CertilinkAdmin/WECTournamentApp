@@ -355,9 +355,9 @@ const HeatResults: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardContent className="text-center p-8">
-              <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-              <h1 className="text-2xl font-bold text-gray-600 mb-2">Heat Not Found</h1>
-              <p className="text-gray-500 mb-4">The requested heat could not be found.</p>
+              <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h1 className="text-2xl font-bold text-foreground mb-2">Heat Not Found</h1>
+              <p className="text-muted-foreground mb-4">The requested heat could not be found.</p>
               <Link to={`/results/${tournament}/bracket`}>
                 <Button variant="outline">
                   <ArrowLeft className="h-4 w-4 mr-2" />
@@ -428,8 +428,8 @@ const HeatResults: React.FC = () => {
                 <div className="text-2xl font-bold text-chart-3">{roundInfo.round}</div>
                 <div className="text-sm text-muted-foreground">Round</div>
               </div>
-              <div className="text-center p-4 bg-green-100 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{heat.winner || "TBD"}</div>
+              <div className="text-center p-4 bg-chart-3/20 dark:bg-chart-3/30 rounded-lg">
+                <div className="text-2xl font-bold text-chart-3">{heat.winner || "TBD"}</div>
                 <div className="text-sm text-muted-foreground">Winner</div>
               </div>
             </div>
@@ -447,17 +447,17 @@ const HeatResults: React.FC = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className={`p-6 rounded-lg border-2 ${
-                heat.winner === heat.competitor1 ? 'border-green-400 bg-green-50' : 'border-gray-200'
+                heat.winner === heat.competitor1 ? 'border-chart-3 bg-chart-3/20 dark:bg-chart-3/30' : 'border-border'
               }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="font-medium text-sm text-gray-600">Left Competitor</div>
+                  <div className="font-medium text-sm text-muted-foreground">Left Competitor</div>
                   {heat.winner === heat.competitor1 && (
-                    <Badge className="bg-green-100 text-green-800">Winner</Badge>
+                    <Badge className="bg-chart-3/30 dark:bg-chart-3/40 text-foreground">Winner</Badge>
                   )}
                 </div>
-                <div className="font-bold text-2xl mb-2">{heat.competitor1}</div>
+                <div className="font-bold text-2xl mb-2 text-foreground">{heat.competitor1}</div>
                 {heat.leftCupCode && (
-                  <div className="text-sm text-gray-500 mb-2">Cup Code: {heat.leftCupCode}</div>
+                  <div className="text-sm text-muted-foreground mb-2">Cup Code: {heat.leftCupCode}</div>
                 )}
                 {heat.score1 !== undefined && (
                   <div className="text-lg font-semibold text-primary">
@@ -467,17 +467,17 @@ const HeatResults: React.FC = () => {
               </div>
               
               <div className={`p-6 rounded-lg border-2 ${
-                heat.winner === heat.competitor2 ? 'border-green-400 bg-green-50' : 'border-gray-200'
+                heat.winner === heat.competitor2 ? 'border-chart-3 bg-chart-3/20 dark:bg-chart-3/30' : 'border-border'
               }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="font-medium text-sm text-gray-600">Right Competitor</div>
+                  <div className="font-medium text-sm text-muted-foreground">Right Competitor</div>
                   {heat.winner === heat.competitor2 && (
-                    <Badge className="bg-green-100 text-green-800">Winner</Badge>
+                    <Badge className="bg-chart-3/30 dark:bg-chart-3/40 text-foreground">Winner</Badge>
                   )}
                 </div>
-                <div className="font-bold text-2xl mb-2">{heat.competitor2}</div>
+                <div className="font-bold text-2xl mb-2 text-foreground">{heat.competitor2}</div>
                 {heat.rightCupCode && (
-                  <div className="text-sm text-gray-500 mb-2">Cup Code: {heat.rightCupCode}</div>
+                  <div className="text-sm text-muted-foreground mb-2">Cup Code: {heat.rightCupCode}</div>
                 )}
                 {heat.score2 !== undefined && (
                   <div className="text-lg font-semibold text-primary">
@@ -510,13 +510,13 @@ const HeatResults: React.FC = () => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {/* Cup Codes */}
-                      <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-lg">
+                      <div className="grid grid-cols-2 gap-4 p-3 bg-muted dark:bg-muted rounded-lg">
                         <div className="text-center">
-                          <div className="font-semibold text-slate-600">Left Cup</div>
+                          <div className="font-semibold text-muted-foreground">Left Cup</div>
                           <div className="text-2xl font-bold text-primary">{judge.leftCupCode}</div>
                         </div>
                         <div className="text-center">
-                          <div className="font-semibold text-slate-600">Right Cup</div>
+                          <div className="font-semibold text-muted-foreground">Right Cup</div>
                           <div className="text-2xl font-bold text-primary">{judge.rightCupCode}</div>
                         </div>
                       </div>
@@ -533,12 +533,12 @@ const HeatResults: React.FC = () => {
                           </Badge>
                         </div>
 
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <Award className="h-4 w-4 text-green-600" />
-                            <span className="font-medium text-green-900">Sensory Beverage</span>
+                        <div className="flex items-center justify-between p-3 bg-chart-3/20 dark:bg-chart-3/30 rounded-lg">
+                            <div className="flex items-center gap-2">
+                            <Award className="h-4 w-4 text-chart-3" />
+                            <span className="font-medium text-foreground">Sensory Beverage</span>
                           </div>
-                          <Badge variant="outline" className="text-green-700">
+                          <Badge variant="outline" className="text-chart-3">
                             {judge.sensoryBeverage}
                           </Badge>
                         </div>

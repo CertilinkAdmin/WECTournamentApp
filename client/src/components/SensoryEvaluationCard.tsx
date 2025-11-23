@@ -68,9 +68,9 @@ export default function SensoryEvaluationCard({
   };
 
   return (
-    <Card className="w-full" data-testid="card-sensory-evaluation">
-      <CardHeader className="bg-cinnamon-brown/10 pb-3">
-        <CardTitle className="text-base sm:text-lg text-cinnamon-brown">
+    <Card className="w-full border-2 border-primary/20 shadow-lg" data-testid="card-sensory-evaluation">
+      <CardHeader className="bg-gradient-to-r from-primary/20 via-primary/15 to-primary/20 dark:from-primary/10 dark:via-primary/5 dark:to-primary/10 pb-3 border-b-2 border-primary/30">
+        <CardTitle className="text-base sm:text-lg text-primary dark:text-primary-foreground font-bold">
           SENSORY EVALUATION
         </CardTitle>
       </CardHeader>
@@ -80,11 +80,11 @@ export default function SensoryEvaluationCard({
           <table className="w-full border-collapse">
             <thead>
               {/* Judges Header Row */}
-              <tr className="bg-slate-100 dark:bg-slate-800 border-b">
+              <tr className="bg-primary/20 dark:bg-primary/10 border-b border-primary/30">
                 <th className="p-2 text-xs font-medium text-left w-32"></th>
                 {displayJudges.map((judge, idx) => (
-                  <th key={idx} className="p-2 text-center border-l" colSpan={2}>
-                    <div className="font-semibold text-xs sm:text-sm text-foreground">
+                  <th key={idx} className="p-2 text-center border-l border-primary/20" colSpan={2}>
+                    <div className="font-semibold text-xs sm:text-sm text-primary dark:text-primary-foreground">
                       {judge.sensoryBeverage}
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -94,13 +94,13 @@ export default function SensoryEvaluationCard({
                 ))}
               </tr>
               {/* LEFT/RIGHT Headers */}
-              <tr className="border-b">
-                <th className="p-2 bg-slate-50 dark:bg-slate-900"></th>
+              <tr className="border-b border-primary/20">
+                <th className="p-2 bg-secondary/50 dark:bg-card"></th>
                 {displayJudges.map((_, idx) => (
-                  <th key={idx} className="p-2 text-center text-xs font-medium bg-slate-50 dark:bg-slate-900 border-l" colSpan={2}>
+                  <th key={idx} className="p-2 text-center text-xs font-medium bg-secondary/50 dark:bg-card border-l border-primary/20" colSpan={2}>
                     <div className="grid grid-cols-2 gap-2">
-                      <span className="border-r pr-2">LEFT</span>
-                      <span>RIGHT</span>
+                      <span className="border-r border-primary/20 pr-2 text-primary dark:text-primary-foreground">LEFT</span>
+                      <span className="text-primary dark:text-primary-foreground">RIGHT</span>
                     </div>
                   </th>
                 ))}
@@ -108,57 +108,57 @@ export default function SensoryEvaluationCard({
             </thead>
             <tbody>
               {/* Taste Row */}
-              <tr className="border-b dark:bg-[hsl(20_14%_12%)]">
-                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-[hsl(20_14%_12%)] dark:text-[hsl(40_30%_90%)]">
+              <tr className="border-b bg-chart-2/10 dark:bg-chart-2/5 hover:bg-chart-2/15 transition-colors">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-chart-2/20 dark:bg-chart-2/10 text-chart-2 dark:text-chart-2 border-r border-chart-2/30">
                   Taste (1 point)
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`taste-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)] border-l border-r dark:border-[hsl(20_20%_20%)]">
+                  <td key={`taste-left-${idx}`} className={`p-3 text-center text-sm font-semibold border-l border-r border-chart-2/20 ${getCellValue(judge.taste, "left") ? 'bg-chart-2/20 dark:bg-chart-2/15 text-chart-2 dark:text-chart-2 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.taste, "left")}
                   </td>,
-                  <td key={`taste-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)]">
+                  <td key={`taste-right-${idx}`} className={`p-3 text-center text-sm font-semibold ${getCellValue(judge.taste, "right") ? 'bg-chart-2/20 dark:bg-chart-2/15 text-chart-2 dark:text-chart-2 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.taste, "right")}
                   </td>
                 ])}
               </tr>
               {/* Tactile Row */}
-              <tr className="border-b dark:bg-[hsl(20_14%_12%)]">
-                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-[hsl(20_14%_12%)] dark:text-[hsl(40_30%_90%)]">
+              <tr className="border-b bg-chart-1/10 dark:bg-chart-1/5 hover:bg-chart-1/15 transition-colors">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-chart-1/20 dark:bg-chart-1/10 text-chart-1 dark:text-chart-1 border-r border-chart-1/30">
                   Tactile (1 point)
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`tactile-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)] border-l border-r dark:border-[hsl(20_20%_20%)]">
+                  <td key={`tactile-left-${idx}`} className={`p-3 text-center text-sm font-semibold border-l border-r border-chart-1/20 ${getCellValue(judge.tactile, "left") ? 'bg-chart-1/20 dark:bg-chart-1/15 text-chart-1 dark:text-chart-1 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.tactile, "left")}
                   </td>,
-                  <td key={`tactile-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)]">
+                  <td key={`tactile-right-${idx}`} className={`p-3 text-center text-sm font-semibold ${getCellValue(judge.tactile, "right") ? 'bg-chart-1/20 dark:bg-chart-1/15 text-chart-1 dark:text-chart-1 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.tactile, "right")}
                   </td>
                 ])}
               </tr>
               {/* Flavour Row */}
-              <tr className="border-b dark:bg-[hsl(20_14%_12%)]">
-                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-[hsl(20_14%_12%)] dark:text-[hsl(40_30%_90%)]">
+              <tr className="border-b bg-chart-3/10 dark:bg-chart-3/5 hover:bg-chart-3/15 transition-colors">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-chart-3/20 dark:bg-chart-3/10 text-chart-3 dark:text-chart-3 border-r border-chart-3/30">
                   Flavour (1 point)
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`flavour-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)] border-l border-r dark:border-[hsl(20_20%_20%)]">
+                  <td key={`flavour-left-${idx}`} className={`p-3 text-center text-sm font-semibold border-l border-r border-chart-3/20 ${getCellValue(judge.flavour, "left") ? 'bg-chart-3/20 dark:bg-chart-3/15 text-chart-3 dark:text-chart-3 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.flavour, "left")}
                   </td>,
-                  <td key={`flavour-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)]">
+                  <td key={`flavour-right-${idx}`} className={`p-3 text-center text-sm font-semibold ${getCellValue(judge.flavour, "right") ? 'bg-chart-3/20 dark:bg-chart-3/15 text-chart-3 dark:text-chart-3 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.flavour, "right")}
                   </td>
                 ])}
               </tr>
               {/* Overall Row */}
-              <tr className="border-b dark:bg-[hsl(20_14%_12%)]">
-                <td className="p-3 text-xs sm:text-sm font-medium bg-slate-50 dark:bg-[hsl(20_14%_12%)] dark:text-[hsl(40_30%_90%)]">
+              <tr className="border-b bg-primary/10 dark:bg-primary/5 hover:bg-primary/15 transition-colors">
+                <td className="p-3 text-xs sm:text-sm font-medium bg-primary/20 dark:bg-primary/10 text-primary dark:text-primary-foreground border-r border-primary/30 font-bold">
                   Overall (5 points)
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`overall-left-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)] border-l border-r dark:border-[hsl(20_20%_20%)]">
+                  <td key={`overall-left-${idx}`} className={`p-3 text-center text-sm font-semibold border-l border-r border-primary/20 ${getOverallCellValue(judge.overall, "left") ? 'bg-primary/20 dark:bg-primary/15 text-primary dark:text-primary-foreground font-bold' : 'text-muted-foreground'}`}>
                     {getOverallCellValue(judge.overall, "left")}
                   </td>,
-                  <td key={`overall-right-${idx}`} className="p-3 text-center text-sm font-semibold text-primary dark:text-[hsl(40_30%_90%)] dark:bg-[hsl(20_14%_12%)]">
+                  <td key={`overall-right-${idx}`} className={`p-3 text-center text-sm font-semibold ${getOverallCellValue(judge.overall, "right") ? 'bg-primary/20 dark:bg-primary/15 text-primary dark:text-primary-foreground font-bold' : 'text-muted-foreground'}`}>
                     {getOverallCellValue(judge.overall, "right")}
                   </td>
                 ])}
@@ -178,18 +178,18 @@ export default function SensoryEvaluationCard({
                 ])}
               </tr>
               {/* Cup Code Row */}
-              <tr className="bg-slate-100 dark:bg-slate-800">
-                <td className="p-3 text-xs sm:text-sm font-bold">
+              <tr className="bg-muted/50 dark:bg-muted border-t-2 border-primary/20">
+                <td className="p-3 text-xs sm:text-sm font-bold text-foreground">
                   Cup Code
                 </td>
                 {displayJudges.map((judge, idx) => [
-                  <td key={`cup-left-${idx}`} className="p-3 text-center border-l border-r">
-                    <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-left-cup-${idx}`}>
+                  <td key={`cup-left-${idx}`} className="p-3 text-center border-l border-r border-primary/20">
+                    <Badge variant="secondary" className="font-mono text-xs bg-secondary dark:bg-card text-foreground" data-testid={`badge-left-cup-${idx}`}>
                       {judge.leftCupCode}
                     </Badge>
                   </td>,
                   <td key={`cup-right-${idx}`} className="p-3 text-center">
-                    <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-right-cup-${idx}`}>
+                    <Badge variant="secondary" className="font-mono text-xs bg-secondary dark:bg-card text-foreground" data-testid={`badge-right-cup-${idx}`}>
                       {judge.rightCupCode}
                     </Badge>
                   </td>
@@ -204,8 +204,8 @@ export default function SensoryEvaluationCard({
           {displayJudges.map((judge, judgeIdx) => (
             <div key={judgeIdx} className="border-b last:border-b-0">
               {/* Judge Header */}
-              <div className="p-3 bg-slate-100 dark:bg-slate-800 border-b">
-                <div className="font-semibold text-sm text-foreground">
+              <div className="p-3 bg-primary/20 dark:bg-primary/10 border-b border-primary/30">
+                <div className="font-semibold text-sm text-primary dark:text-primary-foreground">
                   {judge.sensoryBeverage}
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -216,52 +216,52 @@ export default function SensoryEvaluationCard({
               {/* Score Table for this Judge */}
               <div className="p-3 space-y-2">
                 {/* Headers */}
-                <div className="grid grid-cols-3 gap-2 pb-2 border-b">
+                <div className="grid grid-cols-3 gap-2 pb-2 border-b border-primary/20">
                   <div className="text-xs font-medium text-muted-foreground"></div>
-                  <div className="text-xs font-medium text-center">LEFT</div>
-                  <div className="text-xs font-medium text-center">RIGHT</div>
+                  <div className="text-xs font-medium text-center text-primary dark:text-primary-foreground">LEFT</div>
+                  <div className="text-xs font-medium text-center text-primary dark:text-primary-foreground">RIGHT</div>
                 </div>
 
                 {/* Taste */}
-                <div className="grid grid-cols-3 gap-2 items-center">
-                  <div className="text-xs font-medium">Taste (1)</div>
-                  <div className="text-center text-sm font-semibold text-primary">
+                <div className="grid grid-cols-3 gap-2 items-center p-2 rounded-lg bg-chart-2/10 dark:bg-chart-2/5">
+                  <div className="text-xs font-medium text-chart-2 dark:text-chart-2">Taste (1)</div>
+                  <div className={`text-center text-sm font-semibold ${getCellValue(judge.taste, "left") ? 'text-chart-2 dark:text-chart-2 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.taste, "left")}
                   </div>
-                  <div className="text-center text-sm font-semibold text-primary">
+                  <div className={`text-center text-sm font-semibold ${getCellValue(judge.taste, "right") ? 'text-chart-2 dark:text-chart-2 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.taste, "right")}
                   </div>
                 </div>
 
                 {/* Tactile */}
-                <div className="grid grid-cols-3 gap-2 items-center">
-                  <div className="text-xs font-medium">Tactile (1)</div>
-                  <div className="text-center text-sm font-semibold text-primary">
+                <div className="grid grid-cols-3 gap-2 items-center p-2 rounded-lg bg-chart-1/10 dark:bg-chart-1/5">
+                  <div className="text-xs font-medium text-chart-1 dark:text-chart-1">Tactile (1)</div>
+                  <div className={`text-center text-sm font-semibold ${getCellValue(judge.tactile, "left") ? 'text-chart-1 dark:text-chart-1 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.tactile, "left")}
                   </div>
-                  <div className="text-center text-sm font-semibold text-primary">
+                  <div className={`text-center text-sm font-semibold ${getCellValue(judge.tactile, "right") ? 'text-chart-1 dark:text-chart-1 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.tactile, "right")}
                   </div>
                 </div>
 
                 {/* Flavour */}
-                <div className="grid grid-cols-3 gap-2 items-center">
-                  <div className="text-xs font-medium">Flavour (1)</div>
-                  <div className="text-center text-sm font-semibold text-primary">
+                <div className="grid grid-cols-3 gap-2 items-center p-2 rounded-lg bg-chart-3/10 dark:bg-chart-3/5">
+                  <div className="text-xs font-medium text-chart-3 dark:text-chart-3">Flavour (1)</div>
+                  <div className={`text-center text-sm font-semibold ${getCellValue(judge.flavour, "left") ? 'text-chart-3 dark:text-chart-3 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.flavour, "left")}
                   </div>
-                  <div className="text-center text-sm font-semibold text-primary">
+                  <div className={`text-center text-sm font-semibold ${getCellValue(judge.flavour, "right") ? 'text-chart-3 dark:text-chart-3 font-bold' : 'text-muted-foreground'}`}>
                     {getCellValue(judge.flavour, "right")}
                   </div>
                 </div>
 
                 {/* Overall */}
-                <div className="grid grid-cols-3 gap-2 items-center">
-                  <div className="text-xs font-medium">Overall (5)</div>
-                  <div className="text-center text-sm font-semibold text-primary">
+                <div className="grid grid-cols-3 gap-2 items-center p-2 rounded-lg bg-primary/10 dark:bg-primary/5">
+                  <div className="text-xs font-medium text-primary dark:text-primary-foreground font-bold">Overall (5)</div>
+                  <div className={`text-center text-sm font-semibold ${getOverallCellValue(judge.overall, "left") ? 'text-primary dark:text-primary-foreground font-bold' : 'text-muted-foreground'}`}>
                     {getOverallCellValue(judge.overall, "left")}
                   </div>
-                  <div className="text-center text-sm font-semibold text-primary">
+                  <div className={`text-center text-sm font-semibold ${getOverallCellValue(judge.overall, "right") ? 'text-primary dark:text-primary-foreground font-bold' : 'text-muted-foreground'}`}>
                     {getOverallCellValue(judge.overall, "right")}
                   </div>
                 </div>
@@ -278,15 +278,15 @@ export default function SensoryEvaluationCard({
                 </div>
 
                 {/* Cup Codes */}
-                <div className="grid grid-cols-3 gap-2 items-center pt-2 border-t bg-slate-100 dark:bg-slate-800 -mx-3 px-3 py-2">
-                  <div className="text-xs font-bold">Cup Code</div>
+                <div className="grid grid-cols-3 gap-2 items-center pt-2 border-t border-primary/20 bg-muted/50 dark:bg-muted -mx-3 px-3 py-2">
+                  <div className="text-xs font-bold text-foreground">Cup Code</div>
                   <div className="text-center">
-                    <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-left-cup-${judgeIdx}`}>
+                    <Badge variant="secondary" className="font-mono text-xs bg-secondary dark:bg-card text-foreground" data-testid={`badge-left-cup-${judgeIdx}`}>
                       {judge.leftCupCode}
                     </Badge>
                   </div>
                   <div className="text-center">
-                    <Badge variant="secondary" className="font-mono text-xs" data-testid={`badge-right-cup-${judgeIdx}`}>
+                    <Badge variant="secondary" className="font-mono text-xs bg-secondary dark:bg-card text-foreground" data-testid={`badge-right-cup-${judgeIdx}`}>
                       {judge.rightCupCode}
                     </Badge>
                   </div>

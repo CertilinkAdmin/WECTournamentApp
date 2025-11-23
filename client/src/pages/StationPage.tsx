@@ -259,7 +259,7 @@ function StationHeatCard({ match, users, getInitials }: StationHeatCardProps) {
   return (
     <Card className={`min-h-[120px] transition-all duration-200 ${
       match.status === 'RUNNING' ? 'ring-2 ring-blue-500 bg-blue-50' : 
-      match.status === 'DONE' ? 'ring-2 ring-green-500 bg-green-50' : 
+      match.status === 'DONE' ? 'ring-2 ring-chart-3 bg-chart-3/20' : 
       'hover:shadow-lg'
     }`}>
       <div className="p-4 h-full flex flex-col justify-center">
@@ -280,9 +280,9 @@ function StationHeatCard({ match, users, getInitials }: StationHeatCardProps) {
         
         <div className="space-y-2">
           <div className={`p-2 rounded-md border ${
-            !competitor1 ? 'bg-gray-100 text-gray-500' : 'bg-secondary dark:bg-white'
-          } ${winner?.id === competitor1?.id ? 'ring-2 ring-green-400' : ''}`}>
-            <div className="font-medium text-sm">
+            !competitor1 ? 'bg-muted text-muted-foreground' : 'bg-secondary dark:bg-card'
+          } ${winner?.id === competitor1?.id ? 'ring-2 ring-chart-3' : ''}`}>
+            <div className="font-medium text-sm text-foreground">
               {competitor1?.name || "TBD"}
             </div>
           </div>
@@ -290,8 +290,8 @@ function StationHeatCard({ match, users, getInitials }: StationHeatCardProps) {
           <div className="text-center text-muted-foreground font-bold">VS</div>
           
           <div className={`p-2 rounded-md border ${
-            !competitor2 ? 'bg-gray-100 text-gray-500' : 'bg-secondary dark:bg-white'
-          } ${winner?.id === competitor2?.id ? 'ring-2 ring-green-400' : ''}`}>
+            !competitor2 ? 'bg-muted text-muted-foreground' : 'bg-secondary dark:bg-card'
+          } ${winner?.id === competitor2?.id ? 'ring-2 ring-chart-3' : ''}`}>
             <div className="font-medium text-sm">
               {competitor2?.name || "TBD"}
             </div>
@@ -300,7 +300,7 @@ function StationHeatCard({ match, users, getInitials }: StationHeatCardProps) {
         
         {winner && (
           <div className="mt-3 text-center">
-            <Badge className="bg-green-500 text-white text-xs font-bold">
+            <Badge className="bg-chart-3 text-foreground text-xs font-bold">
               Winner: {winner.name}
             </Badge>
           </div>

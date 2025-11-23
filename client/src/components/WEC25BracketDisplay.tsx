@@ -19,15 +19,15 @@ interface BracketHeatProps {
 function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, score1, score2, isWinner = false, isFinal = false }: BracketHeatProps) {
   const getStationColor = (station: string) => {
     switch (station) {
-      case 'A': return 'bg-primary text-white';
-      case 'B': return 'bg-chart-3 text-white';
-      case 'C': return 'bg-chart-1 text-white';
+      case 'A': return 'bg-primary text-primary-foreground';
+      case 'B': return 'bg-chart-3 text-primary-foreground';
+      case 'C': return 'bg-chart-1 text-primary-foreground';
       default: return 'bg-muted text-muted-foreground';
     }
   };
 
   return (
-    <Card className={`min-h-[140px] transition-all duration-300 ${isFinal ? 'ring-4 ring-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-50 shadow-xl' : isWinner ? 'ring-2 ring-green-400 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg' : 'hover:shadow-xl hover:scale-105'}`}>
+    <Card className={`min-h-[140px] transition-all duration-300 ${isFinal ? 'ring-4 ring-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-50 shadow-xl' : isWinner ? 'ring-2 ring-chart-3 bg-gradient-to-br from-chart-3/20 to-chart-3/30 shadow-lg' : 'hover:shadow-xl hover:scale-105'}`}>
       <CardContent className="p-4 h-full flex flex-col justify-center">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -40,9 +40,9 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, sc
         </div>
         
         <div className="space-y-3">
-          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor1 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-secondary to-secondary/80 dark:from-white dark:to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor1 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
+          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor1 === 'BYE' ? 'bg-muted text-muted-foreground border-border' : 'bg-gradient-to-r from-secondary to-secondary/80 dark:from-white dark:to-slate-50 border-border shadow-sm'} ${winner === competitor1 ? 'ring-2 ring-chart-3 bg-chart-3/20 dark:bg-chart-3/30 border-chart-3 dark:border-chart-3/80 shadow-lg' : 'hover:shadow-md'}`}>
             <div className="flex justify-between items-center">
-              <div className="font-semibold text-base text-slate-800">
+              <div className="font-semibold text-base text-foreground">
                 {competitor1}
               </div>
               {score1 !== undefined && (
@@ -53,11 +53,11 @@ function BracketHeat({ heatNumber, station, competitor1, competitor2, winner, sc
             </div>
           </div>
           
-          <div className="text-center text-slate-600 font-bold text-sm tracking-wider">VS</div>
+          <div className="text-center text-muted-foreground font-bold text-sm tracking-wider">VS</div>
           
-          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor2 === 'BYE' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-gradient-to-r from-secondary to-secondary/80 dark:from-white dark:to-slate-50 border-slate-200 shadow-sm'} ${winner === competitor2 ? 'ring-2 ring-green-400 bg-green-50 border-green-300 shadow-lg' : 'hover:shadow-md'}`}>
+          <div className={`p-3 rounded-lg border-2 transition-all duration-200 ${competitor2 === 'BYE' ? 'bg-muted text-muted-foreground border-border' : 'bg-gradient-to-r from-secondary to-secondary/80 dark:from-white dark:to-slate-50 border-border shadow-sm'} ${winner === competitor2 ? 'ring-2 ring-chart-3 bg-chart-3/20 dark:bg-chart-3/30 border-chart-3 dark:border-chart-3/80 shadow-lg' : 'hover:shadow-md'}`}>
             <div className="flex justify-between items-center">
-              <div className="font-semibold text-base text-slate-800">
+              <div className="font-semibold text-base text-foreground">
                 {competitor2}
               </div>
               {score2 !== undefined && (
@@ -138,7 +138,7 @@ export default function WEC25BracketDisplay() {
         </div>
 
         {/* Bracket Display */}
-        <div className="bg-secondary dark:bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-secondary dark:bg-card rounded-lg shadow-lg p-6">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             
             {/* Round 1 */}

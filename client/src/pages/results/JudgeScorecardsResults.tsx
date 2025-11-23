@@ -673,13 +673,13 @@ const JudgeScorecardsResults: React.FC = () => {
                                     {/* Cup Codes */}
                                     <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
                                       <div className="text-center">
-                                        <div className="text-xs text-slate-600 font-medium">Left Cup</div>
+                                        <div className="text-xs text-muted-foreground font-medium">Left Cup</div>
                                         <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[#2d1b12]">
                                           {judge.leftCupCode}
                                         </div>
                                       </div>
                                       <div className="text-center">
-                                        <div className="text-xs text-slate-600 font-medium">Right Cup</div>
+                                        <div className="text-xs text-muted-foreground font-medium">Right Cup</div>
                                         <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[#2d1b12]">
                                           {judge.rightCupCode}
                                         </div>
@@ -712,7 +712,7 @@ const JudgeScorecardsResults: React.FC = () => {
                     })()}
                   </div>
                 ) : (
-                  <div className="text-center p-6 text-gray-500 mb-8">
+                  <div className="text-center p-6 text-muted-foreground mb-8">
                     <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No judge scorecards available for this heat</p>
                   </div>
@@ -725,12 +725,12 @@ const JudgeScorecardsResults: React.FC = () => {
                       ? 'border-primary bg-secondary' 
                       : 'border-border bg-card'
                   }`}>
-                    <div className="font-medium text-sm text-gray-600 mb-2">Left Competitor</div>
-                    <div className="font-bold text-xl text-gray-900 mb-3 group-hover/competitor:text-primary transition-colors duration-300">
+                    <div className="font-medium text-sm text-muted-foreground mb-2">Left Competitor</div>
+                    <div className="font-bold text-xl text-foreground mb-3 group-hover/competitor:text-primary transition-colors duration-300">
                       {currentHeat.competitor1}
                     </div>
                     {currentHeat.leftCupCode && (
-                      <div className="text-sm text-gray-500 mb-2 font-mono bg-gray-100 px-2 py-1 rounded">
+                      <div className="text-sm text-muted-foreground mb-2 font-mono bg-muted px-2 py-1 rounded">
                         Cup: {currentHeat.leftCupCode}
                       </div>
                     )}
@@ -751,12 +751,12 @@ const JudgeScorecardsResults: React.FC = () => {
                       ? 'border-primary bg-secondary' 
                       : 'border-border bg-card'
                   }`}>
-                    <div className="font-medium text-sm text-gray-600 mb-2">Right Competitor</div>
-                    <div className="font-bold text-xl text-gray-900 mb-3 group-hover/competitor:text-primary transition-colors duration-300">
+                    <div className="font-medium text-sm text-muted-foreground mb-2">Right Competitor</div>
+                    <div className="font-bold text-xl text-foreground mb-3 group-hover/competitor:text-primary transition-colors duration-300">
                       {currentHeat.competitor2}
                     </div>
                     {currentHeat.rightCupCode && (
-                      <div className="text-sm text-gray-500 mb-2 font-mono bg-gray-100 px-2 py-1 rounded">
+                      <div className="text-sm text-muted-foreground mb-2 font-mono bg-muted px-2 py-1 rounded">
                         Cup: {currentHeat.rightCupCode}
                       </div>
                     )}
@@ -777,9 +777,9 @@ const JudgeScorecardsResults: React.FC = () => {
           </div>
         ) : (
           <div className="text-center p-12">
-            <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">No Heats Found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+            <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">No Heats Found</h3>
+            <p className="text-muted-foreground">Try adjusting your search or filter criteria.</p>
           </div>
         )}
 

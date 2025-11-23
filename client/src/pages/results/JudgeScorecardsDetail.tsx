@@ -369,7 +369,7 @@ const JudgeScorecardsDetail: React.FC = () => {
                     {currentHeat.competitor1}
                   </div>
                   {currentJudgeScorecard?.leftCupCode && (
-                    <div className="text-sm text-muted-foreground mb-2 font-mono bg-secondary/60 dark:bg-gray-100 px-2 py-1 rounded border border-primary/20">
+                    <div className="text-sm text-muted-foreground mb-2 font-mono bg-secondary/60 dark:bg-muted px-2 py-1 rounded border border-primary/20">
                       Cup: {currentJudgeScorecard.leftCupCode}
                     </div>
                   )}
@@ -385,7 +385,7 @@ const JudgeScorecardsDetail: React.FC = () => {
                     {currentHeat.competitor2 || '—'}
                   </div>
                   {currentJudgeScorecard?.rightCupCode && (
-                    <div className="text-sm text-muted-foreground mb-2 font-mono bg-secondary/60 dark:bg-gray-100 px-2 py-1 rounded border border-primary/20">
+                    <div className="text-sm text-muted-foreground mb-2 font-mono bg-secondary/60 dark:bg-muted px-2 py-1 rounded border border-primary/20">
                       Cup: {currentJudgeScorecard.rightCupCode}
                     </div>
                   )}
@@ -412,13 +412,13 @@ const JudgeScorecardsDetail: React.FC = () => {
                     {/* Cup Codes */}
                     <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/40 dark:bg-secondary/20 rounded-lg border-2 border-secondary/50 dark:border-secondary/40">
                       <div className="text-center">
-                        <div className="text-xs text-slate-600 font-medium">Left Cup</div>
+                        <div className="text-xs text-muted-foreground font-medium">Left Cup</div>
                         <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
                           {currentJudgeScorecard?.leftCupCode || '—'}
                         </div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs text-slate-600 font-medium">Right Cup</div>
+                        <div className="text-xs text-muted-foreground font-medium">Right Cup</div>
                         <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded mt-1">
                           {currentJudgeScorecard?.rightCupCode || '—'}
                         </div>

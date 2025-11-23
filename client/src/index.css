@@ -236,7 +236,7 @@
 
   --muted: 20 16% 16%;
 
-  --muted-foreground: 40 20% 65%;
+  --muted-foreground: 40 20% 75%;  /* Lighter for better contrast (was 65%) */
 
   --accent: 20 20% 16%;
 
@@ -668,65 +668,317 @@ html, body, #root, .App {
 
 /* ========== LIGHT MODE ENHANCEMENTS ========== */
 @layer utilities {
-  /* Enhanced contrast for light mode text */
+  /* Enhanced contrast for light mode text - WCAG AA compliant */
   :root .text-muted-foreground {
-    color: hsl(25 20% 35%);
+    color: hsl(25 20% 30%) !important; /* Darker for better contrast (was 35%) */
   }
   
   :root .text-foreground {
-    color: hsl(25 20% 10%);
+    color: hsl(25 20% 8%) !important; /* Darker for better contrast (was 10%) */
+  }
+  
+  /* Ensure all text elements have sufficient contrast */
+  :root p,
+  :root span,
+  :root div:not([class*="bg-"]):not([class*="text-"]) {
+    color: hsl(25 20% 12%);
   }
   
   /* Enhanced card styling in light mode */
   :root [class*="Card"] {
-    border-color: hsl(40 18% 80%);
-    box-shadow: 0 1px 3px rgba(25, 20, 15, 0.06), 0 1px 2px rgba(25, 20, 15, 0.04);
+    border-color: hsl(40 18% 75%) !important; /* Darker borders */
+    box-shadow: 0 1px 3px rgba(25, 20, 15, 0.08), 0 1px 2px rgba(25, 20, 15, 0.06);
   }
   
   /* More vibrant buttons in light mode */
   :root button:not([class*="ghost"]):not([class*="link"]):not([class*="primary"]):not([class*="destructive"]) {
     border-width: 1px;
-    border-color: hsl(40 15% 75%);
+    border-color: hsl(40 15% 70%) !important; /* Darker borders */
+    color: hsl(25 20% 12%) !important; /* Ensure text contrast */
   }
   
   /* Enhanced badges in light mode */
   :root [class*="Badge"]:not([class*="destructive"]) {
     border-width: 1px;
-    border-color: hsl(40 20% 70%);
+    border-color: hsl(40 20% 65%) !important; /* Darker borders */
     font-weight: 500;
+    color: hsl(25 20% 15%) !important; /* Ensure text contrast */
   }
   
   /* Better input contrast */
   :root input,
   :root textarea,
   :root select {
-    border-color: hsl(40 18% 75%);
+    border-color: hsl(40 18% 70%) !important; /* Darker borders */
     background-color: hsl(40 10% 98%);
+    color: hsl(25 20% 12%) !important; /* Ensure text contrast */
+  }
+  
+  :root input::placeholder,
+  :root textarea::placeholder {
+    color: hsl(25 20% 40%) !important; /* Darker placeholder for better contrast */
   }
   
   /* Enhanced table styling */
   :root table {
-    border-color: hsl(40 18% 80%);
+    border-color: hsl(40 18% 75%) !important;
   }
   
   :root table th {
-    background-color: hsl(40 15% 94%);
-    color: hsl(25 25% 12%);
+    background-color: hsl(40 15% 92%) !important; /* Slightly darker */
+    color: hsl(25 25% 10%) !important; /* Darker text */
     font-weight: 600;
-    border-color: hsl(40 18% 80%);
+    border-color: hsl(40 18% 75%) !important;
   }
   
   :root table td {
-    border-color: hsl(40 15% 88%);
+    border-color: hsl(40 15% 85%) !important; /* Darker borders */
+    color: hsl(25 20% 12%) !important; /* Ensure text contrast */
   }
   
   /* Enhanced borders throughout */
-  :root [class*="border"] {
-    border-color: hsl(40 15% 82%);
+  :root [class*="border"]:not([class*="border-transparent"]) {
+    border-color: hsl(40 15% 75%) !important; /* Darker borders */
   }
   
   /* More visible shadows in light mode */
   :root [class*="shadow"] {
-    box-shadow: 0 1px 3px rgba(25, 20, 15, 0.08), 0 1px 2px rgba(25, 20, 15, 0.06);
+    box-shadow: 0 1px 3px rgba(25, 20, 15, 0.1), 0 1px 2px rgba(25, 20, 15, 0.08) !important;
+  }
+  
+  /* Ensure headings have proper contrast */
+  :root h1,
+  :root h2,
+  :root h3,
+  :root h4,
+  :root h5,
+  :root h6 {
+    color: hsl(25 20% 8%) !important;
+  }
+  
+  /* Links should have good contrast */
+  :root a:not([class*="text-"]) {
+    color: hsl(20 85% 35%) !important; /* Use primary color but darker */
+  }
+  
+  :root a:hover:not([class*="text-"]) {
+    color: hsl(20 85% 30%) !important; /* Darker on hover */
+  }
+  
+  /* Ensure labels and small text have contrast */
+  :root label,
+  :root .text-xs,
+  :root .text-sm {
+    color: hsl(25 20% 15%) !important;
+  }
+  
+  /* Override any remaining gray colors in light mode */
+  :root .text-gray-400,
+  :root .text-gray-500,
+  :root .text-gray-600 {
+    color: hsl(25 20% 30%) !important; /* Map to muted-foreground */
+  }
+  
+  :root .text-gray-700,
+  :root .text-gray-800,
+  :root .text-gray-900 {
+    color: hsl(25 20% 10%) !important; /* Map to foreground */
+  }
+  
+  /* Ensure backgrounds don't interfere with text */
+  :root .bg-gray-50,
+  :root .bg-gray-100 {
+    background-color: hsl(40 12% 96%) !important; /* Use theme muted color */
+  }
+  
+  :root .bg-gray-200 {
+    background-color: hsl(40 15% 92%) !important; /* Use theme muted color */
+  }
+}
+
+/* ========== DARK MODE ENHANCEMENTS ========== */
+@layer utilities {
+  /* Enhanced contrast for dark mode text - WCAG AA compliant */
+  .dark .text-muted-foreground {
+    color: hsl(40 20% 75%) !important; /* Lighter for better contrast (was 65%) */
+  }
+  
+  .dark .text-foreground {
+    color: hsl(40 30% 95%) !important; /* Ensure maximum contrast */
+  }
+  
+  /* Ensure all text elements have sufficient contrast in dark mode */
+  .dark p,
+  .dark span,
+  .dark div:not([class*="bg-"]):not([class*="text-"]) {
+    color: hsl(40 25% 90%);
+  }
+  
+  /* Enhanced card styling in dark mode */
+  .dark [class*="Card"] {
+    border-color: hsl(20 20% 25%) !important; /* Lighter borders for visibility */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* More visible buttons in dark mode */
+  .dark button:not([class*="ghost"]):not([class*="link"]):not([class*="primary"]):not([class*="destructive"]) {
+    border-width: 1px;
+    border-color: hsl(20 20% 25%) !important; /* Lighter borders */
+    color: hsl(40 25% 90%) !important; /* Ensure text contrast */
+  }
+  
+  /* Enhanced badges in dark mode */
+  .dark [class*="Badge"]:not([class*="destructive"]) {
+    border-width: 1px;
+    border-color: hsl(20 20% 30%) !important; /* Lighter borders */
+    font-weight: 500;
+    color: hsl(40 25% 90%) !important; /* Ensure text contrast */
+  }
+  
+  /* Better input contrast in dark mode */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    border-color: hsl(20 20% 25%) !important; /* Lighter borders */
+    background-color: hsl(20 16% 14%);
+    color: hsl(40 25% 90%) !important; /* Ensure text contrast */
+  }
+  
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: hsl(40 20% 60%) !important; /* Lighter placeholder for better contrast */
+  }
+  
+  /* Enhanced table styling in dark mode */
+  .dark table {
+    border-color: hsl(20 20% 25%) !important;
+  }
+  
+  .dark table th {
+    background-color: hsl(20 18% 18%) !important; /* Slightly lighter */
+    color: hsl(40 25% 92%) !important; /* Lighter text */
+    font-weight: 600;
+    border-color: hsl(20 20% 25%) !important;
+  }
+  
+  .dark table td {
+    border-color: hsl(20 20% 22%) !important; /* Lighter borders */
+    color: hsl(40 25% 88%) !important; /* Ensure text contrast */
+  }
+  
+  /* Enhanced borders throughout dark mode */
+  .dark [class*="border"]:not([class*="border-transparent"]) {
+    border-color: hsl(20 20% 25%) !important; /* Lighter borders for visibility */
+  }
+  
+  /* More visible shadows in dark mode */
+  .dark [class*="shadow"] {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  }
+  
+  /* Ensure headings have proper contrast in dark mode */
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6 {
+    color: hsl(40 30% 95%) !important;
+  }
+  
+  /* Links should have good contrast in dark mode */
+  .dark a:not([class*="text-"]) {
+    color: hsl(17 59% 50%) !important; /* Lighter primary color */
+  }
+  
+  .dark a:hover:not([class*="text-"]) {
+    color: hsl(17 59% 55%) !important; /* Lighter on hover */
+  }
+  
+  /* Ensure labels and small text have contrast in dark mode */
+  .dark label,
+  .dark .text-xs,
+  .dark .text-sm {
+    color: hsl(40 25% 85%) !important;
+  }
+  
+  /* Override any remaining gray colors in dark mode */
+  .dark .text-gray-400,
+  .dark .text-gray-500 {
+    color: hsl(40 20% 70%) !important; /* Map to muted-foreground */
+  }
+  
+  .dark .text-gray-600 {
+    color: hsl(40 25% 80%) !important; /* Lighter for better contrast */
+  }
+  
+  .dark .text-gray-700,
+  .dark .text-gray-800,
+  .dark .text-gray-900 {
+    color: hsl(40 30% 90%) !important; /* Map to foreground */
+  }
+  
+  /* Fix white backgrounds in dark mode - replace with theme colors */
+  .dark .bg-white {
+    background-color: hsl(20 16% 14%) !important; /* Use popover/card background */
+  }
+  
+  .dark .bg-gray-50,
+  .dark .bg-gray-100 {
+    background-color: hsl(20 18% 16%) !important; /* Use theme muted color */
+  }
+  
+  .dark .bg-gray-200 {
+    background-color: hsl(20 20% 20%) !important; /* Use theme muted color */
+  }
+  
+  /* Ensure text on white backgrounds in dark mode has contrast */
+  .dark .bg-white,
+  .dark .bg-gray-50,
+  .dark .bg-gray-100,
+  .dark .bg-gray-200 {
+    color: hsl(40 25% 90%) !important;
+  }
+  
+  /* Fix text-white to use theme foreground when appropriate */
+  .dark .text-white:not([class*="bg-primary"]):not([class*="bg-destructive"]) {
+    color: hsl(40 30% 95%) !important; /* Use theme foreground */
+  }
+  
+  /* Fix slate colors in dark mode */
+  .dark .text-slate-600,
+  .dark .text-slate-800 {
+    color: hsl(40 25% 85%) !important; /* Use theme foreground */
+  }
+  
+  /* Ensure proper contrast for gray backgrounds in dark mode */
+  .dark .bg-gray-100 {
+    background-color: hsl(20 18% 16%) !important;
+    color: hsl(40 25% 90%) !important;
+  }
+  
+  .dark .text-gray-500 {
+    color: hsl(40 20% 70%) !important; /* Lighter for better contrast */
+  }
+  
+  /* Fix slate backgrounds in dark mode */
+  .dark .bg-slate-50,
+  .dark .bg-slate-100,
+  .dark .bg-slate-300 {
+    background-color: hsl(20 18% 16%) !important; /* Use theme muted */
+  }
+  
+  .dark .bg-slate-800,
+  .dark .bg-slate-900 {
+    background-color: hsl(20 16% 14%) !important; /* Use theme card/popover */
+  }
+  
+  /* Ensure text on slate backgrounds has contrast */
+  .dark .bg-slate-50,
+  .dark .bg-slate-100,
+  .dark .bg-slate-300,
+  .dark .bg-slate-800,
+  .dark .bg-slate-900 {
+    color: hsl(40 25% 90%) !important;
   }
 }
