@@ -184,7 +184,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
 
   return (
     <>
-      <div className="tournament-bracket-container-compact px-2 sm:px-4 md:px-6 bg-[#dbc494]">
+      <div className="tournament-bracket-container-compact px-2 sm:px-4 md:px-6 bg-[#DECCA7] dark:bg-[#DECCA7]">
         <div className="text-center mb-4 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black mb-2 sm:mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent" 
               style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '1px' }}>
@@ -264,7 +264,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
       </div>
       {/* Expanded Heat Dialog - Mobile Optimized */}
       <Dialog open={!!selectedHeat} onOpenChange={() => setSelectedHeat(null)}>
-        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto bg-[#ebe4ce] dark:bg-[#1f0e08]">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto bg-[#DECCA7] dark:bg-[#1f0e08]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl md:text-2xl">
               <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-accent flex-shrink-0" />
@@ -275,10 +275,10 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
           {selectedHeat && (
             <div className="space-y-4 sm:space-y-6 py-2 sm:py-4">
               {/* Competitor 1 */}
-              <Card className={`p-4 sm:p-6 ${selectedHeat.winner === selectedHeat.competitor1 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : ''}`} data-testid={`competitor-${selectedHeat.competitor1}`}>
+              <Card className={`p-4 sm:p-6 ${selectedHeat.winner === selectedHeat.competitor1 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : 'bg-[#f2e6d3] dark:bg-card border-2 border-primary/20'}`} data-testid={`competitor-${selectedHeat.competitor1}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2 truncate">{selectedHeat.competitor1}</h3>
+                    <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2 truncate text-[#2d1b12] dark:text-foreground">{selectedHeat.competitor1}</h3>
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">{selectedHeat.leftCupCode}</Badge>
                       {selectedHeat.winner === selectedHeat.competitor1 && (
@@ -287,10 +287,10 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className={`text-3xl sm:text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor1 ? 'text-accent' : 'text-muted-foreground'}`}>
+                    <div className={`text-3xl sm:text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor1 ? 'text-accent' : 'text-[#9a4828] dark:text-muted-foreground'}`}>
                       {selectedHeat.score1}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">Points</div>
+                    <div className="text-xs text-[#9a4828] dark:text-muted-foreground mt-1 font-semibold">Points</div>
                   </div>
                 </div>
               </Card>
@@ -303,10 +303,10 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
               </div>
 
               {/* Competitor 2 */}
-              <Card className={`p-4 sm:p-6 ${selectedHeat.winner === selectedHeat.competitor2 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : ''}`} data-testid={`competitor-${selectedHeat.competitor2}`}>
+              <Card className={`p-4 sm:p-6 ${selectedHeat.winner === selectedHeat.competitor2 ? 'border-2 border-accent bg-accent/10 dark:bg-accent/5' : 'bg-[#f2e6d3] dark:bg-card border-2 border-primary/20'}`} data-testid={`competitor-${selectedHeat.competitor2}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2 truncate">{selectedHeat.competitor2}</h3>
+                    <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2 truncate text-[#2d1b12] dark:text-foreground">{selectedHeat.competitor2}</h3>
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">{selectedHeat.rightCupCode}</Badge>
                       {selectedHeat.winner === selectedHeat.competitor2 && (
@@ -315,32 +315,32 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className={`text-3xl sm:text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor2 ? 'text-accent' : 'text-muted-foreground'}`}>
+                    <div className={`text-3xl sm:text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor2 ? 'text-accent' : 'text-[#9a4828] dark:text-muted-foreground'}`}>
                       {selectedHeat.score2}
                     </div>
-                    <div className="text-xs mt-1 text-[#d8d3ca]">Points</div>
+                    <div className="text-xs mt-1 text-[#9a4828] dark:text-[#d8d3ca] font-semibold">Points</div>
                   </div>
                 </div>
               </Card>
 
               {/* Match Info */}
-              <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+              <div className="bg-[#e8d5b7] dark:bg-muted/50 rounded-lg p-3 sm:p-4 border-2 border-primary/20 dark:border-primary/20">
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
                   <div>
-                    <div className="text-muted-foreground text-xs mb-1">Heat Number</div>
-                    <div className="font-semibold text-sm sm:text-base text-[#f6f4ee]">{selectedHeat.heatNumber}</div>
+                    <div className="text-[#9a4828] dark:text-muted-foreground text-xs mb-1 font-semibold">Heat Number</div>
+                    <div className="font-semibold text-sm sm:text-base text-[#2d1b12] dark:text-[#f6f4ee]">{selectedHeat.heatNumber}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground text-xs mb-1">Station</div>
-                    <div className="font-semibold text-sm sm:text-base text-[#9a4828]">{selectedHeat.station}</div>
+                    <div className="text-[#9a4828] dark:text-muted-foreground text-xs mb-1 font-semibold">Station</div>
+                    <div className="font-semibold text-sm sm:text-base text-[#2d1b12] dark:text-[#9a4828]">{selectedHeat.station}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground text-xs mb-1">Final Score</div>
-                    <div className="font-semibold text-sm sm:text-base text-[#d8d3ca]">{selectedHeat.score1} - {selectedHeat.score2}</div>
+                    <div className="text-[#9a4828] dark:text-muted-foreground text-xs mb-1 font-semibold">Final Score</div>
+                    <div className="font-semibold text-sm sm:text-base text-[#2d1b12] dark:text-[#d8d3ca]">{selectedHeat.score1} - {selectedHeat.score2}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground text-xs mb-1">Winner</div>
-                    <div className="font-semibold text-sm sm:text-base truncate text-[#d8d3ca]">{selectedHeat.winner}</div>
+                    <div className="text-[#9a4828] dark:text-muted-foreground text-xs mb-1 font-semibold">Winner</div>
+                    <div className="font-semibold text-sm sm:text-base truncate text-[#2d1b12] dark:text-[#d8d3ca]">{selectedHeat.winner}</div>
                   </div>
                 </div>
               </div>

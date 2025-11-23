@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Settings, Play, Trophy, LayoutGrid, Award, Crown, FileText, Zap, BarChart3, MapPin, LayoutDashboard, Users, Gavel, Home } from 'lucide-react';
+import { Settings, Play, Trophy, LayoutGrid, Award, Crown, FileText, Zap, BarChart3, MapPin, LayoutDashboard, Users, Gavel, Menu, X } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 
 interface NavButton {
   path: string;
@@ -10,6 +13,26 @@ interface NavButton {
 export default function BottomNav() {
   const location = useLocation();
   const pathname = location.pathname;
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  
+  // Check screen size and orientation
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const isDesktopSize = window.innerWidth >= 768; // md breakpoint
+      const isLandscape = window.innerWidth > window.innerHeight && window.innerWidth >= 640;
+      setIsDesktop(isDesktopSize || isLandscape);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    window.addEventListener('orientationchange', checkScreenSize);
+    
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+      window.removeEventListener('orientationchange', checkScreenSize);
+    };
+  }, []);
   
   // Extract tournamentId from pathname if present
   const extractTournamentId = (path: string): string | null => {
@@ -108,29 +131,68 @@ export default function BottomNav() {
     return false;
   };
 
+  // Render navigation button
+  const renderNavButton = (button: NavButton, isDrawer: boolean = false) => {
+    const Icon = button.icon;
+    const active = isActive(button.path);
+    
+    const baseClasses = isDrawer
+      ? `flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all ${
+          active
+            ? 'bg-primary text-primary-foreground font-semibold'
+            : 'text-foreground hover:bg-muted'
+        }`
+      : `flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all ${
+          active
+            ? 'text-light-sand bg-light-sand/10'
+            : 'text-light-sand/70 hover-elevate active-elevate-2'
+        }`;
+    
+    return (
+      <Link
+        key={button.path}
+        to={button.path}
+        onClick={() => setIsDrawerOpen(false)}
+        className={baseClasses}
+        data-testid={`nav-${isDrawer ? 'drawer' : 'bottom'}-${button.label.toLowerCase().replace(/\s+/g, '-')}`}
+      >
+        <Icon className={isDrawer ? 'h-5 w-5' : 'h-5 w-5'} />
+        <span className={isDrawer ? 'text-base font-medium' : 'text-xs font-medium'}>{button.label}</span>
+      </Link>
+    );
+  };
+
+  // Desktop/Tablet/Landscape Mobile: Drawer Navigation
+  if (isDesktop) {
+    return (
+      <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="fixed top-4 right-4 z-[100] bg-cinnamon-brown/95 backdrop-blur-md border-light-sand/20 text-light-sand hover:bg-cinnamon-brown hover:text-light-sand md:top-6 md:right-6"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-[280px] sm:w-[320px] bg-background border-l border-border">
+          <SheetHeader>
+            <SheetTitle className="text-left text-xl font-bold text-foreground">Navigation</SheetTitle>
+          </SheetHeader>
+          <nav className="mt-6 space-y-2">
+            {navButtons.map((button) => renderNavButton(button, true))}
+          </nav>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Mobile Portrait: Bottom Navigation
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-cinnamon-brown/95 backdrop-blur-md border-t border-light-sand/20 md:hidden safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-cinnamon-brown/95 backdrop-blur-md border-t border-light-sand/20 safe-area-bottom">
       <div className="flex items-center justify-around h-16 max-w-screen px-safe">
-        {navButtons.map((button) => {
-          const Icon = button.icon;
-          const active = isActive(button.path);
-          
-          return (
-            <Link
-              key={button.path}
-              to={button.path}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all ${
-                active
-                  ? 'text-light-sand bg-light-sand/10'
-                  : 'text-light-sand/70 hover-elevate active-elevate-2'
-              }`}
-              data-testid={`nav-bottom-${button.label.toLowerCase().replace(/\s+/g, '-')}`}
-            >
-              <Icon className="h-5 w-5" />
-              <span className="text-xs font-medium">{button.label}</span>
-            </Link>
-          );
-        })}
+        {navButtons.map((button) => renderNavButton(button, false))}
       </div>
     </nav>
   );
