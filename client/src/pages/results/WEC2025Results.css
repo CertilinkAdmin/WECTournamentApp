@@ -194,10 +194,13 @@ div > .round-cards-container {
   color: hsl(var(--foreground));
   font-weight: 500;
   position: absolute;
-  left: 20px;
+  left: 50%;
   top: 15px;
+  transform: translateX(-50%);
   font-size: 1rem;
   z-index: 10;
+  text-align: center;
+  width: calc(100% - 40px);
 }
 
 .round-card-bracket {

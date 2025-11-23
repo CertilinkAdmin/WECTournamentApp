@@ -334,11 +334,11 @@ const WEC2025Results = () => {
   // Get round display name - must be before early returns
   const getRoundDisplayName = (round: number) => {
     const roundNames: Record<number, string> = {
-      1: 'Round 1 - First 16 Heats',
-      2: 'Round 2 - Next 8 Heats', 
-      3: 'Round 3 - Next 4 Heats',
-      4: 'Round 4 - Semifinals',
-      5: 'Round 5 - Final'
+      1: 'Round 1',
+      2: 'Round 2', 
+      3: 'Round 3',
+      4: 'Semifinals',
+      5: 'Final'
     };
     return roundNames[round] || `Round ${round}`;
   };
