@@ -534,7 +534,7 @@ const HeatResults: React.FC = () => {
                         </div>
 
                         <div className="flex items-center justify-between p-3 bg-chart-3/20 dark:bg-chart-3/30 rounded-lg">
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2">
                             <Award className="h-4 w-4 text-chart-3" />
                             <span className="font-medium text-foreground">Sensory Beverage</span>
                           </div>

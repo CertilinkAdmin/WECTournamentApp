@@ -778,9 +778,9 @@ const AdminDashboard: React.FC = () => {
                 
                 <TestTournamentForm 
                   onSuccess={() => {
-                    queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
-                    queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-                  }}
+                          queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+                          queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+                    }}
                 />
               </CardContent>
             </Card>

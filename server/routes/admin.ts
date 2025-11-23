@@ -262,7 +262,7 @@ router.post('/seed-test-data', async (req, res) => {
     for (const name of stationNames) {
       try {
         const station = await storage.createStation({ 
-          tournamentId: tournament.id,
+        tournamentId: tournament.id,
           name, 
           status: 'AVAILABLE', 
           nextAvailableAt: new Date() 
@@ -354,7 +354,7 @@ router.delete('/clear-test-data', async (req, res) => {
           eq(users.email, `test-${tournament.id}`)
         );
         
-        cleared++;
+      cleared++;
       } catch (error: any) {
         errors.push(`Failed to clear tournament ${tournament.id}: ${error.message}`);
         console.error(`Error clearing tournament ${tournament.id}:`, error);
