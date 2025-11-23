@@ -50,7 +50,7 @@ export default function ResultsTournamentList() {
     if (!searchQuery.trim()) {
       return completedTournaments;
     }
-    
+
     const query = searchQuery.toLowerCase();
     return completedTournaments.filter(t => 
       t.name.toLowerCase().includes(query) ||
@@ -95,19 +95,6 @@ export default function ResultsTournamentList() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      
-      {/* Page Title */}
-      <div className="bg-primary text-primary-foreground py-6 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3 mb-2">
-            <Trophy className="w-6 h-6" />
-            <h1 className="text-2xl font-bold">Results</h1>
-          </div>
-          <p className="text-primary-foreground/80 text-sm">
-            Search and select a completed tournament to view its bracket
-          </p>
-        </div>
-      </div>
 
       {/* Search and Dropdown */}
       <div className="max-w-4xl mx-auto px-4 pt-6">
@@ -200,7 +187,19 @@ export default function ResultsTournamentList() {
           )}
         </div>
       </div>
-    </div>
-  );
-}
 
+      {/* Main Content */}
+      <div className="min-h-screen bg-background dark:bg-background p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Page Title */}
+          <div className="flex items-center gap-3 mb-6">
+            <Trophy className="h-7 w-7 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Results</h1>
+              <p className="text-muted-foreground">
+                Search and select a completed tournament to view its bracket
+              </p>
+            </div>
+          </div>
+
+          {searchResults.length > 0 && (
