@@ -236,6 +236,9 @@ export default function WEC25BracketDisplay() {
             {/* Finals */}
             <div className="space-y-4">
               <div className="text-center mb-6">
+                <div className="flex justify-center mb-3">
+                  <img src="/trophy.png" alt="Championship Trophy" className="h-12 w-12" />
+                </div>
                 <h2 className="text-2xl font-bold text-primary mb-2">Finals</h2>
                 <p className="text-sm text-muted-foreground">1 Heat</p>
               </div>

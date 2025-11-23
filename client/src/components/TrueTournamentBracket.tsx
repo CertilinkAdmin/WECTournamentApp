@@ -94,7 +94,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
       case "Round 2": return <Zap className="h-4 w-4 text-accent" />;
       case "Round 3": return <Star className="h-4 w-4 text-primary" />;
       case "Semi-Finals": return <Award className="h-4 w-4 text-accent" />;
-      case "Finals": return <Trophy className="h-5 w-5 text-accent" />;
+      case "Finals": return <img src="/trophy.png" alt="Trophy" className="h-5 w-5" />;
       default: return null;
     }
   };
