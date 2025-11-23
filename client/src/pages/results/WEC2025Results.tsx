@@ -337,7 +337,7 @@ const WEC2025Results = () => {
       1: 'Round 1 - First 16 Heats',
       2: 'Round 2 - Next 8 Heats', 
       3: 'Round 3 - Next 4 Heats',
-      4: 'Round 4 - Semifinals (2 Heats)',
+      4: 'Round 4 - Semifinals',
       5: 'Round 5 - Final'
     };
     return roundNames[round] || `Round ${round}`;
