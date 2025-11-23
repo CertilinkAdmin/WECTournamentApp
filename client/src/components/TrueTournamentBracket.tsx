@@ -184,7 +184,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
 
   return (
     <>
-      <div className="tournament-bracket-container-compact px-2 sm:px-4 md:px-6">
+      <div className="tournament-bracket-container-compact px-2 sm:px-4 md:px-6 bg-[#dbc494]">
         <div className="text-center mb-4 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black mb-2 sm:mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent" 
               style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '1px' }}>
@@ -262,7 +262,6 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
           ))}
         </div>
       </div>
-
       {/* Expanded Heat Dialog - Mobile Optimized */}
       <Dialog open={!!selectedHeat} onOpenChange={() => setSelectedHeat(null)}>
         <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
