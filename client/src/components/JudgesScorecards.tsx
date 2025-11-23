@@ -1008,11 +1008,11 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
             </div>
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.visualLatteArt === 'left'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.visualLatteArt === 'left'} readOnly />
                 <span className="text-sm">Left</span>
               </div>
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.visualLatteArt === 'right'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.visualLatteArt === 'right'} readOnly />
                 <span className="text-sm">Right</span>
               </div>
             </div>
@@ -1037,11 +1037,11 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
             </div>
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.taste === 'left'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.taste === 'left'} readOnly />
                 <span className="text-sm">Left</span>
               </div>
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.taste === 'right'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.taste === 'right'} readOnly />
                 <span className="text-sm">Right</span>
               </div>
             </div>
@@ -1054,11 +1054,11 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
             </div>
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.tactile === 'left'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.tactile === 'left'} readOnly />
                 <span className="text-sm">Left</span>
               </div>
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.tactile === 'right'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.tactile === 'right'} readOnly />
                 <span className="text-sm">Right</span>
               </div>
             </div>
@@ -1071,11 +1071,11 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
             </div>
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.flavour === 'left'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.flavour === 'left'} readOnly />
                 <span className="text-sm">Left</span>
               </div>
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.flavour === 'right'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.flavour === 'right'} readOnly />
                 <span className="text-sm">Right</span>
               </div>
             </div>
@@ -1088,11 +1088,11 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
             </div>
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.overall === 'left'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.overall === 'left'} readOnly />
                 <span className="text-sm font-medium">Left</span>
               </div>
               <div className="flex items-center gap-2">
-                <Checkbox checked={judge.overall === 'right'} disabled className="data-[state=checked]:bg-cinnamon-brown data-[state=checked]:border-cinnamon-brown" />
+                <Checkbox checked={judge.overall === 'right'} readOnly />
                 <span className="text-sm font-medium">Right</span>
               </div>
             </div>

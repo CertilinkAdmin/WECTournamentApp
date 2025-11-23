@@ -411,7 +411,7 @@ const WEC2025Results = () => {
                   data-testid={`card-round-${round}`}
                   style={{ height: `${dynamicHeight}px` }}
                 >
-                  <h3 className="round-card-title bg-[#fbfaf908]">{getRoundDisplayName(round)}</h3>
+                  <h3 className="round-card-title">{getRoundDisplayName(round)}</h3>
                   <div className="round-card-bracket">
                     {heatCount > 0 ? (
                       <svg 
@@ -522,7 +522,7 @@ const WEC2025Results = () => {
                     value={selectedRound.toString()}
                     onValueChange={(value) => setSelectedRound(parseInt(value))}
                   >
-                    <SelectTrigger className="w-auto min-w-[200px] bg-[#dcccb6] dark:bg-[#2d1b12] border-[#9a4828]/50 dark:border-cinnamon-brown/50 text-[#2d1b12] dark:text-white backdrop-blur-sm">
+                    <SelectTrigger className="w-auto min-w-[200px] bg-white/20 dark:bg-transparent border-white/40 dark:border-cinnamon-brown/50 text-white dark:text-white backdrop-blur-sm">
                       <SelectValue>
                         {getRoundDisplayName(selectedRound)}
                       </SelectValue>
@@ -573,7 +573,7 @@ const WEC2025Results = () => {
                   onClick={() => setSelectedHeat(match)}
                   data-testid={`card-heat-${match.id}`}
                 >
-                  <CardHeader className="pb-3 dark:bg-transparent rounded-t-lg border-b border-primary/20 bg-[#f2e6d3]">
+                  <CardHeader className="pb-3 bg-primary/5 dark:bg-transparent rounded-t-lg border-b border-primary/20">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-primary dark:text-cinnamon-brown">
                         Heat {match.heatNumber}
@@ -583,13 +583,13 @@ const WEC2025Results = () => {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3 bg-[#f2e6d3]">
+                  <CardContent className="space-y-3">
                     <div className="space-y-2">
                       <div
                         className={`flex items-center justify-between p-2 rounded-md border-2 ${
                           match.winnerId === match.competitor1Id
                             ? 'bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-800 border-primary/30'
-                            : 'bg-[#2d1b12] dark:bg-muted/50 border-primary/20 dark:border-border'
+                            : 'bg-secondary/40 dark:bg-muted/50 border-primary/20 dark:border-border'
                         }`}
                         data-testid={`competitor-1-${match.id}`}
                       >
@@ -601,7 +601,7 @@ const WEC2025Results = () => {
                               navigate(`/results/${tournamentSlug}/baristas/${encodedName}?heat=${match.heatNumber}`);
                             }
                           }}
-                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1 text-[#2d1b12] dark:text-white"
+                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1"
                           disabled={!match.competitor1Name || match.competitor1Name === 'BYE' || match.competitor1Name === 'SCRATCHED'}
                         >
                           {match.competitor1Name || '—'}
@@ -618,8 +618,8 @@ const WEC2025Results = () => {
                       <div
                         className={`flex items-center justify-between p-2 rounded-md border-2 ${
                           match.winnerId === match.competitor2Id
-                            ? 'bg-[#9a4828] dark:bg-green-950 dark:border-green-800 border-primary/30'
-                            : 'bg-[#a24111] dark:bg-muted/50 border-primary/20 dark:border-border'
+                            ? 'bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-800 border-primary/30'
+                            : 'bg-secondary/40 dark:bg-muted/50 border-primary/20 dark:border-border'
                         }`}
                         data-testid={`competitor-2-${match.id}`}
                       >
@@ -631,7 +631,7 @@ const WEC2025Results = () => {
                               navigate(`/results/${tournamentSlug}/baristas/${encodedName}?heat=${match.heatNumber}`);
                             }
                           }}
-                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1 text-[#2d1b12] dark:text-white"
+                          className="text-base font-medium truncate hover:underline cursor-pointer text-left flex-1"
                           disabled={!match.competitor2Name || match.competitor2Name === 'BYE' || match.competitor2Name === 'SCRATCHED'}
                         >
                           {match.competitor2Name || '—'}

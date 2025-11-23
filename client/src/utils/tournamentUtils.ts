@@ -41,6 +41,7 @@ export function extractTournamentSlug(tournamentName: string): string | null {
 /**
  * Find tournament by slug
  * Matches tournaments by year extracted from slug
+ * Prioritizes tournaments with "Milano" in the name and higher IDs (more recent)
  */
 export function findTournamentBySlug(
   tournaments: Array<{ id: number; name: string }>,
@@ -52,20 +53,33 @@ export function findTournamentBySlug(
   
   const year = yearMatch[1];
   
-  // Find tournament that contains this year
-  // Prioritize "World Espresso Championships" matches
-  let tournament = tournaments.find(t => {
+  // Find all tournaments that match the year
+  const matchingTournaments = tournaments.filter(t => {
     const nameLower = t.name.toLowerCase();
-    return nameLower.includes('world espresso championships') && nameLower.includes(year);
+    return nameLower.includes('world espresso championships') && t.name.includes(year);
   });
   
-  // If not found, try any tournament with that year
-  if (!tournament) {
-    tournament = tournaments.find(t => 
-      t.name.includes(year)
-    );
+  if (matchingTournaments.length === 0) {
+    // If no "World Espresso Championships" matches, try any tournament with that year
+    const anyMatch = tournaments.find(t => t.name.includes(year));
+    return anyMatch || null;
   }
   
-  return tournament || null;
+  // If multiple matches, prioritize:
+  // 1. Tournaments with "Milano" in the name (more specific)
+  // 2. Higher ID (more recent/complete data)
+  const milanoTournaments = matchingTournaments.filter(t => 
+    t.name.toLowerCase().includes('milano')
+  );
+  
+  if (milanoTournaments.length > 0) {
+    // Sort by ID descending (highest ID = most recent)
+    milanoTournaments.sort((a, b) => b.id - a.id);
+    return milanoTournaments[0];
+  }
+  
+  // If no Milano tournaments, return the one with highest ID
+  matchingTournaments.sort((a, b) => b.id - a.id);
+  return matchingTournaments[0];
 }
 

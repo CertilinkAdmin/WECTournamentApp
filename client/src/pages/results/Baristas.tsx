@@ -65,12 +65,29 @@ const Baristas: React.FC<BaristasProps> = () => {
     enabled: !!tournament?.id,
   });
 
-  // Always use the specified tournament baristas
+  // Use fetched participants from API/database
   const baristas = useMemo(() => {
-    // Always use the fallback baristas list for the tournament
-    console.log('Using tournament baristas:', FALLBACK_BARISTAS.map(b => b.name));
-    return FALLBACK_BARISTAS;
-  }, []);
+    if (!participants || participants.length === 0) {
+      // Only use fallback if no data from API
+      console.log('No participants from API, using fallback baristas:', FALLBACK_BARISTAS.map(b => b.name));
+      return FALLBACK_BARISTAS;
+    }
+    
+    // Transform participants from database to baristas format
+    const baristasList = participants
+      .filter((p: any) => p.name) // Only include participants with names
+      .map((p: any, index: number) => ({
+        id: p.id || p.userId || index + 1,
+        name: p.name,
+        rank: p.finalRank || index + 1
+      }))
+      .sort((a, b) => (a.rank || 999) - (b.rank || 999)); // Sort by rank
+    
+    console.log('Using tournament baristas from API/database:', baristasList.map(b => b.name));
+    
+    // Use API data if available, otherwise fallback
+    return baristasList.length > 0 ? baristasList : FALLBACK_BARISTAS;
+  }, [participants]);
 
   const getZindex = (array: any[], index: number) => {
     return array.map((_, i) => 
@@ -106,12 +123,13 @@ const Baristas: React.FC<BaristasProps> = () => {
   };
 
   const handleMouseMove = (e: MouseEvent | TouchEvent) => {
-    const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
+    const clientX = 'touches' in e ? e.touches[0]?.clientX : (e as MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0]?.clientY : (e as MouseEvent).clientY;
     
     // Update cursor position
     const cursors = document.querySelectorAll('.cursor');
     cursors.forEach((cursor) => {
-      (cursor as HTMLElement).style.transform = `translate(${clientX}px, ${(e as MouseEvent).clientY || e.touches[0]?.clientY || 0}px)`;
+      (cursor as HTMLElement).style.transform = `translate(${clientX}px, ${clientY || 0}px)`;
     });
 
     if (!isDown || !clientX) return;

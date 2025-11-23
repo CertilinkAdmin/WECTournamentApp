@@ -357,7 +357,7 @@ const JudgeScorecardsResults: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen tournament-bracket-bg p-6 bg-[#dcccb6]">
+    <div className="min-h-screen tournament-bracket-bg p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
@@ -366,7 +366,7 @@ const JudgeScorecardsResults: React.FC = () => {
             <h1 className="text-4xl font-bold text-primary">WEC25 Judge Scorecards</h1>
             <Users className="h-12 w-12 text-primary" />
           </div>
-          <p className="text-xl text-[#d9d4d1]">
+          <p className="text-xl text-muted-foreground">
             Complete judge scorecards and detailed scoring breakdown for all heats
           </p>
         </div>
@@ -617,7 +617,7 @@ const JudgeScorecardsResults: React.FC = () => {
                                   key={category}
                                   className="relative grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]"
                                 >
-                                  <label className="flex items-center gap-2 justify-start text-[#93401f]">
+                                  <label className="flex items-center gap-2 justify-start">
                                     <input 
                                       type="checkbox" 
                                       checked={judgeVote === 'left'} 
@@ -664,7 +664,7 @@ const JudgeScorecardsResults: React.FC = () => {
                               >
                                 <Card className="border-l-4 border-l-primary bg-card">
                                   <CardHeader className="pb-3 relative z-10">
-                                    <CardTitle className="text-lg flex items-center gap-2 group-hover/judge:text-primary transition-colors duration-300 text-[#93401f]">
+                                    <CardTitle className="text-lg flex items-center gap-2 group-hover/judge:text-primary transition-colors duration-300">
                                       <Users className="h-5 w-5" />
                                       <span className="font-bold">{judge.judgeName}</span>
                                     </CardTitle>
@@ -722,7 +722,7 @@ const JudgeScorecardsResults: React.FC = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className={`group/competitor p-6 rounded-xl border-2 relative ${
                     currentHeat.winner === currentHeat.competitor1 
-                      ? 'border-primary bg-[#2d1b12]' 
+                      ? 'border-primary bg-secondary' 
                       : 'border-border bg-card'
                   }`}>
                     <div className="font-medium text-sm text-gray-600 mb-2">Left Competitor</div>
@@ -748,7 +748,7 @@ const JudgeScorecardsResults: React.FC = () => {
                   
                   <div className={`group/competitor p-6 rounded-xl border-2 relative ${
                     currentHeat.winner === currentHeat.competitor2 
-                      ? 'border-primary bg-[#2d1b12]' 
+                      ? 'border-primary bg-secondary' 
                       : 'border-border bg-card'
                   }`}>
                     <div className="font-medium text-sm text-gray-600 mb-2">Right Competitor</div>

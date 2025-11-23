@@ -48,16 +48,94 @@ const Judges: React.FC<JudgesProps> = () => {
   const [startX, setStartX] = useState(0);
   const [active, setActive] = useState(0);
   const [isDown, setIsDown] = useState(false);
+  const [tournamentData, setTournamentData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   
   const speedWheel = 0.02;
   const speedDrag = -0.1;
 
-  // Always use the specified tournament judges (fallback list)
+  // Fetch tournament data from API/database
+  useEffect(() => {
+    const fetchTournamentData = async () => {
+      try {
+        setLoading(true);
+        const tournamentsResponse = await fetch('/api/tournaments');
+        if (!tournamentsResponse.ok) {
+          throw new Error('Failed to fetch tournaments');
+        }
+        const tournaments = await tournamentsResponse.json();
+        
+        // Try to find tournament by slug, or fallback to WEC 2025 Milano
+        let tournamentId: number | null = null;
+        if (tournamentSlug) {
+          const tournament = findTournamentBySlug(tournaments, tournamentSlug);
+          tournamentId = tournament?.id || null;
+        }
+        
+        // Fallback: try to find WEC 2025 Milano if no slug provided or not found
+        if (!tournamentId) {
+          const wec2025 = tournaments.find((t: any) => 
+            t.name === 'World Espresso Championships 2025 Milano'
+          );
+          tournamentId = wec2025?.id || null;
+        }
+        
+        if (!tournamentId) {
+          console.warn('Tournament not found, using fallback judges');
+          setTournamentData(null);
+          setLoading(false);
+          return;
+        }
+        
+        const response = await fetch(`/api/tournaments/${tournamentId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch tournament data');
+        }
+        const data = await response.json();
+        console.log('Judges: Fetched tournament data from API:', { 
+          tournament: data.tournament?.name, 
+          scoresCount: data.scores?.length 
+        });
+        setTournamentData(data);
+      } catch (err) {
+        console.error('Error fetching tournament data:', err);
+        setTournamentData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTournamentData();
+  }, [tournamentSlug]);
+
+  // Extract unique judges from tournament scores (from API/database)
   const judges = useMemo(() => {
-    // Always use the fallback judges list for the tournament
-    console.log('Using tournament judges:', FALLBACK_JUDGES.map(j => j.name));
-    return FALLBACK_JUDGES;
-  }, []);
+    if (!tournamentData?.scores || tournamentData.scores.length === 0) {
+      // Only use fallback if no data from API
+      console.log('No scores from API, using fallback judges:', FALLBACK_JUDGES.map(j => j.name));
+      return FALLBACK_JUDGES;
+    }
+    
+    // Extract unique judges from scores (from database via API)
+    const judgeMap = new Map<number, { id: number; name: string; rank: number }>();
+    tournamentData.scores.forEach((score: any) => {
+      if (score.judgeId && score.judgeName) {
+        if (!judgeMap.has(score.judgeId)) {
+          judgeMap.set(score.judgeId, {
+            id: score.judgeId,
+            name: score.judgeName,
+            rank: judgeMap.size + 1
+          });
+        }
+      }
+    });
+    
+    const judgesList = Array.from(judgeMap.values());
+    console.log('Using tournament judges from API/database:', judgesList.map(j => j.name));
+    
+    // Use API data if available, otherwise fallback
+    return judgesList.length > 0 ? judgesList : FALLBACK_JUDGES;
+  }, [tournamentData]);
 
   const getZindex = (array: any[], index: number) => {
     return array.map((_, i) => 
