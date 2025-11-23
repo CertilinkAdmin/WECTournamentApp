@@ -17,14 +17,14 @@ const AppHeader: React.FC<AppHeaderProps> = ({ className = '', logoSize = 'small
     large: 'h-20'
   }[logoSize];
 
-  // More vibrant orange for light mode - using primary color
+  // Sand beige for light mode, cinnamon brown for dark mode
   const headerBgColor = theme === 'light' 
-    ? 'bg-primary' 
+    ? 'bg-secondary' 
     : 'bg-primary/80';
 
   return (
     <header 
-      className={`${headerBgColor} backdrop-blur-sm text-primary-foreground border-b border-primary-border/50 ${className}`}
+      className={`${headerBgColor} backdrop-blur-sm ${theme === 'light' ? 'text-secondary-foreground' : 'text-primary-foreground'} border-b border-primary-border/50 ${className}`}
     >
       <div className="px-4 py-4 flex items-center justify-between">
         {/* Left: Home Button */}
