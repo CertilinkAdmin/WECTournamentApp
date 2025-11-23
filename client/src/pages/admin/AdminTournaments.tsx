@@ -64,7 +64,7 @@ export default function AdminTournaments() {
     queryKey: ['/api/tournaments', selectedTournamentId, 'participants'],
     queryFn: async () => {
       if (!selectedTournamentId) return [];
-      const response = await fetch(`/api/tournaments/${selectedTournamentId}/participants`);
+      const response = await fetch(`/api/tournaments/${selectedTournamentId}/participants?includeJudges=true`);
       if (!response.ok) {
         console.error('Failed to fetch participants:', response.status, response.statusText);
         throw new Error('Failed to fetch participants');
@@ -714,20 +714,31 @@ export default function AdminTournaments() {
                               </div>
                               <Button
                                 size="sm"
-                                onClick={() => {
-                                  const newSeed = maxSeed + 1;
-                                  fetch(`/api/tournaments/${selectedTournamentId}/participants/${barista.id}/seed`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    credentials: 'include',
-                                    body: JSON.stringify({ seed: newSeed })
-                                  }).then(() => {
+                                onClick={async () => {
+                                  try {
+                                    const newSeed = maxSeed + 1;
+                                    const response = await fetch(`/api/tournaments/${selectedTournamentId}/participants/${barista.id}/seed`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      credentials: 'include',
+                                      body: JSON.stringify({ seed: newSeed })
+                                    });
+                                    if (!response.ok) {
+                                      const error = await response.json().catch(() => ({ error: 'Failed to approve competitor' }));
+                                      throw new Error(error.error || 'Failed to approve competitor');
+                                    }
                                     queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
                                     toast({
                                       title: 'Competitor Approved',
                                       description: `${barista.name} has been approved for this tournament.`,
                                     });
-                                  });
+                                  } catch (error: any) {
+                                    toast({
+                                      title: 'Error',
+                                      description: error.message || 'Failed to approve competitor',
+                                      variant: 'destructive'
+                                    });
+                                  }
                                 }}
                               >
                                 <CheckCircle2 className="h-4 w-4 mr-1" />
@@ -815,19 +826,30 @@ export default function AdminTournaments() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  fetch(`/api/tournaments/${selectedTournamentId}/participants`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    credentials: 'include',
-                                    body: JSON.stringify({ userId: judge.id, seed: 0 })
-                                  }).then(() => {
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(`/api/tournaments/${selectedTournamentId}/participants`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      credentials: 'include',
+                                      body: JSON.stringify({ userId: judge.id, seed: 0 })
+                                    });
+                                    if (!response.ok) {
+                                      const error = await response.json().catch(() => ({ error: 'Failed to add judge' }));
+                                      throw new Error(error.error || 'Failed to add judge');
+                                    }
                                     queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
                                     toast({
                                       title: 'Judge Added',
                                       description: `${judge.name} has been added to the tournament.`,
                                     });
-                                  });
+                                  } catch (error: any) {
+                                    toast({
+                                      title: 'Error',
+                                      description: error.message || 'Failed to add judge',
+                                      variant: 'destructive'
+                                    });
+                                  }
                                 }}
                               >
                                 <Plus className="h-3 w-3 mr-1" />
@@ -866,20 +888,31 @@ export default function AdminTournaments() {
                               </div>
                               <Button
                                 size="sm"
-                                onClick={() => {
-                                  const newSeed = maxSeed + 1;
-                                  fetch(`/api/tournaments/${selectedTournamentId}/participants/${judge.id}/seed`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    credentials: 'include',
-                                    body: JSON.stringify({ seed: newSeed })
-                                  }).then(() => {
+                                onClick={async () => {
+                                  try {
+                                    const newSeed = maxSeed + 1;
+                                    const response = await fetch(`/api/tournaments/${selectedTournamentId}/participants/${judge.id}/seed`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      credentials: 'include',
+                                      body: JSON.stringify({ seed: newSeed })
+                                    });
+                                    if (!response.ok) {
+                                      const error = await response.json().catch(() => ({ error: 'Failed to approve judge' }));
+                                      throw new Error(error.error || 'Failed to approve judge');
+                                    }
                                     queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
                                     toast({
                                       title: 'Judge Approved',
                                       description: `${judge.user?.name} has been approved for this tournament.`,
                                     });
-                                  });
+                                  } catch (error: any) {
+                                    toast({
+                                      title: 'Error',
+                                      description: error.message || 'Failed to approve judge',
+                                      variant: 'destructive'
+                                    });
+                                  }
                                 }}
                               >
                                 <CheckCircle2 className="h-4 w-4 mr-1" />
