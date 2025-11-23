@@ -411,7 +411,23 @@ const WEC2025Results = () => {
                   data-testid={`card-round-${round}`}
                   style={{ height: `${dynamicHeight}px` }}
                 >
-                  <h3 className="round-card-title bg-[#fbfaf908]">{getRoundDisplayName(round)}</h3>
+                  <h3 className="round-card-title bg-[#fbfaf908] flex items-center justify-center gap-3">
+                    {round === 5 && (
+                      <img 
+                        src="/trophy.png" 
+                        alt="Championship Trophy" 
+                        className="h-8 w-8 object-contain"
+                      />
+                    )}
+                    {getRoundDisplayName(round)}
+                    {round === 5 && (
+                      <img 
+                        src="/trophy.png" 
+                        alt="Championship Trophy" 
+                        className="h-8 w-8 object-contain"
+                      />
+                    )}
+                  </h3>
                   <div className="round-card-bracket">
                     {heatCount > 0 ? (
                       <svg 
