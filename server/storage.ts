@@ -206,7 +206,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllStations(): Promise<Station[]> {
+    // WARNING: This returns stations from all tournaments
+    // Prefer getTournamentStations(tournamentId) for proper partitioning
     return await db.select().from(stations);
+  }
+
+  async getTournamentStations(tournamentId: number): Promise<Station[]> {
+    return await db.select()
+      .from(stations)
+      .where(eq(stations.tournamentId, tournamentId));
   }
 
   async updateStation(id: number, data: Partial<InsertStation>): Promise<Station | undefined> {

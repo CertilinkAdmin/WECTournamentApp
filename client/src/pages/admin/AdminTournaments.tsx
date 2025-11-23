@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,13 +35,42 @@ export default function AdminTournaments() {
   const [selectedRound, setSelectedRound] = useState(1);
 
   // Fetch tournaments
-  const { data: tournaments = [] } = useQuery<Tournament[]>({
+  const { data: tournaments = [], isLoading: tournamentsLoading } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
+    queryFn: async () => {
+      const response = await fetch('/api/tournaments');
+      if (!response.ok) {
+        console.error('Failed to fetch tournaments:', response.status, response.statusText);
+        throw new Error('Failed to fetch tournaments');
+      }
+      const data = await response.json();
+      console.log('Fetched tournaments:', data);
+      return data;
+    },
   });
 
+  // Auto-select first tournament if none selected and tournaments are available
+  useEffect(() => {
+    if (tournaments.length > 0 && !selectedTournamentId && !tournamentsLoading) {
+      console.log('Auto-selecting first tournament:', tournaments[0]);
+      setSelectedTournamentId(tournaments[0].id);
+    }
+  }, [tournaments, selectedTournamentId, tournamentsLoading]);
+
   // Fetch participants for selected tournament
-  const { data: participants = [] } = useQuery<TournamentParticipant[]>({
+  const { data: participants = [], isLoading: participantsLoading } = useQuery<TournamentParticipant[]>({
     queryKey: ['/api/tournaments', selectedTournamentId, 'participants'],
+    queryFn: async () => {
+      if (!selectedTournamentId) return [];
+      const response = await fetch(`/api/tournaments/${selectedTournamentId}/participants`);
+      if (!response.ok) {
+        console.error('Failed to fetch participants:', response.status, response.statusText);
+        throw new Error('Failed to fetch participants');
+      }
+      const data = await response.json();
+      console.log('Fetched participants:', data);
+      return data;
+    },
     enabled: !!selectedTournamentId,
   });
 
@@ -51,8 +80,19 @@ export default function AdminTournaments() {
   });
 
   // Fetch matches for selected tournament
-  const { data: matches = [] } = useQuery<Match[]>({
+  const { data: matches = [], isLoading: matchesLoading } = useQuery<Match[]>({
     queryKey: ['/api/tournaments', selectedTournamentId, 'matches'],
+    queryFn: async () => {
+      if (!selectedTournamentId) return [];
+      const response = await fetch(`/api/tournaments/${selectedTournamentId}/matches`);
+      if (!response.ok) {
+        console.error('Failed to fetch matches:', response.status, response.statusText);
+        throw new Error('Failed to fetch matches');
+      }
+      const data = await response.json();
+      console.log('Fetched matches:', data);
+      return data;
+    },
     enabled: !!selectedTournamentId,
   });
 
@@ -176,25 +216,32 @@ export default function AdminTournaments() {
   const generateBracketMutation = useMutation({
     mutationFn: async () => {
       if (!selectedTournamentId) throw new Error("No tournament selected");
-      const response = await fetch(`/api/tournaments/${selectedTournamentId}/seed`, {
+      const response = await fetch(`/api/tournaments/${selectedTournamentId}/generate-bracket`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       });
-      if (!response.ok) throw new Error('Failed to generate bracket');
-      return response.json();
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to generate bracket' }));
+        throw new Error(error.error || 'Failed to generate bracket');
+      }
+      const data = await response.json();
+      console.log('Bracket generated:', data);
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'matches'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
       toast({
         title: "Bracket Generated",
-        description: "Tournament bracket has been generated from seeds.",
+        description: `Tournament bracket generated with ${data.matchesCreated || 0} matches.`,
       });
     },
     onError: (error: any) => {
+      console.error('Error generating bracket:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || 'Failed to generate bracket',
         variant: "destructive"
       });
     }
@@ -436,24 +483,34 @@ export default function AdminTournaments() {
                       </>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
+                    {baristaParticipants.length === 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        No barista participants found. Add participants first.
+                      </div>
+                    )}
                     {baristaParticipants.length > 0 && currentRoundHeats.length === 0 && (
                       <Button
                         onClick={() => generateBracketMutation.mutate()}
-                        disabled={generateBracketMutation.isPending}
+                        disabled={generateBracketMutation.isPending || participantsLoading}
                       >
                         {generateBracketMutation.isPending ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Generating...
+                            Generating Bracket...
                           </>
                         ) : (
                           <>
                             <Plus className="h-4 w-4 mr-2" />
-                            Generate Bracket from Seeds
+                            Generate Bracket ({baristaParticipants.length} participants)
                           </>
                         )}
                       </Button>
+                    )}
+                    {currentRoundHeats.length > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        Bracket already generated with {currentRoundHeats.length} heats in Round {selectedRound}
+                      </div>
                     )}
                     {currentRoundHeats.length > 0 && (
                       <Button

@@ -19,9 +19,14 @@ export default function BottomNav() {
   // Check screen size and orientation
   useEffect(() => {
     const checkScreenSize = () => {
-      const isDesktopSize = window.innerWidth >= 768; // md breakpoint
+      // Desktop: >= 1024px (lg breakpoint)
+      // Tablet: 768px - 1023px (md breakpoint)
+      // Mobile: < 768px
+      const width = window.innerWidth;
+      const isDesktopSize = width >= 1024;
+      const isTabletSize = width >= 768 && width < 1024;
       const isLandscape = window.innerWidth > window.innerHeight && window.innerWidth >= 640;
-      setIsDesktop(isDesktopSize || isLandscape);
+      setIsDesktop(isDesktopSize || isTabletSize || isLandscape);
     };
     
     checkScreenSize();
@@ -137,10 +142,10 @@ export default function BottomNav() {
     const active = isActive(button.path);
     
     const baseClasses = isDrawer
-      ? `flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all ${
+      ? `flex items-center gap-3 w-full px-4 py-3 md:px-5 md:py-4 rounded-lg transition-all ${
           active
-            ? 'bg-primary text-primary-foreground font-semibold'
-            : 'text-foreground hover:bg-muted'
+            ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
+            : 'text-foreground hover:bg-muted/50'
         }`
       : `flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all ${
           active
@@ -156,8 +161,8 @@ export default function BottomNav() {
         className={baseClasses}
         data-testid={`nav-${isDrawer ? 'drawer' : 'bottom'}-${button.label.toLowerCase().replace(/\s+/g, '-')}`}
       >
-        <Icon className={isDrawer ? 'h-5 w-5' : 'h-5 w-5'} />
-        <span className={isDrawer ? 'text-base font-medium' : 'text-xs font-medium'}>{button.label}</span>
+        <Icon className={isDrawer ? 'h-5 w-5 md:h-6 md:w-6 flex-shrink-0' : 'h-5 w-5'} />
+        <span className={isDrawer ? 'text-base md:text-lg font-medium' : 'text-xs font-medium'}>{button.label}</span>
       </Link>
     );
   };
@@ -170,15 +175,20 @@ export default function BottomNav() {
           <Button
             variant="outline"
             size="icon"
-            className="fixed top-4 right-4 z-[100] bg-cinnamon-brown/95 backdrop-blur-md border-light-sand/20 text-light-sand hover:bg-cinnamon-brown hover:text-light-sand md:top-6 md:right-6"
+            className="fixed z-[60] bg-cinnamon-brown/95 backdrop-blur-md border-light-sand/20 text-light-sand hover:bg-cinnamon-brown hover:text-light-sand shadow-lg
+              top-20 right-4 md:top-24 md:right-6 lg:top-6 lg:right-6
+              h-10 w-10 md:h-12 md:w-12"
             aria-label="Open navigation menu"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-5 w-5 md:h-6 md:w-6" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[280px] sm:w-[320px] bg-background border-l border-border">
-          <SheetHeader>
-            <SheetTitle className="text-left text-xl font-bold text-foreground">Navigation</SheetTitle>
+        <SheetContent 
+          side="right" 
+          className="w-[280px] sm:w-[320px] md:w-[360px] lg:w-[400px] bg-background border-l border-border z-[70] pt-6"
+        >
+          <SheetHeader className="pb-4 border-b border-border">
+            <SheetTitle className="text-left text-xl md:text-2xl font-bold text-foreground">Navigation</SheetTitle>
           </SheetHeader>
           <nav className="mt-6 space-y-2">
             {navButtons.map((button) => renderNavButton(button, true))}

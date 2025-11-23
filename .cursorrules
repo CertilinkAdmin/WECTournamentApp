@@ -1,0 +1,122 @@
+# OPUX - Optimized Performance & User Experience Workflow
+
+## Overview
+OPUX is a systematic workflow for identifying, fixing, and optimizing web application performance, accessibility, and responsive design issues using MCP (Model Context Protocol) tools.
+
+## Workflow Steps
+
+### 1. Lighthouse MCP → Find Problems
+**Purpose**: Run a mobile Lighthouse audit to identify issues
+
+**Actions**:
+- Run mobile Lighthouse audit on the app
+- Generate structured report with:
+  - Layout issues (overflow, CLS, bad viewport)
+  - Performance issues
+  - Accessibility issues
+- Output: JSON/markdown with specific URLs, selectors, and problem descriptions
+
+**MCP Command**: Use Lighthouse MCP to audit the application
+
+### 2. Responsive Refactor MCP → Fix Layout
+**Purpose**: Convert fixed layouts to responsive designs
+
+**Input**:
+- Relevant source files (components, pages, CSS)
+- Lighthouse mobile issues summary
+
+**Tasks**:
+- Convert fixed-width layouts to responsive grid/flex
+- Add breakpoints (sm, md, lg) with mobile-first behavior
+- Adjust font sizes, spacing, tap targets for mobile
+- Fix overflow issues
+- Improve CLS (Cumulative Layout Shift)
+- Fix viewport issues
+
+**MCP Command**: Use Responsive Refactor MCP to transform layouts
+
+### 3. Tailwind Optimizer MCP → Clean Up & Enforce Patterns
+**Purpose**: Normalize and optimize Tailwind CSS usage
+
+**Input**:
+- Modified files from Responsive Refactor step
+
+**Tasks**:
+- Normalize class naming & composition
+- Reduce duplicated utilities
+- Enforce Tailwind design system:
+  - Spacing scale consistency
+  - Color system alignment
+  - Typography scale
+- Replace ad-hoc styles with consistent utilities
+- Generate/align with Tailwind theme config
+
+**MCP Command**: Use Tailwind Optimizer MCP to clean up styles
+
+### 4. Lighthouse MCP (Again) → Verify
+**Purpose**: Confirm improvements
+
+**Actions**:
+- Re-run mobile Lighthouse audit
+- Confirm original problems are improved or resolved
+- If issues persist, iterate through steps 2-4
+
+**MCP Command**: Use Lighthouse MCP to verify improvements
+
+## Workflow Diagram
+
+```
+Lighthouse MCP (Audit)
+    ↓
+[Find Problems]
+    ↓
+Responsive Refactor MCP
+    ↓
+[Fix Layout Issues]
+    ↓
+Tailwind Optimizer MCP
+    ↓
+[Clean & Normalize]
+    ↓
+Lighthouse MCP (Verify)
+    ↓
+[Confirm Improvements]
+    ↓
+(If issues persist → Iterate)
+```
+
+## Key Principles
+
+1. **Mobile-First**: Always start with mobile viewport and scale up
+2. **Data-Driven**: Let Lighthouse findings drive what needs to be fixed
+3. **Systematic**: Follow the workflow in order - don't skip steps
+4. **Iterative**: Repeat until Lighthouse scores meet targets
+5. **Consistent**: Use Tailwind design system patterns throughout
+
+## Target Metrics
+
+- **Performance**: 90+ score
+- **Accessibility**: 95+ score
+- **Best Practices**: 95+ score
+- **SEO**: 90+ score
+- **CLS**: < 0.1
+- **No horizontal overflow** on mobile
+- **Proper viewport** configuration
+
+## When to Use OPUX
+
+- Before major releases
+- After adding new pages/components
+- When Lighthouse scores drop
+- When users report mobile issues
+- During regular maintenance cycles
+- After design system updates
+
+## Integration with Development
+
+OPUX should be integrated into:
+- Pre-commit hooks (optional)
+- CI/CD pipeline (recommended)
+- Code review process
+- Release checklist
+

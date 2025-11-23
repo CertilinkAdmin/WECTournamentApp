@@ -52,7 +52,7 @@ const ResultsLayout: React.FC = () => {
       {!shouldHideHeader && <AppHeader />}
 
       {/* Content */}
-      <main className="flex-1 pb-20 md:pb-0">
+      <main className="flex-1 pb-20 md:pb-6 lg:pb-8">
         <Outlet />
       </main>
     </div>

@@ -121,10 +121,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tournamentData = insertTournamentSchema.parse(req.body);
       const tournament = await storage.createTournament(tournamentData);
       
-      // Create default stations
-      await storage.createStation({ name: "A", status: "AVAILABLE", nextAvailableAt: new Date() });
-      await storage.createStation({ name: "B", status: "AVAILABLE", nextAvailableAt: new Date() });
-      await storage.createStation({ name: "C", status: "AVAILABLE", nextAvailableAt: new Date() });
+      // Create tournament-specific stations (with tournament_id)
+      await storage.createStation({ 
+        tournamentId: tournament.id,
+        name: "A", 
+        status: "AVAILABLE", 
+        nextAvailableAt: new Date() 
+      });
+      await storage.createStation({ 
+        tournamentId: tournament.id,
+        name: "B", 
+        status: "AVAILABLE", 
+        nextAvailableAt: new Date() 
+      });
+      await storage.createStation({ 
+        tournamentId: tournament.id,
+        name: "C", 
+        status: "AVAILABLE", 
+        nextAvailableAt: new Date() 
+      });
       
       io.emit("tournament:created", tournament);
       res.json(tournament);

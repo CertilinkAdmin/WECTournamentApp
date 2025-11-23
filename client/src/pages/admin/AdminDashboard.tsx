@@ -10,10 +10,145 @@ import { Switch } from '@/components/ui/switch';
 import { 
   Activity, Users, Database, Pause, Play, Trash2, Plus, 
   Image, Settings, AlertTriangle, CheckCircle2, XCircle,
-  Server, Cpu, HardDrive, Wifi, Clock
+  Server, Cpu, HardDrive, Wifi, Clock, Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import './AdminDashboard.css';
+
+// Test Tournament Form Component
+const TestTournamentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
+  const { toast } = useToast();
+  const [tournamentName, setTournamentName] = useState('Test Tournament');
+  const [numBaristas, setNumBaristas] = useState(16);
+  const [numJudges, setNumJudges] = useState(9);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleCreate = async () => {
+    if (numBaristas < 2 || numBaristas > 64) {
+      toast({
+        title: 'Invalid Input',
+        description: 'Number of baristas must be between 2 and 64',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (numJudges < 1 || numJudges > 20) {
+      toast({
+        title: 'Invalid Input',
+        description: 'Number of judges must be between 1 and 20',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const response = await fetch('/api/admin/seed-test-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournamentName,
+          numBaristas,
+          numJudges
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        onSuccess();
+        toast({
+          title: 'Test Tournament Created',
+          description: data.message || 'Test tournament created successfully.',
+        });
+        // Reset form
+        setTournamentName('Test Tournament');
+        setNumBaristas(16);
+        setNumJudges(9);
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create test data');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="tournament-name">Tournament Name</Label>
+          <Input
+            id="tournament-name"
+            value={tournamentName}
+            onChange={(e) => setTournamentName(e.target.value)}
+            placeholder="Test Tournament"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="num-baristas">
+            Number of Baristas
+            <span className="text-xs text-muted-foreground ml-2">(2-64)</span>
+          </Label>
+          <Input
+            id="num-baristas"
+            type="number"
+            min="2"
+            max="64"
+            value={numBaristas}
+            onChange={(e) => setNumBaristas(parseInt(e.target.value) || 16)}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="num-judges">
+            Number of Judges
+            <span className="text-xs text-muted-foreground ml-2">(1-20)</span>
+          </Label>
+          <Input
+            id="num-judges"
+            type="number"
+            min="1"
+            max="20"
+            value={numJudges}
+            onChange={(e) => setNumJudges(parseInt(e.target.value) || 9)}
+          />
+        </div>
+      </div>
+      
+      <Button
+        onClick={handleCreate}
+        disabled={isCreating || !tournamentName.trim()}
+        className="w-full"
+      >
+        {isCreating ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Creating Test Tournament...
+          </>
+        ) : (
+          <>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Test Tournament
+          </>
+        )}
+      </Button>
+      
+      <p className="text-xs text-muted-foreground">
+        💡 Test tournaments are automatically marked and isolated from real tournament data.
+        All test users have unique emails to prevent conflicts.
+      </p>
+    </div>
+  );
+};
 
 interface SystemStats {
   uptime: number;
@@ -638,45 +773,15 @@ const AdminDashboard: React.FC = () => {
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   Create test tournaments with sample baristas and judges for development and testing.
+                  Test tournaments are isolated and won't mix with real tournament data.
                 </p>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={async () => {
-                      try {
-                        const response = await fetch('/api/admin/seed-test-data', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            tournamentName: 'Test Tournament',
-                            numBaristas: 16,
-                            numJudges: 9
-                          })
-                        });
-                        if (response.ok) {
-                          const data = await response.json();
-                          queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
-                          queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-                          toast({
-                            title: 'Test Data Created',
-                            description: data.message || 'Test tournament created successfully.',
-                          });
-                        } else {
-                          const error = await response.json();
-                          throw new Error(error.error || 'Failed to create test data');
-                        }
-                      } catch (error: any) {
-                        toast({
-                          title: 'Error',
-                          description: error.message,
-                          variant: 'destructive',
-                        });
-                      }
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Test Tournament
-                  </Button>
-                </div>
+                
+                <TestTournamentForm 
+                  onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+                  }}
+                />
               </CardContent>
             </Card>
 

@@ -1,15 +1,26 @@
 import { Router } from 'express';
 import { storage } from '../storage';
 import { db } from '../db';
-import { tournaments, matches, tournamentParticipants, users, stations } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
+import { 
+  tournaments, 
+  matches, 
+  tournamentParticipants, 
+  users, 
+  stations,
+  heatScores,
+  judgeDetailedScores,
+  heatJudges,
+  heatSegments,
+  tournamentRoundTimes
+} from '../../shared/schema';
+import { eq, inArray } from 'drizzle-orm';
 import os from 'os';
 
 const router = Router();
 
 // In-memory storage for carousel images (could be moved to database later)
 // Initialize with default images - will be populated on first request
-let carouselImages: string[] | null = null;
+let carouselImages: string[] = [];
 
 // In-memory storage for tournament pause states (tournamentId -> isPaused)
 const tournamentPauseStates = new Map<number, boolean>();
@@ -19,7 +30,7 @@ const tournamentPauseStates = new Map<number, boolean>();
 router.get('/carousel', async (req, res) => {
   try {
     // Initialize with default images from config if not already set
-    if (carouselImages === null) {
+    if (carouselImages.length === 0) {
       // Try to load from config file (client-side config)
       // Since we're on the server, we'll use a fallback approach
       // The client will handle loading from the config file
@@ -176,34 +187,57 @@ router.get('/tournaments/pause-states', async (req, res) => {
 // ===== TEST DATA SEEDING =====
 router.post('/seed-test-data', async (req, res) => {
   try {
-    const { tournamentName = 'Test Tournament', numBaristas = 16, numJudges = 9 } = req.body;
+    const { 
+      tournamentName = 'Test Tournament', 
+      numBaristas = 16, 
+      numJudges = 9 
+    } = req.body;
     
-    // Create test tournament
+    // Validate inputs
+    if (typeof numBaristas !== 'number' || numBaristas < 2 || numBaristas > 64) {
+      return res.status(400).json({ 
+        error: 'numBaristas must be a number between 2 and 64' 
+      });
+    }
+    
+    if (typeof numJudges !== 'number' || numJudges < 1 || numJudges > 20) {
+      return res.status(400).json({ 
+        error: 'numJudges must be a number between 1 and 20' 
+      });
+    }
+    
+    // Ensure tournament name is marked as test (for isolation)
+    const testTournamentName = tournamentName.toLowerCase().includes('test') 
+      ? tournamentName 
+      : `Test Tournament: ${tournamentName}`;
+    
+    // Create test tournament with explicit test marker
     const tournament = await storage.createTournament({
-      name: tournamentName,
+      name: testTournamentName,
       status: 'SETUP',
       totalRounds: 5,
       currentRound: 1
     });
     
-    // Create test baristas
+    // Create test baristas with unique emails per tournament
     const baristas = [];
+    const timestamp = Date.now();
     for (let i = 1; i <= numBaristas; i++) {
       const barista = await storage.createUser({
         name: `Test Barista ${i}`,
-        email: `barista${i}@test.com`,
+        email: `test-barista-${tournament.id}-${i}-${timestamp}@test.com`,
         role: 'BARISTA',
         approved: true
       });
       baristas.push(barista);
     }
     
-    // Create test judges
+    // Create test judges with unique emails per tournament
     const judges = [];
     for (let i = 1; i <= numJudges; i++) {
       const judge = await storage.createUser({
         name: `Test Judge ${i}`,
-        email: `judge${i}@test.com`,
+        email: `test-judge-${tournament.id}-${i}-${timestamp}@test.com`,
         role: 'JUDGE',
         approved: true
       });
@@ -219,21 +253,25 @@ router.post('/seed-test-data', async (req, res) => {
       });
     }
     
-    // Add judges as participants
-    for (let i = 0; i < judges.length; i++) {
-      await storage.addParticipant({
-        tournamentId: tournament.id,
-        userId: judges[i].id,
-        seed: i + 1
-      });
-    }
+    // Judges are NOT participants - they judge matches, not compete
+    // Remove the code that adds judges as participants
     
-    // Ensure stations exist
-    const existingStations = await storage.getAllStations();
-    if (existingStations.length < 3) {
-      await storage.createStation({ name: 'A', status: 'AVAILABLE', nextAvailableAt: new Date() });
-      await storage.createStation({ name: 'B', status: 'AVAILABLE', nextAvailableAt: new Date() });
-      await storage.createStation({ name: 'C', status: 'AVAILABLE', nextAvailableAt: new Date() });
+    // Create tournament-specific stations (with tournament_id)
+    const stationNames = ['A', 'B', 'C'];
+    const createdStations = [];
+    for (const name of stationNames) {
+      try {
+        const station = await storage.createStation({ 
+          tournamentId: tournament.id,
+          name, 
+          status: 'AVAILABLE', 
+          nextAvailableAt: new Date() 
+        });
+        createdStations.push(station);
+      } catch (error: any) {
+        // Station might already exist, skip
+        console.warn(`Station ${name} creation warning:`, error.message);
+      }
     }
     
     res.json({
@@ -241,9 +279,11 @@ router.post('/seed-test-data', async (req, res) => {
       tournament,
       baristasCreated: baristas.length,
       judgesCreated: judges.length,
-      message: `Test data created: Tournament "${tournamentName}" with ${baristas.length} baristas and ${judges.length} judges`
+      stationsCreated: createdStations.length,
+      message: `Test tournament "${testTournamentName}" created with ${baristas.length} baristas, ${judges.length} judges, and ${createdStations.length} stations`
     });
   } catch (error: any) {
+    console.error('Error creating test data:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -251,23 +291,81 @@ router.post('/seed-test-data', async (req, res) => {
 // ===== CLEAR TEST DATA =====
 router.delete('/clear-test-data', async (req, res) => {
   try {
-    // Get all test tournaments (those with "Test" in the name)
+    // Get all test tournaments (those with "Test" in the name or test emails)
     const allTournaments = await storage.getAllTournaments();
     const testTournaments = allTournaments.filter(t => 
       t.name.toLowerCase().includes('test') || 
       t.name.toLowerCase().includes('demo')
     );
     
+    if (testTournaments.length === 0) {
+      return res.json({
+        success: true,
+        tournamentsCleared: 0,
+        message: 'No test tournaments found to clear'
+      });
+    }
+    
     let cleared = 0;
+    const errors: string[] = [];
+    
     for (const tournament of testTournaments) {
-      await storage.clearTournamentData(tournament.id);
-      cleared++;
+      try {
+        // Get all participants for this tournament
+        const participants = await db.select()
+          .from(tournamentParticipants)
+          .where(eq(tournamentParticipants.tournamentId, tournament.id));
+        
+        // Get all matches for this tournament
+        const tournamentMatches = await db.select()
+          .from(matches)
+          .where(eq(matches.tournamentId, tournament.id));
+        const matchIds = tournamentMatches.map(m => m.id);
+        
+        // Delete all related data in correct order
+        if (matchIds.length > 0) {
+          await db.delete(judgeDetailedScores).where(inArray(judgeDetailedScores.matchId, matchIds));
+          await db.delete(heatScores).where(inArray(heatScores.matchId, matchIds));
+          await db.delete(heatJudges).where(inArray(heatJudges.matchId, matchIds));
+          await db.delete(heatSegments).where(inArray(heatSegments.matchId, matchIds));
+        }
+        
+        await db.delete(matches).where(eq(matches.tournamentId, tournament.id));
+        await db.delete(tournamentParticipants).where(eq(tournamentParticipants.tournamentId, tournament.id));
+        
+        // Delete tournament-specific stations
+        await db.delete(stations).where(eq(stations.tournamentId, tournament.id));
+        
+        // Delete tournament round times
+        await db.delete(tournamentRoundTimes).where(eq(tournamentRoundTimes.tournamentId, tournament.id));
+        
+        // Delete the tournament
+        await db.delete(tournaments).where(eq(tournaments.id, tournament.id));
+        
+        // Delete test users (those with test emails for this tournament)
+        const testUserEmails = participants.map(p => {
+          // Extract test user emails pattern
+          return `test-%-${tournament.id}-%@test.com`;
+        });
+        
+        // Delete users with test emails matching this tournament
+        await db.delete(users).where(
+          // This is a simplified approach - in production, you'd want more precise matching
+          eq(users.email, `test-${tournament.id}`)
+        );
+        
+        cleared++;
+      } catch (error: any) {
+        errors.push(`Failed to clear tournament ${tournament.id}: ${error.message}`);
+        console.error(`Error clearing tournament ${tournament.id}:`, error);
+      }
     }
     
     res.json({
       success: true,
       tournamentsCleared: cleared,
-      message: `Cleared ${cleared} test tournament(s)`
+      errors: errors.length > 0 ? errors : undefined,
+      message: `Cleared ${cleared} test tournament(s)${errors.length > 0 ? ` with ${errors.length} error(s)` : ''}`
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

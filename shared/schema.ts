@@ -76,6 +76,7 @@ export type TournamentRoundTime = typeof tournamentRoundTimes.$inferSelect;
 // Stations
 export const stations = pgTable("stations", {
   id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
   name: text("name").notNull(),
   location: text("location"),
   status: stationStatusEnum("status").notNull().default('AVAILABLE'),

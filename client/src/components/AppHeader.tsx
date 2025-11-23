@@ -24,7 +24,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ className = '', logoSize = 'small
 
   return (
     <header 
-      className={`${headerBgColor} backdrop-blur-sm ${theme === 'light' ? 'text-secondary-foreground' : 'text-primary-foreground'} border-b border-primary-border/50 ${className}`}
+      className={`sticky top-0 z-50 ${headerBgColor} backdrop-blur-sm ${theme === 'light' ? 'text-secondary-foreground' : 'text-primary-foreground'} border-b border-primary-border/50 ${className}`}
     >
       <div className="px-4 py-4 flex items-center justify-between">
         {/* Left: Home Button */}

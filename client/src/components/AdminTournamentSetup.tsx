@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import UserManagement from "./UserManagement";
 import BaristaUpload from "./BaristaUpload";
@@ -53,14 +53,36 @@ export default function AdminTournamentSetup() {
   });
 
   // Fetch competitors for current tournament
-  const { data: competitors = [] } = useQuery<TournamentParticipant[]>({
+  const { data: competitors = [], isLoading: competitorsLoading } = useQuery<TournamentParticipant[]>({
     queryKey: ['/api/tournaments', currentTournamentId, 'participants'],
+    queryFn: async () => {
+      if (!currentTournamentId) return [];
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/participants`);
+      if (!response.ok) {
+        console.error('Failed to fetch competitors:', response.status, response.statusText);
+        throw new Error('Failed to fetch competitors');
+      }
+      const data = await response.json();
+      console.log('Fetched competitors:', data);
+      return data;
+    },
     enabled: !!currentTournamentId,
   });
 
   // Fetch matches for current tournament
-  const { data: matches = [] } = useQuery<any[]>({
+  const { data: matches = [], isLoading: matchesLoading } = useQuery<any[]>({
     queryKey: ['/api/tournaments', currentTournamentId, 'matches'],
+    queryFn: async () => {
+      if (!currentTournamentId) return [];
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/matches`);
+      if (!response.ok) {
+        console.error('Failed to fetch matches:', response.status, response.statusText);
+        throw new Error('Failed to fetch matches');
+      }
+      const data = await response.json();
+      console.log('Fetched matches:', data);
+      return data;
+    },
     enabled: !!currentTournamentId,
   });
 
@@ -403,6 +425,9 @@ export default function AdminTournamentSetup() {
                     <HelpCircle className="h-5 w-5" />
                     Tournament Creation Tutorial
                   </DialogTitle>
+                  <DialogDescription>
+                    Step-by-step guide for creating and managing tournaments
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
