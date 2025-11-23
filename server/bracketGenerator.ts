@@ -285,6 +285,40 @@ export class BracketGenerator {
           plannedMinutes: roundTimes.espressoMinutes
         });
 
+        // Assign 3 judges to this heat (2 ESPRESSO, 1 CAPPUCCINO)
+        // Get all approved judges
+        const allJudges = await storage.getAllUsers();
+        const approvedJudges = allJudges.filter(u => u.role === 'JUDGE' && u.approved === true);
+        
+        if (approvedJudges.length >= 3) {
+          // Shuffle judges for randomization
+          const shuffledJudges = [...approvedJudges].sort(() => Math.random() - 0.5);
+          
+          // Select 3 unique judges (wrap around if needed)
+          const selectedJudges = [];
+          for (let i = 0; i < 3; i++) {
+            selectedJudges.push(shuffledJudges[i % shuffledJudges.length]);
+          }
+          
+          // Assign roles: 2 ESPRESSO judges (TECHNICAL), 1 CAPPUCCINO judge (SENSORY)
+          // All 3 judges score latte art
+          await storage.assignJudge({
+            matchId: match.id,
+            judgeId: selectedJudges[0].id,
+            role: 'TECHNICAL' // First ESPRESSO judge
+          });
+          await storage.assignJudge({
+            matchId: match.id,
+            judgeId: selectedJudges[1].id,
+            role: 'TECHNICAL' // Second ESPRESSO judge
+          });
+          await storage.assignJudge({
+            matchId: match.id,
+            judgeId: selectedJudges[2].id,
+            role: 'SENSORY' // CAPPUCCINO judge
+          });
+        }
+
         // Update station availability (total minutes per heat + 10 minute buffer)
         const nextAvailable = new Date(station.nextAvailableAt.getTime() + (roundTimes.totalMinutes + 10) * 60 * 1000);
         await storage.updateStation(station.id, { nextAvailableAt: nextAvailable });

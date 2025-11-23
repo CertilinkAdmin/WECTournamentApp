@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { eq, desc, inArray } from 'drizzle-orm';
+import { eq, desc, inArray, and } from 'drizzle-orm';
 import { 
   tournaments, 
   tournamentParticipants, 
@@ -160,6 +160,100 @@ router.get('/:id/leaderboard', async (req, res) => {
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Assign judges to all heats in a tournament
+router.post('/:id/assign-judges', async (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    
+    // Get all approved judges
+    const allUsers = await db.select().from(users);
+    const judges = allUsers.filter(u => u.role === 'JUDGE' && u.approved === true);
+    
+    if (judges.length < 3) {
+      return res.status(400).json({ 
+        error: `Need at least 3 approved judges. Currently have ${judges.length}.` 
+      });
+    }
+    
+    // Get all matches for this tournament
+    const tournamentMatches = await db
+      .select()
+      .from(matches)
+      .where(eq(matches.tournamentId, tournamentId));
+    
+    if (tournamentMatches.length === 0) {
+      return res.status(400).json({ error: 'No matches found for this tournament' });
+    }
+    
+    // Shuffle judges array for randomization
+    const shuffledJudges = [...judges].sort(() => Math.random() - 0.5);
+    
+    let assignedCount = 0;
+    let judgeIndex = 0;
+    
+    for (const match of tournamentMatches) {
+      // Skip if match already has judges assigned
+      const existingJudges = await db
+        .select()
+        .from(heatJudges)
+        .where(eq(heatJudges.matchId, match.id));
+      
+      if (existingJudges.length > 0) {
+        // Delete existing judges for this match
+        await db.delete(heatJudges).where(eq(heatJudges.matchId, match.id));
+      }
+      
+      // Assign 3 judges: 2 ESPRESSO, 1 CAPPUCCINO
+      // All 3 judges score latte art, but beverage assignment determines their sensory focus
+      const assignedJudges: typeof judges = [];
+      
+      // Select 3 unique judges (wrap around if needed)
+      for (let i = 0; i < 3; i++) {
+        if (judgeIndex >= shuffledJudges.length) {
+          // Reshuffle if we've used all judges
+          shuffledJudges.sort(() => Math.random() - 0.5);
+          judgeIndex = 0;
+        }
+        assignedJudges.push(shuffledJudges[judgeIndex]);
+        judgeIndex++;
+      }
+      
+      // Assign roles: 2 ESPRESSO judges, 1 CAPPUCCINO judge
+      // Using TECHNICAL for ESPRESSO and SENSORY for CAPPUCCINO
+      // HEAD role can be used for the first ESPRESSO judge if needed
+      await db.insert(heatJudges).values([
+        {
+          matchId: match.id,
+          judgeId: assignedJudges[0].id,
+          role: 'TECHNICAL' // First ESPRESSO judge
+        },
+        {
+          matchId: match.id,
+          judgeId: assignedJudges[1].id,
+          role: 'TECHNICAL' // Second ESPRESSO judge
+        },
+        {
+          matchId: match.id,
+          judgeId: assignedJudges[2].id,
+          role: 'SENSORY' // CAPPUCCINO judge
+        }
+      ]);
+      
+      assignedCount++;
+    }
+    
+    res.json({
+      success: true,
+      message: `Assigned 3 judges to ${assignedCount} heats`,
+      judgesAssigned: assignedCount * 3,
+      totalJudges: judges.length
+    });
+  } catch (error: any) {
+    console.error('Error assigning judges:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 

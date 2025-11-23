@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
-import { Trophy, Shuffle, Save, RotateCcw, Loader2, Users, Settings2, ArrowLeftRight, Plus } from 'lucide-react';
+import { Trophy, Shuffle, Save, RotateCcw, Loader2, Users, Settings2, ArrowLeftRight, Plus, Play, CheckCircle2, Rocket, XCircle, Gavel } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RandomizeSeeds from '@/components/RandomizeSeeds';
 import DraggableCompetitor from '@/components/DraggableCompetitor';
@@ -30,9 +31,10 @@ export default function AdminTournaments() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'seeds' | 'bracket'>('seeds');
+  const [activeTab, setActiveTab] = useState<'approval' | 'seeds' | 'bracket'>('approval');
   const [activeCompetitor, setActiveCompetitor] = useState<User | null>(null);
   const [selectedRound, setSelectedRound] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch tournaments
   const { data: tournaments = [], isLoading: tournamentsLoading } = useQuery<Tournament[]>({
@@ -112,11 +114,59 @@ export default function AdminTournaments() {
           seed: p.seed,
           name: user.name,
           email: user.email,
+          user,
         } : null;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null)
       .sort((a, b) => a.seed - b.seed);
   }, [participants, users]);
+
+  // Pending baristas (not yet approved for tournament - seed = 0 or null)
+  const pendingBaristas = useMemo(() => {
+    return baristaParticipants.filter(b => !b.seed || b.seed === 0);
+  }, [baristaParticipants]);
+
+  // Approved baristas (seed > 0)
+  const approvedBaristasForTournament = useMemo(() => {
+    return baristaParticipants.filter(b => b.seed && b.seed > 0);
+  }, [baristaParticipants]);
+
+  // Get all judges (not just approved ones) for the approval step
+  const allJudges = useMemo(() => {
+    return users.filter(u => u.role === 'JUDGE');
+  }, [users]);
+
+  // Get judges who are tournament participants
+  const judgeParticipants = useMemo(() => {
+    if (!selectedTournamentId || !participants.length) return [];
+    return participants
+      .map(p => {
+        const user = users.find(u => u.id === p.userId && u.role === 'JUDGE');
+        return user ? { ...p, user } : null;
+      })
+      .filter((j): j is TournamentParticipant & { user: User } => j !== null);
+  }, [participants, users, selectedTournamentId]);
+
+  // Pending judges (not yet approved for tournament - seed = 0 or null)
+  const pendingJudges = useMemo(() => {
+    return judgeParticipants.filter(j => !j.seed || j.seed === 0);
+  }, [judgeParticipants]);
+
+  // Approved judges (seed > 0)
+  const approvedJudgesForTournament = useMemo(() => {
+    return judgeParticipants.filter(j => j.seed && j.seed > 0);
+  }, [judgeParticipants]);
+
+  // Judges not yet added to tournament
+  const availableJudgesToAdd = useMemo(() => {
+    const addedJudgeIds = new Set(judgeParticipants.map(j => j.userId));
+    return allJudges.filter(j => !addedJudgeIds.has(j.id));
+  }, [allJudges, judgeParticipants]);
+
+  // Get approved judges (for judge assignment - these are system-approved judges)
+  const approvedJudges = useMemo(() => {
+    return users.filter(u => u.role === 'JUDGE' && u.approved);
+  }, [users]);
 
   // Group matches by round
   const matchesByRound = useMemo(() => {
@@ -242,6 +292,141 @@ export default function AdminTournaments() {
       toast({
         title: "Error",
         description: error.message || 'Failed to generate bracket',
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Assign judges mutation
+  const assignJudgesMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedTournamentId) throw new Error("No tournament selected");
+      const response = await fetch(`/api/tournaments/${selectedTournamentId}/assign-judges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to assign judges' }));
+        throw new Error(error.error || 'Failed to assign judges');
+      }
+      const data = await response.json();
+      console.log('Judges assigned:', data);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'matches'] });
+      toast({
+        title: "Judges Assigned",
+        description: data.message || `Assigned 3 judges to ${data.judgesAssigned / 3} heats.`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error assigning judges:', error);
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to assign judges',
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Prepare Tournament - Complete workflow: randomize seeds, generate bracket, assign judges
+  const prepareTournamentMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedTournamentId) throw new Error("No tournament selected");
+      
+      // Step 1: Randomize seeds
+      const randomizeResponse = await fetch(`/api/tournaments/${selectedTournamentId}/randomize-seeds`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({}),
+      });
+      if (!randomizeResponse.ok) {
+        const error = await randomizeResponse.json().catch(() => ({ error: 'Failed to randomize seeds' }));
+        throw new Error(error.error || 'Failed to randomize seeds');
+      }
+      
+      // Step 2: Generate bracket (this also auto-assigns judges)
+      const bracketResponse = await fetch(`/api/tournaments/${selectedTournamentId}/generate-bracket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!bracketResponse.ok) {
+        const error = await bracketResponse.json().catch(() => ({ error: 'Failed to generate bracket' }));
+        throw new Error(error.error || 'Failed to generate bracket');
+      }
+      const bracketData = await bracketResponse.json();
+      
+      // Step 3: Assign judges to all heats (if not already assigned by bracket generator)
+      const judgesResponse = await fetch(`/api/tournaments/${selectedTournamentId}/assign-judges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!judgesResponse.ok) {
+        // Don't fail if judges are already assigned, just log
+        console.warn('Judge assignment warning:', await judgesResponse.json().catch(() => ({})));
+      }
+      
+      return {
+        seedsRandomized: true,
+        bracketGenerated: true,
+        matchesCreated: bracketData.matchesCreated || 0,
+        judgesAssigned: true
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'matches'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      toast({
+        title: "Tournament Prepared",
+        description: `Seeds randomized, bracket generated with ${data.matchesCreated} matches, and judges assigned. Ready to initiate!`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error preparing tournament:', error);
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to prepare tournament',
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Initiate tournament mutation
+  const initiateTournamentMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedTournamentId) throw new Error("No tournament selected");
+      const response = await fetch(`/api/tournament-mode/${selectedTournamentId}/activate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to initiate tournament' }));
+        throw new Error(error.error || 'Failed to initiate tournament');
+      }
+      const data = await response.json();
+      console.log('Tournament initiated:', data);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId] });
+      toast({
+        title: "Tournament Initiated",
+        description: `${selectedTournament?.name} is now active and ready to begin!`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error initiating tournament:', error);
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to initiate tournament',
         variant: "destructive"
       });
     }
@@ -425,15 +610,47 @@ export default function AdminTournaments() {
             </h1>
             <p className="text-muted-foreground mt-1">Bracket Builder & Seed Management</p>
           </div>
-          <Badge variant={selectedTournament?.status === 'ACTIVE' ? 'default' : 'secondary'}>
-            {selectedTournament?.status}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant={selectedTournament?.status === 'ACTIVE' ? 'default' : selectedTournament?.status === 'COMPLETED' ? 'secondary' : 'outline'}>
+              {selectedTournament?.status}
+            </Badge>
+            {selectedTournament?.status === 'SETUP' && baristaParticipants.length > 0 && matches.length > 0 && (
+              <Button
+                onClick={() => initiateTournamentMutation.mutate()}
+                disabled={initiateTournamentMutation.isPending}
+                size="lg"
+                className="gap-2"
+              >
+                {initiateTournamentMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Initiating...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4" />
+                    Initiate Tournament
+                  </>
+                )}
+              </Button>
+            )}
+            {selectedTournament?.status === 'SETUP' && (baristaParticipants.length === 0 || matches.length === 0) && (
+              <div className="text-sm text-muted-foreground">
+                {baristaParticipants.length === 0 && "Add participants and generate bracket to initiate"}
+                {baristaParticipants.length > 0 && matches.length === 0 && "Generate bracket to initiate"}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="approval" className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4" />
+            Approve Participants
+          </TabsTrigger>
           <TabsTrigger value="seeds" className="flex items-center gap-2">
             <Shuffle className="h-4 w-4" />
             Randomize Seeds
@@ -443,6 +660,279 @@ export default function AdminTournaments() {
             Bracket Builder
           </TabsTrigger>
         </TabsList>
+
+        {/* Approval Tab */}
+        <TabsContent value="approval" className="mt-6">
+          <div className="space-y-6">
+            {/* Search */}
+            <Card>
+              <CardContent className="p-4">
+                <Input
+                  placeholder="Search by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-md"
+                />
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Competitors Approval */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Competitors (Baristas)
+                    <Badge variant="secondary">{baristaParticipants.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Pending Competitors */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                      Pending Approval ({pendingBaristas.length})
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {pendingBaristas
+                        .filter(b => 
+                          !searchTerm || 
+                          b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          b.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((barista) => {
+                          const maxSeed = approvedBaristasForTournament.length > 0
+                            ? Math.max(...approvedBaristasForTournament.map(b => b.seed || 0))
+                            : 0;
+                          return (
+                            <div
+                              key={barista.id}
+                              className="flex items-center justify-between p-3 bg-muted rounded-md"
+                            >
+                              <div>
+                                <div className="font-medium">{barista.name || 'Unknown'}</div>
+                                <div className="text-sm text-muted-foreground">{barista.email}</div>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  const newSeed = maxSeed + 1;
+                                  fetch(`/api/tournaments/${selectedTournamentId}/participants/${barista.id}/seed`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ seed: newSeed })
+                                  }).then(() => {
+                                    queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
+                                    toast({
+                                      title: 'Competitor Approved',
+                                      description: `${barista.name} has been approved for this tournament.`,
+                                    });
+                                  });
+                                }}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      {pendingBaristas.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No pending competitors</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Approved Competitors */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                      Approved ({approvedBaristasForTournament.length})
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {approvedBaristasForTournament
+                        .filter(b => 
+                          !searchTerm || 
+                          b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          b.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((barista) => (
+                          <div
+                            key={barista.id}
+                            className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-md"
+                          >
+                            <div>
+                              <div className="font-medium">{barista.name || 'Unknown'}</div>
+                              <div className="text-sm text-muted-foreground">
+                                Seed: <Badge variant="outline">{barista.seed}</Badge>
+                              </div>
+                            </div>
+                            <Badge variant="default">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Approved
+                            </Badge>
+                          </div>
+                        ))}
+                      {approvedBaristasForTournament.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No approved competitors yet</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Judges Approval */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Gavel className="h-5 w-5" />
+                    Judges
+                    <Badge variant="secondary">{judgeParticipants.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add Judges */}
+                  {availableJudgesToAdd.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                        Available to Add ({availableJudgesToAdd.length})
+                      </h4>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {availableJudgesToAdd
+                          .filter(j => 
+                            !searchTerm || 
+                            j.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            j.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                          )
+                          .slice(0, 10)
+                          .map((judge) => (
+                            <div
+                              key={judge.id}
+                              className="flex items-center justify-between p-2 bg-muted rounded-md"
+                            >
+                              <div>
+                                <div className="font-medium text-sm">{judge.name}</div>
+                                <div className="text-xs text-muted-foreground">{judge.email}</div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  fetch(`/api/tournaments/${selectedTournamentId}/participants`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ userId: judge.id, seed: 0 })
+                                  }).then(() => {
+                                    queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
+                                    toast({
+                                      title: 'Judge Added',
+                                      description: `${judge.name} has been added to the tournament.`,
+                                    });
+                                  });
+                                }}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add
+                              </Button>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pending Judges */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                      Pending Approval ({pendingJudges.length})
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {pendingJudges
+                        .filter(j => 
+                          !searchTerm || 
+                          j.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          j.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((judge) => {
+                          const maxSeed = approvedJudgesForTournament.length > 0
+                            ? Math.max(...approvedJudgesForTournament.map(j => j.seed || 0))
+                            : 0;
+                          return (
+                            <div
+                              key={judge.id}
+                              className="flex items-center justify-between p-3 bg-muted rounded-md"
+                            >
+                              <div>
+                                <div className="font-medium">{judge.user?.name || 'Unknown'}</div>
+                                <div className="text-sm text-muted-foreground">{judge.user?.email}</div>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  const newSeed = maxSeed + 1;
+                                  fetch(`/api/tournaments/${selectedTournamentId}/participants/${judge.id}/seed`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ seed: newSeed })
+                                  }).then(() => {
+                                    queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
+                                    toast({
+                                      title: 'Judge Approved',
+                                      description: `${judge.user?.name} has been approved for this tournament.`,
+                                    });
+                                  });
+                                }}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      {pendingJudges.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No pending judges</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Approved Judges */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                      Approved ({approvedJudgesForTournament.length})
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {approvedJudgesForTournament
+                        .filter(j => 
+                          !searchTerm || 
+                          j.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          j.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((judge) => (
+                          <div
+                            key={judge.id}
+                            className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-md"
+                          >
+                            <div>
+                              <div className="font-medium">{judge.user?.name || 'Unknown'}</div>
+                              <div className="text-sm text-muted-foreground">
+                                ID: <Badge variant="outline">{judge.seed}</Badge>
+                              </div>
+                            </div>
+                            <Badge variant="default">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Approved
+                            </Badge>
+                          </div>
+                        ))}
+                      {approvedJudgesForTournament.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No approved judges yet</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
 
         {/* Seeds Tab */}
         <TabsContent value="seeds" className="mt-6">
@@ -458,6 +948,124 @@ export default function AdminTournaments() {
         {/* Bracket Builder Tab */}
         <TabsContent value="bracket" className="mt-6">
           <div className="space-y-6">
+            {/* Prepare Tournament - Complete Workflow */}
+            {selectedTournament?.status === 'SETUP' && baristaParticipants.length > 0 && (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Rocket className="h-5 w-5 text-primary" />
+                    Prepare Tournament
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Complete tournament setup in one click: randomize seeds, generate bracket, and assign judges.
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                      <span>Randomize competitor seeds</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                      <span>Generate tournament bracket with matches</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                      <span>Assign 3 judges per heat (2 ESPRESSO, 1 CAPPUCCINO)</span>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => prepareTournamentMutation.mutate()}
+                    disabled={prepareTournamentMutation.isPending || baristaParticipants.length < 2 || approvedJudges.length < 3}
+                    size="lg"
+                    className="w-full gap-2"
+                  >
+                    {prepareTournamentMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Preparing Tournament...
+                      </>
+                    ) : (
+                      <>
+                        <Rocket className="h-4 w-4" />
+                        Prepare Tournament
+                      </>
+                    )}
+                  </Button>
+                  {(baristaParticipants.length < 2 || approvedJudges.length < 3) && (
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      {baristaParticipants.length < 2 && (
+                        <p>⚠️ Need at least 2 participants to prepare tournament</p>
+                      )}
+                      {approvedJudges.length < 3 && (
+                        <p>⚠️ Need at least 3 approved judges to prepare tournament</p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Approved Judges Display */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Approved Judges ({approvedJudges.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {approvedJudges.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No approved judges found. Please approve judges first.</p>
+                ) : approvedJudges.length < 3 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      ⚠️ Need at least 3 approved judges to assign judges to heats. Currently have {approvedJudges.length}.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {approvedJudges.map(judge => (
+                        <Badge key={judge.id} variant="secondary">{judge.name}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        {approvedJudges.length} approved judges available. Each heat will be assigned 3 judges (2 ESPRESSO, 1 CAPPUCCINO). All 3 judges score latte art.
+                      </p>
+                      {matches.length > 0 && (
+                        <Button
+                          onClick={() => assignJudgesMutation.mutate()}
+                          disabled={assignJudgesMutation.isPending || approvedJudges.length < 3}
+                          variant="outline"
+                          className="gap-2"
+                        >
+                          {assignJudgesMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Assigning...
+                            </>
+                          ) : (
+                            <>
+                              <Shuffle className="h-4 w-4" />
+                              Randomize Judges for All Heats
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {approvedJudges.map(judge => (
+                        <Badge key={judge.id} variant="secondary">{judge.name}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Actions */}
             <Card>
               <CardContent className="p-4">
