@@ -340,7 +340,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
                   </div>
                   <div>
                     <div className="text-muted-foreground text-xs mb-1">Winner</div>
-                    <div className="font-semibold text-accent text-sm sm:text-base truncate">{selectedHeat.winner}</div>
+                    <div className="font-semibold text-sm sm:text-base truncate text-[#d8d3ca]">{selectedHeat.winner}</div>
                   </div>
                 </div>
               </div>
