@@ -318,7 +318,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
                     <div className={`text-3xl sm:text-4xl font-black ${selectedHeat.winner === selectedHeat.competitor2 ? 'text-accent' : 'text-muted-foreground'}`}>
                       {selectedHeat.score2}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">Points</div>
+                    <div className="text-xs mt-1 text-[#d8d3ca]">Points</div>
                   </div>
                 </div>
               </Card>
