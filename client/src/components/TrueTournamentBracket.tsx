@@ -203,7 +203,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
               <Trophy className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent flex-shrink-0" />
               <span className="font-semibold whitespace-nowrap truncate max-w-[120px] sm:max-w-none">{finalWinner.toUpperCase()}</span>
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/30 touch-target">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-lg border border-primary/30 touch-target bg-[#c66e38]">
               <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent flex-shrink-0" />
               <span className="font-semibold whitespace-nowrap">RESULTS</span>
             </div>
