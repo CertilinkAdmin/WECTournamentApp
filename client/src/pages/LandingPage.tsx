@@ -8,7 +8,7 @@ import './LandingPage.css';
 const LandingPage: React.FC = () => {
   return (
     <div className="landing-page overflow-hidden h-screen">
-      <AppHeader className="fixed top-0 left-0 right-0 z-50" logoSize="large" />
+      <AppHeader logoSize="large" />
 
       {/* Photo Carousel Background */}
       <div className="landing-background">
@@ -29,7 +29,7 @@ const LandingPage: React.FC = () => {
         />
       </div>
 
-      <main className="absolute top-28 bottom-0 left-0 right-0 z-10 flex flex-col items-center justify-start pt-8">
+      <main className="absolute top-[89px] bottom-0 left-0 right-0 z-10 flex flex-col items-center justify-start pt-8">
         {/* Text Overlay */}
         <div className="text-center text-primary-foreground">
           <div className="text-4xl font-bold tracking-widest mb-2">ESPRESSO</div>

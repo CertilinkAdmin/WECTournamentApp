@@ -167,35 +167,10 @@ export default function BottomNav() {
     );
   };
 
-  // Desktop/Tablet/Landscape Mobile: Drawer Navigation
+  // Desktop/Tablet/Landscape Mobile: Navigation is now handled in AppHeader
+  // Only show bottom nav on mobile portrait
   if (isDesktop) {
-    return (
-      <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <SheetTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="fixed z-[60] bg-cinnamon-brown/95 backdrop-blur-md border-light-sand/20 text-light-sand hover:bg-cinnamon-brown hover:text-light-sand shadow-lg
-              top-20 right-4 md:top-24 md:right-6 lg:top-6 lg:right-6
-              h-10 w-10 md:h-12 md:w-12"
-            aria-label="Open navigation menu"
-          >
-            <Menu className="h-5 w-5 md:h-6 md:w-6" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent 
-          side="right" 
-          className="w-[280px] sm:w-[320px] md:w-[360px] lg:w-[400px] bg-background border-l border-border z-[70] pt-6"
-        >
-          <SheetHeader className="pb-4 border-b border-border">
-            <SheetTitle className="text-left text-xl md:text-2xl font-bold text-foreground">Navigation</SheetTitle>
-          </SheetHeader>
-          <nav className="mt-6 space-y-2">
-            {navButtons.map((button) => renderNavButton(button, true))}
-          </nav>
-        </SheetContent>
-      </Sheet>
-    );
+    return null;
   }
 
   // Mobile Portrait: Bottom Navigation

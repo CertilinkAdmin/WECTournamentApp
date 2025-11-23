@@ -37,8 +37,8 @@ export default function Header({
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-primary text-primary-foreground">
-      <div className="flex items-center justify-between gap-4 px-6 py-4">
+    <header className="sticky top-0 z-[50] border-b bg-primary text-primary-foreground">
+      <div className="flex items-center justify-between gap-4 px-4 md:px-6 py-3 md:py-4">
         <div className="flex items-center gap-4">
           <Trophy className="h-8 w-8" />
           <div>
