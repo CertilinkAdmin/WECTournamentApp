@@ -346,11 +346,45 @@ export class BracketGenerator {
   }
 
   /**
+   * Generate cup code from name and seed
+   * Format: First 2 letters of name (uppercase) + seed number
+   * For test baristas: ATest, BTest, CTest, etc.
+   */
+  static generateCupCode(name: string, seed: number, index?: number): string {
+    // Check if it's a test barista (name contains "test" case-insensitive)
+    const isTest = /test/i.test(name);
+    
+    if (isTest) {
+      // For test baristas: ATest, BTest, CTest, DTest, etc.
+      const testIndex = index !== undefined ? index : seed - 1;
+      const testLetter = String.fromCharCode(65 + (testIndex % 26)); // A=65, B=66, etc. (wrap around after Z)
+      return `${testLetter}Test`;
+    }
+    
+    // For regular baristas: First 2 letters (uppercase) + seed number
+    // Remove all non-alphabetic characters and spaces
+    const cleanName = name.trim().replace(/[^a-zA-Z]/g, '').replace(/\s+/g, '');
+    
+    // If name has less than 2 letters, pad with 'X' or use first letter twice
+    let firstTwo: string;
+    if (cleanName.length === 0) {
+      firstTwo = 'XX';
+    } else if (cleanName.length === 1) {
+      firstTwo = (cleanName[0] + 'X').toUpperCase();
+    } else {
+      firstTwo = cleanName.substring(0, 2).toUpperCase();
+    }
+    
+    return `${firstTwo}${seed}`;
+  }
+
+  /**
    * Randomize participant seeds
    * @param participants - Array of participants
-   * @returns Participants with randomized seeds
+   * @param allUsers - Array of all users (to get names for cup code generation)
+   * @returns Participants with randomized seeds and cup codes
    */
-  static randomizeSeeds(participants: TournamentParticipant[]): TournamentParticipant[] {
+  static randomizeSeeds(participants: TournamentParticipant[], allUsers: any[] = []): TournamentParticipant[] {
     const shuffled = [...participants];
     
     // Fisher-Yates shuffle
@@ -359,10 +393,18 @@ export class BracketGenerator {
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    // Assign new seeds
-    return shuffled.map((participant, index) => ({
-      ...participant,
-      seed: index + 1
-    }));
+    // Assign new seeds and generate cup codes
+    return shuffled.map((participant, index) => {
+      const seed = index + 1;
+      const user = allUsers.find(u => u.id === participant.userId);
+      const name = user?.name || 'Unknown';
+      const cupCode = this.generateCupCode(name, seed, index);
+      
+      return {
+        ...participant,
+        seed,
+        cupCode
+      };
+    });
   }
 }

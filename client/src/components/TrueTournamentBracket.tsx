@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Trophy, Medal, Award, Star, Coffee, Zap, Maximize2, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { WEC25_BRACKET_POSITIONS, WEC25_ROUND2_POSITIONS, WEC25_ROUND3_POSITIONS, WEC25_ROUND4_POSITIONS, WEC25_FINAL_POSITION } from './WEC25BracketData';
+import { useQuery } from '@tanstack/react-query';
+import type { Match, User, Station, HeatJudge } from '@shared/schema';
 
 interface TrueTournamentBracketProps {
   mode?: 'live' | 'results';
@@ -50,32 +51,139 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
   const [lastTouchCenter, setLastTouchCenter] = useState<{ x: number; y: number } | null>(null);
   const bracketRef = useRef<HTMLDivElement>(null);
 
-  // WEC25 Milano historical data
-  const wec25Rounds: BracketRound[] = [
-    { title: "Round 1", matches: WEC25_BRACKET_POSITIONS },
-    { title: "Round 2", matches: WEC25_ROUND2_POSITIONS },
-    { title: "Round 3", matches: WEC25_ROUND3_POSITIONS },
-    { title: "Semi-Finals", matches: WEC25_ROUND4_POSITIONS },
-    { title: "Finals", matches: WEC25_FINAL_POSITION },
-  ];
+  // Fetch tournament data if tournamentId is provided
+  const { data: tournamentData } = useQuery<{
+    tournament: any;
+    matches: Match[];
+    participants: any[];
+  }>({
+    queryKey: [`/api/tournaments/${tournamentId}`],
+    enabled: !!tournamentId,
+  });
 
-  const rounds = wec25Rounds;
+  const { data: allUsers = [] } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+  });
+
+  const { data: stations = [] } = useQuery<Station[]>({
+    queryKey: ['/api/stations'],
+  });
+
+  // Fetch judges for all matches
+  const { data: allJudgesData = {} } = useQuery<Record<number, HeatJudge[]>>({
+    queryKey: ['/api/tournaments', tournamentId, 'matches', 'judges'],
+    queryFn: async () => {
+      if (!tournamentId || !tournamentData?.matches) return {};
+      const judgesPromises = tournamentData.matches.map(async (match) => {
+        const response = await fetch(`/api/matches/${match.id}/judges`);
+        if (!response.ok) return { matchId: match.id, judges: [] };
+        const judges = await response.json();
+        return { matchId: match.id, judges };
+      });
+      const results = await Promise.all(judgesPromises);
+      const judgesMap: Record<number, HeatJudge[]> = {};
+      results.forEach(({ matchId, judges }) => {
+        judgesMap[matchId] = judges;
+      });
+      return judgesMap;
+    },
+    enabled: !!tournamentId && !!tournamentData?.matches,
+  });
+
+  // Process matches into bracket rounds
+  const rounds = useMemo(() => {
+    if (!tournamentData?.matches || tournamentData.matches.length === 0) {
+      // If no tournament data, return empty (don't use static WEC25 data)
+      return [];
+    }
+
+    // Filter matches by tournamentId to ensure data isolation
+    const matches = tournamentData.matches.filter(m => 
+      !tournamentId || m.tournamentId === tournamentId
+    );
+    const roundsMap = new Map<number, BracketMatch[]>();
+
+    matches.forEach(match => {
+      const round = match.round || 1;
+      if (!roundsMap.has(round)) {
+        roundsMap.set(round, []);
+      }
+
+      const competitor1Name = match.competitor1Id 
+        ? allUsers.find(u => u.id === match.competitor1Id)?.name || 'TBD'
+        : 'BYE';
+      const competitor2Name = match.competitor2Id 
+        ? allUsers.find(u => u.id === match.competitor2Id)?.name || 'TBD'
+        : 'BYE';
+      const winnerName = match.winnerId 
+        ? allUsers.find(u => u.id === match.winnerId)?.name || ''
+        : '';
+      const stationName = match.stationId 
+        ? stations.find(s => s.id === match.stationId)?.name || 'A'
+        : 'A';
+
+      // Get judges for this match
+      const heatJudges = allJudgesData[match.id] || [];
+      const judges: Judge[] = heatJudges.map(hj => {
+        const judge = allUsers.find(u => u.id === hj.judgeId);
+        return {
+          judgeName: judge?.name || 'Unknown',
+          visualLatteArt: 'left' as const, // Default, would need score data
+          sensoryBeverage: hj.role === 'SENSORY' ? 'Cappuccino' as const : 'Espresso' as const,
+          taste: 'left' as const,
+          tactile: 'left' as const,
+          flavour: 'left' as const,
+          overall: 'left' as const,
+          leftCupCode: '',
+          rightCupCode: '',
+        };
+      });
+
+      roundsMap.get(round)!.push({
+        heatNumber: match.heatNumber || 0,
+        station: stationName,
+        competitor1: competitor1Name,
+        competitor2: competitor2Name,
+        winner: winnerName,
+        score1: 0, // Would need score data
+        score2: 0,
+        judges,
+      });
+    });
+
+    // Convert to array and sort by round
+    const roundsArray: BracketRound[] = Array.from(roundsMap.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([roundNum, matches]) => ({
+        title: roundNum === 1 ? 'Round 1' : 
+               roundNum === 2 ? 'Round 2' : 
+               roundNum === 3 ? 'Round 3' : 
+               roundNum === 4 ? 'Semi-Finals' : 
+               'Finals',
+        matches: matches.sort((a, b) => a.heatNumber - b.heatNumber),
+      }));
+
+    return roundsArray;
+  }, [tournamentData, allUsers, stations, allJudgesData]);
+
   const totalHeats = rounds.flatMap(r => r.matches).length;
-  const finalWinner = rounds[rounds.length - 1]?.matches[0]?.winner || 'AGA MUHAMMED';
+  const finalWinner = rounds[rounds.length - 1]?.matches[0]?.winner || '';
 
   // Animate matches on load
   useEffect(() => {
-    setIsLoaded(true);
-    setAnimatedMatches(new Set());
-    
-    const allMatches = rounds.flatMap(round => round.matches);
-    
-    allMatches.forEach((match, index) => {
-      setTimeout(() => {
-        setAnimatedMatches(prev => new Set([...Array.from(prev), match.heatNumber]));
-      }, index * 50);
-    });
-  }, []); // Run only on mount - rounds is static demo data
+    if (rounds.length > 0) {
+      setIsLoaded(true);
+      setAnimatedMatches(new Set());
+      
+      const allMatches = rounds.flatMap(round => round.matches);
+      
+      allMatches.forEach((match, index) => {
+        setTimeout(() => {
+          setAnimatedMatches(prev => new Set([...Array.from(prev), match.heatNumber]));
+        }, index * 50);
+      });
+    }
+  }, [rounds]);
 
   const getMedalIcon = (roundTitle: string, isWinner: boolean) => {
     if (!isWinner) return null;
@@ -188,7 +296,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
         <div className="text-center mb-4 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black mb-2 sm:mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent" 
               style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '1px' }}>
-            WEC 2025 MILANO
+            {tournamentData?.tournament?.name?.toUpperCase() || 'TOURNAMENT BRACKET'}
           </h1>
           <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 text-accent" 
               style={{ fontFamily: 'Lexend, sans-serif', letterSpacing: '0.5px' }}>

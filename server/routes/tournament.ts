@@ -9,7 +9,8 @@ import {
   heatJudges, 
   heatScores,
   judgeDetailedScores,
-  users 
+  users,
+  stations
 } from '../../shared/schema';
 
 const router = Router();
@@ -168,13 +169,28 @@ router.post('/:id/assign-judges', async (req, res) => {
   try {
     const tournamentId = parseInt(req.params.id);
     
-    // Get all approved judges
+    // Get tournament participants (judges) - only those approved for this tournament (seed > 0)
+    const allParticipants = await db
+      .select()
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.tournamentId, tournamentId));
+    
     const allUsers = await db.select().from(users);
-    const judges = allUsers.filter(u => u.role === 'JUDGE' && u.approved === true);
+    
+    // Filter to only judges who are approved for this tournament (seed > 0)
+    const judges = allParticipants
+      .filter(p => {
+        const user = allUsers.find(u => u.id === p.userId);
+        return user?.role === 'JUDGE' && p.seed && p.seed > 0;
+      })
+      .map(p => {
+        const user = allUsers.find(u => u.id === p.userId);
+        return user!;
+      });
     
     if (judges.length < 3) {
       return res.status(400).json({ 
-        error: `Need at least 3 approved judges. Currently have ${judges.length}.` 
+        error: `Need at least 3 approved judges for this tournament. Currently have ${judges.length}.` 
       });
     }
     
@@ -253,6 +269,79 @@ router.post('/:id/assign-judges', async (req, res) => {
     });
   } catch (error: any) {
     console.error('Error assigning judges:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Assign station leads to stations (A, B, C)
+router.post('/:id/assign-station-leads', async (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    
+    // Get tournament participants (station leads) - only those approved for this tournament (seed > 0)
+    const allParticipants = await db
+      .select()
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.tournamentId, tournamentId));
+    
+    const allUsers = await db.select().from(users);
+    
+    // Filter to only station leads who are approved for this tournament (seed > 0)
+    const stationLeads = allParticipants
+      .filter(p => {
+        const user = allUsers.find(u => u.id === p.userId);
+        return user?.role === 'STATION_LEAD' && p.seed && p.seed > 0;
+      })
+      .map(p => {
+        const user = allUsers.find(u => u.id === p.userId);
+        return user!;
+      });
+    
+    if (stationLeads.length === 0) {
+      return res.status(400).json({ 
+        error: `No approved station leads found for this tournament.` 
+      });
+    }
+    
+    // Get all stations for this tournament
+    const tournamentStations = await db
+      .select()
+      .from(stations)
+      .where(eq(stations.tournamentId, tournamentId));
+    
+    // Filter to stations A, B, C
+    const stationsABC = tournamentStations
+      .filter(s => ['A', 'B', 'C'].includes(s.name))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    
+    if (stationsABC.length === 0) {
+      return res.status(400).json({ error: 'No stations A, B, C found for this tournament' });
+    }
+    
+    // Shuffle station leads for randomization
+    const shuffledLeads = [...stationLeads].sort(() => Math.random() - 0.5);
+    
+    // Assign station leads to stations (distribute evenly, wrap around if needed)
+    let assignedCount = 0;
+    for (let i = 0; i < stationsABC.length; i++) {
+      const station = stationsABC[i];
+      const stationLead = shuffledLeads[i % shuffledLeads.length];
+      
+      await db.update(stations)
+        .set({ stationLeadId: stationLead.id })
+        .where(eq(stations.id, station.id));
+      
+      assignedCount++;
+    }
+    
+    res.json({
+      success: true,
+      message: `Assigned ${assignedCount} station leads to stations`,
+      stationLeadsAssigned: assignedCount,
+      totalStationLeads: stationLeads.length
+    });
+  } catch (error: any) {
+    console.error('Error assigning station leads:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });

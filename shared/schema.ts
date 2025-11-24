@@ -49,6 +49,7 @@ export const tournamentParticipants = pgTable("tournament_participants", {
   tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
   userId: integer("user_id").notNull().references(() => users.id),
   seed: integer("seed").notNull(),
+  cupCode: text("cup_code"),
   eliminatedRound: integer("eliminated_round"),
   finalRank: integer("final_rank"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -82,6 +83,7 @@ export const stations = pgTable("stations", {
   status: stationStatusEnum("status").notNull().default('AVAILABLE'),
   nextAvailableAt: timestamp("next_available_at").defaultNow().notNull(),
   currentMatchId: integer("current_match_id"),
+  stationLeadId: integer("station_lead_id").references(() => users.id),
 });
 
 export const insertStationSchema = createInsertSchema(stations).omit({ id: true });

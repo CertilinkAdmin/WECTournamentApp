@@ -1,0 +1,664 @@
+{
+  "heats": [
+    {
+      "heatNumber": 12,
+      "heatName": "Heat 12",
+      "competitor1CupCode": "M7",
+      "competitor2CupCode": "M7",
+      "judgeScores": [
+        {
+          "judgeName": "Michalis",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "M7",
+          "rightCupCode": "M7",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Korn",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "M7",
+          "rightCupCode": "M7",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Jasper",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "M7",
+          "rightCupCode": "M7",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 13,
+      "heatName": "Heat 13",
+      "competitor1CupCode": "F5",
+      "competitor2CupCode": "F5",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "F5",
+          "rightCupCode": "F5",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Ali",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "F5",
+          "rightCupCode": "F5",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Junior",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "F5",
+          "rightCupCode": "F5",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 14,
+      "heatName": "Heat 14",
+      "competitor1CupCode": "C6",
+      "competitor2CupCode": "C6",
+      "judgeScores": [
+        {
+          "judgeName": "Michalis",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "C6",
+          "rightCupCode": "C6",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Jasper",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "C6",
+          "rightCupCode": "C6",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Korn",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "C6",
+          "rightCupCode": "C6",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 17,
+      "heatName": "Heat 17",
+      "competitor1CupCode": "W6",
+      "competitor2CupCode": "W6",
+      "judgeScores": [
+        {
+          "judgeName": "Michalis",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "W6",
+          "rightCupCode": "W6",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Jasper",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "W6",
+          "rightCupCode": "W6",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Tess",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "W6",
+          "rightCupCode": "W6",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 18,
+      "heatName": "Heat 18",
+      "competitor1CupCode": "V4",
+      "competitor2CupCode": "V4",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "V4",
+          "rightCupCode": "V4",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Ali",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "V4",
+          "rightCupCode": "V4",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Junior",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "V4",
+          "rightCupCode": "V4",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 19,
+      "heatName": "Heat 19",
+      "competitor1CupCode": "G2",
+      "competitor2CupCode": "G2",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "G2",
+          "rightCupCode": "G2",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Tess",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "G2",
+          "rightCupCode": "G2",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Junior",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "G2",
+          "rightCupCode": "G2",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 21,
+      "heatName": "Heat 21",
+      "competitor1CupCode": "Q5",
+      "competitor2CupCode": "Q5",
+      "judgeScores": [
+        {
+          "judgeName": "Michalis",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "Q5",
+          "rightCupCode": "Q5",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Ali",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "Q5",
+          "rightCupCode": "Q5",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Jasper",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "Q5",
+          "rightCupCode": "Q5",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 22,
+      "heatName": "Heat 22",
+      "competitor1CupCode": "T8",
+      "competitor2CupCode": "T8",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "T8",
+          "rightCupCode": "T8",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Tess",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "T8",
+          "rightCupCode": "T8",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Junior",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "T8",
+          "rightCupCode": "T8",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 23,
+      "heatName": "Heat 23",
+      "competitor1CupCode": "E9",
+      "competitor2CupCode": "E9",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "E9",
+          "rightCupCode": "E9",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Tess",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "E9",
+          "rightCupCode": "E9",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Junior",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "E9",
+          "rightCupCode": "E9",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 24,
+      "heatName": "Heat 24",
+      "competitor1CupCode": "M1",
+      "competitor2CupCode": "M1",
+      "judgeScores": [
+        {
+          "judgeName": "Michalis",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "M1",
+          "rightCupCode": "M1",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Ali",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "M1",
+          "rightCupCode": "M1",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Jasper",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "M1",
+          "rightCupCode": "M1",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 25,
+      "heatName": "Heat 25",
+      "competitor1CupCode": "A7",
+      "competitor2CupCode": "A7",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "A7",
+          "rightCupCode": "A7",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Tess",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "A7",
+          "rightCupCode": "A7",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Junior",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "A7",
+          "rightCupCode": "A7",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 26,
+      "heatName": "Heat 26",
+      "competitor1CupCode": "K5",
+      "competitor2CupCode": "K5",
+      "judgeScores": [
+        {
+          "judgeName": "Michalis",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "K5",
+          "rightCupCode": "K5",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Korn",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "K5",
+          "rightCupCode": "K5",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Junior",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "K5",
+          "rightCupCode": "K5",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 27,
+      "heatName": "Heat 27",
+      "competitor1CupCode": "P3",
+      "competitor2CupCode": "P3",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "P3",
+          "rightCupCode": "P3",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Korn",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "P3",
+          "rightCupCode": "P3",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Ali",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "P3",
+          "rightCupCode": "P3",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 28,
+      "heatName": "Heat 28",
+      "competitor1CupCode": "G8",
+      "competitor2CupCode": "G8",
+      "judgeScores": [
+        {
+          "judgeName": "Michalis",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "G8",
+          "rightCupCode": "G8",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Tess",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "G8",
+          "rightCupCode": "G8",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Junior",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "G8",
+          "rightCupCode": "G8",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 29,
+      "heatName": "Heat 29",
+      "competitor1CupCode": "L2",
+      "competitor2CupCode": "L2",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "L2",
+          "rightCupCode": "L2",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Korn",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "L2",
+          "rightCupCode": "L2",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Boss",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "L2",
+          "rightCupCode": "L2",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 30,
+      "heatName": "Heat 30",
+      "competitor1CupCode": "N4",
+      "competitor2CupCode": "N4",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "N4",
+          "rightCupCode": "N4",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Korn",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "N4",
+          "rightCupCode": "N4",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Boss",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "N4",
+          "rightCupCode": "N4",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    },
+    {
+      "heatNumber": 31,
+      "heatName": "Heat 31",
+      "competitor1CupCode": "22",
+      "competitor2CupCode": "22",
+      "judgeScores": [
+        {
+          "judgeName": "Shinsaku",
+          "beverage": "CAPPUCCINO",
+          "leftCupCode": "22",
+          "rightCupCode": "22",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Korn",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "22",
+          "rightCupCode": "22",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        },
+        {
+          "judgeName": "Boss",
+          "beverage": "ESPRESSO",
+          "leftCupCode": "22",
+          "rightCupCode": "22",
+          "taste": "left",
+          "tactile": "left",
+          "flavour": "left",
+          "overall": "left"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalHeats": 17,
+    "totalJudges": 8,
+    "uniqueJudges": [
+      "Ali",
+      "Boss",
+      "Jasper",
+      "Junior",
+      "Korn",
+      "Michalis",
+      "Shinsaku",
+      "Tess"
+    ]
+  }
+}

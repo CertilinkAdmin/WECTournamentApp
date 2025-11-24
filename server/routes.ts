@@ -411,12 +411,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } else {
         // Use Fisher-Yates shuffle - only on baristas
-        randomized = BracketGenerator.randomizeSeeds(baristaParticipants);
+        randomized = BracketGenerator.randomizeSeeds(baristaParticipants, allUsers);
       }
       
-      // Persist the randomized seeds to database (only for baristas)
+      // Persist the randomized seeds and cup codes to database (only for baristas)
       for (const participant of randomized) {
-        await storage.updateParticipantSeed(participant.id, participant.seed);
+        if (participant.cupCode) {
+          await storage.updateParticipantSeedAndCupCode(participant.id, participant.seed, participant.cupCode);
+        } else {
+          await storage.updateParticipantSeed(participant.id, participant.seed);
+        }
       }
       
       // Get updated participants from database
@@ -738,6 +742,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!tournament) {
         return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      // Assign cup codes to participants who don't have them yet
+      const allParticipants = await storage.getTournamentParticipants(tournamentId);
+      const allUsers = await storage.getAllUsers();
+      
+      // Filter to only baristas (competitors)
+      const baristaParticipants = allParticipants.filter(participant => {
+        const user = allUsers.find(u => u.id === participant.userId);
+        return user?.role === 'BARISTA';
+      });
+
+      // Assign cup codes to participants missing them
+      for (const participant of baristaParticipants) {
+        if (!participant.cupCode && participant.seed > 0) {
+          const user = allUsers.find(u => u.id === participant.userId);
+          if (user) {
+            const cupCode = BracketGenerator.generateCupCode(user.name, participant.seed, participant.seed - 1);
+            await storage.updateParticipantCupCode(participant.id, cupCode);
+          }
+        }
+      }
+
+      // Assign station leads to stations (A, B, C)
+      try {
+        const allParticipants = await storage.getTournamentParticipants(tournamentId);
+        const allUsers = await storage.getAllUsers();
+        
+        // Filter to only station leads who are approved for this tournament (seed > 0)
+        const stationLeads = allParticipants
+          .filter(p => {
+            const user = allUsers.find(u => u.id === p.userId);
+            return user?.role === 'STATION_LEAD' && p.seed && p.seed > 0;
+          })
+          .map(p => {
+            const user = allUsers.find(u => u.id === p.userId);
+            return user!;
+          });
+        
+        if (stationLeads.length > 0) {
+          // Get all stations for this tournament
+          const tournamentStations = await storage.getAllStations();
+          const stationsABC = tournamentStations
+            .filter(s => s.tournamentId === tournamentId && ['A', 'B', 'C'].includes(s.name))
+            .sort((a, b) => a.name.localeCompare(b.name));
+          
+          if (stationsABC.length > 0) {
+            // Shuffle station leads for randomization
+            const shuffledLeads = [...stationLeads].sort(() => Math.random() - 0.5);
+            
+            // Assign station leads to stations (distribute evenly, wrap around if needed)
+            for (let i = 0; i < stationsABC.length; i++) {
+              const station = stationsABC[i];
+              const stationLead = shuffledLeads[i % shuffledLeads.length];
+              
+              await storage.updateStation(station.id, { stationLeadId: stationLead.id });
+            }
+            console.log(`Assigned ${Math.min(stationsABC.length, stationLeads.length)} station leads to stations`);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to assign station leads:', error);
       }
       
       io.to(`tournament:${tournamentId}`).emit("tournament:activated", tournament);

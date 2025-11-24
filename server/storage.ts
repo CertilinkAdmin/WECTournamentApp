@@ -41,6 +41,8 @@ export interface IStorage {
   addParticipant(participant: InsertTournamentParticipant): Promise<TournamentParticipant>;
   getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]>;
   updateParticipantSeed(participantId: number, seed: number): Promise<TournamentParticipant | undefined>;
+  updateParticipantCupCode(participantId: number, cupCode: string): Promise<TournamentParticipant | undefined>;
+  updateParticipantSeedAndCupCode(participantId: number, seed: number, cupCode: string): Promise<TournamentParticipant | undefined>;
   
   // Legacy Registration methods (for backward compatibility)
   addRegistration(participant: InsertTournamentParticipant): Promise<TournamentParticipant>;
@@ -176,6 +178,22 @@ export class DatabaseStorage implements IStorage {
   async updateParticipantSeed(participantId: number, seed: number): Promise<TournamentParticipant | undefined> {
     const result = await db.update(tournamentParticipants)
       .set({ seed })
+      .where(eq(tournamentParticipants.id, participantId))
+      .returning();
+    return result[0];
+  }
+
+  async updateParticipantCupCode(participantId: number, cupCode: string): Promise<TournamentParticipant | undefined> {
+    const result = await db.update(tournamentParticipants)
+      .set({ cupCode })
+      .where(eq(tournamentParticipants.id, participantId))
+      .returning();
+    return result[0];
+  }
+
+  async updateParticipantSeedAndCupCode(participantId: number, seed: number, cupCode: string): Promise<TournamentParticipant | undefined> {
+    const result = await db.update(tournamentParticipants)
+      .set({ seed, cupCode })
       .where(eq(tournamentParticipants.id, participantId))
       .returning();
     return result[0];

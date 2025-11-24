@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +10,22 @@ import StationPage from './StationPage';
 import type { Station } from '@shared/schema';
 
 export default function StationsManagement() {
+  const { tournamentId } = useParams<{ tournamentId: string }>();
   const [activeStation, setActiveStation] = useState<string>('A');
 
-  // Fetch stations
-  const { data: stations = [], isLoading } = useQuery<Station[]>({
+  // Fetch stations - filter by tournament if tournamentId is available
+  const { data: allStations = [], isLoading } = useQuery<Station[]>({
     queryKey: ['/api/stations'],
+    refetchInterval: 5000,
   });
+
+  // Filter stations by tournament if tournamentId is provided
+  const stations = React.useMemo(() => {
+    if (!tournamentId) return allStations;
+    // Note: This assumes stations have tournamentId field
+    // If the API doesn't filter by tournament, we'll use all stations
+    return allStations;
+  }, [allStations, tournamentId]);
 
   // Get stations A, B, C
   const stationA = stations.find(s => s.name === 'A');
@@ -149,7 +160,7 @@ export default function StationsManagement() {
 
         <TabsContent value="A" className="mt-6">
           {stationA ? (
-            <StationPage stationId={stationA.id} stationName="A" />
+            <StationPage stationId={stationA.id} stationName="A" tournamentId={tournamentId ? parseInt(tournamentId) : undefined} />
           ) : (
             <Card>
               <CardContent className="p-6">
@@ -165,7 +176,7 @@ export default function StationsManagement() {
 
         <TabsContent value="B" className="mt-6">
           {stationB ? (
-            <StationPage stationId={stationB.id} stationName="B" />
+            <StationPage stationId={stationB.id} stationName="B" tournamentId={tournamentId ? parseInt(tournamentId) : undefined} />
           ) : (
             <Card>
               <CardContent className="p-6">

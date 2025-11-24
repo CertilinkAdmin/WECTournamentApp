@@ -25,9 +25,10 @@ import type { Station, Match, HeatSegment, User } from '@shared/schema';
 interface StationPageProps {
   stationId: number;
   stationName: string;
+  tournamentId?: number; // Optional tournament ID for filtering
 }
 
-export default function StationPage({ stationId, stationName }: StationPageProps) {
+export default function StationPage({ stationId, stationName, tournamentId }: StationPageProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentSegmentId, setCurrentSegmentId] = useState<number | null>(null);
@@ -43,12 +44,13 @@ export default function StationPage({ stationId, stationName }: StationPageProps
     queryKey: ['/api/users'],
   });
 
-  // Fetch tournaments to get current one
+  // Get tournament ID - use prop if provided, otherwise fetch from tournaments list
   const { data: tournaments = [] } = useQuery<any[]>({
     queryKey: ['/api/tournaments'],
+    enabled: !tournamentId, // Only fetch if tournamentId not provided
   });
   
-  const currentTournamentId = tournaments[0]?.id || 1;
+  const currentTournamentId = tournamentId || tournaments[0]?.id || 1;
 
   // Fetch current matches for this station
   const { data: allMatches = [] } = useQuery<Match[]>({

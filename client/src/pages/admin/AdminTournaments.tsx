@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DndContext, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
-import { Trophy, Shuffle, Save, RotateCcw, Loader2, Users, Settings2, ArrowLeftRight, Plus, Play, CheckCircle2, Rocket, XCircle, Gavel } from 'lucide-react';
+import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { Trophy, Shuffle, Save, RotateCcw, Loader2, Users, Settings2, ArrowLeftRight, Plus, Play, CheckCircle2, Rocket, XCircle, Gavel, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RandomizeSeeds from '@/components/RandomizeSeeds';
 import DraggableCompetitor from '@/components/DraggableCompetitor';
 import DroppableBracketPosition from '@/components/DroppableBracketPosition';
-import type { Tournament, User, TournamentParticipant, Match, Station } from '@shared/schema';
+import SegmentTimeConfig from '@/components/SegmentTimeConfig';
+import type { Tournament, User, TournamentParticipant, Match, Station, HeatJudge } from '@shared/schema';
 
 interface BracketHeat {
   id: number;
@@ -35,6 +36,16 @@ export default function AdminTournaments() {
   const [activeCompetitor, setActiveCompetitor] = useState<User | null>(null);
   const [selectedRound, setSelectedRound] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Configure drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before starting drag
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
   // Fetch tournaments
   const { data: tournaments = [], isLoading: tournamentsLoading } = useQuery<Tournament[]>({
@@ -98,6 +109,27 @@ export default function AdminTournaments() {
     enabled: !!selectedTournamentId,
   });
 
+  // Fetch judges for all matches
+  const { data: allJudgesData = [] } = useQuery<Record<number, HeatJudge[]>>({
+    queryKey: ['/api/tournaments', selectedTournamentId, 'matches', 'judges'],
+    queryFn: async () => {
+      if (!selectedTournamentId || matches.length === 0) return {};
+      const judgesPromises = matches.map(async (match) => {
+        const response = await fetch(`/api/matches/${match.id}/judges`);
+        if (!response.ok) return { matchId: match.id, judges: [] };
+        const judges = await response.json();
+        return { matchId: match.id, judges };
+      });
+      const results = await Promise.all(judgesPromises);
+      const judgesMap: Record<number, HeatJudge[]> = {};
+      results.forEach(({ matchId, judges }) => {
+        judgesMap[matchId] = judges;
+      });
+      return judgesMap;
+    },
+    enabled: !!selectedTournamentId && matches.length > 0,
+  });
+
   // Fetch stations
   const { data: stations = [] } = useQuery<Station[]>({
     queryKey: ['/api/stations'],
@@ -136,6 +168,11 @@ export default function AdminTournaments() {
     return users.filter(u => u.role === 'JUDGE');
   }, [users]);
 
+  // Get all station leads (not just approved ones) for the approval step
+  const allStationLeads = useMemo(() => {
+    return users.filter(u => u.role === 'STATION_LEAD');
+  }, [users]);
+
   // Get judges who are tournament participants
   const judgeParticipants = useMemo(() => {
     if (!selectedTournamentId || !participants.length) return [];
@@ -156,6 +193,33 @@ export default function AdminTournaments() {
   const approvedJudgesForTournament = useMemo(() => {
     return judgeParticipants.filter(j => j.seed && j.seed > 0);
   }, [judgeParticipants]);
+
+  // Get station leads who are tournament participants
+  const stationLeadParticipants = useMemo(() => {
+    if (!selectedTournamentId || !participants.length) return [];
+    return participants
+      .map(p => {
+        const user = users.find(u => u.id === p.userId && u.role === 'STATION_LEAD');
+        return user ? { ...p, user } : null;
+      })
+      .filter((sl): sl is TournamentParticipant & { user: User } => sl !== null);
+  }, [participants, users, selectedTournamentId]);
+
+  // Pending station leads (not yet approved for tournament - seed = 0 or null)
+  const pendingStationLeads = useMemo(() => {
+    return stationLeadParticipants.filter(sl => !sl.seed || sl.seed === 0);
+  }, [stationLeadParticipants]);
+
+  // Approved station leads (seed > 0)
+  const approvedStationLeadsForTournament = useMemo(() => {
+    return stationLeadParticipants.filter(sl => sl.seed && sl.seed > 0);
+  }, [stationLeadParticipants]);
+
+  // Get station leads available to add (not yet in tournament)
+  const availableStationLeadsToAdd = useMemo(() => {
+    const participantUserIds = new Set(participants.map(p => p.userId));
+    return allStationLeads.filter(sl => !participantUserIds.has(sl.id));
+  }, [allStationLeads, participants]);
 
   // Judges not yet added to tournament
   const availableJudgesToAdd = useMemo(() => {
@@ -279,19 +343,82 @@ export default function AdminTournaments() {
       console.log('Bracket generated:', data);
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'matches'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
-      toast({
-        title: "Bracket Generated",
-        description: `Tournament bracket generated with ${data.matchesCreated || 0} matches.`,
-      });
+      
+      // Automatically assign judges to all heats after bracket generation
+      if (approvedJudgesForTournament.length >= 3) {
+        try {
+          const judgesResponse = await fetch(`/api/tournaments/${selectedTournamentId}/assign-judges`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+          });
+          if (judgesResponse.ok) {
+            queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'matches', 'judges'] });
+            toast({
+              title: "Bracket Generated & Judges Assigned",
+              description: `Tournament bracket generated with ${data.matchesCreated || 0} matches. 3 judges assigned to each heat.`,
+            });
+          } else {
+            toast({
+              title: "Bracket Generated",
+              description: `Tournament bracket generated with ${data.matchesCreated || 0} matches. Please assign judges manually.`,
+            });
+          }
+        } catch (error) {
+          toast({
+            title: "Bracket Generated",
+            description: `Tournament bracket generated with ${data.matchesCreated || 0} matches. Please assign judges manually.`,
+          });
+        }
+      } else {
+        toast({
+          title: "Bracket Generated",
+          description: `Tournament bracket generated with ${data.matchesCreated || 0} matches. Add at least 3 judges to assign them to heats.`,
+        });
+      }
     },
     onError: (error: any) => {
       console.error('Error generating bracket:', error);
       toast({
         title: "Error",
         description: error.message || 'Failed to generate bracket',
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Assign station leads mutation
+  const assignStationLeadsMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedTournamentId) throw new Error("No tournament selected");
+      const response = await fetch(`/api/tournaments/${selectedTournamentId}/assign-station-leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to assign station leads' }));
+        throw new Error(error.error || 'Failed to assign station leads');
+      }
+      const data = await response.json();
+      console.log('Station leads assigned:', data);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/stations'] });
+      toast({
+        title: "Station Leads Assigned",
+        description: data.message || `Assigned ${data.stationLeadsAssigned} station leads to stations.`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error assigning station leads:', error);
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to assign station leads',
         variant: "destructive"
       });
     }
@@ -316,6 +443,7 @@ export default function AdminTournaments() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'matches'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'matches', 'judges'] });
       toast({
         title: "Judges Assigned",
         description: data.message || `Assigned 3 judges to ${data.judgesAssigned / 3} heats.`,
@@ -370,12 +498,24 @@ export default function AdminTournaments() {
         // Don't fail if judges are already assigned, just log
         console.warn('Judge assignment warning:', await judgesResponse.json().catch(() => ({})));
       }
+
+      // Step 4: Assign station leads to stations (A, B, C)
+      const stationLeadsResponse = await fetch(`/api/tournaments/${selectedTournamentId}/assign-station-leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!stationLeadsResponse.ok) {
+        // Don't fail if station leads assignment fails, just log
+        console.warn('Station leads assignment warning:', await stationLeadsResponse.json().catch(() => ({})));
+      }
       
       return {
         seedsRandomized: true,
         bracketGenerated: true,
         matchesCreated: bracketData.matchesCreated || 0,
-        judgesAssigned: true
+        judgesAssigned: true,
+        stationLeadsAssigned: stationLeadsResponse.ok
       };
     },
     onSuccess: (data) => {
@@ -384,7 +524,7 @@ export default function AdminTournaments() {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       toast({
         title: "Tournament Prepared",
-        description: `Seeds randomized, bracket generated with ${data.matchesCreated} matches, and judges assigned. Ready to initiate!`,
+        description: `Seeds randomized, bracket generated with ${data.matchesCreated} matches, judges assigned, and station leads assigned to stations. Ready to initiate!`,
       });
     },
     onError: (error: any) => {
@@ -963,6 +1103,180 @@ export default function AdminTournaments() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Station Leads Approval */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="h-5 w-5" />
+                    Station Leads
+                    <Badge variant="secondary">{stationLeadParticipants.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add Station Leads */}
+                  {availableStationLeadsToAdd.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                        Available to Add ({availableStationLeadsToAdd.length})
+                      </h4>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {availableStationLeadsToAdd
+                          .filter(sl => 
+                            !searchTerm || 
+                            sl.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            sl.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                          )
+                          .slice(0, 10)
+                          .map((stationLead) => (
+                            <div
+                              key={stationLead.id}
+                              className="flex items-center justify-between p-2 bg-muted rounded-md"
+                            >
+                              <div>
+                                <div className="font-medium text-sm">{stationLead.name}</div>
+                                <div className="text-xs text-muted-foreground">{stationLead.email}</div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(`/api/tournaments/${selectedTournamentId}/participants`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      credentials: 'include',
+                                      body: JSON.stringify({ userId: stationLead.id, seed: 0 })
+                                    });
+                                    if (!response.ok) {
+                                      const error = await response.json().catch(() => ({ error: 'Failed to add station lead' }));
+                                      throw new Error(error.error || 'Failed to add station lead');
+                                    }
+                                    queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
+                                    toast({
+                                      title: 'Station Lead Added',
+                                      description: `${stationLead.name} has been added to the tournament.`,
+                                    });
+                                  } catch (error: any) {
+                                    toast({
+                                      title: 'Error',
+                                      description: error.message || 'Failed to add station lead',
+                                      variant: 'destructive'
+                                    });
+                                  }
+                                }}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add
+                              </Button>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pending Station Leads */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                      Pending Approval ({pendingStationLeads.length})
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {pendingStationLeads
+                        .filter(sl => 
+                          !searchTerm || 
+                          sl.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          sl.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((stationLead) => {
+                          const maxSeed = approvedStationLeadsForTournament.length > 0
+                            ? Math.max(...approvedStationLeadsForTournament.map(sl => sl.seed || 0))
+                            : 0;
+                          return (
+                            <div
+                              key={stationLead.id}
+                              className="flex items-center justify-between p-3 bg-muted rounded-md"
+                            >
+                              <div>
+                                <div className="font-medium">{stationLead.user?.name || 'Unknown'}</div>
+                                <div className="text-sm text-muted-foreground">{stationLead.user?.email}</div>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    const newSeed = maxSeed + 1;
+                                    const response = await fetch(`/api/tournaments/${selectedTournamentId}/participants/${stationLead.id}/seed`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      credentials: 'include',
+                                      body: JSON.stringify({ seed: newSeed })
+                                    });
+                                    if (!response.ok) {
+                                      const error = await response.json().catch(() => ({ error: 'Failed to approve station lead' }));
+                                      throw new Error(error.error || 'Failed to approve station lead');
+                                    }
+                                    queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'participants'] });
+                                    toast({
+                                      title: 'Station Lead Approved',
+                                      description: `${stationLead.user?.name} has been approved for this tournament.`,
+                                    });
+                                  } catch (error: any) {
+                                    toast({
+                                      title: 'Error',
+                                      description: error.message || 'Failed to approve station lead',
+                                      variant: 'destructive'
+                                    });
+                                  }
+                                }}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      {pendingStationLeads.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No pending station leads</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Approved Station Leads */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                      Approved ({approvedStationLeadsForTournament.length})
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {approvedStationLeadsForTournament
+                        .filter(sl => 
+                          !searchTerm || 
+                          sl.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          sl.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((stationLead) => (
+                          <div
+                            key={stationLead.id}
+                            className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-md"
+                          >
+                            <div>
+                              <div className="font-medium">{stationLead.user?.name || 'Unknown'}</div>
+                              <div className="text-sm text-muted-foreground">
+                                ID: <Badge variant="outline">{stationLead.seed}</Badge>
+                              </div>
+                            </div>
+                            <Badge variant="default">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Approved
+                            </Badge>
+                          </div>
+                        ))}
+                      {approvedStationLeadsForTournament.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No approved station leads yet</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </TabsContent>
@@ -982,7 +1296,7 @@ export default function AdminTournaments() {
         <TabsContent value="bracket" className="mt-6">
           <div className="space-y-6">
             {/* Prepare Tournament - Complete Workflow */}
-            {selectedTournament?.status === 'SETUP' && baristaParticipants.length > 0 && (
+            {selectedTournament?.status === 'SETUP' && approvedBaristasForTournament.length > 0 && (
               <Card className="border-primary/20 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -992,7 +1306,7 @@ export default function AdminTournaments() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Complete tournament setup in one click: randomize seeds, generate bracket, and assign judges.
+                    Complete tournament setup in one click: randomize seeds, generate bracket, assign judges, and assign station leads to stations.
                   </p>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
@@ -1007,10 +1321,18 @@ export default function AdminTournaments() {
                       <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                       <span>Assign 3 judges per heat (2 ESPRESSO, 1 CAPPUCCINO)</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                      <span>Assign station leads to stations A, B, C</span>
+                    </div>
                   </div>
                   <Button
                     onClick={() => prepareTournamentMutation.mutate()}
-                    disabled={prepareTournamentMutation.isPending || baristaParticipants.length < 2 || approvedJudges.length < 3}
+                    disabled={
+                      prepareTournamentMutation.isPending || 
+                      approvedBaristasForTournament.length < 2 || 
+                      approvedJudgesForTournament.length < 3
+                    }
                     size="lg"
                     className="w-full gap-2"
                   >
@@ -1026,12 +1348,12 @@ export default function AdminTournaments() {
                       </>
                     )}
                   </Button>
-                  {(baristaParticipants.length < 2 || approvedJudges.length < 3) && (
+                  {(approvedBaristasForTournament.length < 2 || approvedJudgesForTournament.length < 3) && (
                     <div className="text-xs text-muted-foreground space-y-1">
-                      {baristaParticipants.length < 2 && (
-                        <p>⚠️ Need at least 2 participants to prepare tournament</p>
+                      {approvedBaristasForTournament.length < 2 && (
+                        <p>⚠️ Need at least 2 approved competitors to prepare tournament</p>
                       )}
-                      {approvedJudges.length < 3 && (
+                      {approvedJudgesForTournament.length < 3 && (
                         <p>⚠️ Need at least 3 approved judges to prepare tournament</p>
                       )}
                     </div>
@@ -1045,20 +1367,20 @@ export default function AdminTournaments() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  Approved Judges ({approvedJudges.length})
+                  Approved Judges ({approvedJudgesForTournament.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {approvedJudges.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No approved judges found. Please approve judges first.</p>
-                ) : approvedJudges.length < 3 ? (
+                {approvedJudgesForTournament.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No approved judges found. Please approve judges in the Approval tab first.</p>
+                ) : approvedJudgesForTournament.length < 3 ? (
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      ⚠️ Need at least 3 approved judges to assign judges to heats. Currently have {approvedJudges.length}.
+                      ⚠️ Need at least 3 approved judges to assign judges to heats. Currently have {approvedJudgesForTournament.length}.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {approvedJudges.map(judge => (
-                        <Badge key={judge.id} variant="secondary">{judge.name}</Badge>
+                      {approvedJudgesForTournament.map(judge => (
+                        <Badge key={judge.id} variant="secondary">{judge.user?.name || 'Unknown'}</Badge>
                       ))}
                     </div>
                   </div>
@@ -1066,12 +1388,12 @@ export default function AdminTournaments() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">
-                        {approvedJudges.length} approved judges available. Each heat will be assigned 3 judges (2 ESPRESSO, 1 CAPPUCCINO). All 3 judges score latte art.
+                        {approvedJudgesForTournament.length} approved judges available. Each heat will be assigned 3 judges (2 ESPRESSO, 1 CAPPUCCINO). All 3 judges score latte art.
                       </p>
                       {matches.length > 0 && (
                         <Button
                           onClick={() => assignJudgesMutation.mutate()}
-                          disabled={assignJudgesMutation.isPending || approvedJudges.length < 3}
+                          disabled={assignJudgesMutation.isPending || approvedJudgesForTournament.length < 3}
                           variant="outline"
                           className="gap-2"
                         >
@@ -1090,8 +1412,56 @@ export default function AdminTournaments() {
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {approvedJudges.map(judge => (
-                        <Badge key={judge.id} variant="secondary">{judge.name}</Badge>
+                      {approvedJudgesForTournament.map(judge => (
+                        <Badge key={judge.id} variant="secondary">{judge.user?.name || 'Unknown'}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Approved Station Leads Display */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  Approved Station Leads ({approvedStationLeadsForTournament.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {approvedStationLeadsForTournament.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No approved station leads found. Please approve station leads in the Approval tab first.</p>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        {approvedStationLeadsForTournament.length} approved station leads available. They will be randomly assigned to stations A, B, and C during tournament setup.
+                      </p>
+                      {stations.length >= 3 && (
+                        <Button
+                          onClick={() => assignStationLeadsMutation.mutate()}
+                          disabled={assignStationLeadsMutation.isPending || approvedStationLeadsForTournament.length === 0}
+                          variant="outline"
+                          className="gap-2"
+                        >
+                          {assignStationLeadsMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Assigning...
+                            </>
+                          ) : (
+                            <>
+                              <Shuffle className="h-4 w-4" />
+                              Assign Station Leads to Stations
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {approvedStationLeadsForTournament.map(stationLead => (
+                        <Badge key={stationLead.id} variant="secondary">{stationLead.user?.name || 'Unknown'}</Badge>
                       ))}
                     </div>
                   </div>
@@ -1125,28 +1495,35 @@ export default function AdminTournaments() {
                     )}
                   </div>
                   <div className="flex gap-2 items-center">
-                    {baristaParticipants.length === 0 && (
+                    {approvedBaristasForTournament.length === 0 && (
                       <div className="text-sm text-muted-foreground">
-                        No barista participants found. Add participants first.
+                        No approved competitors found. Approve competitors in the Approval tab first.
                       </div>
                     )}
-                    {baristaParticipants.length > 0 && currentRoundHeats.length === 0 && (
+                    {approvedBaristasForTournament.length >= 2 && currentRoundHeats.length === 0 && (
                       <Button
                         onClick={() => generateBracketMutation.mutate()}
-                        disabled={generateBracketMutation.isPending || participantsLoading}
+                        disabled={generateBracketMutation.isPending || participantsLoading || approvedBaristasForTournament.length < 2}
+                        size="lg"
+                        className="gap-2"
                       >
                         {generateBracketMutation.isPending ? (
                           <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                             Generating Bracket...
                           </>
                         ) : (
                           <>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Generate Bracket ({baristaParticipants.length} participants)
+                            <Plus className="h-4 w-4" />
+                            Generate Bracket ({approvedBaristasForTournament.length} approved competitors)
                           </>
                         )}
                       </Button>
+                    )}
+                    {approvedBaristasForTournament.length < 2 && currentRoundHeats.length === 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        Need at least 2 approved competitors to generate bracket
+                      </div>
                     )}
                     {currentRoundHeats.length > 0 && (
                       <div className="text-sm text-muted-foreground">
@@ -1211,8 +1588,23 @@ export default function AdminTournaments() {
               </CardContent>
             </Card>
 
+            {/* Time Configuration */}
+            {selectedTournamentId && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings2 className="h-5 w-5" />
+                    Round Time Configuration
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SegmentTimeConfig tournamentId={selectedTournamentId} />
+                </CardContent>
+              </Card>
+            )}
+
             {/* Bracket Builder */}
-            <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Available Competitors */}
                 <Card className="lg:col-span-1">
@@ -1266,9 +1658,43 @@ export default function AdminTournaments() {
                 {/* Bracket Heats */}
                 <Card className="lg:col-span-2">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Trophy className="h-5 w-5" />
-                      Round {selectedRound} Bracket
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-5 w-5" />
+                        Round {selectedRound} Bracket
+                      </div>
+                      {currentRoundHeats.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const heatsWithJudges = currentRoundHeats.filter(h => allJudgesData[h.id] && allJudgesData[h.id].length === 3).length;
+                            const totalHeats = currentRoundHeats.length;
+                            const allHeatsHaveJudges = heatsWithJudges === totalHeats;
+                            return (
+                              <>
+                                <Badge variant={allHeatsHaveJudges ? 'default' : 'destructive'} className="text-xs">
+                                  Judges: {heatsWithJudges}/{totalHeats} heats
+                                </Badge>
+                                {!allHeatsHaveJudges && approvedJudgesForTournament.length >= 3 && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => assignJudgesMutation.mutate()}
+                                    disabled={assignJudgesMutation.isPending}
+                                    className="h-7 text-xs"
+                                  >
+                                    {assignJudgesMutation.isPending ? (
+                                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                    ) : (
+                                      <Shuffle className="h-3 w-3 mr-1" />
+                                    )}
+                                    Assign Judges
+                                  </Button>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1298,6 +1724,47 @@ export default function AdminTournaments() {
                                   <Badge variant="secondary">{heat.status}</Badge>
                                 </div>
                               </div>
+                              
+                              {/* Judge Assignments */}
+                              <div className="mb-3">
+                                {allJudgesData[heat.id] && allJudgesData[heat.id].length > 0 ? (
+                                  <div className={`p-2 rounded-md ${allJudgesData[heat.id].length === 3 ? 'bg-muted/50' : 'bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800'}`}>
+                                    <div className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-2">
+                                      Judges ({allJudgesData[heat.id].length}/3):
+                                      {allJudgesData[heat.id].length < 3 && (
+                                        <Badge variant="destructive" className="text-xs">Missing {3 - allJudgesData[heat.id].length}</Badge>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {allJudgesData[heat.id].map((judge) => {
+                                        const judgeUser = users.find(u => u.id === judge.judgeId);
+                                        const roleLabel = judge.role === 'TECHNICAL' ? 'ESPRESSO' : judge.role === 'SENSORY' ? 'CAPPUCCINO' : judge.role;
+                                        return (
+                                          <Badge 
+                                            key={judge.id} 
+                                            variant={judge.role === 'SENSORY' ? 'default' : 'secondary'}
+                                            className="text-xs"
+                                            title={`${judgeUser?.name || 'Unknown'} - ${roleLabel} + Latte Art`}
+                                          >
+                                            {judgeUser?.name || 'Unknown'} ({roleLabel} + LA)
+                                          </Badge>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="p-2 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-md">
+                                    <div className="text-xs font-semibold text-orange-700 dark:text-orange-300 mb-1.5 flex items-center gap-2">
+                                      Judges (0/3):
+                                      <Badge variant="destructive" className="text-xs">Missing 3</Badge>
+                                    </div>
+                                    <p className="text-xs text-orange-600 dark:text-orange-400">
+                                      No judges assigned. Click "Randomize Judges for All Heats" to assign.
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                              
                               <div className="grid grid-cols-2 gap-3">
                                 <div className="relative">
                                   <DroppableBracketPosition

@@ -244,6 +244,18 @@ router.post('/seed-test-data', async (req, res) => {
       judges.push(judge);
     }
     
+    // Create 9 test station leads
+    const stationLeads = [];
+    for (let i = 1; i <= 9; i++) {
+      const stationLead = await storage.createUser({
+        name: `Test Station Lead ${i}`,
+        email: `test-stationlead-${tournament.id}-${i}-${timestamp}@test.com`,
+        role: 'STATION_LEAD',
+        approved: true
+      });
+      stationLeads.push(stationLead);
+    }
+    
     // Add baristas as participants with seeds
     for (let i = 0; i < baristas.length; i++) {
       await storage.addParticipant({
@@ -279,8 +291,9 @@ router.post('/seed-test-data', async (req, res) => {
       tournament,
       baristasCreated: baristas.length,
       judgesCreated: judges.length,
+      stationLeadsCreated: stationLeads.length,
       stationsCreated: createdStations.length,
-      message: `Test tournament "${testTournamentName}" created with ${baristas.length} baristas, ${judges.length} judges, and ${createdStations.length} stations`
+      message: `Test tournament "${testTournamentName}" created with ${baristas.length} baristas, ${judges.length} judges, ${stationLeads.length} station leads, and ${createdStations.length} stations`
     });
   } catch (error: any) {
     console.error('Error creating test data:', error);

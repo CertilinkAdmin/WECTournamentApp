@@ -64,6 +64,7 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
     <Card>
       <CardHeader className="bg-primary/10">
         <CardTitle className="flex items-center gap-2 text-primary">
+          <img src="/icons/stopwatch.png" alt="Stopwatch" className="h-5 w-5" />
           <Clock className="h-5 w-5" />
           Heat Segment Time Configuration
         </CardTitle>
@@ -118,7 +119,8 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
         </div>
 
         <div className="flex items-center justify-between p-4 bg-muted rounded-md">
-          <div className="text-sm">
+          <div className="flex items-center gap-2 text-sm">
+            <img src="/icons/stopwatch.png" alt="Stopwatch" className="h-4 w-4 opacity-70" />
             <span className="text-muted-foreground">Total Time:</span>
             <span className="ml-2 font-bold text-lg">
               {dialInMinutes + cappuccinoMinutes + espressoMinutes} minutes
@@ -132,7 +134,10 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
 
         {roundTimes.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-sm font-medium mb-3">Configured Rounds</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <img src="/icons/stopwatch.png" alt="Stopwatch" className="h-4 w-4" />
+              <h3 className="text-sm font-medium">Configured Rounds</h3>
+            </div>
             <div className="space-y-2">
               {roundTimes.map((rt) => (
                 <div
@@ -140,7 +145,10 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
                   className="flex items-center justify-between p-3 bg-muted/50 rounded-md text-sm"
                   data-testid={`round-time-${rt.round}`}
                 >
-                  <span className="font-medium">Round {rt.round}</span>
+                  <div className="flex items-center gap-2">
+                    <img src="/icons/stopwatch.png" alt="Stopwatch" className="h-3 w-3 opacity-60" />
+                    <span className="font-medium">Round {rt.round}</span>
+                  </div>
                   <div className="flex gap-4 text-muted-foreground">
                     <span>Dial-In: {rt.dialInMinutes}min</span>
                     <span>Cappuccino: {rt.cappuccinoMinutes}min</span>

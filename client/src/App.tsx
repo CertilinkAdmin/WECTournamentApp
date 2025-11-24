@@ -14,6 +14,10 @@ import ResultsTournamentList from './pages/results/ResultsTournamentList';
 import WEC2025Results from './pages/results/WEC2025Results';
 import TournamentBracketResults from './pages/results/TournamentBracketResults';
 import LiveBracket from './pages/live/LiveBracket';
+import LiveOverview from './pages/live/LiveOverview';
+import LiveHeats from './pages/live/LiveHeats';
+import LiveLeaderboard from './pages/live/LiveLeaderboard';
+import StationsManagement from './components/StationsManagement';
 import JudgeScorecardsResults from './pages/results/JudgeScorecardsResults';
 import JudgeScorecardsDetail from './pages/results/JudgeScorecardsDetail';
 import Baristas from './pages/results/Baristas';
@@ -57,11 +61,12 @@ const App: React.FC = () => {
           {/* Live Tournament Routes */}
           <Route path="/live" element={<TournamentList />} />
           <Route path="/live/:tournamentId" element={<LiveLayout />}>
-            <Route index element={<LiveBracket />} />
+            <Route index element={<LiveOverview />} />
+            <Route path="overview" element={<LiveOverview />} />
             <Route path="bracket" element={<LiveBracket />} />
-            <Route path="heats" element={<div>Current Heats</div>} />
-            <Route path="leaderboard" element={<div>Live Leaderboard</div>} />
-            <Route path="stations" element={<div>Stations</div>} />
+            <Route path="heats" element={<LiveHeats />} />
+            <Route path="leaderboard" element={<LiveLeaderboard />} />
+            <Route path="stations" element={<StationsManagement />} />
           </Route>
 
           {/* Results Routes */}

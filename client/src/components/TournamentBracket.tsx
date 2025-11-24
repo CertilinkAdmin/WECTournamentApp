@@ -89,15 +89,20 @@ function SortableHeat({ heat, isSmall = false, stationColors }: SortableHeatProp
   );
 }
 
-export default function TournamentBracket() {
+interface TournamentBracketProps {
+  tournamentId?: number; // Accept tournamentId as prop
+}
+
+export default function TournamentBracket({ tournamentId }: TournamentBracketProps = {}) {
   const { toast } = useToast();
   
-  // Fetch tournaments to get current one
+  // Use provided tournamentId or fetch tournaments to get current one
   const { data: tournaments = [] } = useQuery<any[]>({
     queryKey: ['/api/tournaments'],
+    enabled: !tournamentId, // Only fetch if tournamentId not provided
   });
   
-  const currentTournamentId = tournaments[0]?.id || 1;
+  const currentTournamentId = tournamentId || tournaments[0]?.id || 1;
 
   // Fetch all matches for the tournament
   const { data: allMatches = [], isLoading: matchesLoading } = useQuery<Match[]>({

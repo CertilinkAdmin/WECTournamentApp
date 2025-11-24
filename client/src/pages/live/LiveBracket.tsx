@@ -13,10 +13,18 @@ interface Tournament {
 const LiveBracket: React.FC = () => {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   
-  const { data: tournament, isLoading } = useQuery<Tournament>({
+  // API returns { tournament, participants, matches, scores }
+  const { data: tournamentData, isLoading } = useQuery<{
+    tournament: Tournament;
+    participants: any[];
+    matches: any[];
+    scores: any[];
+  }>({
     queryKey: [`/api/tournaments/${tournamentId}`],
     enabled: !!tournamentId,
   });
+
+  const tournament = tournamentData?.tournament;
 
   if (isLoading) {
     return (
