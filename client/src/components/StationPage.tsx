@@ -50,7 +50,7 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
     queryKey: ['/api/tournaments'],
     enabled: !tournamentId, // Only fetch if tournamentId not provided
   });
-  
+
   const currentTournamentId = tournamentId || tournaments[0]?.id || 1;
 
   // Fetch current matches for this station
@@ -59,7 +59,11 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
     enabled: !!currentTournamentId,
   });
 
-  const stationMatches = allMatches.filter(m => m.stationId === stationId);
+  // Filter matches for this station
+  const stationMatches = allMatches.filter(match => {
+    if (!match.stationId || !station) return false;
+    return match.stationId === station.id;
+  });
   const currentMatch = stationMatches.find(m => m.status === 'RUNNING') || 
                        stationMatches.find(m => m.status === 'READY') ||
                        stationMatches[0];
@@ -212,7 +216,7 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
                     const status = segment?.status || 'IDLE';
                     const isActive = status === 'RUNNING';
                     const isComplete = status === 'ENDED';
-                    
+
                     return (
                       <div
                         key={segmentCode}
@@ -233,7 +237,7 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
                     );
                   })}
                 </div>
-                
+
                 {/* Show timer for running segment in a dedicated section */}
                 {(() => {
                   const runningSegment = segments.find(s => s.status === 'RUNNING');
@@ -258,13 +262,13 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
               {/* Segment Controls */}
               <div className="space-y-4">
                 <Separator />
-                
+
                 <div className="flex flex-wrap gap-2">
                   {['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'].map((segmentCode) => {
                     const status = getSegmentStatus(segmentCode);
                     const isRunning = status === 'RUNNING';
                     const isEnded = status === 'ENDED';
-                    
+
                     return (
                       <Button
                         key={segmentCode}

@@ -29,25 +29,24 @@ export default function StationLeadView() {
 
   // Filter to only show stations A, B, and C, deduplicated by normalized name
   const mainStations = React.useMemo(() => {
-    // Normalize station names (remove "Station " prefix if present) and filter
+    // Normalize station names and filter for A, B, C
     const normalizedStations = stations.map(station => ({
       ...station,
-      normalizedName: station.name.startsWith('Station ') 
-        ? station.name.replace(/^Station /, '') 
-        : station.name
+      normalizedName: station.name.replace(/^Station\s*/i, '').trim()
     }));
     
     const filtered = normalizedStations.filter(station => 
-      ['A', 'B', 'C'].includes(station.normalizedName)
+      ['A', 'B', 'C'].includes(station.normalizedName.toUpperCase())
     );
     
     // Deduplicate by normalized name - take first occurrence of each letter
     const seen = new Set<string>();
     return filtered.filter(station => {
-      if (seen.has(station.normalizedName)) {
+      const upperName = station.normalizedName.toUpperCase();
+      if (seen.has(upperName)) {
         return false;
       }
-      seen.add(station.normalizedName);
+      seen.add(upperName);
       return true;
     });
   }, [stations]);

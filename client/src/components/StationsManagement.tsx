@@ -28,10 +28,10 @@ export default function StationsManagement() {
     return allStations;
   }, [allStations, tournamentId]);
 
-  // Get stations A, B, C
-  const stationA = stations.find(s => s.name === 'A');
-  const stationB = stations.find(s => s.name === 'B');
-  const stationC = stations.find(s => s.name === 'C');
+  // Get stations A, B, C (handle both 'A' and 'Station A' naming conventions)
+  const stationA = stations.find(s => s.name === 'A' || s.name === 'Station A');
+  const stationB = stations.find(s => s.name === 'B' || s.name === 'Station B');
+  const stationC = stations.find(s => s.name === 'C' || s.name === 'Station C');
 
   const getStationStatus = (station: Station | undefined) => {
     if (!station) return 'OFFLINE';
