@@ -6,7 +6,7 @@ import { BracketGenerator } from "./bracketGenerator";
 import tournamentRoutes from "./routes/tournament";
 import { registerBracketRoutes } from "./routes/bracket";
 import adminRoutes from "./routes/admin";
-import { 
+import {
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
   insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
@@ -17,7 +17,7 @@ import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  
+
   // WebSocket setup
   const io = new SocketIOServer(httpServer, {
     cors: {
@@ -34,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WebSocket connection handling
   io.on("connection", (socket: any) => {
     console.log("Client connected:", socket.id);
-    
+
     socket.on("disconnect", () => {
       console.log("Client disconnected:", socket.id);
     });
@@ -120,27 +120,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tournamentData = insertTournamentSchema.parse(req.body);
       const tournament = await storage.createTournament(tournamentData);
-      
+
       // Create tournament-specific stations (with tournament_id)
-      await storage.createStation({ 
+      await storage.createStation({
         tournamentId: tournament.id,
-        name: "A", 
-        status: "AVAILABLE", 
-        nextAvailableAt: new Date() 
+        name: "A",
+        status: "AVAILABLE",
+        nextAvailableAt: new Date()
       });
-      await storage.createStation({ 
+      await storage.createStation({
         tournamentId: tournament.id,
-        name: "B", 
-        status: "AVAILABLE", 
-        nextAvailableAt: new Date() 
+        name: "B",
+        status: "AVAILABLE",
+        nextAvailableAt: new Date()
       });
-      await storage.createStation({ 
+      await storage.createStation({
         tournamentId: tournament.id,
-        name: "C", 
-        status: "AVAILABLE", 
-        nextAvailableAt: new Date() 
+        name: "C",
+        status: "AVAILABLE",
+        nextAvailableAt: new Date()
       });
-      
+
       io.emit("tournament:created", tournament);
       res.json(tournament);
     } catch (error: any) {
@@ -157,12 +157,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tournamentId = parseInt(req.params.id);
       console.log('Fetching tournament with ID:', tournamentId);
-      
+
       const tournament = await storage.getTournament(tournamentId);
       if (!tournament) {
         return res.status(404).json({ error: "Tournament not found" });
       }
-      
+
       // Get participants with user info
       const participants = await storage.getTournamentParticipants(tournamentId);
       const allUsers = await storage.getAllUsers();
@@ -177,30 +177,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user?.email || ''
         };
       });
-      
+
       // Get matches with competitor names
       const matches = await storage.getTournamentMatches(tournamentId);
       const matchesWithNames = matches.map((m) => {
         let competitor1Name = '';
         let competitor2Name = '';
-        
+
         if (m.competitor1Id) {
           const comp1 = allUsers.find(u => u.id === m.competitor1Id);
           competitor1Name = comp1?.name || '';
         }
-        
+
         if (m.competitor2Id) {
           const comp2 = allUsers.find(u => u.id === m.competitor2Id);
           competitor2Name = comp2?.name || '';
         }
-        
+
         return {
           ...m,
           competitor1Name,
           competitor2Name
         };
       });
-      
+
       // Get scores with judge names for all matches
       const scoresPromises = matches.map(m => storage.getMatchScores(m.id));
       const scoresArrays = await Promise.all(scoresPromises);
@@ -212,12 +212,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           judgeName: judge?.name || 'Unknown Judge'
         };
       });
-      
+
       // Get detailed scores for all matches
       const detailedScoresPromises = matches.map(m => storage.getMatchDetailedScores(m.id));
       const detailedScoresArrays = await Promise.all(detailedScoresPromises);
       const detailedScoresForTournament = detailedScoresArrays.flat();
-      
+
       res.json({
         tournament,
         participants: participantsWithInfo,
@@ -264,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tournamentId = parseInt(req.params.id);
       const { includeJudges } = req.query; // Optional query param to include judges
       const participants = await storage.getTournamentParticipants(tournamentId);
-      
+
       if (includeJudges === 'true') {
         // Return all participants including judges
         res.json(participants);
@@ -287,16 +287,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const participantId = parseInt(req.params.participantId);
       const { seed } = req.body;
-      
+
       if (typeof seed !== 'number') {
         return res.status(400).json({ error: "Seed must be a number" });
       }
-      
+
       const participant = await storage.updateParticipantSeed(participantId, seed);
       if (!participant) {
         return res.status(404).json({ error: "Participant not found" });
       }
-      
+
       io.to(`tournament:${participant.tournamentId}`).emit("participant:updated", participant);
       res.json(participant);
     } catch (error: any) {
@@ -309,18 +309,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tournamentId = parseInt(req.params.id);
       const participantId = parseInt(req.params.participantId);
-      
+
       // Get participant first to verify it exists and belongs to tournament
       const participants = await storage.getTournamentParticipants(tournamentId);
       const participant = participants.find(p => p.id === participantId);
-      
+
       if (!participant) {
         return res.status(404).json({ error: "Participant not found" });
       }
-      
+
       // Delete from database
       await db.delete(tournamentParticipants).where(eq(tournamentParticipants.id, participantId));
-      
+
       io.to(`tournament:${tournamentId}`).emit("participant:removed", { participantId, tournamentId });
       res.json({ success: true, participantId });
     } catch (error: any) {
@@ -333,23 +333,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tournamentId = parseInt(req.params.id);
       const participants = await storage.getTournamentParticipants(tournamentId);
-      
+
       // Filter to only use baristas (competitors), not judges
       const allUsers = await storage.getAllUsers();
       const baristaParticipants = participants.filter(participant => {
         const user = allUsers.find(u => u.id === participant.userId);
         return user?.role === 'BARISTA';
       });
-      
+
       if (baristaParticipants.length === 0) {
         return res.status(400).json({ error: "No barista participants found" });
       }
 
       await BracketGenerator.generateBracket(tournamentId, baristaParticipants);
-      
+
       const matches = await storage.getTournamentMatches(tournamentId);
       io.to(`tournament:${tournamentId}`).emit("bracket:generated", matches);
-      
+
       res.json({ success: true, matchesCreated: matches.length });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -360,12 +360,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/tournaments/:id/clear", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
-      
+
       // Clear all tournament-related data
       await storage.clearTournamentData(tournamentId);
-      
+
       io.to(`tournament:${tournamentId}`).emit("tournament:cleared", { tournamentId });
-      
+
       res.json({ success: true, message: "Tournament data cleared successfully" });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -377,33 +377,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tournamentId = parseInt(req.params.id);
       const { seedAssignments } = req.body; // Optional: accept specific seed assignments
-      
+
       const allParticipants = await storage.getTournamentParticipants(tournamentId);
-      
+
       // Filter to only baristas (competitors), not judges
       const allUsers = await storage.getAllUsers();
       const baristaParticipants = allParticipants.filter(participant => {
         const user = allUsers.find(u => u.id === participant.userId);
         return user?.role === 'BARISTA';
       });
-      
+
       if (baristaParticipants.length === 0) {
         return res.status(400).json({ error: "No barista participants found to randomize" });
       }
 
       let randomized: typeof baristaParticipants;
-      
+
       // If specific seed assignments provided, use them; otherwise randomize
       if (seedAssignments && Array.isArray(seedAssignments)) {
         // Validate seed assignments
         const participantIds = new Set(baristaParticipants.map(p => p.id));
         const assignmentIds = new Set(seedAssignments.map((a: any) => a.participantId));
-        
-        if (participantIds.size !== assignmentIds.size || 
-            !Array.from(participantIds).every(id => assignmentIds.has(id))) {
+
+        if (participantIds.size !== assignmentIds.size ||
+          !Array.from(participantIds).every(id => assignmentIds.has(id))) {
           return res.status(400).json({ error: "Invalid seed assignments" });
         }
-        
+
         randomized = seedAssignments.map((assignment: { participantId: number; seed: number }) => {
           const participant = baristaParticipants.find(p => p.id === assignment.participantId);
           if (!participant) throw new Error(`Participant ${assignment.participantId} not found`);
@@ -413,7 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Use Fisher-Yates shuffle - only on baristas
         randomized = BracketGenerator.randomizeSeeds(baristaParticipants, allUsers);
       }
-      
+
       // Persist the randomized seeds and cup codes to database (only for baristas)
       for (const participant of randomized) {
         if (participant.cupCode) {
@@ -422,12 +422,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateParticipantSeed(participant.id, participant.seed);
         }
       }
-      
+
       // Get updated participants from database
       const updatedParticipants = await storage.getTournamentParticipants(tournamentId);
-      
+
       io.to(`tournament:${tournamentId}`).emit("seeds:randomized", updatedParticipants);
-      
+
       res.json(updatedParticipants);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -462,9 +462,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tournamentId = parseInt(req.params.id);
       const { round, dialInMinutes, cappuccinoMinutes, espressoMinutes } = req.body;
-      
+
       const totalMinutes = dialInMinutes + cappuccinoMinutes + espressoMinutes;
-      
+
       const roundTime = await storage.setRoundTimes({
         tournamentId,
         round,
@@ -473,7 +473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         espressoMinutes,
         totalMinutes
       });
-      
+
       io.to(`tournament:${tournamentId}`).emit("round-times:updated", roundTime);
       res.json(roundTime);
     } catch (error: any) {
@@ -517,7 +517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stationId = parseInt(req.params.id);
       const limit = parseInt(req.query.limit as string) || 10;
       const offset = parseInt(req.query.offset as string) || 0;
-      
+
       const matches = await storage.getStationMatches(stationId, limit, offset);
       res.json(matches);
     } catch (error: any) {
@@ -543,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const matchData = insertMatchSchema.parse(req.body);
       const match = await storage.createMatch(matchData);
-      
+
       // Create heat segments
       await storage.createHeatSegment({
         matchId: match.id,
@@ -563,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "IDLE",
         plannedMinutes: 1
       });
-      
+
       io.to(`tournament:${match.tournamentId}`).emit("match:created", match);
       res.json(match);
     } catch (error: any) {
@@ -607,52 +607,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const segmentId = parseInt(req.params.id);
       const updateData = req.body;
-      
+
       // Get the current segment to check its match and status
       const segment = await storage.getHeatSegment(segmentId);
-      
+
       if (!segment) {
         return res.status(404).json({ error: "Segment not found" });
       }
-      
+
       // If starting a segment (status changing to RUNNING), validate segment order
       if (updateData.status === 'RUNNING' && segment.status !== 'RUNNING') {
         const matchId = segment.matchId;
         const segments = await storage.getMatchSegments(matchId);
-        
+
         // Validate segment order
         const segmentOrder = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
         const currentIndex = segmentOrder.indexOf(segment.segment);
-        
+
         if (currentIndex > 0) {
           const previousSegmentCode = segmentOrder[currentIndex - 1];
           const previousSegment = segments.find(s => s.segment === previousSegmentCode);
-          
+
           if (previousSegment && previousSegment.status !== 'ENDED') {
-            return res.status(400).json({ 
-              error: `Previous segment ${previousSegmentCode} must be completed before starting ${segment.segment}` 
+            return res.status(400).json({
+              error: `Previous segment ${previousSegmentCode} must be completed before starting ${segment.segment}`
             });
           }
         }
-        
+
         // Set startTime if not provided
         if (!updateData.startTime) {
           updateData.startTime = new Date();
         }
       }
-      
+
       // If ending a segment (status changing to ENDED), set endTime
       if (updateData.status === 'ENDED' && segment.status !== 'ENDED') {
         if (!updateData.endTime) {
           updateData.endTime = new Date();
         }
       }
-      
+
       const updatedSegment = await storage.updateHeatSegment(segmentId, updateData);
       if (!updatedSegment) {
         return res.status(404).json({ error: "Segment not found" });
       }
-      
+
       // Emit appropriate socket events
       const match = await storage.getMatch(segment.matchId);
       if (match) {
@@ -664,7 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           io.to(`tournament:${match.tournamentId}`).emit("segment:updated", updatedSegment);
         }
       }
-      
+
       res.json(updatedSegment);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -695,13 +695,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const scoreData = insertHeatScoreSchema.parse(req.body);
       const score = await storage.submitScore(scoreData);
-      
+
       // Get match to emit to correct tournament room
       const match = await storage.getMatch(score.matchId);
       if (match) {
         io.to(`tournament:${match.tournamentId}`).emit("score:submitted", score);
       }
-      
+
       res.json(score);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -719,13 +719,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { insertJudgeDetailedScoreSchema } = await import("@shared/schema");
       const scoreData = insertJudgeDetailedScoreSchema.parse(req.body);
       const score = await storage.submitDetailedScore(scoreData);
-      
+
       // Get match to emit to correct tournament room
       const match = await storage.getMatch(score.matchId);
       if (match) {
         io.to(`tournament:${match.tournamentId}`).emit("detailed-score:submitted", score);
       }
-      
+
       res.json(score);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -740,7 +740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const batchSchema = z.z.array(insertJudgeDetailedScoreSchema);
       const scoresData = batchSchema.parse(req.body);
       const scores = await storage.submitBatchDetailedScores(scoresData);
-      
+
       // Emit to tournament room if match exists
       if (scores.length > 0) {
         const match = await storage.getMatch(scores[0].matchId);
@@ -748,7 +748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           io.to(`tournament:${match.tournamentId}`).emit("detailed-scores:batch-submitted", scores);
         }
       }
-      
+
       res.json(scores);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -766,14 +766,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tournamentId = parseInt(req.params.tournamentId);
       const tournament = await storage.getTournament(tournamentId);
-      
+
       if (!tournament) {
         return res.status(404).json({ error: "Tournament not found" });
       }
-      
+
       // Tournament mode is active if status is not SETUP
       const isActive = tournament.status !== 'SETUP';
-      
+
       res.json({
         tournamentId,
         isActive,
@@ -790,11 +790,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournament-mode/:tournamentId/activate", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.tournamentId);
-      const tournament = await storage.updateTournament(tournamentId, { 
+      const tournament = await storage.updateTournament(tournamentId, {
         status: 'ACTIVE',
         startDate: new Date()
       });
-      
+
       if (!tournament) {
         return res.status(404).json({ error: "Tournament not found" });
       }
@@ -802,7 +802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Assign cup codes to participants who don't have them yet
       const allParticipants = await storage.getTournamentParticipants(tournamentId);
       const allUsers = await storage.getAllUsers();
-      
+
       // Filter to only baristas (competitors)
       const baristaParticipants = allParticipants.filter(participant => {
         const user = allUsers.find(u => u.id === participant.userId);
@@ -824,7 +824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const allParticipants = await storage.getTournamentParticipants(tournamentId);
         const allUsers = await storage.getAllUsers();
-        
+
         // Filter to only station leads who are approved for this tournament (seed > 0)
         const stationLeads = allParticipants
           .filter(p => {
@@ -835,23 +835,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const user = allUsers.find(u => u.id === p.userId);
             return user!;
           });
-        
+
         if (stationLeads.length > 0) {
           // Get all stations for this tournament
           const tournamentStations = await storage.getAllStations();
           const stationsABC = tournamentStations
             .filter(s => s.tournamentId === tournamentId && ['A', 'B', 'C'].includes(s.name))
             .sort((a, b) => a.name.localeCompare(b.name));
-          
+
           if (stationsABC.length > 0) {
             // Shuffle station leads for randomization
             const shuffledLeads = [...stationLeads].sort(() => Math.random() - 0.5);
-            
+
             // Assign station leads to stations (distribute evenly, wrap around if needed)
             for (let i = 0; i < stationsABC.length; i++) {
               const station = stationsABC[i];
               const stationLead = shuffledLeads[i % shuffledLeads.length];
-              
+
               await storage.updateStation(station.id, { stationLeadId: stationLead.id });
             }
             console.log(`Assigned ${Math.min(stationsABC.length, stationLeads.length)} station leads to stations`);
@@ -860,7 +860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.warn('Failed to assign station leads:', error);
       }
-      
+
       io.to(`tournament:${tournamentId}`).emit("tournament:activated", tournament);
       res.json({ success: true, tournament });
     } catch (error: any) {
@@ -872,15 +872,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournament-mode/:tournamentId/deactivate", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.tournamentId);
-      const tournament = await storage.updateTournament(tournamentId, { 
+      const tournament = await storage.updateTournament(tournamentId, {
         status: 'COMPLETED',
         endDate: new Date()
       });
-      
+
       if (!tournament) {
         return res.status(404).json({ error: "Tournament not found" });
       }
-      
+
       io.to(`tournament:${tournamentId}`).emit("tournament:deactivated", tournament);
       res.json({ success: true, tournament });
     } catch (error: any) {
@@ -893,15 +893,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/heats/:id/start", async (req, res) => {
     try {
       const matchId = parseInt(req.params.id);
-      const match = await storage.updateMatch(matchId, { 
+      const match = await storage.updateMatch(matchId, {
         status: 'RUNNING',
         startTime: new Date()
       });
-      
+
       if (!match) {
         return res.status(404).json({ error: "Heat not found" });
       }
-      
+
       io.to(`tournament:${match.tournamentId}`).emit("heat:started", match);
       res.json(match);
     } catch (error: any) {
@@ -914,57 +914,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const matchId = parseInt(req.params.id);
       const segmentCode = req.params.code.toUpperCase();
-      
+
       // Validate segment code
       const validSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
       if (!validSegments.includes(segmentCode)) {
         return res.status(400).json({ error: "Invalid segment code. Must be DIAL_IN, CAPPUCCINO, or ESPRESSO" });
       }
-      
+
       // Find the segment
       const segments = await storage.getMatchSegments(matchId);
       const segment = segments.find(s => s.segment === segmentCode);
-      
+
       if (!segment) {
         return res.status(404).json({ error: "Segment not found" });
       }
-      
+
       // Validate that all required segments exist for this match
       const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'] as const;
       const existingSegments = segments.map(s => s.segment);
       const missingSegments = requiredSegments.filter(seg => !existingSegments.includes(seg as any));
-      
+
       if (missingSegments.length > 0) {
-        return res.status(400).json({ 
-          error: `Match is missing required segments: ${missingSegments.join(', ')}` 
+        return res.status(400).json({
+          error: `Match is missing required segments: ${missingSegments.join(', ')}`
         });
       }
-      
+
       // Check if previous segment is completed (if not the first segment)
       const segmentOrder = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
       const currentIndex = segmentOrder.indexOf(segmentCode);
-      
+
       if (currentIndex > 0) {
         const previousSegmentCode = segmentOrder[currentIndex - 1];
         const previousSegment = segments.find(s => s.segment === previousSegmentCode);
-        
+
         if (previousSegment && previousSegment.status !== 'ENDED') {
-          return res.status(400).json({ 
-            error: `Previous segment ${previousSegmentCode} must be completed before starting ${segmentCode}` 
+          return res.status(400).json({
+            error: `Previous segment ${previousSegmentCode} must be completed before starting ${segmentCode}`
           });
         }
       }
-      
+
       const updatedSegment = await storage.updateHeatSegment(segment.id, {
         status: 'RUNNING',
         startTime: new Date()
       });
-      
+
       const match = await storage.getMatch(matchId);
       if (match) {
         io.to(`tournament:${match.tournamentId}`).emit("segment:started", updatedSegment);
       }
-      
+
       res.json(updatedSegment);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -976,38 +976,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const matchId = parseInt(req.params.id);
       const segmentCode = req.params.code.toUpperCase();
-      
+
       // Validate segment code
       const validSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
       if (!validSegments.includes(segmentCode)) {
         return res.status(400).json({ error: "Invalid segment code. Must be DIAL_IN, CAPPUCCINO, or ESPRESSO" });
       }
-      
+
       // Find the segment
       const segments = await storage.getMatchSegments(matchId);
       const segment = segments.find(s => s.segment === segmentCode);
-      
+
       if (!segment) {
         return res.status(404).json({ error: "Segment not found" });
       }
-      
+
       // Validate that segment is currently running
       if (segment.status !== 'RUNNING') {
-        return res.status(400).json({ 
-          error: `Segment ${segmentCode} is not currently running. Current status: ${segment.status}` 
+        return res.status(400).json({
+          error: `Segment ${segmentCode} is not currently running. Current status: ${segment.status}`
         });
       }
-      
+
       const updatedSegment = await storage.updateHeatSegment(segment.id, {
         status: 'ENDED',
         endTime: new Date()
       });
-      
+
       const match = await storage.getMatch(matchId);
       if (match) {
         io.to(`tournament:${match.tournamentId}`).emit("segment:ended", updatedSegment);
       }
-      
+
       res.json(updatedSegment);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -1018,24 +1018,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/matches/:id/segments/validate", async (req, res) => {
     try {
       const matchId = parseInt(req.params.id);
-      
+
       const segments = await storage.getMatchSegments(matchId);
       const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'] as const;
       const existingSegments = segments.map(s => s.segment);
-      
+
       const missingSegments = requiredSegments.filter(seg => !existingSegments.includes(seg as any));
       const extraSegments = existingSegments.filter(seg => !requiredSegments.includes(seg as any));
-      
+
       const isValid = missingSegments.length === 0 && extraSegments.length === 0;
-      
+
       res.json({
         isValid,
         requiredSegments,
         existingSegments: existingSegments,
         missingSegments,
         extraSegments,
-        message: isValid 
-          ? "Match has all required segments" 
+        message: isValid
+          ? "Match has all required segments"
           : `Match is invalid: missing ${missingSegments.join(', ')}, extra ${extraSegments.join(', ')}`
       });
     } catch (error: any) {
@@ -1047,7 +1047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournaments/:id/populate-next-round", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
-      
+
       // Get current tournament
       const tournament = await storage.getTournament(tournamentId);
       if (!tournament) {
@@ -1058,7 +1058,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentMatches = await storage.getTournamentMatches(tournamentId);
       const currentRound = Math.max(...currentMatches.map(m => m.round));
       const currentRoundMatches = currentMatches.filter(m => m.round === currentRound);
-      
+
       // Check if all current round matches are complete
       const allCurrentRoundComplete = currentRoundMatches.every(m => m.status === 'DONE');
       if (!allCurrentRoundComplete) {
@@ -1100,12 +1100,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i];
         const station = sortedStations[i];
-        
+
         // Create matches for this group
         for (let j = 0; j < group.length; j += 2) {
           const competitor1 = group[j];
           const competitor2 = group[j + 1];
-          
+
           if (competitor2) {
             // Regular match with two competitors
             const match = await storage.createMatch({
@@ -1139,14 +1139,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: 'IDLE',
               plannedMinutes: roundTimes.dialInMinutes
             });
-            
+
             await storage.createHeatSegment({
               matchId: match.id,
               segment: 'CAPPUCCINO',
               status: 'IDLE',
               plannedMinutes: roundTimes.cappuccinoMinutes
             });
-            
+
             await storage.createHeatSegment({
               matchId: match.id,
               segment: 'ESPRESSO',
@@ -1181,11 +1181,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Next round has been populated with competitors"
       });
 
-      res.json({ 
-        success: true, 
-        nextRound, 
+      res.json({
+        success: true,
+        nextRound,
         matchesCreated: heatNumber - 1,
-        message: "Next round populated successfully" 
+        message: "Next round populated successfully"
       });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -1197,17 +1197,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const matchId = parseInt(req.params.id);
       const { winnerId } = req.body;
-      
-      const match = await storage.updateMatch(matchId, { 
+
+      const match = await storage.updateMatch(matchId, {
         status: 'DONE',
         winnerId,
         endTime: new Date()
       });
-      
+
       if (!match) {
         return res.status(404).json({ error: "Heat not found" });
       }
-      
+
       io.to(`tournament:${match.tournamentId}`).emit("heat:completed", match);
       res.json(match);
     } catch (error: any) {
@@ -1221,14 +1221,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const stationId = parseInt(req.params.stationId);
       const station = await storage.getStation(stationId);
-      
+
       if (!station) {
         return res.status(404).json({ error: "Station not found" });
       }
-      
+
       // Get matches for this station
       const matches = await storage.getStationMatches(stationId, 10, 0);
-      
+
       res.json({
         station,
         queue: matches,
@@ -1246,7 +1246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tournamentId = parseInt(req.params.id);
       const matches = await storage.getTournamentMatches(tournamentId);
       const participants = await storage.getTournamentParticipants(tournamentId);
-      
+
       res.json({
         tournamentId,
         matches,
@@ -1262,16 +1262,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tournamentId = parseInt(req.params.id);
       const participants = await storage.getTournamentParticipants(tournamentId);
-      
+
       if (participants.length === 0) {
         return res.status(400).json({ error: "No participants found" });
       }
 
       await BracketGenerator.generateBracket(tournamentId, participants);
-      
+
       const matches = await storage.getTournamentMatches(tournamentId);
       io.to(`tournament:${tournamentId}`).emit("bracket:seeded", matches);
-      
+
       res.json({ success: true, matches });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
