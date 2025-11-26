@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MapPin, Clock, Users, Trophy, Target } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import StationPage from './StationPage';
 import type { Station } from '@shared/schema';
 
@@ -73,11 +74,14 @@ export default function StationsManagement() {
     <div className="space-y-6">
       {/* Header */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-6 w-6" />
             Station Management
           </CardTitle>
+          <Button asChild variant="outline">
+            <Link to="/station-lead">Open Station Lead View</Link>
+          </Button>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
@@ -120,6 +124,19 @@ export default function StationsManagement() {
                     Next available: {new Date(station.nextAvailableAt).toLocaleTimeString()}
                   </div>
                 )}
+                <div className="pt-2">
+                  {station ? (
+                    <Button asChild size="sm" className="w-full">
+                      <Link to={`/station-lead?stationId=${station.id}`}>
+                        Manage Station {name}
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button size="sm" className="w-full" disabled>
+                      Station offline
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

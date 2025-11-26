@@ -64,13 +64,40 @@ const LiveHeats: React.FC = () => {
     refetchInterval: 5000,
   });
 
+  // Filter to only show stations A, B, and C, deduplicated by normalized name
+  const mainStations = useMemo(() => {
+    // Normalize station names (remove "Station " prefix if present) and filter
+    const normalizedStations = stations.map(station => ({
+      ...station,
+      normalizedName: station.name.startsWith('Station ') 
+        ? station.name.replace(/^Station /, '') 
+        : station.name
+    }));
+    
+    const filtered = normalizedStations.filter(station => 
+      ['A', 'B', 'C'].includes(station.normalizedName)
+    );
+    
+    // Deduplicate by normalized name - take first occurrence of each letter
+    const seen = new Set<string>();
+    return filtered.filter(station => {
+      if (seen.has(station.normalizedName)) {
+        return false;
+      }
+      seen.add(station.normalizedName);
+      return true;
+    });
+  }, [stations]);
+
   // Filter matches by station
   const filteredMatches = useMemo(() => {
     if (selectedStation === 'all') return matches;
-    const station = stations.find(s => s.name === selectedStation);
+    const station = mainStations.find(s => 
+      s.normalizedName === selectedStation || s.name === selectedStation
+    );
     if (!station) return matches;
     return matches.filter(m => m.stationId === station.id);
-  }, [matches, stations, selectedStation]);
+  }, [matches, mainStations, selectedStation]);
 
   // Group matches by status
   const matchesByStatus = useMemo(() => {
@@ -150,7 +177,9 @@ const LiveHeats: React.FC = () => {
   const getStationName = (stationId: number | null) => {
     if (!stationId) return 'TBD';
     const station = stations.find(s => s.id === stationId);
-    return station?.name || 'Unknown';
+    if (!station) return 'Unknown';
+    // Remove "Station " prefix if present to avoid duplication when adding prefix in JSX
+    return station.name.startsWith('Station ') ? station.name.replace(/^Station /, '') : station.name;
   };
 
   return (
@@ -198,16 +227,19 @@ const LiveHeats: React.FC = () => {
             <Tabs value={selectedStation} onValueChange={setSelectedStation}>
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="all">All Stations</TabsTrigger>
-                {stations.map(station => (
-                  <TabsTrigger key={station.id} value={station.name}>
-                    Station {station.name}
-                    {stationStats[station.name] && (
-                      <Badge variant="secondary" className="ml-2">
-                        {stationStats[station.name].active}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                ))}
+                {mainStations.map(station => {
+                  const displayName = `Station ${station.normalizedName}`;
+                  return (
+                    <TabsTrigger key={station.id} value={station.normalizedName}>
+                      {displayName}
+                      {stationStats[station.name] && (
+                        <Badge variant="secondary" className="ml-2">
+                          {stationStats[station.name].active}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                  );
+                })}
               </TabsList>
             </Tabs>
           </CardContent>
@@ -216,15 +248,16 @@ const LiveHeats: React.FC = () => {
         {/* Station Overview */}
         {selectedStation === 'all' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {stations.map(station => {
+            {mainStations.map(station => {
               const stats = stationStats[station.name] || { total: 0, active: 0, completed: 0 };
+              const displayName = `Station ${station.normalizedName}`;
               return (
                 <Card key={station.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         <MapPin className="h-5 w-5" />
-                        Station {station.name}
+                        {displayName}
                       </span>
                       <Badge variant={station.status === 'BUSY' ? 'default' : 'secondary'}>
                         {station.status}

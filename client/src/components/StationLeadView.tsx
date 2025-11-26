@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import React, { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,143 +8,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink } from "lucide-react";
+import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink, Coffee, ArrowRight } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import StationWarning from "./StationWarning";
-
-interface SegmentTimerProps {
-  startTime: Date;
-  durationMinutes: number;
-  isPaused?: boolean;
-  onComplete?: () => void;
-}
-
-function SegmentTimer({ startTime, durationMinutes, isPaused = false, onComplete }: SegmentTimerProps) {
-  const [timeRemaining, setTimeRemaining] = useState(durationMinutes * 60);
-  const [pausedAt, setPausedAt] = useState<number | null>(null);
-  const [warningsShown, setWarningsShown] = useState({ oneMinute: false, thirtySeconds: false });
-
-  useEffect(() => {
-    if (isPaused) {
-      // When pausing, store the current time remaining
-      if (pausedAt === null) {
-        setPausedAt(timeRemaining);
-      }
-      return;
-    }
-
-    // When resuming from pause, use the pausedAt value as the new baseline
-    const effectiveStartTime = pausedAt !== null 
-      ? new Date(Date.now() - ((durationMinutes * 60 - pausedAt) * 1000))
-      : startTime;
-
-    // Clear pausedAt when resuming
-    if (pausedAt !== null) {
-      setPausedAt(null);
-    }
-
-    const interval = setInterval(() => {
-      const now = new Date();
-      const elapsed = Math.floor((now.getTime() - effectiveStartTime.getTime()) / 1000);
-      const remaining = Math.max(0, (durationMinutes * 60) - elapsed);
-      setTimeRemaining(remaining);
-
-      // Show warnings at 1 minute and 30 seconds
-      if (remaining === 60 && !warningsShown.oneMinute) {
-        setWarningsShown(prev => ({ ...prev, oneMinute: true }));
-        // You could add a toast notification here
-      }
-      if (remaining === 30 && !warningsShown.thirtySeconds) {
-        setWarningsShown(prev => ({ ...prev, thirtySeconds: true }));
-        // You could add a toast notification here
-      }
-
-      if (remaining === 0 && onComplete) {
-        onComplete();
-        clearInterval(interval);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [startTime, durationMinutes, isPaused, pausedAt, onComplete, timeRemaining]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const progress = ((durationMinutes * 60 - timeRemaining) / (durationMinutes * 60)) * 100;
-  const remainingProgress = 100 - progress;
-
-  return (
-    <div className="text-center space-y-4">
-      {/* Warning Messages */}
-      {timeRemaining === 60 && warningsShown.oneMinute && (
-        <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3">
-          <div className="text-yellow-800 dark:text-yellow-200 font-semibold">
-            ⚠️ 1 MINUTE WARNING
-          </div>
-        </div>
-      )}
-      
-      {timeRemaining === 30 && warningsShown.thirtySeconds && (
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-          <div className="text-red-800 dark:text-red-200 font-semibold">
-            🚨 30 SECONDS WARNING
-          </div>
-        </div>
-      )}
-
-      {/* Wave Timer Container */}
-      <div className="relative h-40 bg-black rounded-lg overflow-hidden">
-        {/* Time Display Overlay */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center">
-          <div 
-            className={`text-7xl font-bold font-mono transition-colors duration-500 ${
-              timeRemaining < 30 ? "text-red-500 animate-pulse" : 
-              timeRemaining < 60 ? "text-red-500" : "text-white"
-            }`}
-            data-testid="text-segment-timer"
-          >
-            {formatTime(timeRemaining)}
-          </div>
-        </div>
-
-        {/* Animated Wave Marker */}
-        <div 
-          className="absolute bottom-0 left-0 w-full transition-all duration-1000 ease-linear overflow-hidden"
-          style={{ 
-            height: `${remainingProgress}%`,
-            background: timeRemaining < 30 ? '#DC2626' : timeRemaining < 60 ? '#F59E0B' : '#8B5A3C',
-            opacity: Math.max(0.6, remainingProgress / 100)
-          }}
-        >
-          {/* Wave Animation */}
-          <div 
-            className="absolute top-0 left-0 w-[200%] h-8 animate-wave"
-            style={{
-              backgroundImage: `repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 10px,
-                rgba(255, 255, 255, 0.1) 10px,
-                rgba(255, 255, 255, 0.1) 20px
-              )`
-            }}
-          />
-        </div>
-      </div>
-      
-      {timeRemaining === 0 && (
-        <Badge variant="destructive" className="text-sm animate-pulse">
-          TIME'S UP!
-        </Badge>
-      )}
-    </div>
-  );
-}
+import SegmentTimer from "./SegmentTimer";
 
 export default function StationLeadView() {
   const { toast } = useToast();
@@ -152,23 +20,42 @@ export default function StationLeadView() {
   const [currentSegmentId, setCurrentSegmentId] = useState<number | null>(null);
   const [pausedSegmentId, setPausedSegmentId] = useState<number | null>(null);
   const socket = useWebSocket();
+  const [searchParams] = useSearchParams();
 
   // Fetch stations
   const { data: stations = [] } = useQuery<Station[]>({
     queryKey: ['/api/stations'],
   });
 
+  // Filter to only show stations A, B, and C, deduplicated by normalized name
+  const mainStations = React.useMemo(() => {
+    // Normalize station names (remove "Station " prefix if present) and filter
+    const normalizedStations = stations.map(station => ({
+      ...station,
+      normalizedName: station.name.startsWith('Station ') 
+        ? station.name.replace(/^Station /, '') 
+        : station.name
+    }));
+    
+    const filtered = normalizedStations.filter(station => 
+      ['A', 'B', 'C'].includes(station.normalizedName)
+    );
+    
+    // Deduplicate by normalized name - take first occurrence of each letter
+    const seen = new Set<string>();
+    return filtered.filter(station => {
+      if (seen.has(station.normalizedName)) {
+        return false;
+      }
+      seen.add(station.normalizedName);
+      return true;
+    });
+  }, [stations]);
+
   // Fetch users for competitor names
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
   });
-
-  // Select first available station by default
-  useEffect(() => {
-    if (stations.length > 0 && !selectedStation) {
-      setSelectedStation(stations[0].id);
-    }
-  }, [stations, selectedStation]);
 
   // Fetch tournaments to get the current one
   const { data: tournaments = [] } = useQuery<any[]>({
@@ -176,6 +63,29 @@ export default function StationLeadView() {
   });
   
   const currentTournamentId = tournaments[0]?.id || 1;
+
+  // Fetch participants to get cup codes
+  const { data: participants = [] } = useQuery<any[]>({
+    queryKey: ['/api/tournaments', currentTournamentId, 'participants'],
+    enabled: !!currentTournamentId,
+  });
+
+  // Select station from query param or default to first available
+  useEffect(() => {
+    if (mainStations.length === 0) return;
+
+    const stationParam = searchParams.get('stationId');
+    const stationIdFromParam = stationParam ? Number(stationParam) : null;
+
+    if (stationIdFromParam && mainStations.some(s => s.id === stationIdFromParam)) {
+      setSelectedStation(stationIdFromParam);
+      return;
+    }
+
+    if (!selectedStation) {
+      setSelectedStation(mainStations[0].id);
+    }
+  }, [mainStations, selectedStation, searchParams]);
 
   // Fetch current matches for tournament
   const { data: allMatches = [] } = useQuery<Match[]>({
@@ -196,12 +106,30 @@ export default function StationLeadView() {
 
   const startSegmentMutation = useMutation({
     mutationFn: async (segmentId: number) => {
+      // Get competitor cup codes
+      const comp1Participant = currentMatch?.competitor1Id 
+        ? participants.find(p => p.userId === currentMatch.competitor1Id)
+        : null;
+      const comp2Participant = currentMatch?.competitor2Id 
+        ? participants.find(p => p.userId === currentMatch.competitor2Id)
+        : null;
+      
+      const cupCode1 = comp1Participant?.cupCode || null;
+      const cupCode2 = comp2Participant?.cupCode || null;
+      
+      // Randomly assign cup codes to left/right positions
+      const shouldSwap = Math.random() < 0.5;
+      const leftCupCode = shouldSwap ? cupCode2 : cupCode1;
+      const rightCupCode = shouldSwap ? cupCode1 : cupCode2;
+      
       const response = await fetch(`/api/segments/${segmentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'RUNNING',
-          startTime: new Date().toISOString()
+          startTime: new Date().toISOString(),
+          leftCupCode,
+          rightCupCode
         })
       });
       if (!response.ok) throw new Error('Failed to start segment');
@@ -212,7 +140,7 @@ export default function StationLeadView() {
       setCurrentSegmentId(data.id);
       toast({
         title: "Segment Started",
-        description: `${data.segment} segment has begun.`,
+        description: `${data.segment} segment has begun. Cup placement: ${data.leftCupCode || 'L'} / ${data.rightCupCode || 'R'}`,
       });
     }
   });
@@ -336,7 +264,10 @@ export default function StationLeadView() {
     
     // Define station order (A, B, C)
     const stationOrder = ['A', 'B', 'C'];
-    const currentStationIndex = stationOrder.indexOf(selectedStationData?.name || '');
+    const currentStationNormalizedName = selectedStationData?.name.startsWith('Station ') 
+      ? selectedStationData.name.replace(/^Station /, '') 
+      : selectedStationData?.name || '';
+    const currentStationIndex = stationOrder.indexOf(currentStationNormalizedName);
     
     if (currentStationIndex === -1) {
       return warnings;
@@ -402,25 +333,40 @@ export default function StationLeadView() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex gap-2">
-            {stations.map((station) => (
-              <Button
-                key={station.id}
-                variant={selectedStation === station.id ? "default" : "outline"}
-                onClick={() => setSelectedStation(station.id)}
-                data-testid={`button-station-${station.name}`}
-              >
-                Station {station.name}
-              </Button>
-            ))}
+            {mainStations.map((station) => {
+              const stationLead = station.stationLeadId ? users.find(u => u.id === station.stationLeadId) : null;
+              const displayName = `Station ${station.normalizedName}`;
+              return (
+                <Button
+                  key={station.id}
+                  variant={selectedStation === station.id ? "default" : "outline"}
+                  onClick={() => setSelectedStation(station.id)}
+                  data-testid={`button-station-${station.normalizedName}`}
+                  className="flex flex-col items-start h-auto py-2"
+                >
+                  <span>{displayName}</span>
+                  {stationLead && (
+                    <span className="text-xs opacity-80 font-normal">Lead: {stationLead.name}</span>
+                  )}
+                </Button>
+              );
+            })}
           </div>
-          {selectedStation && (
-            <Link href={`/station/${selectedStation}`}>
-              <Button variant="outline" size="sm" className="w-full" data-testid="button-view-station-page">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Full Station Page
+          <div className="flex flex-col md:flex-row gap-2">
+            <Button asChild variant="secondary" className="w-full md:w-auto">
+              <Link to={`/live/${currentTournamentId}/stations`}>
+                Back to Station Management
+              </Link>
+            </Button>
+            {selectedStation && (
+              <Button asChild variant="outline" className="w-full md:w-auto" data-testid="button-view-station-page">
+                <Link to={`/station/${selectedStation}`}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View Full Station Page
+                </Link>
               </Button>
-            </Link>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -494,161 +440,79 @@ export default function StationLeadView() {
       ))}
 
       {currentMatch && (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Current Heat
-                </div>
-                <Badge variant={currentMatch.status === 'RUNNING' ? 'default' : 'secondary'}>
-                  Round {currentMatch.round} - Heat {currentMatch.heatNumber}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-muted rounded-md">
-                  <div className="text-sm text-muted-foreground mb-1">Competitor 1</div>
-                  <div className="text-lg font-bold" data-testid="competitor1-name">
-                    {competitor1?.name || 'TBD'}
+        <Card className="border border-primary/30 bg-[#1b110a] text-white shadow-lg">
+          <CardContent className="space-y-6 p-6">
+            <div className="flex items-center justify-between text-sm uppercase tracking-wide text-primary/70">
+              <span>Station {selectedStationData?.name || '—'}</span>
+              <Badge variant={currentMatch.status === 'RUNNING' ? 'default' : 'secondary'}>
+                Round {currentMatch.round} · Heat {currentMatch.heatNumber}
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                {
+                  label: "Left Cup",
+                  cupCode: (() => {
+                    const participant = participants.find(p => p.userId === currentMatch?.competitor1Id);
+                    return participant?.cupCode || "—";
+                  })(),
+                  placement: runningSegment?.leftCupCode || "L",
+                  competitor: competitor1?.name || "Waiting",
+                },
+                {
+                  label: "Right Cup",
+                  cupCode: (() => {
+                    const participant = participants.find(p => p.userId === currentMatch?.competitor2Id);
+                    return participant?.cupCode || "—";
+                  })(),
+                  placement: runningSegment?.rightCupCode || "R",
+                  competitor: competitor2?.name || "Waiting",
+                }
+              ].map((slot) => (
+                <div key={slot.label} className="rounded-xl border border-primary/30 bg-black/40 p-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs text-white/70">
+                    <span>{slot.label}</span>
+                    <Coffee className="h-4 w-4" />
                   </div>
+                  <div className="text-3xl font-mono font-bold">{slot.placement}</div>
+                  <div className="text-sm text-white/70 uppercase">Cup Code</div>
+                  <div className="text-2xl font-mono">{slot.cupCode}</div>
+                  <div className="text-xs text-white/60">{slot.competitor}</div>
                 </div>
-                <div className="p-4 bg-muted rounded-md">
-                  <div className="text-sm text-muted-foreground mb-1">Competitor 2</div>
-                  <div className="text-lg font-bold" data-testid="competitor2-name">
-                    {competitor2?.name || 'TBD'}
-                  </div>
-                </div>
-              </div>
+              ))}
+            </div>
 
-              {currentMatch.status !== 'RUNNING' && currentMatch.status !== 'DONE' && (
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="w-full"
-                  onClick={() => handleStartMatch(currentMatch.id)}
-                  disabled={startMatchMutation.isPending}
-                  data-testid="button-start-heat"
-                >
-                  <Play className="h-5 w-5 mr-2" />
-                  Start Heat
-                </Button>
-              )}
+            <div className="text-center space-y-1">
+              <div className="text-xs text-white/50 uppercase">Heat Status</div>
+              <div className="text-3xl font-bold tracking-wide">{currentMatch.status}</div>
+            </div>
 
-              {/* Workflow Status Indicator */}
-              {currentMatch.status === 'RUNNING' && (
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                  <div className="text-sm font-medium text-center">Heat Progress</div>
-                  <div className="flex justify-between items-center">
-                    {segments.map((segment, index) => {
-                      const isCompleted = segment.status === 'ENDED';
-                      const isCurrent = segment.status === 'RUNNING';
-                      const isPending = segment.status === 'IDLE';
-                      
-                      return (
-                        <div key={segment.id} className="flex flex-col items-center space-y-1">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                            isCompleted ? 'bg-green-500 text-white' :
-                            isCurrent ? 'bg-primary text-primary-foreground' :
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                            {index + 1}
-                          </div>
-                          <div className="text-xs text-center">
-                            <div className="font-medium">{segment.segment.replace('_', ' ')}</div>
-                            <div className={`text-xs ${
-                              isCompleted ? 'text-green-600' :
-                              isCurrent ? 'text-primary' :
-                              'text-muted-foreground'
-                            }`}>
-                              {isCompleted ? '✓ Done' : isCurrent ? '● Active' : '○ Pending'}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Next Segment Button */}
-              {currentMatch.status === 'RUNNING' && !allSegmentsEnded && (
-                <div className="space-y-2">
-                  {(() => {
-                    const nextSegment = segments.find(s => s.status === 'IDLE');
-                    if (nextSegment) {
-                      return (
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className="w-full"
-                          onClick={() => handleStartSegment(nextSegment.id)}
-                          disabled={startSegmentMutation.isPending}
-                          data-testid="button-start-next-segment"
-                        >
-                          <Play className="h-5 w-5 mr-2" />
-                          Start {nextSegment.segment.replace('_', ' ')} Segment
-                        </Button>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              )}
-
-              {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="w-full"
-                  onClick={() => handleCompleteMatch(currentMatch.id)}
-                  disabled={completeMatchMutation.isPending}
-                  data-testid="button-complete-heat"
-                >
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  Complete Heat
-                </Button>
-              )}
-
-              {currentMatch.status === 'DONE' && (
-                <div className="p-4 bg-primary/10 rounded-md text-center">
-                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <div className="font-semibold text-primary">Heat Completed</div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="space-y-4">
-            {segments.map((segment, index) => {
-              const isRunning = segment.status === 'RUNNING';
-              const isEnded = segment.status === 'ENDED';
-              const canStart = index === 0 || segments[index - 1]?.status === 'ENDED';
-
-              return (
-                <Card key={segment.id} className={isRunning ? 'border-primary' : ''}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5" />
-                        <span className="capitalize">{segment.segment.toLowerCase().replace('_', ' ')}</span>
-                        <Badge variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'}>
-                          {segment.plannedMinutes} min
-                        </Badge>
+            <div className="space-y-3">
+              {['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'].map((segmentCode, idx) => {
+                const segment = segments.find(s => s.segment === segmentCode);
+                const status = segment?.status || 'IDLE';
+                const isRunning = status === 'RUNNING';
+                const isEnded = status === 'ENDED';
+                const canStart = idx === 0 || segments.find(s => s.segment === ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'][idx - 1])?.status === 'ENDED';
+                
+                return (
+                  <div
+                    key={segmentCode}
+                    className={`rounded-xl border p-4 bg-black/30 ${isRunning ? 'border-primary shadow-primary/40 shadow-lg' : 'border-white/10'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm uppercase tracking-wide text-white/60">{segmentCode.replace('_', ' ')}</div>
+                        <div className="text-xs text-white/40">{segment?.plannedMinutes || 0} minutes</div>
                       </div>
-                      <Badge 
-                        variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'}
-                        data-testid={`segment-status-${segment.segment}`}
-                      >
-                        {segment.status}
+                      <Badge variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'}>
+                        {status}
                       </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isRunning && segment.startTime ? (
-                      <div className="space-y-4">
+                    </div>
+
+                    {isRunning && segment?.startTime && (
+                      <div className="mt-3 space-y-3">
                         <SegmentTimer
                           durationMinutes={segment.plannedMinutes}
                           startTime={new Date(segment.startTime)}
@@ -685,28 +549,80 @@ export default function StationLeadView() {
                           </Button>
                         </div>
                       </div>
-                    ) : isEnded ? (
-                      <div className="text-center p-4 text-muted-foreground">
-                        Segment completed
-                      </div>
-                    ) : (
+                    )}
+
+                    {!isRunning && !isEnded && (
                       <Button
-                        variant="default"
-                        className="w-full"
-                        onClick={() => handleStartSegment(segment.id)}
-                        disabled={!canStart || currentMatch.status !== 'RUNNING'}
-                        data-testid={`button-start-${segment.segment}`}
+                        variant="ghost"
+                        className="w-full mt-3 text-white border border-white/10 bg-white/5"
+                        onClick={() => segment && handleStartSegment(segment.id)}
+                        disabled={!segment || !canStart || currentMatch.status !== 'RUNNING'}
+                        data-testid={`button-start-${segmentCode}`}
                       >
-                        <Play className="h-4 w-4 mr-2" />
-                        Start {segment.segment} Segment
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        Start {segmentCode.replace('_', ' ')}
                       </Button>
                     )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </>
+
+                    {isEnded && (
+                      <div className="mt-3 text-xs text-white/60 text-center">
+                        Segment completed
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="space-y-3">
+              {currentMatch.status !== 'RUNNING' && currentMatch.status !== 'DONE' && (
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => handleStartMatch(currentMatch.id)}
+                  disabled={startMatchMutation.isPending}
+                  data-testid="button-start-heat"
+                >
+                  <Play className="h-5 w-5 mr-2" />
+                  Start Heat
+                </Button>
+              )}
+
+              {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => handleCompleteMatch(currentMatch.id)}
+                  disabled={completeMatchMutation.isPending}
+                  data-testid="button-complete-heat"
+                >
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                  Complete Heat
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full border-dashed border-white/30 text-white"
+                onClick={handlePopulateNextRound}
+                disabled={!allSegmentsEnded || populateNextRoundMutation.isPending}
+                data-testid="button-advance-next-heat"
+              >
+                Advance to Next Heat (Reset Clock)
+              </Button>
+              <p className="text-xs text-center text-white/50">
+                Activates after all three segments are complete.
+              </p>
+            </div>
+
+            <p className="text-xs text-center text-white/40 uppercase tracking-wide">
+              Cup code will stay with competitor for the entire event. This ID drives scoring.
+            </p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Station A Lead Controls - Populate Next Round */}

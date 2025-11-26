@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Station, Match, HeatSegment, User } from '@shared/schema';
+import SegmentTimer from '@/components/SegmentTimer';
 
 interface StationPageProps {
   stationId: number;
@@ -203,11 +204,12 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
               </div>
 
               {/* Segment Progress */}
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <h4 className="font-medium">Segment Progress</h4>
                 <div className="grid grid-cols-3 gap-2">
                   {['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'].map((segmentCode) => {
-                    const status = getSegmentStatus(segmentCode);
+                    const segment = segments.find(s => s.segment === segmentCode);
+                    const status = segment?.status || 'IDLE';
                     const isActive = status === 'RUNNING';
                     const isComplete = status === 'ENDED';
                     
@@ -231,6 +233,26 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
                     );
                   })}
                 </div>
+                
+                {/* Show timer for running segment in a dedicated section */}
+                {(() => {
+                  const runningSegment = segments.find(s => s.status === 'RUNNING');
+                  if (runningSegment && runningSegment.startTime) {
+                    return (
+                      <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                        <div className="text-sm font-semibold text-muted-foreground mb-3 text-center">
+                          {runningSegment.segment.replace('_', ' ')} Timer
+                        </div>
+                        <SegmentTimer
+                          startTime={new Date(runningSegment.startTime)}
+                          durationMinutes={runningSegment.plannedMinutes}
+                          isPaused={false}
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {/* Segment Controls */}

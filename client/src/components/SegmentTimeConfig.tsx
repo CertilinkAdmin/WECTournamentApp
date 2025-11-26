@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Clock, Save } from "lucide-react";
-import type { TournamentRoundTime } from "@shared/schema";
+import type { TournamentRoundTime, Tournament } from "@shared/schema";
 
 interface SegmentTimeConfigProps {
   tournamentId: number;
@@ -20,10 +20,31 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
   const [cappuccinoMinutes, setCappuccinoMinutes] = useState(3);
   const [espressoMinutes, setEspressoMinutes] = useState(2);
 
+  // Fetch tournament to get totalRounds
+  const { data: tournament } = useQuery<Tournament>({
+    queryKey: ['/api/tournaments', tournamentId],
+    queryFn: async () => {
+      const response = await fetch(`/api/tournaments/${tournamentId}`);
+      if (!response.ok) throw new Error('Failed to fetch tournament');
+      return await response.json();
+    },
+    enabled: !!tournamentId,
+  });
+
   // Fetch existing round times
   const { data: roundTimes = [] } = useQuery<TournamentRoundTime[]>({
     queryKey: ['/api/tournaments', tournamentId, 'round-times'],
   });
+
+  // Load values for current round when round changes or roundTimes update
+  useEffect(() => {
+    const existingRoundTime = roundTimes.find(rt => rt.round === round);
+    if (existingRoundTime) {
+      setDialInMinutes(existingRoundTime.dialInMinutes);
+      setCappuccinoMinutes(existingRoundTime.cappuccinoMinutes);
+      setEspressoMinutes(existingRoundTime.espressoMinutes);
+    }
+  }, [round, roundTimes]);
 
   const saveTimesMutation = useMutation({
     mutationFn: async () => {
@@ -46,6 +67,21 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
         title: "Segment Times Saved",
         description: `Round ${round} times have been configured successfully.`,
       });
+      
+      // Auto-increment to next round (up to totalRounds)
+      const maxRounds = tournament?.totalRounds || 5;
+      if (round < maxRounds) {
+        const nextRound = round + 1;
+        setRound(nextRound);
+        
+        // Load values for next round if they exist, otherwise keep current values
+        // The useEffect will handle loading existing values
+      } else {
+        toast({
+          title: "All Rounds Configured",
+          description: `All ${maxRounds} rounds have been configured.`,
+        });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -77,7 +113,7 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
               id="round"
               type="number"
               min={1}
-              max={5}
+              max={tournament?.totalRounds || 5}
               value={round}
               onChange={(e) => setRound(Number(e.target.value))}
               data-testid="input-round"

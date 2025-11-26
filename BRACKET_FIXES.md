@@ -27,3 +27,15 @@
 - Show judge roles per heat (2 ESPRESSO, 1 CAPPUCCINO, all score LATTE ART)
 - Display in bracket view and heat details
 
+
+
+
+
+
+
+
+
+
+
+
+

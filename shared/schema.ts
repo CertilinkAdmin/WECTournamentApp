@@ -120,6 +120,8 @@ export const heatSegments = pgTable("heat_segments", {
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
   plannedMinutes: integer("planned_minutes").notNull(),
+  leftCupCode: text("left_cup_code"),
+  rightCupCode: text("right_cup_code"),
 });
 
 export const insertHeatSegmentSchema = createInsertSchema(heatSegments).omit({ id: true });

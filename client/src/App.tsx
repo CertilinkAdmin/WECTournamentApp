@@ -18,6 +18,8 @@ import LiveOverview from './pages/live/LiveOverview';
 import LiveHeats from './pages/live/LiveHeats';
 import LiveLeaderboard from './pages/live/LiveLeaderboard';
 import StationsManagement from './components/StationsManagement';
+import StationLeadView from './components/StationLeadView';
+import StationDetail from './pages/StationDetail';
 import JudgeScorecardsResults from './pages/results/JudgeScorecardsResults';
 import JudgeScorecardsDetail from './pages/results/JudgeScorecardsDetail';
 import Baristas from './pages/results/Baristas';
@@ -68,6 +70,10 @@ const App: React.FC = () => {
             <Route path="leaderboard" element={<LiveLeaderboard />} />
             <Route path="stations" element={<StationsManagement />} />
           </Route>
+
+          {/* Station Lead Controls */}
+          <Route path="/station-lead" element={<StationLeadView />} />
+          <Route path="/station/:stationId" element={<StationDetail />} />
 
           {/* Results Routes */}
           <Route path="/results" element={<ResultsTournamentList />} />

@@ -605,12 +605,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/segments/:id", async (req, res) => {
     try {
-      const segment = await storage.updateHeatSegment(parseInt(req.params.id), req.body);
+      const segmentId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      // Get the current segment to check its match and status
+      const segment = await storage.getHeatSegment(segmentId);
+      
       if (!segment) {
         return res.status(404).json({ error: "Segment not found" });
       }
-      io.emit("segment:updated", segment);
-      res.json(segment);
+      
+      // If starting a segment (status changing to RUNNING), validate segment order
+      if (updateData.status === 'RUNNING' && segment.status !== 'RUNNING') {
+        const matchId = segment.matchId;
+        const segments = await storage.getMatchSegments(matchId);
+        
+        // Validate segment order
+        const segmentOrder = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+        const currentIndex = segmentOrder.indexOf(segment.segment);
+        
+        if (currentIndex > 0) {
+          const previousSegmentCode = segmentOrder[currentIndex - 1];
+          const previousSegment = segments.find(s => s.segment === previousSegmentCode);
+          
+          if (previousSegment && previousSegment.status !== 'ENDED') {
+            return res.status(400).json({ 
+              error: `Previous segment ${previousSegmentCode} must be completed before starting ${segment.segment}` 
+            });
+          }
+        }
+        
+        // Set startTime if not provided
+        if (!updateData.startTime) {
+          updateData.startTime = new Date();
+        }
+      }
+      
+      // If ending a segment (status changing to ENDED), set endTime
+      if (updateData.status === 'ENDED' && segment.status !== 'ENDED') {
+        if (!updateData.endTime) {
+          updateData.endTime = new Date();
+        }
+      }
+      
+      const updatedSegment = await storage.updateHeatSegment(segmentId, updateData);
+      if (!updatedSegment) {
+        return res.status(404).json({ error: "Segment not found" });
+      }
+      
+      // Emit appropriate socket events
+      const match = await storage.getMatch(segment.matchId);
+      if (match) {
+        if (updateData.status === 'RUNNING') {
+          io.to(`tournament:${match.tournamentId}`).emit("segment:started", updatedSegment);
+        } else if (updateData.status === 'ENDED') {
+          io.to(`tournament:${match.tournamentId}`).emit("segment:ended", updatedSegment);
+        } else {
+          io.to(`tournament:${match.tournamentId}`).emit("segment:updated", updatedSegment);
+        }
+      }
+      
+      res.json(updatedSegment);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

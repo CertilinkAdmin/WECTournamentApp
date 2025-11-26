@@ -65,6 +65,7 @@ export interface IStorage {
   // Heat Segments
   createHeatSegment(segment: InsertHeatSegment): Promise<HeatSegment>;
   getMatchSegments(matchId: number): Promise<HeatSegment[]>;
+  getHeatSegment(id: number): Promise<HeatSegment | undefined>;
   updateHeatSegment(id: number, data: Partial<InsertHeatSegment>): Promise<HeatSegment | undefined>;
 
   // Heat Judges
@@ -286,6 +287,14 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(heatSegments)
       .where(eq(heatSegments.matchId, matchId));
+  }
+
+  async getHeatSegment(id: number): Promise<HeatSegment | undefined> {
+    const result = await db.select()
+      .from(heatSegments)
+      .where(eq(heatSegments.id, id))
+      .limit(1);
+    return result[0];
   }
 
   async updateHeatSegment(id: number, data: Partial<InsertHeatSegment>): Promise<HeatSegment | undefined> {
