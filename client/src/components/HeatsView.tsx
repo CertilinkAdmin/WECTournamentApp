@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, Clock, Trophy, Users } from "lucide-react";
 import HeatCard from "./HeatCard";
+import type { Station, Match, User } from '@shared/schema';
+import { getStationLetter as getStationLetterUtil } from '@/utils/stationUtils';
 
 interface Competitor {
   id: string;
@@ -28,31 +30,47 @@ const mockHeats: Heat[] = [
   { heatNumber: 1, station: "A", round: 1, status: "completed", competitors: [{ id: "1", name: "John Smith", code: "PK", score: 18 }, { id: "2", name: "Jane Doe", code: "TR", score: 15 }], winner: "1" },
   { heatNumber: 4, station: "A", round: 1, status: "active", competitors: [{ id: "7", name: "Mike Johnson", code: "BR" }, { id: "8", name: "Sarah Williams", code: "GN" }] },
   { heatNumber: 7, station: "A", round: 1, status: "pending", competitors: [{ id: "13", name: "Alex Brown", code: "PK" }, { id: "14", name: "Emily Davis", code: "TR" }] },
-  
+
   // Station B heats
   { heatNumber: 2, station: "B", round: 1, status: "completed", competitors: [{ id: "3", name: "David Wilson", code: "BR", score: 16 }, { id: "4", name: "Lisa Anderson", code: "GN", score: 14 }], winner: "3" },
   { heatNumber: 5, station: "B", round: 1, status: "active", competitors: [{ id: "9", name: "Chris Taylor", code: "PK" }, { id: "10", name: "Maria Garcia", code: "TR" }] },
   { heatNumber: 8, station: "B", round: 1, status: "pending", competitors: [{ id: "15", name: "Tom Wilson", code: "BR" }, { id: "16", name: "Anna Smith", code: "GN" }] },
-  
+
   // Station C heats
   { heatNumber: 3, station: "C", round: 1, status: "completed", competitors: [{ id: "5", name: "Robert Davis", code: "PK", score: 17 }, { id: "6", name: "Jennifer Lee", code: "TR", score: 13 }], winner: "5" },
   { heatNumber: 6, station: "C", round: 1, status: "active", competitors: [{ id: "11", name: "James Brown", code: "BR" }, { id: "12", name: "Linda Johnson", code: "GN" }] },
   { heatNumber: 9, station: "C", round: 1, status: "pending", competitors: [{ id: "17", name: "Mark Wilson", code: "PK" }, { id: "18", name: "Susan Davis", code: "TR" }] },
 ];
 
+// Mock stations data - in real app this would come from API
+const stations: Station[] = [
+  { id: 1, name: "Station A", code: "STA" },
+  { id: 2, name: "Station B", code: "STB" },
+  { id: 3, name: "Station C", code: "STC" },
+];
+
 export default function HeatsView() {
   const [currentStation, setCurrentStation] = useState<"A" | "B" | "C">("A");
-  
+
   // Filter heats by current station
   const stationHeats = mockHeats.filter(heat => heat.station === currentStation);
-  
+
+  // Helper function to get station letter from station data
+  const getStationLetter = (stationId: number | null): "A" | "B" | "C" | null => {
+    if (!stationId) return null;
+    const station = stations.find(s => s.id === stationId);
+    if (!station) return null;
+    return getStationLetterUtil(station.name);
+  };
+
+
   // Get station statistics
   const getStationStats = (station: "A" | "B" | "C") => {
     const stationHeats = mockHeats.filter(heat => heat.station === station);
     const completed = stationHeats.filter(heat => heat.status === "completed").length;
     const active = stationHeats.filter(heat => heat.status === "active").length;
     const pending = stationHeats.filter(heat => heat.status === "pending").length;
-    
+
     return { completed, active, pending, total: stationHeats.length };
   };
 
@@ -130,7 +148,7 @@ export default function HeatsView() {
                 </span>
               </div>
             </div>
-            
+
             {/* Station Navigation Buttons */}
             <div className="flex gap-2">
               <Button
@@ -207,9 +225,9 @@ export default function HeatsView() {
             {(["A", "B", "C"] as const).map((station) => {
               const stats = getStationStats(station);
               const isCurrentStation = station === currentStation;
-              
+
               return (
-                <Card 
+                <Card
                   key={station}
                   className={`cursor-pointer transition-all ${isCurrentStation ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
                   onClick={() => setCurrentStation(station)}

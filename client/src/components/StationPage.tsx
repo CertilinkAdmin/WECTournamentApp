@@ -59,11 +59,19 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
     enabled: !!currentTournamentId,
   });
 
-  // Filter matches for this station
+  // Filter matches for this station - ensure we're matching by station ID correctly
   const stationMatches = allMatches.filter(match => {
     if (!match.stationId || !station) return false;
     return match.stationId === station.id;
   });
+
+  // Debug logging to help identify the issue
+  React.useEffect(() => {
+    if (station && allMatches.length > 0) {
+      console.log(`Station ${stationName} (ID: ${station.id}) matches:`, stationMatches);
+      console.log('All matches:', allMatches.map(m => ({ id: m.id, heatNumber: m.heatNumber, stationId: m.stationId })));
+    }
+  }, [station, allMatches, stationMatches, stationName]);
   const currentMatch = stationMatches.find(m => m.status === 'RUNNING') || 
                        stationMatches.find(m => m.status === 'READY') ||
                        stationMatches[0];

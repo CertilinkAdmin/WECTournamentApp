@@ -10,6 +10,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink, Coffee, ArrowRight } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
+import { normalizeStationName, isMainStation } from '@/utils/stationUtils';
 import { useWebSocket } from "@/hooks/useWebSocket";
 import StationWarning from "./StationWarning";
 import SegmentTimer from "./SegmentTimer";
@@ -29,24 +30,22 @@ export default function StationLeadView() {
 
   // Filter to only show stations A, B, and C, deduplicated by normalized name
   const mainStations = React.useMemo(() => {
-    // Normalize station names and filter for A, B, C
     const normalizedStations = stations.map(station => ({
       ...station,
-      normalizedName: station.name.replace(/^Station\s*/i, '').trim()
+      normalizedName: normalizeStationName(station.name)
     }));
     
     const filtered = normalizedStations.filter(station => 
-      ['A', 'B', 'C'].includes(station.normalizedName.toUpperCase())
+      isMainStation(station.name)
     );
     
     // Deduplicate by normalized name - take first occurrence of each letter
     const seen = new Set<string>();
     return filtered.filter(station => {
-      const upperName = station.normalizedName.toUpperCase();
-      if (seen.has(upperName)) {
+      if (seen.has(station.normalizedName)) {
         return false;
       }
-      seen.add(upperName);
+      seen.add(station.normalizedName);
       return true;
     });
   }, [stations]);

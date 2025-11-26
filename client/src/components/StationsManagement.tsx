@@ -9,6 +9,7 @@ import { MapPin, Clock, Users, Trophy, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StationPage from './StationPage';
 import type { Station } from '@shared/schema';
+import { findStationByLetter } from '@/utils/stationUtils';
 
 export default function StationsManagement() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
@@ -28,10 +29,10 @@ export default function StationsManagement() {
     return allStations;
   }, [allStations, tournamentId]);
 
-  // Get stations A, B, C (handle both 'A' and 'Station A' naming conventions)
-  const stationA = stations.find(s => s.name === 'A' || s.name === 'Station A');
-  const stationB = stations.find(s => s.name === 'B' || s.name === 'Station B');
-  const stationC = stations.find(s => s.name === 'C' || s.name === 'Station C');
+  // Get stations A, B, C using consistent utility functions
+  const stationA = findStationByLetter(stations, 'A');
+  const stationB = findStationByLetter(stations, 'B');
+  const stationC = findStationByLetter(stations, 'C');
 
   const getStationStatus = (station: Station | undefined) => {
     if (!station) return 'OFFLINE';
