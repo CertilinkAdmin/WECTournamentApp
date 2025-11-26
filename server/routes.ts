@@ -10,7 +10,7 @@ import {
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
   insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
-  tournamentParticipants
+  tournamentParticipants, heatJudges
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -116,6 +116,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerBracketRoutes(app);
 
   // ===== TOURNAMENT ROUTES =====
+  
+  // Assign station leads to tournament stations
+  app.post("/api/tournaments/:id/assign-station-leads", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      
+      // Get tournament participants (station leads) - only those approved for this tournament (seed > 0)
+      const allParticipants = await storage.getTournamentParticipants(tournamentId);
+      const allUsers = await storage.getAllUsers();
+      
+      // Filter to only station leads who are approved for this tournament (seed > 0)
+      const stationLeads = allParticipants
+        .filter(p => {
+          const user = allUsers.find(u => u.id === p.userId);
+          return user?.role === 'STATION_LEAD' && p.seed && p.seed > 0;
+        })
+        .map(p => {
+          const user = allUsers.find(u => u.id === p.userId);
+          return user!;
+        });
+      
+      if (stationLeads.length === 0) {
+        return res.status(400).json({ 
+          error: `No approved station leads found for this tournament.` 
+        });
+      }
+      
+      // Get all stations for this tournament
+      const tournamentStations = await storage.getAllStations();
+      const stationsABC = tournamentStations
+        .filter(s => s.tournamentId === tournamentId && ['A', 'B', 'C'].includes(s.name))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      
+      if (stationsABC.length === 0) {
+        return res.status(400).json({ error: 'No stations A, B, C found for this tournament' });
+      }
+      
+      // Shuffle station leads for randomization
+      const shuffledLeads = [...stationLeads].sort(() => Math.random() - 0.5);
+      
+      // Assign station leads to stations (distribute evenly, wrap around if needed)
+      let assignedCount = 0;
+      for (let i = 0; i < stationsABC.length; i++) {
+        const station = stationsABC[i];
+        const stationLead = shuffledLeads[i % shuffledLeads.length];
+        
+        await storage.updateStation(station.id, { stationLeadId: stationLead.id });
+        assignedCount++;
+      }
+      
+      res.json({
+        success: true,
+        message: `Assigned ${assignedCount} station leads to stations`,
+        stationLeadsAssigned: assignedCount,
+        totalStationLeads: stationLeads.length
+      });
+    } catch (error: any) {
+      console.error('Error assigning station leads:', error);
+      res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  });
+
+  // Assign judges to all heats in a tournament
+  app.post("/api/tournaments/:id/assign-judges", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      
+      // Get tournament participants (judges) - only those approved for this tournament (seed > 0)
+      const allParticipants = await storage.getTournamentParticipants(tournamentId);
+      const allUsers = await storage.getAllUsers();
+      
+      // Filter to only judges who are approved for this tournament (seed > 0)
+      const judges = allParticipants
+        .filter(p => {
+          const user = allUsers.find(u => u.id === p.userId);
+          return user?.role === 'JUDGE' && p.seed && p.seed > 0;
+        })
+        .map(p => {
+          const user = allUsers.find(u => u.id === p.userId);
+          return user!;
+        });
+      
+      if (judges.length < 3) {
+        return res.status(400).json({ 
+          error: `Need at least 3 approved judges for this tournament. Currently have ${judges.length}.` 
+        });
+      }
+      
+      // Get all matches for this tournament
+      const tournamentMatches = await storage.getTournamentMatches(tournamentId);
+      
+      if (tournamentMatches.length === 0) {
+        return res.status(400).json({ error: 'No matches found for this tournament' });
+      }
+      
+      // Shuffle judges array for randomization
+      const shuffledJudges = [...judges].sort(() => Math.random() - 0.5);
+      
+      let assignedCount = 0;
+      let judgeIndex = 0;
+      
+      for (const match of tournamentMatches) {
+        // Skip if match already has judges assigned
+        const existingJudges = await storage.getMatchJudges(match.id);
+        
+        if (existingJudges.length > 0) {
+          // Delete existing judges for this match first
+          for (const existingJudge of existingJudges) {
+            await db.delete(heatJudges).where(eq(heatJudges.id, existingJudge.id));
+          }
+        }
+        
+        // Assign 3 judges: 2 ESPRESSO (TECHNICAL), 1 CAPPUCCINO (SENSORY)
+        const assignedJudges: typeof judges = [];
+        
+        // Select 3 unique judges (wrap around if needed)
+        for (let i = 0; i < 3; i++) {
+          if (judgeIndex >= shuffledJudges.length) {
+            // Reshuffle if we've used all judges
+            shuffledJudges.sort(() => Math.random() - 0.5);
+            judgeIndex = 0;
+          }
+          assignedJudges.push(shuffledJudges[judgeIndex]);
+          judgeIndex++;
+        }
+        
+        // Create judge assignments
+        await storage.assignJudge({
+          matchId: match.id,
+          judgeId: assignedJudges[0].id,
+          role: 'TECHNICAL' // First ESPRESSO judge
+        });
+        
+        await storage.assignJudge({
+          matchId: match.id,
+          judgeId: assignedJudges[1].id,
+          role: 'TECHNICAL' // Second ESPRESSO judge
+        });
+        
+        await storage.assignJudge({
+          matchId: match.id,
+          judgeId: assignedJudges[2].id,
+          role: 'SENSORY' // CAPPUCCINO judge
+        });
+        
+        assignedCount++;
+      }
+      
+      res.json({
+        success: true,
+        message: `Assigned 3 judges to ${assignedCount} heats`,
+        judgesAssigned: assignedCount * 3,
+        totalJudges: judges.length
+      });
+    } catch (error: any) {
+      console.error('Error assigning judges:', error);
+      res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  });
+
   app.post("/api/tournaments", async (req, res) => {
     try {
       const tournamentData = insertTournamentSchema.parse(req.body);
