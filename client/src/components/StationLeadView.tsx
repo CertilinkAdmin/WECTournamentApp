@@ -21,6 +21,7 @@ export default function StationLeadView() {
   const [selectedStation, setSelectedStation] = useState<number | null>(null);
   const [currentSegmentId, setCurrentSegmentId] = useState<number | null>(null);
   const [pausedSegmentId, setPausedSegmentId] = useState<number | null>(null);
+  const [pausedTimes, setPausedTimes] = useState<Record<number, { pausedAt: number; elapsedBeforePause: number; pauseDuration: number }>>({});
   const socket = useWebSocket();
   const [searchParams] = useSearchParams();
 
@@ -119,6 +120,8 @@ export default function StationLeadView() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
+      // Force immediate refetch to update timer
+      queryClient.refetchQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
       setCurrentSegmentId(data.id);
       toast({
         title: "Segment Started",
@@ -319,38 +322,64 @@ export default function StationLeadView() {
   const [currentSegmentName, setCurrentSegmentName] = useState<string>('READY');
 
   useEffect(() => {
-    // If a segment is running, show its countdown
-    if (runningSegment && runningSegment.startTime && pausedSegmentId !== runningSegment.id) {
+    // If a segment is running, show its countdown (independent timer for each segment)
+    if (runningSegment && runningSegment.startTime) {
+      // Check if this segment is paused
+      const isPaused = pausedSegmentId === runningSegment.id;
+      const currentPausedTimes = pausedTimes; // Capture in closure
+      const pauseData = currentPausedTimes[runningSegment.id];
+
       const calculateRemaining = () => {
-        const now = new Date();
-        const start = new Date(runningSegment.startTime!);
-        const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
-        const totalSeconds = runningSegment.plannedMinutes * 60;
-        return Math.max(0, totalSeconds - elapsed);
+        if (isPaused && pauseData) {
+          // Use the elapsed time from when it was paused (frozen time)
+          return Math.max(0, (runningSegment.plannedMinutes * 60) - pauseData.elapsedBeforePause);
+        } else {
+          // Calculate normally based on start time, accounting for pause duration if resumed
+          const now = new Date();
+          const start = new Date(runningSegment.startTime!);
+          let elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
+          
+          // If we resumed from a pause, subtract the pause duration
+          if (pauseData && pauseData.pauseDuration > 0) {
+            elapsed -= pauseData.pauseDuration;
+          }
+          
+          const totalSeconds = runningSegment.plannedMinutes * 60;
+          return Math.max(0, totalSeconds - elapsed);
+        }
       };
 
-      setCurrentSegmentTimeRemaining(calculateRemaining());
-      setCurrentSegmentName(runningSegment.segment.replace('_', ' '));
+      const remaining = calculateRemaining();
+      setCurrentSegmentTimeRemaining(remaining);
+      setCurrentSegmentName(isPaused 
+        ? `${runningSegment.segment.replace('_', ' ')} (PAUSED)`
+        : runningSegment.segment.replace('_', ' '));
 
-      const interval = setInterval(() => {
-        const remaining = calculateRemaining();
-        setCurrentSegmentTimeRemaining(remaining);
-        if (remaining === 0) {
-          clearInterval(interval);
-        }
-      }, 1000);
+      // Only update timer if not paused
+      if (!isPaused) {
+        const interval = setInterval(() => {
+          const newRemaining = calculateRemaining();
+          setCurrentSegmentTimeRemaining(newRemaining);
+          if (newRemaining === 0) {
+            clearInterval(interval);
+            // When segment ends, check for next segment
+            const segmentOrder = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+            const currentIndex = segmentOrder.indexOf(runningSegment.segment);
+            if (currentIndex < segmentOrder.length - 1) {
+              const nextCode = segmentOrder[currentIndex + 1];
+              const nextSeg = segments.find(s => s.segment === nextCode);
+              if (nextSeg && nextSeg.status === 'IDLE') {
+                setCurrentSegmentTimeRemaining(nextSeg.plannedMinutes * 60);
+                setCurrentSegmentName(`NEXT: ${nextCode.replace('_', ' ')}`);
+              }
+            }
+          }
+        }, 1000);
 
-      return () => clearInterval(interval);
-    } else if (pausedSegmentId === runningSegment?.id && runningSegment?.startTime) {
-      // Calculate paused time - show paused time
-      const now = new Date();
-      const start = new Date(runningSegment.startTime);
-      const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
-      const totalSeconds = runningSegment.plannedMinutes * 60;
-      setCurrentSegmentTimeRemaining(Math.max(0, totalSeconds - elapsed));
-      setCurrentSegmentName(`${runningSegment.segment.replace('_', ' ')} (PAUSED)`);
+        return () => clearInterval(interval);
+      }
     } else if (currentMatch?.status === 'RUNNING' && segments.length > 0) {
-      // Heat is running but no segment is active - show next segment's planned time
+      // Heat is running but no segment is active - show next segment's planned time in sequence
       const segmentOrder = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
       const nextSegment = segmentOrder.find(code => {
         const seg = segments.find(s => s.segment === code);
@@ -376,7 +405,7 @@ export default function StationLeadView() {
       setCurrentSegmentTimeRemaining(0);
       setCurrentSegmentName('READY');
     }
-  }, [runningSegment, pausedSegmentId, currentMatch?.status, segments]);
+  }, [runningSegment, pausedSegmentId, currentMatch?.status, segments, pausedTimes]);
 
   // Calculate station warnings based on other stations
   const getStationWarnings = () => {
@@ -466,7 +495,7 @@ export default function StationLeadView() {
           </div>
         </CardHeader>
         <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {mainStations.map((station) => {
               const stationLead = station.stationLeadId ? users.find(u => u.id === station.stationLeadId) : null;
               const displayName = `Station ${station.normalizedName}`;
@@ -476,11 +505,11 @@ export default function StationLeadView() {
                   variant={selectedStation === station.id ? "default" : "outline"}
                   onClick={() => setSelectedStation(station.id)}
                   data-testid={`button-station-${station.normalizedName}`}
-                  className="flex flex-col items-start h-auto py-1.5 sm:py-2 text-xs sm:text-sm flex-1 min-w-[100px]"
+                  className="flex flex-col items-start justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm min-w-0"
                 >
-                  <span className="truncate w-full">{displayName}</span>
+                  <span className="truncate w-full text-center sm:text-left">{displayName}</span>
                   {stationLead && (
-                    <span className="text-[10px] sm:text-xs opacity-80 font-normal truncate w-full">Lead: {stationLead.name}</span>
+                    <span className="text-[10px] sm:text-xs opacity-80 font-normal truncate w-full text-center sm:text-left">Lead: {stationLead.name}</span>
                   )}
                 </Button>
               );
@@ -659,7 +688,38 @@ export default function StationLeadView() {
                           <Button
                             variant={pausedSegmentId === segment.id ? "default" : "secondary"}
                             className="flex-1"
-                            onClick={() => setPausedSegmentId(pausedSegmentId === segment.id ? null : segment.id)}
+                            onClick={() => {
+                              if (pausedSegmentId === segment.id) {
+                                // Resuming - calculate pause duration and update
+                                const now = new Date();
+                                const pauseData = pausedTimes[segment.id];
+                                if (pauseData) {
+                                  const pauseDuration = Math.floor((now.getTime() - pauseData.pausedAt) / 1000);
+                                  setPausedTimes(prev => ({
+                                    ...prev,
+                                    [segment.id]: {
+                                      ...pauseData,
+                                      pauseDuration: pauseDuration
+                                    }
+                                  }));
+                                }
+                                setPausedSegmentId(null);
+                              } else {
+                                // Pausing - store current elapsed time and pause start time
+                                const now = new Date();
+                                const start = new Date(segment.startTime!);
+                                const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
+                                setPausedSegmentId(segment.id);
+                                setPausedTimes(prev => ({
+                                  ...prev,
+                                  [segment.id]: {
+                                    pausedAt: now.getTime(),
+                                    elapsedBeforePause: elapsed,
+                                    pauseDuration: 0
+                                  }
+                                }));
+                              }
+                            }}
                             data-testid={`button-pause-${segment.segment}`}
                           >
                             {pausedSegmentId === segment.id ? (

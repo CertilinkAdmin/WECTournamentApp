@@ -652,20 +652,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update segment status (for Station Lead to start/end segments)
-  app.patch("/api/segments/:id", async (req, res) => {
-    try {
-      const segmentId = parseInt(req.params.id);
-      const segment = await storage.updateHeatSegment(segmentId, req.body);
-      if (!segment) {
-        return res.status(404).json({ error: "Segment not found" });
-      }
-      res.json(segment);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
   // ===== STATION ROUTES =====
   app.get("/api/stations", async (req, res) => {
     const stations = await storage.getAllStations();
@@ -784,7 +770,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/segments/:id", async (req, res) => {
     try {
       const segmentId = parseInt(req.params.id);
-      const updateData = req.body;
+      const updateData = { ...req.body };
+
+      // Convert ISO string dates to Date objects for timestamp fields
+      if (updateData.startTime && typeof updateData.startTime === 'string') {
+        updateData.startTime = new Date(updateData.startTime);
+      }
+      if (updateData.endTime && typeof updateData.endTime === 'string') {
+        updateData.endTime = new Date(updateData.endTime);
+      }
 
       // Get the current segment to check its match and status
       const segment = await storage.getHeatSegment(segmentId);
