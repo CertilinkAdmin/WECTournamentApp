@@ -124,6 +124,13 @@ export default function StationLeadView() {
         title: "Segment Started",
         description: `${data.segment} segment has begun. Cup placement: ${data.leftCupCode || 'L'} / ${data.rightCupCode || 'R'}`,
       });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Start Segment",
+        description: error.message || "An error occurred while starting the segment.",
+        variant: "destructive",
+      });
     }
   });
 
@@ -216,14 +223,24 @@ export default function StationLeadView() {
       return { match: matchData, segment: null };
     },
     onSuccess: (data) => {
+      // Invalidate queries to refresh UI immediately
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
       if (data.segment) {
         setCurrentSegmentId(data.segment.id);
+        // Force immediate refetch of segments to update timer
+        queryClient.refetchQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
       }
       toast({
         title: "Heat Started",
         description: `Round ${data.match.round}, Heat ${data.match.heatNumber} has begun. Dial-In segment started automatically.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Start Heat",
+        description: error.message || "An error occurred while starting the heat.",
+        variant: "destructive",
       });
     }
   });
@@ -297,10 +314,12 @@ export default function StationLeadView() {
   const allSegmentsEnded = segments.length > 0 && segments.every(s => s.status === 'ENDED');
 
   // Calculate current segment time remaining for prominent display - ALWAYS VISIBLE
+  // Shows current segment countdown, or next segment's planned time if heat is running but no segment active
   const [currentSegmentTimeRemaining, setCurrentSegmentTimeRemaining] = useState<number>(0);
   const [currentSegmentName, setCurrentSegmentName] = useState<string>('READY');
 
   useEffect(() => {
+    // If a segment is running, show its countdown
     if (runningSegment && runningSegment.startTime && pausedSegmentId !== runningSegment.id) {
       const calculateRemaining = () => {
         const now = new Date();
@@ -330,12 +349,34 @@ export default function StationLeadView() {
       const totalSeconds = runningSegment.plannedMinutes * 60;
       setCurrentSegmentTimeRemaining(Math.max(0, totalSeconds - elapsed));
       setCurrentSegmentName(`${runningSegment.segment.replace('_', ' ')} (PAUSED)`);
+    } else if (currentMatch?.status === 'RUNNING' && segments.length > 0) {
+      // Heat is running but no segment is active - show next segment's planned time
+      const segmentOrder = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+      const nextSegment = segmentOrder.find(code => {
+        const seg = segments.find(s => s.segment === code);
+        return seg && seg.status === 'IDLE';
+      });
+      
+      if (nextSegment) {
+        const seg = segments.find(s => s.segment === nextSegment);
+        if (seg) {
+          setCurrentSegmentTimeRemaining(seg.plannedMinutes * 60);
+          setCurrentSegmentName(`NEXT: ${nextSegment.replace('_', ' ')}`);
+        } else {
+          setCurrentSegmentTimeRemaining(0);
+          setCurrentSegmentName('READY');
+        }
+      } else {
+        // All segments done or no next segment
+        setCurrentSegmentTimeRemaining(0);
+        setCurrentSegmentName('HEAT COMPLETE');
+      }
     } else {
-      // Always show timer, even when idle - show 00:00
+      // Heat not running - show 00:00
       setCurrentSegmentTimeRemaining(0);
       setCurrentSegmentName('READY');
     }
-  }, [runningSegment, pausedSegmentId]);
+  }, [runningSegment, pausedSegmentId, currentMatch?.status, segments]);
 
   // Calculate station warnings based on other stations
   const getStationWarnings = () => {
@@ -402,20 +443,20 @@ export default function StationLeadView() {
   const [rulesOpen, setRulesOpen] = useState(false);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
       <Card className="bg-primary/10">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <MapPin className="h-6 w-6" />
-              Station Lead Control
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <CardTitle className="flex items-center gap-2 text-primary text-lg sm:text-xl">
+              <MapPin className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+              <span className="truncate">Station Lead Control</span>
             </CardTitle>
             {/* Prominent Countdown Timer - Always Visible */}
-            <div className="flex flex-col items-center sm:items-end gap-2 w-full sm:w-auto min-w-[200px]">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide text-center">
+            <div className="flex flex-col items-center sm:items-end gap-1.5 sm:gap-2 w-full sm:w-auto sm:min-w-[180px] flex-shrink-0">
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide text-center">
                 {currentSegmentName}
               </div>
-              <div className="bg-black rounded-lg p-2 border-2 border-primary/50 shadow-lg shadow-primary/20 w-full sm:w-auto">
+              <div className="bg-black rounded-lg p-1.5 sm:p-2 border-2 border-primary/50 shadow-lg shadow-primary/20 w-full sm:w-auto max-w-[200px] sm:max-w-none">
                 <SevenSegmentTimer 
                   timeRemaining={currentSegmentTimeRemaining} 
                   isPaused={pausedSegmentId === runningSegment?.id}
@@ -424,8 +465,8 @@ export default function StationLeadView() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
+        <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6">
+          <div className="flex flex-wrap gap-2">
             {mainStations.map((station) => {
               const stationLead = station.stationLeadId ? users.find(u => u.id === station.stationLeadId) : null;
               const displayName = `Station ${station.normalizedName}`;
@@ -435,17 +476,17 @@ export default function StationLeadView() {
                   variant={selectedStation === station.id ? "default" : "outline"}
                   onClick={() => setSelectedStation(station.id)}
                   data-testid={`button-station-${station.normalizedName}`}
-                  className="flex flex-col items-start h-auto py-2"
+                  className="flex flex-col items-start h-auto py-1.5 sm:py-2 text-xs sm:text-sm flex-1 min-w-[100px]"
                 >
-                  <span>{displayName}</span>
+                  <span className="truncate w-full">{displayName}</span>
                   {stationLead && (
-                    <span className="text-xs opacity-80 font-normal">Lead: {stationLead.name}</span>
+                    <span className="text-[10px] sm:text-xs opacity-80 font-normal truncate w-full">Lead: {stationLead.name}</span>
                   )}
                 </Button>
               );
             })}
           </div>
-          <div className="flex flex-col md:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button asChild variant="secondary" className="w-full md:w-auto">
               <Link to={`/live/${currentTournamentId}/stations`}>
                 Back to Station Management
@@ -534,15 +575,15 @@ export default function StationLeadView() {
 
       {currentMatch && (
         <Card className="border border-primary/30 bg-[#1b110a] text-white shadow-lg">
-          <CardContent className="space-y-6 p-6">
-            <div className="flex items-center justify-between text-sm uppercase tracking-wide text-primary/70">
-              <span>Station {selectedStationData?.name || '—'}</span>
-              <Badge variant={currentMatch.status === 'RUNNING' ? 'default' : 'secondary'}>
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs sm:text-sm uppercase tracking-wide text-primary/70">
+              <span className="truncate">Station {selectedStationData?.name || '—'}</span>
+              <Badge variant={currentMatch.status === 'RUNNING' ? 'default' : 'secondary'} className="text-xs">
                 Round {currentMatch.round} · Heat {currentMatch.heatNumber}
               </Badge>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {[
                 {
                   label: "Left Cup",
@@ -563,25 +604,25 @@ export default function StationLeadView() {
                   competitor: competitor2?.name || "Waiting",
                 }
               ].map((slot) => (
-                <div key={slot.label} className="rounded-xl border border-primary/30 bg-black/40 p-4 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-white/70">
+                <div key={slot.label} className="rounded-xl border border-primary/30 bg-black/40 p-3 sm:p-4 space-y-2 sm:space-y-3">
+                  <div className="flex items-center justify-between text-[10px] sm:text-xs text-white/70">
                     <span>{slot.label}</span>
-                    <Coffee className="h-4 w-4" />
+                    <Coffee className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                   </div>
-                  <div className="text-3xl font-mono font-bold">{slot.placement}</div>
-                  <div className="text-sm text-white/70 uppercase">Cup Code</div>
-                  <div className="text-2xl font-mono">{slot.cupCode}</div>
-                  <div className="text-xs text-white/60">{slot.competitor}</div>
+                  <div className="text-2xl sm:text-3xl font-mono font-bold">{slot.placement}</div>
+                  <div className="text-xs sm:text-sm text-white/70 uppercase">Cup Code</div>
+                  <div className="text-xl sm:text-2xl font-mono truncate">{slot.cupCode}</div>
+                  <div className="text-[10px] sm:text-xs text-white/60 truncate">{slot.competitor}</div>
                 </div>
               ))}
             </div>
 
             <div className="text-center space-y-1">
-              <div className="text-xs text-white/50 uppercase">Heat Status</div>
-              <div className="text-3xl font-bold tracking-wide">{currentMatch.status}</div>
+              <div className="text-[10px] sm:text-xs text-white/50 uppercase">Heat Status</div>
+              <div className="text-2xl sm:text-3xl font-bold tracking-wide">{currentMatch.status}</div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'].map((segmentCode, idx) => {
                 const segment = segments.find(s => s.segment === segmentCode);
                 const status = segment?.status || 'IDLE';
@@ -592,26 +633,28 @@ export default function StationLeadView() {
                 return (
                   <div
                     key={segmentCode}
-                    className={`rounded-xl border p-4 bg-black/30 ${isRunning ? 'border-primary shadow-primary/40 shadow-lg' : 'border-white/10'}`}
+                    className={`rounded-xl border p-3 sm:p-4 bg-black/30 ${isRunning ? 'border-primary shadow-primary/40 shadow-lg' : 'border-white/10'}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm uppercase tracking-wide text-white/60">{segmentCode.replace('_', ' ')}</div>
-                        <div className="text-xs text-white/40">{segment?.plannedMinutes || 0} minutes</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs sm:text-sm uppercase tracking-wide text-white/60 truncate">{segmentCode.replace('_', ' ')}</div>
+                        <div className="text-[10px] sm:text-xs text-white/40">{segment?.plannedMinutes || 0} minutes</div>
                       </div>
-                      <Badge variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'}>
+                      <Badge variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'} className="text-[10px] sm:text-xs flex-shrink-0">
                         {status}
                       </Badge>
                     </div>
 
                     {isRunning && segment?.startTime && (
-                      <div className="mt-3 space-y-3">
-                        <SegmentTimer
-                          durationMinutes={segment.plannedMinutes}
-                          startTime={new Date(segment.startTime)}
-                          isPaused={pausedSegmentId === segment.id}
-                          onComplete={() => handleEndSegment(segment.id)}
-                        />
+                      <div className="mt-2 sm:mt-3 space-y-2 sm:space-y-3">
+                        <div className="scale-90 sm:scale-100 origin-center">
+                          <SegmentTimer
+                            durationMinutes={segment.plannedMinutes}
+                            startTime={new Date(segment.startTime)}
+                            isPaused={pausedSegmentId === segment.id}
+                            onComplete={() => handleEndSegment(segment.id)}
+                          />
+                        </div>
                         <div className="flex gap-2">
                           <Button
                             variant={pausedSegmentId === segment.id ? "default" : "secondary"}
@@ -646,13 +689,14 @@ export default function StationLeadView() {
 
                     {!isRunning && !isEnded && (
                       <Button
-                        variant="ghost"
-                        className="w-full mt-3 text-white border border-white/10 bg-white/5"
+                        variant="default"
+                        size="lg"
+                        className="w-full mt-3 text-sm sm:text-base"
                         onClick={() => segment && handleStartSegment(segment.id)}
-                        disabled={!segment || !canStart || currentMatch.status !== 'RUNNING'}
+                        disabled={!segment || !canStart || (currentMatch.status !== 'RUNNING' && currentMatch.status !== 'READY')}
                         data-testid={`button-start-${segmentCode}`}
                       >
-                        <ArrowRight className="h-4 w-4 mr-2" />
+                        <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                         Start {segmentCode.replace('_', ' ')}
                       </Button>
                     )}
@@ -667,17 +711,17 @@ export default function StationLeadView() {
               })}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {currentMatch.status !== 'RUNNING' && currentMatch.status !== 'DONE' && (
                 <Button
                   variant="default"
                   size="lg"
-                  className="w-full"
+                  className="w-full text-sm sm:text-base"
                   onClick={() => handleStartMatch(currentMatch.id)}
                   disabled={startMatchMutation.isPending}
                   data-testid="button-start-heat"
                 >
-                  <Play className="h-5 w-5 mr-2" />
+                  <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Start Heat
                 </Button>
               )}

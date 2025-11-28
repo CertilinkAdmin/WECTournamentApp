@@ -746,7 +746,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/matches/:id", async (req, res) => {
     try {
-      const match = await storage.updateMatch(parseInt(req.params.id), req.body);
+      const updateData = { ...req.body };
+      
+      // Convert ISO string dates to Date objects for timestamp fields
+      if (updateData.startTime && typeof updateData.startTime === 'string') {
+        updateData.startTime = new Date(updateData.startTime);
+      }
+      if (updateData.endTime && typeof updateData.endTime === 'string') {
+        updateData.endTime = new Date(updateData.endTime);
+      }
+      
+      const match = await storage.updateMatch(parseInt(req.params.id), updateData);
       if (!match) {
         return res.status(404).json({ error: "Match not found" });
       }

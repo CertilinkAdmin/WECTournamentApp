@@ -74,25 +74,46 @@ export default function SevenSegmentTimer({ timeRemaining, isPaused = false }: S
           display: flex;
           justify-content: center;
           align-items: center;
-          padding: 0.75rem;
+          padding: 0.5rem;
           background: #000;
           border-radius: 0.5rem;
-          min-height: 100px;
+          min-height: 70px;
+        }
+
+        @media (min-width: 640px) {
+          .seven-segment-timer {
+            padding: 0.75rem;
+            min-height: 100px;
+          }
         }
 
         .seven-segment-timer .clock {
           display: flex;
           align-items: center;
           justify-content: center;
-          height: 100px;
+          height: 70px;
+        }
+
+        @media (min-width: 640px) {
+          .seven-segment-timer .clock {
+            height: 100px;
+          }
         }
 
         .seven-segment-timer .digit {
-          width: 50px;
-          height: 80px;
-          margin: 0 2px;
+          width: 35px;
+          height: 55px;
+          margin: 0 1px;
           position: relative;
           display: inline-block;
+        }
+
+        @media (min-width: 640px) {
+          .seven-segment-timer .digit {
+            width: 50px;
+            height: 80px;
+            margin: 0 2px;
+          }
         }
 
         .seven-segment-timer .digit .segment {
