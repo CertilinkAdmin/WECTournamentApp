@@ -50,7 +50,6 @@ export default function SevenSegmentTimer({ timeRemaining, isPaused = false }: S
   const minutesDigit2Ref = useRef<HTMLDivElement>(null);
   const secondsDigit1Ref = useRef<HTMLDivElement>(null);
   const secondsDigit2Ref = useRef<HTMLDivElement>(null);
-  const [prevTime, setPrevTime] = useState(timeRemaining);
 
   useEffect(() => {
     // Always update when time changes, even if paused (to show current time)
@@ -75,30 +74,30 @@ export default function SevenSegmentTimer({ timeRemaining, isPaused = false }: S
           display: flex;
           justify-content: center;
           align-items: center;
-          padding: 1rem;
+          padding: 0.75rem;
           background: #000;
           border-radius: 0.5rem;
-          min-height: 120px;
+          min-height: 100px;
         }
 
         .seven-segment-timer .clock {
           display: flex;
           align-items: center;
           justify-content: center;
-          height: 120px;
+          height: 100px;
         }
 
         .seven-segment-timer .digit {
-          width: 60px;
-          height: 100px;
-          margin: 0 3px;
+          width: 50px;
+          height: 80px;
+          margin: 0 2px;
           position: relative;
           display: inline-block;
         }
 
         .seven-segment-timer .digit .segment {
-          background: #c00;
-          border-radius: 3px;
+          background: #ff0000;
+          border-radius: 2px;
           position: absolute;
           opacity: 0.15;
           transition: opacity 0.2s;
@@ -106,20 +105,20 @@ export default function SevenSegmentTimer({ timeRemaining, isPaused = false }: S
 
         .seven-segment-timer .digit .segment.on {
           opacity: 1;
-          box-shadow: 0 0 25px rgba(255, 0, 0, 0.7);
+          box-shadow: 0 0 20px rgba(255, 0, 0, 0.8), 0 0 40px rgba(255, 0, 0, 0.4);
           transition: opacity 0s;
         }
 
         .seven-segment-timer .separator {
-          width: 10px;
-          height: 10px;
-          background: #c00;
+          width: 8px;
+          height: 8px;
+          background: #ff0000;
           border-radius: 50%;
           display: inline-block;
           position: relative;
-          margin: 0 5px;
+          margin: 0 4px;
           opacity: 1;
-          box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
+          box-shadow: 0 0 12px rgba(255, 0, 0, 0.8);
           animation: blink 1s infinite;
         }
 

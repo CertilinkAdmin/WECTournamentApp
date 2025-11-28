@@ -14,6 +14,7 @@ import { getMainStationsForTournament, normalizeStationName } from '@/utils/stat
 import { useWebSocket } from "@/hooks/useWebSocket";
 import StationWarning from "./StationWarning";
 import SegmentTimer from "./SegmentTimer";
+import SevenSegmentTimer from "./SevenSegmentTimer";
 
 export default function StationLeadView() {
   const { toast } = useToast();
@@ -151,7 +152,8 @@ export default function StationLeadView() {
 
   const startMatchMutation = useMutation({
     mutationFn: async (matchId: number) => {
-      const response = await fetch(`/api/matches/${matchId}`, {
+      // First, update match status to RUNNING
+      const matchResponse = await fetch(`/api/matches/${matchId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -159,14 +161,69 @@ export default function StationLeadView() {
           startTime: new Date().toISOString()
         })
       });
-      if (!response.ok) throw new Error('Failed to start match');
-      return await response.json();
+      if (!matchResponse.ok) throw new Error('Failed to start match');
+      const matchData = await matchResponse.json();
+
+      // Fetch segments for this match to get the Dial-In segment
+      const segmentsResponse = await fetch(`/api/matches/${matchId}/segments`);
+      if (!segmentsResponse.ok) {
+        console.warn('Failed to fetch segments, segments may not exist yet');
+        return { match: matchData, segment: null };
+      }
+      const matchSegments = await segmentsResponse.json();
+      
+      // Ensure segments exist - if not, they should be created by the match creation endpoint
+      if (!matchSegments || matchSegments.length === 0) {
+        console.warn('No segments found for match, cannot auto-start Dial-In');
+        return { match: matchData, segment: null };
+      }
+      
+      // Then, automatically start the Dial-In segment
+      const dialInSegment = matchSegments.find((s: HeatSegment) => s.segment === 'DIAL_IN');
+      if (dialInSegment && dialInSegment.id) {
+        // Get competitor cup codes from participants
+        const comp1Participant = currentMatch?.competitor1Id 
+          ? participants.find(p => p.userId === currentMatch.competitor1Id)
+          : null;
+        const comp2Participant = currentMatch?.competitor2Id 
+          ? participants.find(p => p.userId === currentMatch.competitor2Id)
+          : null;
+        
+        const cupCode1 = comp1Participant?.cupCode || null;
+        const cupCode2 = comp2Participant?.cupCode || null;
+        
+        // Randomly assign cup codes to left/right positions
+        const shouldSwap = Math.random() < 0.5;
+        const leftCupCode = shouldSwap ? cupCode2 : cupCode1;
+        const rightCupCode = shouldSwap ? cupCode1 : cupCode2;
+        
+        const segmentResponse = await fetch(`/api/segments/${dialInSegment.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'RUNNING',
+            startTime: new Date().toISOString(),
+            leftCupCode,
+            rightCupCode
+          })
+        });
+        if (!segmentResponse.ok) throw new Error('Failed to start Dial-In segment');
+        const segmentData = await segmentResponse.json();
+        
+        return { match: matchData, segment: segmentData };
+      }
+
+      return { match: matchData, segment: null };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
+      if (data.segment) {
+        setCurrentSegmentId(data.segment.id);
+      }
       toast({
         title: "Heat Started",
-        description: `Round ${data.round}, Heat ${data.heatNumber} has begun.`,
+        description: `Round ${data.match.round}, Heat ${data.match.heatNumber} has begun. Dial-In segment started automatically.`,
       });
     }
   });
@@ -239,6 +296,47 @@ export default function StationLeadView() {
   const runningSegment = segments.find(s => s.status === 'RUNNING');
   const allSegmentsEnded = segments.length > 0 && segments.every(s => s.status === 'ENDED');
 
+  // Calculate current segment time remaining for prominent display - ALWAYS VISIBLE
+  const [currentSegmentTimeRemaining, setCurrentSegmentTimeRemaining] = useState<number>(0);
+  const [currentSegmentName, setCurrentSegmentName] = useState<string>('READY');
+
+  useEffect(() => {
+    if (runningSegment && runningSegment.startTime && pausedSegmentId !== runningSegment.id) {
+      const calculateRemaining = () => {
+        const now = new Date();
+        const start = new Date(runningSegment.startTime!);
+        const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
+        const totalSeconds = runningSegment.plannedMinutes * 60;
+        return Math.max(0, totalSeconds - elapsed);
+      };
+
+      setCurrentSegmentTimeRemaining(calculateRemaining());
+      setCurrentSegmentName(runningSegment.segment.replace('_', ' '));
+
+      const interval = setInterval(() => {
+        const remaining = calculateRemaining();
+        setCurrentSegmentTimeRemaining(remaining);
+        if (remaining === 0) {
+          clearInterval(interval);
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } else if (pausedSegmentId === runningSegment?.id && runningSegment?.startTime) {
+      // Calculate paused time - show paused time
+      const now = new Date();
+      const start = new Date(runningSegment.startTime);
+      const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
+      const totalSeconds = runningSegment.plannedMinutes * 60;
+      setCurrentSegmentTimeRemaining(Math.max(0, totalSeconds - elapsed));
+      setCurrentSegmentName(`${runningSegment.segment.replace('_', ' ')} (PAUSED)`);
+    } else {
+      // Always show timer, even when idle - show 00:00
+      setCurrentSegmentTimeRemaining(0);
+      setCurrentSegmentName('READY');
+    }
+  }, [runningSegment, pausedSegmentId]);
+
   // Calculate station warnings based on other stations
   const getStationWarnings = () => {
     const warnings: Array<{ referenceStationName: string; targetStartTime: Date }> = [];
@@ -307,10 +405,24 @@ export default function StationLeadView() {
     <div className="space-y-6 p-6">
       <Card className="bg-primary/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <MapPin className="h-6 w-6" />
-            Station Lead Control
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <MapPin className="h-6 w-6" />
+              Station Lead Control
+            </CardTitle>
+            {/* Prominent Countdown Timer - Always Visible */}
+            <div className="flex flex-col items-center sm:items-end gap-2 w-full sm:w-auto min-w-[200px]">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide text-center">
+                {currentSegmentName}
+              </div>
+              <div className="bg-black rounded-lg p-2 border-2 border-primary/50 shadow-lg shadow-primary/20 w-full sm:w-auto">
+                <SevenSegmentTimer 
+                  timeRemaining={currentSegmentTimeRemaining} 
+                  isPaused={pausedSegmentId === runningSegment?.id}
+                />
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex gap-2">

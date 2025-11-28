@@ -69,16 +69,20 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
     queryKey: ['/api/stations'],
   });
 
-  // Fetch judges for all matches
+  // Fetch judges for all matches - use stable query key to prevent infinite loops
   const { data: allJudgesData = {} } = useQuery<Record<number, HeatJudge[]>>({
-    queryKey: ['/api/tournaments', tournamentId, 'matches', 'judges'],
+    queryKey: ['/api/tournaments', tournamentId, 'matches', 'judges', tournamentData?.matches?.map(m => m.id).join(',')],
     queryFn: async () => {
-      if (!tournamentId || !tournamentData?.matches) return {};
+      if (!tournamentId || !tournamentData?.matches || tournamentData.matches.length === 0) return {};
       const judgesPromises = tournamentData.matches.map(async (match) => {
-        const response = await fetch(`/api/matches/${match.id}/judges`);
-        if (!response.ok) return { matchId: match.id, judges: [] };
-        const judges = await response.json();
-        return { matchId: match.id, judges };
+        try {
+          const response = await fetch(`/api/matches/${match.id}/judges`);
+          if (!response.ok) return { matchId: match.id, judges: [] };
+          const judges = await response.json();
+          return { matchId: match.id, judges };
+        } catch (error) {
+          return { matchId: match.id, judges: [] };
+        }
       });
       const results = await Promise.all(judgesPromises);
       const judgesMap: Record<number, HeatJudge[]> = {};
@@ -87,7 +91,8 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
       });
       return judgesMap;
     },
-    enabled: !!tournamentId && !!tournamentData?.matches,
+    enabled: !!tournamentId && !!tournamentData?.matches && tournamentData.matches.length > 0,
+    staleTime: 5000, // Cache for 5 seconds to prevent excessive refetches
   });
 
   // Process matches into bracket rounds
@@ -169,9 +174,10 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
   const totalHeats = rounds.flatMap(r => r.matches).length;
   const finalWinner = rounds[rounds.length - 1]?.matches[0]?.winner || '';
 
-  // Animate matches on load
+  // Animate matches on load - use stable dependency to prevent infinite loops
+  const roundsString = JSON.stringify(rounds.map(r => ({ title: r.title, matchCount: r.matches.length })));
   useEffect(() => {
-    if (rounds.length > 0) {
+    if (rounds.length > 0 && !isLoaded) {
       setIsLoaded(true);
       setAnimatedMatches(new Set());
       
@@ -179,11 +185,15 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
       
       allMatches.forEach((match, index) => {
         setTimeout(() => {
-          setAnimatedMatches(prev => new Set([...Array.from(prev), match.heatNumber]));
+          setAnimatedMatches(prev => {
+            const newSet = new Set(prev);
+            newSet.add(match.heatNumber);
+            return newSet;
+          });
         }, index * 50);
       });
     }
-  }, [rounds]);
+  }, [roundsString, isLoaded]); // Use stringified rounds to prevent object reference changes
 
   const getMedalIcon = (roundTitle: string, isWinner: boolean) => {
     if (!isWinner) return null;

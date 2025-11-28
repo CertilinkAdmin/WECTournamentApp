@@ -22,6 +22,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import type { Station, Match, HeatSegment, User } from '@shared/schema';
 import SegmentTimer from '@/components/SegmentTimer';
+import HeatCountdownTimer from '@/components/HeatCountdownTimer';
 
 interface StationPageProps {
   stationId: number;
@@ -82,49 +83,86 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
     enabled: !!currentMatch,
   });
 
-  // Segment control mutations
+  // Fetch participants to get cup codes
+  const { data: participants = [] } = useQuery<any[]>({
+    queryKey: ['/api/tournaments', currentTournamentId, 'participants'],
+    enabled: !!currentTournamentId,
+  });
+
+  // Segment control mutations - using same pattern as StationLeadView
   const startSegmentMutation = useMutation({
-    mutationFn: async ({ matchId, segmentCode }: { matchId: number; segmentCode: string }) => {
-      const response = await fetch(`/api/heats/${matchId}/segment/${segmentCode}/start`, {
+    mutationFn: async (segmentId: number) => {
+      // Get competitor cup codes
+      const comp1Participant = currentMatch?.competitor1Id 
+        ? participants.find(p => p.userId === currentMatch.competitor1Id)
+        : null;
+      const comp2Participant = currentMatch?.competitor2Id 
+        ? participants.find(p => p.userId === currentMatch.competitor2Id)
+        : null;
+      
+      const cupCode1 = comp1Participant?.cupCode || null;
+      const cupCode2 = comp2Participant?.cupCode || null;
+      
+      // Randomly assign cup codes to left/right positions
+      const shouldSwap = Math.random() < 0.5;
+      const leftCupCode = shouldSwap ? cupCode2 : cupCode1;
+      const rightCupCode = shouldSwap ? cupCode1 : cupCode2;
+      
+      const response = await fetch(`/api/segments/${segmentId}`, {
         method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'RUNNING',
+          startTime: new Date().toISOString(),
+          leftCupCode,
+          rightCupCode
+        })
       });
       if (!response.ok) throw new Error('Failed to start segment');
-      return response.json();
+      return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
-      toast({ title: "Segment Started", description: "Timer is now running." });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  });
-
-  const stopSegmentMutation = useMutation({
-    mutationFn: async ({ matchId, segmentCode }: { matchId: number; segmentCode: string }) => {
-      const response = await fetch(`/api/heats/${matchId}/segment/${segmentCode}/stop`, {
-        method: 'PATCH',
+      setCurrentSegmentId(data.id);
+      toast({ 
+        title: "Segment Started", 
+        description: `${data.segment} segment has begun. Cup placement: ${data.leftCupCode || 'L'} / ${data.rightCupCode || 'R'}` 
       });
-      if (!response.ok) throw new Error('Failed to stop segment');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
-      toast({ title: "Segment Stopped", description: "Timer has been stopped." });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   });
 
-  const handleStartSegment = (segmentCode: string) => {
-    if (!currentMatch) return;
-    startSegmentMutation.mutate({ matchId: currentMatch.id, segmentCode });
+  const endSegmentMutation = useMutation({
+    mutationFn: async (segmentId: number) => {
+      const response = await fetch(`/api/segments/${segmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'ENDED',
+          endTime: new Date().toISOString()
+        })
+      });
+      if (!response.ok) throw new Error('Failed to end segment');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
+      setCurrentSegmentId(null);
+      toast({ title: "Segment Ended", description: `${data.segment} segment has completed.` });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleStartSegment = (segmentId: number) => {
+    startSegmentMutation.mutate(segmentId);
   };
 
-  const handleStopSegment = (segmentCode: string) => {
-    if (!currentMatch) return;
-    stopSegmentMutation.mutate({ matchId: currentMatch.id, segmentCode });
+  const handleEndSegment = (segmentId: number) => {
+    endSegmentMutation.mutate(segmentId);
   };
 
   const getCompetitorName = (userId: number) => {
@@ -137,19 +175,48 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
     return segment?.status || 'IDLE';
   };
 
-  const getNextSegment = () => {
-    const segmentOrder = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
-    for (const code of segmentOrder) {
-      if (getSegmentStatus(code) === 'IDLE') {
-        return code;
-      }
-    }
-    return null;
-  };
+  const runningSegment = segments.find(s => s.status === 'RUNNING');
+  const allSegmentsEnded = segments.length > 0 && segments.every(s => s.status === 'ENDED');
 
-  const isAllSegmentsComplete = () => {
-    return segments.every(s => s.status === 'ENDED');
-  };
+  // Calculate total heat time remaining (sum of remaining segment times)
+  const [totalHeatTimeRemaining, setTotalHeatTimeRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!currentMatch || currentMatch.status !== 'RUNNING' || segments.length === 0) {
+      setTotalHeatTimeRemaining(null);
+      return;
+    }
+    
+    const calculateRemaining = () => {
+      let totalSeconds = 0;
+      const segmentOrder = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+      
+      for (const code of segmentOrder) {
+        const segment = segments.find(s => s.segment === code);
+        if (!segment) continue;
+        
+        if (segment.status === 'RUNNING' && segment.startTime) {
+          const elapsed = Math.floor((Date.now() - new Date(segment.startTime).getTime()) / 1000);
+          const remaining = Math.max(0, (segment.plannedMinutes * 60) - elapsed);
+          totalSeconds += remaining;
+        } else if (segment.status === 'IDLE') {
+          totalSeconds += segment.plannedMinutes * 60;
+        }
+        // ENDED segments contribute 0
+      }
+      
+      return totalSeconds;
+    };
+
+    setTotalHeatTimeRemaining(calculateRemaining());
+
+    // Update every second when heat is running
+    const interval = setInterval(() => {
+      setTotalHeatTimeRemaining(calculateRemaining());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentMatch, segments, currentMatch?.status]);
 
   return (
     <div className="space-y-6">
@@ -188,17 +255,28 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
 
       {/* Current Match */}
       {currentMatch && (
-        <Card>
+        <Card className="border-primary/30">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Current Match</span>
+              <span className="flex items-center gap-2">
+                <Trophy className="h-5 w-5" />
+                Round {currentMatch.round} · Heat {currentMatch.heatNumber}
+              </span>
               <Badge variant={currentMatch.status === 'RUNNING' ? 'default' : 'secondary'}>
                 {currentMatch.status}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Heat Countdown Timer - Show when heat is RUNNING */}
+              {currentMatch.status === 'RUNNING' && totalHeatTimeRemaining !== null && (
+                <HeatCountdownTimer 
+                  totalSeconds={totalHeatTimeRemaining} 
+                  isActive={currentMatch.status === 'RUNNING'} 
+                />
+              )}
+
               {/* Competitors */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-muted rounded-lg">
@@ -215,118 +293,108 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
                 </div>
               </div>
 
-              {/* Segment Progress */}
+              {/* Segment Controls - Manual Start for Each Segment */}
               <div className="space-y-4">
-                <h4 className="font-medium">Segment Progress</h4>
-                <div className="grid grid-cols-3 gap-2">
-                  {['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'].map((segmentCode) => {
+                <h4 className="font-semibold text-lg">Segment Controls</h4>
+                <div className="space-y-3">
+                  {['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'].map((segmentCode, idx) => {
                     const segment = segments.find(s => s.segment === segmentCode);
                     const status = segment?.status || 'IDLE';
-                    const isActive = status === 'RUNNING';
-                    const isComplete = status === 'ENDED';
-
+                    const isRunning = status === 'RUNNING';
+                    const isEnded = status === 'ENDED';
+                    const canStart = idx === 0 || segments.find(s => s.segment === ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'][idx - 1])?.status === 'ENDED';
+                    
                     return (
                       <div
                         key={segmentCode}
-                        className={`p-3 rounded-lg border text-center ${
-                          isActive ? 'bg-blue-50 border-blue-200' :
-                          isComplete ? 'bg-green-50 border-green-200' :
-                          'bg-muted border-muted-foreground/20'
+                        className={`rounded-xl border p-4 ${
+                          isRunning ? 'border-primary shadow-primary/40 shadow-lg bg-primary/5' : 
+                          isEnded ? 'border-green-200 bg-green-50/50' : 
+                          'border-muted-foreground/20 bg-muted/30'
                         }`}
                       >
-                        <div className="font-medium text-sm">
-                          {segmentCode.replace('_', ' ')}
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <div className="text-sm uppercase tracking-wide font-medium">
+                              {segmentCode.replace('_', ' ')}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {segment?.plannedMinutes || 0} minutes
+                            </div>
+                          </div>
+                          <Badge variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'}>
+                            {status}
+                          </Badge>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {status}
-                        </div>
-                        {isActive && <div className="text-blue-600 text-xs mt-1">● LIVE</div>}
-                      </div>
-                    );
-                  })}
-                </div>
 
-                {/* Show timer for running segment in a dedicated section */}
-                {(() => {
-                  const runningSegment = segments.find(s => s.status === 'RUNNING');
-                  if (runningSegment && runningSegment.startTime) {
-                    return (
-                      <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                        <div className="text-sm font-semibold text-muted-foreground mb-3 text-center">
-                          {runningSegment.segment.replace('_', ' ')} Timer
-                        </div>
-                        <SegmentTimer
-                          startTime={new Date(runningSegment.startTime)}
-                          durationMinutes={runningSegment.plannedMinutes}
-                          isPaused={false}
-                        />
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
+                        {/* Timer Display for Running Segment */}
+                        {isRunning && segment?.startTime && (
+                          <div className="mb-3">
+                            <SegmentTimer
+                              durationMinutes={segment.plannedMinutes}
+                              startTime={new Date(segment.startTime)}
+                              isPaused={pausedSegmentId === segment.id}
+                              onComplete={() => handleEndSegment(segment.id)}
+                            />
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                variant={pausedSegmentId === segment.id ? "default" : "secondary"}
+                                className="flex-1"
+                                onClick={() => setPausedSegmentId(pausedSegmentId === segment.id ? null : segment.id)}
+                                size="sm"
+                              >
+                                {pausedSegmentId === segment.id ? (
+                                  <>
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Resume
+                                  </>
+                                ) : (
+                                  <>
+                                    <Pause className="h-4 w-4 mr-2" />
+                                    Pause
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                className="flex-1"
+                                onClick={() => handleEndSegment(segment.id)}
+                                size="sm"
+                              >
+                                <Square className="h-4 w-4 mr-2" />
+                                End Segment
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
-              {/* Segment Controls */}
-              <div className="space-y-4">
-                <Separator />
-
-                <div className="flex flex-wrap gap-2">
-                  {['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'].map((segmentCode) => {
-                    const status = getSegmentStatus(segmentCode);
-                    const isRunning = status === 'RUNNING';
-                    const isEnded = status === 'ENDED';
-
-                    return (
-                      <Button
-                        key={segmentCode}
-                        variant={isRunning ? "destructive" : "default"}
-                        size="sm"
-                        onClick={() => {
-                          if (isRunning) {
-                            handleStopSegment(segmentCode);
-                          } else if (!isEnded) {
-                            handleStartSegment(segmentCode);
-                          }
-                        }}
-                        disabled={isEnded}
-                      >
-                        {isRunning ? (
-                          <>
-                            <Square className="h-4 w-4 mr-2" />
-                            Stop {segmentCode.replace('_', ' ')}
-                          </>
-                        ) : isEnded ? (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            {segmentCode.replace('_', ' ')} Complete
-                          </>
-                        ) : (
-                          <>
+                        {/* Start Button for Idle Segments */}
+                        {!isRunning && !isEnded && (
+                          <Button
+                            variant="default"
+                            className="w-full"
+                            onClick={() => segment && handleStartSegment(segment.id)}
+                            disabled={!segment || !canStart || currentMatch.status !== 'RUNNING'}
+                            size="lg"
+                          >
                             <Play className="h-4 w-4 mr-2" />
                             Start {segmentCode.replace('_', ' ')}
-                          </>
+                          </Button>
                         )}
-                      </Button>
+
+                        {isEnded && (
+                          <div className="text-sm text-muted-foreground text-center py-2">
+                            ✓ Segment completed
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
 
-                {/* Quick Start Next Segment */}
-                {getNextSegment() && (
-                  <Button
-                    variant="outline"
-                    onClick={() => handleStartSegment(getNextSegment()!)}
-                    className="w-full"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Start Next Segment ({getNextSegment()?.replace('_', ' ')})
-                  </Button>
-                )}
-
-                {/* Match Complete */}
-                {isAllSegmentsComplete() && (
-                  <Alert>
+                {/* Match Complete Alert */}
+                {allSegmentsEnded && (
+                  <Alert className="mt-4">
                     <CheckCircle className="h-4 w-4" />
                     <AlertTitle>Match Complete!</AlertTitle>
                     <AlertDescription>

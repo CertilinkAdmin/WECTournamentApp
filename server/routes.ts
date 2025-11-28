@@ -759,8 +759,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== HEAT SEGMENT ROUTES =====
   app.get("/api/matches/:id/segments", async (req, res) => {
-    const segments = await storage.getMatchSegments(parseInt(req.params.id));
-    res.json(segments);
+    try {
+      const matchId = parseInt(req.params.id);
+      if (isNaN(matchId)) {
+        return res.status(400).json({ error: "Invalid match ID" });
+      }
+      const segments = await storage.getMatchSegments(matchId);
+      res.json(segments || []);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   app.patch("/api/segments/:id", async (req, res) => {
@@ -1234,9 +1242,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No winners found in current round" });
       }
 
-      // Get stations
-      const stations = await storage.getAllStations();
-      const availableStations = stations.filter(s => s.status === 'AVAILABLE');
+      // Get stations for this tournament
+      const allStations = await storage.getAllStations();
+      const tournamentStations = allStations.filter(s => s.tournamentId === tournamentId);
+      const availableStations = tournamentStations.filter(s => s.status === 'AVAILABLE');
 
       if (availableStations.length < 3) {
         return res.status(400).json({ error: "Need at least 3 available stations" });

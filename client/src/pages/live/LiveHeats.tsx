@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, Trophy, Users, MapPin, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getMainStationsForTournament } from '@/utils/stationUtils';
 
 interface Tournament {
   id: number;
@@ -64,30 +65,11 @@ const LiveHeats: React.FC = () => {
     refetchInterval: 5000,
   });
 
-  // Filter to only show stations A, B, and C, deduplicated by normalized name
+  // Filter to only show stations A, B, and C for the current tournament
   const mainStations = useMemo(() => {
-    // Normalize station names (remove "Station " prefix if present) and filter
-    const normalizedStations = stations.map(station => ({
-      ...station,
-      normalizedName: station.name.startsWith('Station ') 
-        ? station.name.replace(/^Station /, '') 
-        : station.name
-    }));
-    
-    const filtered = normalizedStations.filter(station => 
-      ['A', 'B', 'C'].includes(station.normalizedName)
-    );
-    
-    // Deduplicate by normalized name - take first occurrence of each letter
-    const seen = new Set<string>();
-    return filtered.filter(station => {
-      if (seen.has(station.normalizedName)) {
-        return false;
-      }
-      seen.add(station.normalizedName);
-      return true;
-    });
-  }, [stations]);
+    const tournamentIdNum = tournamentId ? parseInt(tournamentId) : undefined;
+    return getMainStationsForTournament(stations, tournamentIdNum);
+  }, [stations, tournamentId]);
 
   // Filter matches by station
   const filteredMatches = useMemo(() => {
@@ -162,7 +144,7 @@ const LiveHeats: React.FC = () => {
   const getStatusBadge = (status: Match['status']) => {
     switch (status) {
       case 'RUNNING':
-        return <Badge className="bg-green-600 text-white animate-pulse">LIVE</Badge>;
+        return <Badge className="bg-green-600 text-white animate-pulse min-w-[3rem]">LIVE</Badge>;
       case 'READY':
         return <Badge variant="default">READY</Badge>;
       case 'DONE':
@@ -194,22 +176,22 @@ const LiveHeats: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{matchesByStatus.running.length}</div>
-                <div className="text-sm text-muted-foreground">Active</div>
+                <div className="text-2xl font-bold text-green-600 min-h-[2rem] flex items-center justify-center">{matchesByStatus.running.length}</div>
+                <div className="text-sm text-muted-foreground mt-1">Active</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{matchesByStatus.ready.length}</div>
-                <div className="text-sm text-muted-foreground">Ready</div>
+                <div className="text-2xl font-bold text-blue-600 min-h-[2rem] flex items-center justify-center">{matchesByStatus.ready.length}</div>
+                <div className="text-sm text-muted-foreground mt-1">Ready</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold">{matchesByStatus.done.length}</div>
-                <div className="text-sm text-muted-foreground">Completed</div>
+                <div className="text-2xl font-bold min-h-[2rem] flex items-center justify-center">{matchesByStatus.done.length}</div>
+                <div className="text-sm text-muted-foreground mt-1">Completed</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold">{filteredMatches.length}</div>
-                <div className="text-sm text-muted-foreground">Total</div>
+                <div className="text-2xl font-bold min-h-[2rem] flex items-center justify-center">{filteredMatches.length}</div>
+                <div className="text-sm text-muted-foreground mt-1">Total</div>
               </div>
             </div>
           </CardContent>
@@ -225,15 +207,16 @@ const LiveHeats: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Tabs value={selectedStation} onValueChange={setSelectedStation}>
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="all">All Stations</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-2">
+                <TabsTrigger value="all" className="text-xs sm:text-sm">All Stations</TabsTrigger>
                 {mainStations.map(station => {
                   const displayName = `Station ${station.normalizedName}`;
                   return (
-                    <TabsTrigger key={station.id} value={station.normalizedName}>
-                      {displayName}
+                    <TabsTrigger key={station.id} value={station.normalizedName} className="text-xs sm:text-sm">
+                      <span className="hidden sm:inline">{displayName}</span>
+                      <span className="sm:hidden">{station.normalizedName}</span>
                       {stationStats[station.name] && (
-                        <Badge variant="secondary" className="ml-2">
+                        <Badge variant="secondary" className="ml-1 sm:ml-2 min-w-[1.5rem] text-xs">
                           {stationStats[station.name].active}
                         </Badge>
                       )}
@@ -247,7 +230,7 @@ const LiveHeats: React.FC = () => {
 
         {/* Station Overview */}
         {selectedStation === 'all' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {mainStations.map(station => {
               const stats = stationStats[station.name] || { total: 0, active: 0, completed: 0 };
               const displayName = `Station ${station.normalizedName}`;
@@ -271,7 +254,7 @@ const LiveHeats: React.FC = () => {
                         <span className="font-semibold">{stats.total}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-green-600">Active:</span>
+                        <span className="text-green-600 font-medium">Active:</span>
                         <span className="font-semibold">{stats.active}</span>
                       </div>
                       <div className="flex justify-between text-sm">
@@ -296,7 +279,7 @@ const LiveHeats: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {matchesByStatus.running.map(match => (
                   <Card key={match.id} className="border-green-500 border-2">
                     <CardHeader className="pb-3">
@@ -306,17 +289,17 @@ const LiveHeats: React.FC = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4" />
-                          Station {getStationName(match.stationId)}
+                          <MapPin className="h-4 w-4 flex-shrink-0" />
+                          <span>Station {getStationName(match.stationId)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
-                          <Trophy className="h-4 w-4" />
-                          Round {match.round}
+                          <Trophy className="h-4 w-4 flex-shrink-0" />
+                          <span>Round {match.round}</span>
                         </div>
                         <div className="pt-2 border-t">
-                          <div className="text-sm font-medium mb-1">
+                          <div className="text-sm font-medium">
                             {match.competitor1Name || 'TBD'} vs {match.competitor2Name || 'TBD'}
                           </div>
                         </div>
@@ -339,7 +322,7 @@ const LiveHeats: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {matchesByStatus.ready.map(match => (
                   <Card key={match.id}>
                     <CardHeader className="pb-3">
@@ -349,17 +332,17 @@ const LiveHeats: React.FC = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4" />
-                          Station {getStationName(match.stationId)}
+                          <MapPin className="h-4 w-4 flex-shrink-0" />
+                          <span>Station {getStationName(match.stationId)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
-                          <Trophy className="h-4 w-4" />
-                          Round {match.round}
+                          <Trophy className="h-4 w-4 flex-shrink-0" />
+                          <span>Round {match.round}</span>
                         </div>
                         <div className="pt-2 border-t">
-                          <div className="text-sm font-medium mb-1">
+                          <div className="text-sm font-medium">
                             {match.competitor1Name || 'TBD'} vs {match.competitor2Name || 'TBD'}
                           </div>
                         </div>
@@ -393,7 +376,7 @@ const LiveHeats: React.FC = () => {
                   .map(match => (
                     <div
                       key={match.id}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-h-[4rem]"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-1">
