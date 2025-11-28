@@ -1,3 +1,5 @@
+import type { Station } from '@shared/schema';
+
 /**
  * Station Utilities
  * 
@@ -73,3 +75,91 @@ export const isMainStation = (stationName: string): boolean => {
 export const findStationByLetter = (stations: Array<{ id: number; name: string }>, letter: 'A' | 'B' | 'C') => {
   return stations.find(s => normalizeStationName(s.name) === letter);
 };
+
+export type StationWithNormalizedName = Station & { normalizedName: string };
+
+const LETTER_PRIORITY: Array<'A' | 'B' | 'C'> = ['A', 'B', 'C'];
+
+const dedupeByLetter = (stations: StationWithNormalizedName[]): StationWithNormalizedName[] => {
+  const buckets: Record<string, StationWithNormalizedName[]> = {};
+
+  for (const station of stations) {
+    if (!buckets[station.normalizedName]) {
+      buckets[station.normalizedName] = [];
+    }
+    buckets[station.normalizedName].push(station);
+  }
+
+  const result: StationWithNormalizedName[] = [];
+
+  for (const letter of LETTER_PRIORITY) {
+    const bucket = buckets[letter];
+    if (bucket && bucket.length > 0) {
+      result.push(bucket[0]);
+    }
+  }
+
+  return result;
+};
+
+export function getMainStationsForTournament(
+  stations: Station[],
+  tournamentId?: number | null
+): StationWithNormalizedName[] {
+  const eligibleStations: StationWithNormalizedName[] = stations
+    .map((station) => ({
+      ...station,
+      normalizedName: normalizeStationName(station.name),
+    }))
+    .filter((station) => isMainStation(station.name));
+
+  if (eligibleStations.length === 0) {
+    return [];
+  }
+
+  const groupedByTournament = new Map<number, StationWithNormalizedName[]>();
+  for (const station of eligibleStations) {
+    const group = groupedByTournament.get(station.tournamentId) ?? [];
+    group.push(station);
+    groupedByTournament.set(station.tournamentId, group);
+  }
+
+  const appendFromCandidates = (
+    current: StationWithNormalizedName[],
+    candidates: StationWithNormalizedName[]
+  ) => {
+    const existingLetters = new Set(current.map((station) => station.normalizedName));
+
+    for (const station of candidates) {
+      if (existingLetters.has(station.normalizedName)) continue;
+      current.push(station);
+      existingLetters.add(station.normalizedName);
+      if (current.length === LETTER_PRIORITY.length) {
+        break;
+      }
+    }
+  };
+
+  const preferredGroup = tournamentId ? groupedByTournament.get(tournamentId) ?? [] : [];
+  const mainStations: StationWithNormalizedName[] = dedupeByLetter(preferredGroup);
+
+  if (mainStations.length < LETTER_PRIORITY.length) {
+    const sortedGroups = Array.from(groupedByTournament.entries())
+      .sort((a, b) => {
+        const coverageDifference =
+          dedupeByLetter(b[1]).length - dedupeByLetter(a[1]).length;
+        if (coverageDifference !== 0) return coverageDifference;
+        return a[0] - b[0];
+      });
+
+    for (const [groupId, stationsList] of sortedGroups) {
+      if (tournamentId && groupId === tournamentId) continue;
+      appendFromCandidates(mainStations, dedupeByLetter(stationsList));
+      if (mainStations.length === LETTER_PRIORITY.length) {
+        break;
+      }
+    }
+  }
+
+  return mainStations;
+}

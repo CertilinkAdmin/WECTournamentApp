@@ -10,7 +10,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink, Coffee, ArrowRight } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
-import { normalizeStationName, isMainStation } from '@/utils/stationUtils';
+import { getMainStationsForTournament, normalizeStationName } from '@/utils/stationUtils';
 import { useWebSocket } from "@/hooks/useWebSocket";
 import StationWarning from "./StationWarning";
 import SegmentTimer from "./SegmentTimer";
@@ -23,44 +23,27 @@ export default function StationLeadView() {
   const socket = useWebSocket();
   const [searchParams] = useSearchParams();
 
-  // Fetch stations
-  const { data: stations = [] } = useQuery<Station[]>({
-    queryKey: ['/api/stations'],
-  });
-
-  // Filter to only show stations A, B, and C, deduplicated by normalized name
-  const mainStations = React.useMemo(() => {
-    const normalizedStations = stations.map(station => ({
-      ...station,
-      normalizedName: normalizeStationName(station.name)
-    }));
-    
-    const filtered = normalizedStations.filter(station => 
-      isMainStation(station.name)
-    );
-    
-    // Deduplicate by normalized name - take first occurrence of each letter
-    const seen = new Set<string>();
-    return filtered.filter(station => {
-      if (seen.has(station.normalizedName)) {
-        return false;
-      }
-      seen.add(station.normalizedName);
-      return true;
-    });
-  }, [stations]);
-
-  // Fetch users for competitor names
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ['/api/users'],
-  });
-
   // Fetch tournaments to get the current one
   const { data: tournaments = [] } = useQuery<any[]>({
     queryKey: ['/api/tournaments'],
   });
   
   const currentTournamentId = tournaments[0]?.id || 1;
+
+  // Fetch stations
+  const { data: stations = [] } = useQuery<Station[]>({
+    queryKey: ['/api/stations'],
+  });
+
+  // Filter to only show stations A, B, and C for the current tournament
+  const mainStations = React.useMemo(() => {
+    return getMainStationsForTournament(stations, currentTournamentId);
+  }, [stations, currentTournamentId]);
+
+  // Fetch users for competitor names
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+  });
 
   // Fetch participants to get cup codes
   const { data: participants = [] } = useQuery<any[]>({
@@ -624,7 +607,7 @@ export default function StationLeadView() {
       )}
 
       {/* Station A Lead Controls - Populate Next Round */}
-      {selectedStationData?.name === 'A' && (
+      {normalizeStationName(selectedStationData?.name || '') === 'A' && (
         <Card className="bg-primary/5 border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-primary">

@@ -9,7 +9,7 @@ import { MapPin, Clock, Users, Trophy, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StationPage from './StationPage';
 import type { Station } from '@shared/schema';
-import { findStationByLetter } from '@/utils/stationUtils';
+import { getMainStationsForTournament } from '@/utils/stationUtils';
 
 export default function StationsManagement() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
@@ -21,18 +21,13 @@ export default function StationsManagement() {
     refetchInterval: 5000,
   });
 
-  // Filter stations by tournament if tournamentId is provided
-  const stations = React.useMemo(() => {
-    if (!tournamentId) return allStations;
-    // Note: This assumes stations have tournamentId field
-    // If the API doesn't filter by tournament, we'll use all stations
-    return allStations;
+  const tournamentScopedStations = React.useMemo(() => {
+    return getMainStationsForTournament(allStations, tournamentId ? parseInt(tournamentId) : undefined);
   }, [allStations, tournamentId]);
 
-  // Get stations A, B, C using consistent utility functions
-  const stationA = findStationByLetter(stations, 'A');
-  const stationB = findStationByLetter(stations, 'B');
-  const stationC = findStationByLetter(stations, 'C');
+  const stationA = tournamentScopedStations.find((station) => station.normalizedName === 'A');
+  const stationB = tournamentScopedStations.find((station) => station.normalizedName === 'B');
+  const stationC = tournamentScopedStations.find((station) => station.normalizedName === 'C');
 
   const getStationStatus = (station: Station | undefined) => {
     if (!station) return 'OFFLINE';
