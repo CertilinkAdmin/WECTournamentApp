@@ -48,6 +48,20 @@ export default function StationPage() {
     return match.stationId === stationId;
   });
 
+  // Debug logging to help identify the issue
+  React.useEffect(() => {
+    if (station && allMatches.length > 0) {
+      console.log(`Station ${station.name} (ID: ${stationId}) matches:`, stationMatches);
+      console.log('All matches with station IDs:', allMatches.map(m => ({ 
+        id: m.id, 
+        heatNumber: m.heatNumber, 
+        stationId: m.stationId,
+        round: m.round
+      })));
+      console.log('Current station details:', { id: stationId, name: station.name });
+    }
+  }, [station, allMatches, stationMatches, stationId]);
+
   const { data: matches = [], isLoading: matchesLoading } = useQuery<Match[]>({
     queryKey: ['/api/stations', stationId, 'matches', { limit: ITEMS_PER_PAGE, offset: currentPage * ITEMS_PER_PAGE }],
     queryFn: async () => {
@@ -151,6 +165,11 @@ export default function StationPage() {
             <div className="text-center p-6 text-muted-foreground">
               <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No matches scheduled for this station in the current tournament.</p>
+              <div className="text-xs mt-2 opacity-70">
+                <p>Station ID: {stationId}</p>
+                <p>Total matches in tournament: {allMatches.length}</p>
+                <p>Station IDs in matches: {[...new Set(allMatches.map(m => m.stationId))].join(', ')}</p>
+              </div>
             </div>
           ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
