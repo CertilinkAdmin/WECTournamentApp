@@ -49,11 +49,20 @@ const stations: Station[] = [
   { id: 3, name: "Station C", code: "STC" },
 ];
 
+const HEATS_PER_PAGE = 6;
+
 export default function HeatsView() {
   const [currentStation, setCurrentStation] = useState<"A" | "B" | "C">("A");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter heats by current station
   const stationHeats = mockHeats.filter(heat => heat.station === currentStation);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(stationHeats.length / HEATS_PER_PAGE);
+  const startIndex = (currentPage - 1) * HEATS_PER_PAGE;
+  const endIndex = startIndex + HEATS_PER_PAGE;
+  const paginatedHeats = stationHeats.slice(startIndex, endIndex);
 
   // Helper function to get station letter from station data
   const getStationLetter = (stationId: number | null): "A" | "B" | "C" | null => {
@@ -78,6 +87,7 @@ export default function HeatsView() {
 
   const handleStationChange = (station: "A" | "B" | "C") => {
     setCurrentStation(station);
+    setCurrentPage(1); // Reset to first page when changing stations
   };
 
   const handleHeatClick = (heatNumber: number) => {
@@ -146,21 +156,21 @@ export default function HeatsView() {
                   <Users className="h-4 w-4 text-gray-600" />
                   {stationStats.pending} pending
                 </span>
+                {totalPages > 1 && (
+                  <span className="text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Station Navigation Buttons */}
+            {/* Pagination Controls */}
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  const stations: ("A" | "B" | "C")[] = ["A", "B", "C"];
-                  const currentIndex = stations.indexOf(currentStation);
-                  const prevIndex = currentIndex === 0 ? stations.length - 1 : currentIndex - 1;
-                  setCurrentStation(stations[prevIndex]);
-                }}
-                disabled={false}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
               >
                 <ChevronLeft className="h-4 w-4" />
                 Previous
@@ -168,13 +178,8 @@ export default function HeatsView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  const stations: ("A" | "B" | "C")[] = ["A", "B", "C"];
-                  const currentIndex = stations.indexOf(currentStation);
-                  const nextIndex = currentIndex === stations.length - 1 ? 0 : currentIndex + 1;
-                  setCurrentStation(stations[nextIndex]);
-                }}
-                disabled={false}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
               >
                 Next
                 <ChevronRight className="h-4 w-4" />
@@ -186,8 +191,8 @@ export default function HeatsView() {
 
       {/* Station Heats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {stationHeats.length > 0 ? (
-          stationHeats.map((heat) => (
+        {paginatedHeats.length > 0 ? (
+          paginatedHeats.map((heat) => (
             <HeatCard
               key={heat.heatNumber}
               heatNumber={heat.heatNumber}
@@ -211,6 +216,70 @@ export default function HeatsView() {
           </Card>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {startIndex + 1}-{Math.min(endIndex, stationHeats.length)} of {stationHeats.length} heats
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = i + Math.max(1, currentPage - 2);
+                    if (pageNum > totalPages) return null;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Station Overview */}
       <Card>

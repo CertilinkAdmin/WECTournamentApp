@@ -6,6 +6,14 @@ interface BracketPair {
   seed2: number;
 }
 
+// Represents a single matchup in a bracket assignment
+interface BracketAssignment {
+  round: number;
+  heatNumber: number;
+  seed1: number;
+  seed2: number;
+}
+
 export class BracketGenerator {
   /**
    * Generate tournament bracket pairings for Round 1 with bye support
@@ -18,7 +26,7 @@ export class BracketGenerator {
     }
 
     const pairings: BracketPair[] = [];
-    
+
     // If odd number of players, give the top seed a bye
     if (totalPlayers % 2 === 1) {
       // Top seed (seed 1) gets a bye - create a pairing with null for competitor2
@@ -26,7 +34,7 @@ export class BracketGenerator {
         seed1: 1,
         seed2: 0 // Use 0 to indicate bye (will be handled as null in match creation)
       });
-      
+
       // Pair remaining players normally (seeds 2 through totalPlayers)
       for (let i = 2; i <= Math.floor(totalPlayers / 2) + 1; i++) {
         pairings.push({
@@ -61,7 +69,7 @@ export class BracketGenerator {
 
     // Get the station that's available soonest
     const station = sortedStations.find(s => s.status === 'AVAILABLE');
-    
+
     if (!station) {
       throw new Error("No available stations");
     }
@@ -69,7 +77,7 @@ export class BracketGenerator {
     // Ensure proper staggered timing is maintained
     const now = new Date();
     const stationName = station.name;
-    
+
     // If this is the first heat assignment, ensure staggered timing
     if (stationName === 'A' && station.nextAvailableAt.getTime() === now.getTime()) {
       // Station A starts immediately - this is correct
@@ -89,7 +97,7 @@ export class BracketGenerator {
    */
   static async generateBracket(tournamentId: number, participants: TournamentParticipant[]) {
     const totalParticipants = participants.length;
-    
+
     if (totalParticipants < 2) {
       throw new Error("Need at least 2 participants");
     }
@@ -124,13 +132,13 @@ export class BracketGenerator {
       nextAvailableAt: now,
       status: 'AVAILABLE'
     });
-    
+
     // Station B starts 10 minutes after Station A
     await storage.updateStation(stationB.id, { 
       nextAvailableAt: new Date(now.getTime() + 10 * 60 * 1000),
       status: 'AVAILABLE'
     });
-    
+
     // Station C starts 20 minutes after Station A
     await storage.updateStation(stationC.id, { 
       nextAvailableAt: new Date(now.getTime() + 20 * 60 * 1000),
@@ -195,14 +203,14 @@ export class BracketGenerator {
             startTime: new Date(),
             endTime: new Date()
           });
-          
+
           // Create perfect scores for bye (33 points total)
           // 3 judges x 11 points each (3 visual + 1 taste + 1 tactile + 1 flavour + 5 overall)
-          
+
           // Create 3 dummy judge users for bye matches
           const judgeNames = ['Judge 1', 'Judge 2', 'Judge 3'];
           const sensoryBeverages = ['Cappuccino', 'Espresso', 'Espresso'];
-          
+
           // Get or create judge users
           const judges: { id: number; name: string }[] = [];
           for (const judgeName of judgeNames) {
@@ -216,7 +224,7 @@ export class BracketGenerator {
             }
             judges.push(judge);
           }
-          
+
           // Create detailed scores and aggregate scores for each judge
           for (let i = 0; i < 3; i++) {
             // Detailed score (for sensory evaluation card)
@@ -232,7 +240,7 @@ export class BracketGenerator {
               flavour: 'left',
               overall: 'left'
             });
-            
+
             // Aggregate score (11 points per judge for bye)
             await storage.submitScore({
               matchId: match.id,
@@ -243,7 +251,7 @@ export class BracketGenerator {
               notes: 'Automatic bye advancement - perfect score'
             });
           }
-          
+
           heatNumber++;
           continue;
         }
@@ -301,14 +309,14 @@ export class BracketGenerator {
           status: 'IDLE',
           plannedMinutes: heatStructure.dialInMinutes
         });
-        
+
         await storage.createHeatSegment({
           matchId: match.id,
           segment: 'CAPPUCCINO',
           status: 'IDLE',
           plannedMinutes: heatStructure.cappuccinoMinutes
         });
-        
+
         await storage.createHeatSegment({
           matchId: match.id,
           segment: 'ESPRESSO',
@@ -320,17 +328,17 @@ export class BracketGenerator {
         // Get all approved judges
         const allJudges = await storage.getAllUsers();
         const approvedJudges = allJudges.filter(u => u.role === 'JUDGE' && u.approved === true);
-        
+
         if (approvedJudges.length >= 3) {
           // Shuffle judges for randomization
           const shuffledJudges = [...approvedJudges].sort(() => Math.random() - 0.5);
-          
+
           // Select 3 unique judges (wrap around if needed)
           const selectedJudges = [];
           for (let i = 0; i < 3; i++) {
             selectedJudges.push(shuffledJudges[i % shuffledJudges.length]);
           }
-          
+
           // Assign roles: 2 ESPRESSO judges (TECHNICAL), 1 CAPPUCCINO judge (SENSORY)
           // All 3 judges score latte art
           await storage.assignJudge({
@@ -362,7 +370,7 @@ export class BracketGenerator {
     let previousRoundMatches = totalParticipants / 2;
     for (let round = 2; round <= totalRounds; round++) {
       const matchesInRound = previousRoundMatches / 2;
-      
+
       for (let i = 0; i < matchesInRound; i++) {
         await storage.createMatch({
           tournamentId,
@@ -371,7 +379,7 @@ export class BracketGenerator {
           status: 'PENDING'
         });
       }
-      
+
       previousRoundMatches = matchesInRound;
     }
   }
@@ -384,18 +392,18 @@ export class BracketGenerator {
   static generateCupCode(name: string, seed: number, index?: number): string {
     // Check if it's a test barista (name contains "test" case-insensitive)
     const isTest = /test/i.test(name);
-    
+
     if (isTest) {
       // For test baristas: ATest, BTest, CTest, DTest, etc.
       const testIndex = index !== undefined ? index : seed - 1;
       const testLetter = String.fromCharCode(65 + (testIndex % 26)); // A=65, B=66, etc. (wrap around after Z)
       return `${testLetter}Test`;
     }
-    
+
     // For regular baristas: First 2 letters (uppercase) + seed number
     // Remove all non-alphabetic characters and spaces
     const cleanName = name.trim().replace(/[^a-zA-Z]/g, '').replace(/\s+/g, '');
-    
+
     // If name has less than 2 letters, pad with 'X' or use first letter twice
     let firstTwo: string;
     if (cleanName.length === 0) {
@@ -405,7 +413,7 @@ export class BracketGenerator {
     } else {
       firstTwo = cleanName.substring(0, 2).toUpperCase();
     }
-    
+
     return `${firstTwo}${seed}`;
   }
 
@@ -417,7 +425,7 @@ export class BracketGenerator {
    */
   static randomizeSeeds(participants: TournamentParticipant[], allUsers: any[] = []): TournamentParticipant[] {
     const shuffled = [...participants];
-    
+
     // Fisher-Yates shuffle
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -430,12 +438,167 @@ export class BracketGenerator {
       const user = allUsers.find(u => u.id === participant.userId);
       const name = user?.name || 'Unknown';
       const cupCode = this.generateCupCode(name, seed, index);
-      
+
       return {
         ...participant,
         seed,
         cupCode
       };
     });
+  }
+
+  /**
+   * Generate Round 1 bracket with proper seeding and bye handling
+   * Each participant competes once in Round 1
+   */
+  private static generateRound1Bracket(totalParticipants: number): BracketAssignment[] {
+    // Calculate bracket size (next power of 2)
+    const bracketSize = Math.pow(2, Math.ceil(Math.log2(totalParticipants)));
+    const byes = bracketSize - totalParticipants;
+
+    console.log(`📋 Round 1: ${totalParticipants} participants, ${bracketSize} bracket size, ${byes} byes`);
+
+    const assignments: BracketAssignment[] = [];
+    let heatNumber = 1;
+
+    // Create matchups for Round 1
+    for (let i = 0; i < bracketSize / 2; i++) {
+      const seed1 = i * 2 + 1;
+      const seed2 = i * 2 + 2;
+
+      // Handle byes - if seed2 is beyond total participants, it's a bye
+      const actualSeed2 = seed2 > totalParticipants ? 0 : seed2;
+
+      assignments.push({
+        round: 1,
+        heatNumber: heatNumber++,
+        seed1,
+        seed2: actualSeed2
+      });
+    }
+
+    return assignments;
+  }
+
+  /**
+   * Generate subsequent rounds from winners (called after previous round completes)
+   */
+  static async generateNextRound(tournamentId: number, completedRound: number) {
+    // Get all matches from the completed round
+    const completedMatches = await storage.db.query.matches.findMany({
+      where: (matches, { eq, and }) => and(
+        eq(matches.tournamentId, tournamentId),
+        eq(matches.round, completedRound),
+        eq(matches.status, 'DONE')
+      )
+    });
+
+    if (completedMatches.length === 0) {
+      throw new Error(`No completed matches found for round ${completedRound}`);
+    }
+
+    // Check if all matches in the round are complete
+    const allMatches = await storage.db.query.matches.findMany({
+      where: (matches, { eq, and }) => and(
+        eq(matches.tournamentId, tournamentId),
+        eq(matches.round, completedRound)
+      )
+    });
+
+    if (completedMatches.length !== allMatches.length) {
+      throw new Error(`Round ${completedRound} is not complete. ${completedMatches.length}/${allMatches.length} matches finished`);
+    }
+
+    // Get winners for next round
+    const winners: TournamentParticipant[] = [];
+    for (const match of completedMatches) {
+      if (match.winnerId) {
+        const winner = await storage.db.query.tournamentParticipants.findFirst({
+          where: (participants, { eq, and }) => and(
+            eq(participants.tournamentId, tournamentId),
+            eq(participants.userId, match.winnerId!)
+          )
+        });
+        if (winner) winners.push(winner);
+      }
+    }
+
+    if (winners.length < 2) {
+      console.log(`🏆 Tournament complete! Final winner determined.`);
+      return;
+    }
+
+    // Generate next round bracket
+    const nextRound = completedRound + 1;
+    const nextRoundAssignments = this.generateRound1Bracket(winners.length);
+
+    // Update heat numbers and round numbers
+    const adjustedAssignments = nextRoundAssignments.map(assignment => ({
+      ...assignment,
+      round: nextRound,
+      heatNumber: assignment.heatNumber + (completedRound * 100) // Offset heat numbers by round
+    }));
+
+    // Get available stations
+    const allStations = await storage.getAllStations();
+    const availableStations = allStations.filter(s => s.status === 'AVAILABLE');
+    const stationA = availableStations.find(s => s.name === 'Station A');
+    const stationB = availableStations.find(s => s.name === 'Station B');  
+    const stationC = availableStations.find(s => s.name === 'Station C');
+
+    if (!stationA || !stationB || !stationC) {
+      throw new Error("Stations A, B, C must exist for next round");
+    }
+
+    // Assign to stations
+    const stationAssignments = this.assignRound1ToStations(adjustedAssignments, [stationA, stationB, stationC]);
+
+    // Create matches for next round
+    for (const { station, pairings } of stationAssignments) {
+      for (const pairing of pairings) {
+        const competitor1 = winners.find(p => p.seed === pairing.seed1);
+        const competitor2 = pairing.seed2 === 0 ? null : winners.find(p => p.seed === pairing.seed2);
+
+        if (!competitor1) continue;
+
+        const match = await storage.createMatch({
+          tournamentId,
+          round: nextRound,
+          heatNumber: pairing.heatNumber,
+          stationId: station.id,
+          competitor1Id: competitor1.userId,
+          competitor2Id: competitor2?.userId || null,
+          status: 'PENDING' as const
+        });
+
+        // Create heat segments
+        await storage.createHeatSegments(match.id);
+      }
+    }
+
+    console.log(`✅ Generated Round ${nextRound} with ${adjustedAssignments.length} matches`);
+  }
+
+  /**
+   * Assign Round 1 heats to stations in round-robin fashion
+   */
+  private static assignRound1ToStations(
+    assignments: BracketAssignment[],
+    stations: { id: number; name: string }[]
+  ): { station: { id: number; name: string }; pairings: BracketAssignment[] }[] {
+    const result: { station: { id: number; name: string }; pairings: BracketAssignment[] }[] = [];
+
+    // Initialize station assignments
+    for (const station of stations) {
+      result.push({ station, pairings: [] });
+    }
+
+    // Assign heats to stations in round-robin fashion
+    assignments.forEach((assignment, index) => {
+      const stationIndex = index % stations.length;
+      result[stationIndex].pairings.push(assignment);
+    });
+
+    return result;
   }
 }

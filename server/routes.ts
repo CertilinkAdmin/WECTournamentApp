@@ -11,7 +11,7 @@ import {
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
   insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
-  tournamentParticipants, heatJudges
+  tournamentParticipants, heatJudges, matches
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -120,21 +120,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== BRACKET ROUTES =====
   registerBracketRoutes(app);
-  
+
   // ===== AUTH ROUTES =====
   registerAuthRoutes(app);
 
   // ===== TOURNAMENT ROUTES =====
-  
+
   // Assign station leads to tournament stations
   app.post("/api/tournaments/:id/assign-station-leads", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
-      
+
       // Get tournament participants (station leads) - only those approved for this tournament (seed > 0)
       const allParticipants = await storage.getTournamentParticipants(tournamentId);
       const allUsers = await storage.getAllUsers();
-      
+
       // Filter to only station leads who are approved for this tournament (seed > 0)
       const stationLeads = allParticipants
         .filter(p => {
@@ -145,36 +145,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = allUsers.find(u => u.id === p.userId);
           return user!;
         });
-      
+
       if (stationLeads.length === 0) {
         return res.status(400).json({ 
           error: `No approved station leads found for this tournament.` 
         });
       }
-      
+
       // Get all stations for this tournament
       const tournamentStations = await storage.getAllStations();
       const stationsABC = tournamentStations
         .filter(s => s.tournamentId === tournamentId && ['A', 'B', 'C'].includes(s.name))
         .sort((a, b) => a.name.localeCompare(b.name));
-      
+
       if (stationsABC.length === 0) {
         return res.status(400).json({ error: 'No stations A, B, C found for this tournament' });
       }
-      
+
       // Shuffle station leads for randomization
       const shuffledLeads = [...stationLeads].sort(() => Math.random() - 0.5);
-      
+
       // Assign station leads to stations (distribute evenly, wrap around if needed)
       let assignedCount = 0;
       for (let i = 0; i < stationsABC.length; i++) {
         const station = stationsABC[i];
         const stationLead = shuffledLeads[i % shuffledLeads.length];
-        
+
         await storage.updateStation(station.id, { stationLeadId: stationLead.id });
         assignedCount++;
       }
-      
+
       res.json({
         success: true,
         message: `Assigned ${assignedCount} station leads to stations`,
@@ -191,11 +191,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournaments/:id/assign-judges", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
-      
+
       // Get tournament participants (judges) - only those approved for this tournament (seed > 0)
       const allParticipants = await storage.getTournamentParticipants(tournamentId);
       const allUsers = await storage.getAllUsers();
-      
+
       // Filter to only judges who are approved for this tournament (seed > 0)
       const judges = allParticipants
         .filter(p => {
@@ -206,40 +206,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = allUsers.find(u => u.id === p.userId);
           return user!;
         });
-      
+
       if (judges.length < 3) {
         return res.status(400).json({ 
           error: `Need at least 3 approved judges for this tournament. Currently have ${judges.length}.` 
         });
       }
-      
+
       // Get all matches for this tournament
       const tournamentMatches = await storage.getTournamentMatches(tournamentId);
-      
+
       if (tournamentMatches.length === 0) {
         return res.status(400).json({ error: 'No matches found for this tournament' });
       }
-      
+
       // Shuffle judges array for randomization
       const shuffledJudges = [...judges].sort(() => Math.random() - 0.5);
-      
+
       let assignedCount = 0;
       let judgeIndex = 0;
-      
+
       for (const match of tournamentMatches) {
         // Skip if match already has judges assigned
         const existingJudges = await storage.getMatchJudges(match.id);
-        
+
         if (existingJudges.length > 0) {
           // Delete existing judges for this match first
           for (const existingJudge of existingJudges) {
             await db.delete(heatJudges).where(eq(heatJudges.id, existingJudge.id));
           }
         }
-        
+
         // Assign 3 judges: 2 ESPRESSO (TECHNICAL), 1 CAPPUCCINO (SENSORY)
         const assignedJudges: typeof judges = [];
-        
+
         // Select 3 unique judges (wrap around if needed)
         for (let i = 0; i < 3; i++) {
           if (judgeIndex >= shuffledJudges.length) {
@@ -250,29 +250,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           assignedJudges.push(shuffledJudges[judgeIndex]);
           judgeIndex++;
         }
-        
+
         // Create judge assignments
         await storage.assignJudge({
           matchId: match.id,
           judgeId: assignedJudges[0].id,
           role: 'TECHNICAL' // First ESPRESSO judge
         });
-        
+
         await storage.assignJudge({
           matchId: match.id,
           judgeId: assignedJudges[1].id,
           role: 'TECHNICAL' // Second ESPRESSO judge
         });
-        
+
         await storage.assignJudge({
           matchId: match.id,
           judgeId: assignedJudges[2].id,
           role: 'SENSORY' // CAPPUCCINO judge
         });
-        
+
         assignedCount++;
       }
-      
+
       res.json({
         success: true,
         message: `Assigned 3 judges to ${assignedCount} heats`,
@@ -497,31 +497,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate tournament bracket
-  app.post("/api/tournaments/:id/generate-bracket", async (req, res) => {
+  // Generate tournament bracket (Round 1 only)
+  app.post('/api/tournaments/:id/generate-bracket', async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
-      const participants = await storage.getTournamentParticipants(tournamentId);
 
-      // Filter to only use baristas (competitors), not judges
-      const allUsers = await storage.getAllUsers();
-      const baristaParticipants = participants.filter(participant => {
-        const user = allUsers.find(u => u.id === participant.userId);
-        return user?.role === 'BARISTA';
-      });
-
-      if (baristaParticipants.length === 0) {
-        return res.status(400).json({ error: "No barista participants found" });
+      if (!tournamentId) {
+        return res.status(400).json({ error: 'Invalid tournament ID' });
       }
 
-      await BracketGenerator.generateBracket(tournamentId, baristaParticipants);
+      const participants = await db.select()
+        .from(tournamentParticipants)
+        .where(eq(tournamentParticipants.tournamentId, tournamentId))
+        .orderBy(tournamentParticipants.seed);
 
-      const matches = await storage.getTournamentMatches(tournamentId);
-      io.to(`tournament:${tournamentId}`).emit("bracket:generated", matches);
+      if (participants.length === 0) {
+        return res.status(400).json({ error: 'No participants found for tournament' });
+      }
 
-      res.json({ success: true, matchesCreated: matches.length });
+      await BracketGenerator.generateBracket(tournamentId, participants);
+
+      res.json({ 
+        success: true, 
+        message: `Round 1 bracket generated successfully for ${participants.length} participants` 
+      });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      console.error('Error generating bracket:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Generate next round from completed round
+  app.post('/api/tournaments/:id/generate-next-round', async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const { completedRound } = req.body;
+
+      if (!tournamentId) {
+        return res.status(400).json({ error: 'Invalid tournament ID' });
+      }
+
+      if (!completedRound || typeof completedRound !== 'number') {
+        return res.status(400).json({ error: 'Invalid completed round number' });
+      }
+
+      await BracketGenerator.generateNextRound(tournamentId, completedRound);
+
+      res.json({ 
+        success: true, 
+        message: `Next round generated successfully from completed round ${completedRound}` 
+      });
+    } catch (error: any) {
+      console.error('Error generating next round:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -636,7 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if heat structure already exists
       const existingStructure = await storage.getRoundTimes(tournamentId, 1);
-      
+
       let heatStructure;
       if (existingStructure) {
         // Update existing structure
@@ -757,7 +785,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/matches/:id", async (req, res) => {
     try {
       const updateData = { ...req.body };
-      
+
       // Convert ISO string dates to Date objects for timestamp fields
       if (updateData.startTime && typeof updateData.startTime === 'string') {
         updateData.startTime = new Date(updateData.startTime);
@@ -765,7 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updateData.endTime && typeof updateData.endTime === 'string') {
         updateData.endTime = new Date(updateData.endTime);
       }
-      
+
       const match = await storage.updateMatch(parseInt(req.params.id), updateData);
       if (!match) {
         return res.status(404).json({ error: "Match not found" });
@@ -897,7 +925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(heatJudges)
         .innerJoin(matches, eq(heatJudges.matchId, matches.id))
         .where(eq(heatJudges.judgeId, judgeId));
-      
+
       res.json(judgeMatches.map(jm => ({
         ...jm.match,
         judgeRole: jm.role,
@@ -981,7 +1009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/matches/:matchId/cup-positions", async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
-      
+
       // Validate match exists
       const match = await storage.getMatch(matchId);
       if (!match) {
@@ -991,7 +1019,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate all judges have scored both CAPPUCCINO and ESPRESSO
       const cappuccinoStatus = await storage.getJudgeCompletionStatus(matchId, 'CAPPUCCINO');
       const espressoStatus = await storage.getJudgeCompletionStatus(matchId, 'ESPRESSO');
-      
+
       if (!cappuccinoStatus.allComplete || !espressoStatus.allComplete) {
         return res.status(400).json({ 
           error: 'All judges must complete scoring before assigning cup positions',
@@ -1277,13 +1305,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (segmentCode === 'ESPRESSO') {
         try {
           const completionStatus = await storage.getJudgeCompletionStatus(matchId, 'CAPPUCCINO');
-          
+
           if (!completionStatus.allComplete) {
             const incompleteJudges = completionStatus.judges
               .filter(j => !j.completed)
               .map(j => `${j.judgeName} (${j.role})`)
               .join(', ');
-            
+
             return res.status(400).json({
               error: `Cannot start ESPRESSO segment. Judges must complete scoring for CAPPUCCINO segment first. Missing scores from: ${incompleteJudges || 'judges'}`,
               completionStatus
@@ -1346,7 +1374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const match = await storage.getMatch(matchId);
       if (match) {
         io.to(`tournament:${match.tournamentId}`).emit("segment:ended", updatedSegment);
-        
+
         // Notify judges when a segment ends and scoring is needed
         // CAPPUCCINO segment ending means SENSORY judge needs to score
         // ESPRESSO segment ending means TECHNICAL and HEAD judges need to score
@@ -1359,7 +1387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return j.role === 'TECHNICAL' || j.role === 'HEAD';
             }
           });
-          
+
           // Emit notification to each relevant judge
           relevantJudges.forEach(judge => {
             io.to(`judge:${judge.judgeId}`).emit("judge:scoring-required", {
@@ -1433,7 +1461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allHaveWinners = currentRoundMatches.every(m => m.winnerId !== null);
       const incompleteMatches = currentRoundMatches.filter(m => m.status !== 'DONE');
       const matchesWithoutWinners = currentRoundMatches.filter(m => m.winnerId === null);
-      
+
       if (!allCurrentRoundComplete) {
         return res.status(400).json({ 
           error: `Current round (Round ${currentRound}) must be complete before advancing. ${incompleteMatches.length} heats still in progress.`,
