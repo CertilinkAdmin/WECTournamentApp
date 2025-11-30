@@ -26,11 +26,18 @@ export default function StationLeadView() {
   const socket = useWebSocket();
   const [searchParams] = useSearchParams();
 
+  // Station timing coordination state
+  const [stationTimingAlert, setStationTimingAlert] = useState<{
+    message: string;
+    countdown: number;
+    show: boolean;
+  } | null>(null);
+
   // Fetch tournaments to get the current one
   const { data: tournaments = [] } = useQuery<any[]>({
     queryKey: ['/api/tournaments'],
   });
-  
+
   const currentTournamentId = tournaments[0]?.id || 1;
 
   // Fetch stations
@@ -46,13 +53,13 @@ export default function StationLeadView() {
   // Check if current round is complete across all stations
   const isCurrentRoundComplete = React.useMemo(() => {
     if (allMatches.length === 0) return false;
-    
+
     // Get current round number
     const currentRound = Math.max(...allMatches.map(m => m.round));
-    
+
     // Get all matches in current round
     const currentRoundMatches = allMatches.filter(m => m.round === currentRound);
-    
+
     // Check if ALL matches in current round are DONE
     return currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.status === 'DONE');
   }, [allMatches]);
@@ -181,13 +188,13 @@ export default function StationLeadView() {
         return { match: matchData, segment: null };
       }
       const matchSegments = await segmentsResponse.json();
-      
+
       // Ensure segments exist - if not, they should be created by the match creation endpoint
       if (!matchSegments || matchSegments.length === 0) {
         console.warn('No segments found for match, cannot auto-start Dial-In');
         return { match: matchData, segment: null };
       }
-      
+
       // Then, automatically start the Dial-In segment
       const dialInSegment = matchSegments.find((s: HeatSegment) => s.segment === 'DIAL_IN');
       if (dialInSegment && dialInSegment.id) {
@@ -198,15 +205,15 @@ export default function StationLeadView() {
         const comp2Participant = currentMatch?.competitor2Id 
           ? participants.find(p => p.userId === currentMatch.competitor2Id)
           : null;
-        
+
         const cupCode1 = comp1Participant?.cupCode || null;
         const cupCode2 = comp2Participant?.cupCode || null;
-        
+
         // Randomly assign cup codes to left/right positions
         const shouldSwap = Math.random() < 0.5;
         const leftCupCode = shouldSwap ? cupCode2 : cupCode1;
         const rightCupCode = shouldSwap ? cupCode1 : cupCode2;
-        
+
         const segmentResponse = await fetch(`/api/segments/${dialInSegment.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -219,7 +226,16 @@ export default function StationLeadView() {
         });
         if (!segmentResponse.ok) throw new Error('Failed to start Dial-In segment');
         const segmentData = await segmentResponse.json();
-        
+
+        // Emit WebSocket event for station timing coordination
+        if (socket) {
+          socket.emit("station-timing:dial-in-started", {
+            stationA: { started: true, startTime: new Date(segmentData.startTime) },
+            stationB: { countdown: 10 * 60 }, // 10 minutes
+            stationC: { countdown: 20 * 60 }, // 20 minutes
+          });
+        }
+
         return { match: matchData, segment: segmentData };
       }
 
@@ -338,12 +354,12 @@ export default function StationLeadView() {
           const now = new Date();
           const start = new Date(runningSegment.startTime!);
           let elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
-          
+
           // If we resumed from a pause, subtract the pause duration
           if (pauseData && pauseData.pauseDuration > 0) {
             elapsed -= pauseData.pauseDuration;
           }
-          
+
           const totalSeconds = runningSegment.plannedMinutes * 60;
           return Math.max(0, totalSeconds - elapsed);
         }
@@ -385,7 +401,7 @@ export default function StationLeadView() {
         const seg = segments.find(s => s.segment === code);
         return seg && seg.status === 'IDLE';
       });
-      
+
       if (nextSegment) {
         const seg = segments.find(s => s.segment === nextSegment);
         if (seg) {
@@ -410,21 +426,19 @@ export default function StationLeadView() {
   // Calculate station warnings based on other stations
   const getStationWarnings = () => {
     const warnings: Array<{ referenceStationName: string; targetStartTime: Date }> = [];
-    
+
     // Define station order (A, B, C)
     const stationOrder = ['A', 'B', 'C'];
-    const currentStationNormalizedName = selectedStationData?.name.startsWith('Station ') 
-      ? selectedStationData.name.replace(/^Station /, '') 
-      : selectedStationData?.name || '';
+    const currentStationNormalizedName = normalizeStationName(selectedStationData?.name || '');
     const currentStationIndex = stationOrder.indexOf(currentStationNormalizedName);
-    
+
     if (currentStationIndex === -1) {
       return warnings;
     }
-    
+
     // Calculate warnings based on which stations have started
     const stationsStartTimes: Record<string, Date | null> = {};
-    
+
     // Get start times for all stations (not just RUNNING - include DONE matches too)
     for (const station of stations) {
       const match = allMatches.find(m => 
@@ -456,7 +470,7 @@ export default function StationLeadView() {
       // Current station should start 10 minutes after the preceding station
       const targetStartTime = new Date(precedingTime.getTime() + (10 * 60 * 1000));
       const secondsUntilStart = Math.ceil((targetStartTime.getTime() - Date.now()) / 1000);
-      
+
       if (secondsUntilStart > 0 && secondsUntilStart <= 20 * 60) {
         warnings.push({
           referenceStationName: precedingStation,
@@ -470,6 +484,78 @@ export default function StationLeadView() {
 
   const stationWarnings = getStationWarnings();
   const [rulesOpen, setRulesOpen] = useState(false);
+
+  // Listen for WebSocket events
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleSegmentStarted = (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
+    };
+
+    const handleSegmentEnded = (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
+    };
+
+    const handleStationTimingStart = (data: {
+      stationA: { started: boolean; startTime: Date };
+      stationB: { countdown: number };
+      stationC: { countdown: number };
+    }) => {
+      const currentStationName = normalizeStationName(selectedStationData?.name || '');
+
+      if (currentStationName === 'B') {
+        setStationTimingAlert({
+          message: 'Station A has started DIAL-IN. Your station starts in:',
+          countdown: data.stationB.countdown,
+          show: true
+        });
+      } else if (currentStationName === 'C') {
+        setStationTimingAlert({
+          message: 'Station A has started DIAL-IN. Your station starts in:',
+          countdown: data.stationC.countdown,
+          show: true
+        });
+      }
+    };
+
+    socket.on("segment:started", handleSegmentStarted);
+    socket.on("segment:ended", handleSegmentEnded);
+    socket.on("station-timing:dial-in-started", handleStationTimingStart);
+
+    return () => {
+      socket.off("segment:started", handleSegmentStarted);
+      socket.off("segment:ended", handleSegmentEnded);
+      socket.off("station-timing:dial-in-started", handleStationTimingStart);
+    };
+  }, [socket, currentMatch?.id, selectedStationData?.name]);
+
+  // Countdown for station timing coordination
+  useEffect(() => {
+    if (!stationTimingAlert?.show || stationTimingAlert.countdown <= 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setStationTimingAlert(prev => {
+        if (!prev) return null;
+        const newCountdown = prev.countdown - 1;
+
+        if (newCountdown <= 0) {
+          toast({
+            title: "Station Ready!",
+            description: "Your station should begin the heat now.",
+            duration: 10000,
+          });
+          return { ...prev, show: false, countdown: 0 };
+        }
+
+        return { ...prev, countdown: newCountdown };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [stationTimingAlert, toast]);
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
@@ -602,6 +688,20 @@ export default function StationLeadView() {
         />
       ))}
 
+      {/* Station Timing Alert */}
+      {stationTimingAlert?.show && (
+        <Alert variant="default" className="bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200">
+          <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <AlertTitle className="text-base font-semibold">Station Timing Coordination</AlertTitle>
+          <AlertDescription className="space-y-2 mt-2">
+            <p className="text-sm">
+              {stationTimingAlert.message}
+              <strong className="ml-1">{stationTimingAlert.countdown}</strong> seconds.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {currentMatch && (
         <Card className="border border-primary/30 bg-[#1b110a] text-white shadow-lg">
           <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
@@ -658,7 +758,7 @@ export default function StationLeadView() {
                 const isRunning = status === 'RUNNING';
                 const isEnded = status === 'ENDED';
                 const canStart = idx === 0 || segments.find(s => s.segment === ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'][idx - 1])?.status === 'ENDED';
-                
+
                 return (
                   <div
                     key={segmentCode}
@@ -779,7 +879,7 @@ export default function StationLeadView() {
                   segmentType={(() => {
                     const cappuccinoSegment = segments.find(s => s.segment === 'CAPPUCCINO');
                     const espressoSegment = segments.find(s => s.segment === 'ESPRESSO');
-                    
+
                     if (cappuccinoSegment && (cappuccinoSegment.status === 'ENDED' || cappuccinoSegment.status === 'RUNNING')) {
                       return 'CAPPUCCINO';
                     }
@@ -844,7 +944,7 @@ export default function StationLeadView() {
                   </p>
                 </div>
               )}
-              
+
               {/* Show round completion status */}
               {isCurrentRoundComplete && (
                 <div className="text-center space-y-2">
@@ -882,10 +982,10 @@ export default function StationLeadView() {
                   <span className="font-medium">Round {Math.max(...allMatches.map(m => m.round))} Complete</span>
                 </div>
                 <p className="text-sm text-green-600 dark:text-green-300">
-                  All stations have completed their heats. Ready to advance to next round with winners.
+                  All heats in this round are complete across all stations
                 </p>
               </div>
-              
+
               <Button
                 variant="default"
                 size="lg"
@@ -897,7 +997,7 @@ export default function StationLeadView() {
                 <Users className="h-5 w-5 mr-2" />
                 {populateNextRoundMutation.isPending ? "Setting Up Next Round..." : "Set Up Next Round"}
               </Button>
-              
+
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                 <p className="text-xs text-blue-700 dark:text-blue-300">
                   <strong>Next Round Setup:</strong> This will create new bracket with advancing competitors distributed across stations A, B, and C based on their wins from the current round.

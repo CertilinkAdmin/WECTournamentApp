@@ -1259,6 +1259,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const matchId = parseInt(req.params.id);
       const segmentCode = req.params.code.toUpperCase();
 
+      const match = await storage.getMatch(matchId);
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+
       // Validate segment code
       const validSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
       if (!validSegments.includes(segmentCode)) {
@@ -1331,6 +1336,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const match = await storage.getMatch(matchId);
       if (match) {
         io.to(`tournament:${match.tournamentId}`).emit("segment:started", updatedSegment);
+
+        // Broadcast station timing coordination for DIAL_IN segment
+        if (segmentCode === 'DIAL_IN') {
+          const station = await storage.getStation(match.stationId!);
+          if (station && station.name === 'A') {
+            io.to(`tournament:${match.tournamentId}`).emit("station-timing:dial-in-started", {
+              stationA: { started: true, startTime: new Date() },
+              stationB: { countdown: 10 * 60 }, // 10 minutes countdown
+              stationC: { countdown: 20 * 60 }  // 20 minutes countdown
+            });
+          }
+        }
       }
 
       res.json(updatedSegment);
