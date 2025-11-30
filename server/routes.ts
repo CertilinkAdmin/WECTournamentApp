@@ -1457,6 +1457,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No winners found in current round" });
       }
 
+      // Check for duplicate winners (should not happen but safety check)
+      const uniqueWinners = [...new Set(winners)];
+      if (uniqueWinners.length !== winners.length) {
+        console.warn('Duplicate winners found in current round, removing duplicates');
+        winners.splice(0, winners.length, ...uniqueWinners);
+      }
+
       // Get stations for this tournament
       const allStations = await storage.getAllStations();
       const tournamentStations = allStations.filter(s => s.tournamentId === tournamentId);
@@ -1480,6 +1487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create matches for next round
       const nextRound = currentRound + 1;
       let heatNumber = 1;
+      const assignedInNextRound = new Set<number>();
 
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i];
@@ -1489,6 +1497,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (let j = 0; j < group.length; j += 2) {
           const competitor1 = group[j];
           const competitor2 = group[j + 1];
+
+          // Validate no duplicate assignments
+          if (assignedInNextRound.has(competitor1)) {
+            return res.status(500).json({ 
+              error: `Competitor ${competitor1} already assigned in next round` 
+            });
+          }
+          if (competitor2 && assignedInNextRound.has(competitor2)) {
+            return res.status(500).json({ 
+              error: `Competitor ${competitor2} already assigned in next round` 
+            });
+          }
+
+          // Track assignments
+          assignedInNextRound.add(competitor1);
+          if (competitor2) {
+            assignedInNextRound.add(competitor2);
+          }
 
           if (competitor2) {
             // Regular match with two competitors

@@ -101,6 +101,9 @@ export class BracketGenerator {
     const allStations = await storage.getAllStations();
     const availableStations = allStations.filter(s => s.status === 'AVAILABLE');
 
+    // Track assigned baristas per round to prevent duplicates
+    const assignedBaristasInRound: Set<number> = new Set();
+
     if (availableStations.length < 3) {
       throw new Error("Need at least 3 stations (A, B, C)");
     }
@@ -160,6 +163,20 @@ export class BracketGenerator {
 
         if (!competitor1) {
           throw new Error(`Participant not found for seed ${pairing.seed1}`);
+        }
+
+        // Check for duplicate assignments in the same round
+        if (assignedBaristasInRound.has(competitor1.userId)) {
+          throw new Error(`Barista ${competitor1.userId} already assigned in this round`);
+        }
+        if (competitor2 && assignedBaristasInRound.has(competitor2.userId)) {
+          throw new Error(`Barista ${competitor2.userId} already assigned in this round`);
+        }
+
+        // Add baristas to tracking set
+        assignedBaristasInRound.add(competitor1.userId);
+        if (competitor2) {
+          assignedBaristasInRound.add(competitor2.userId);
         }
 
         // Handle bye (seed2 is 0, indicating a bye)
