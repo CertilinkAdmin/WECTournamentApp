@@ -263,26 +263,40 @@ export class BracketGenerator {
           });
         }
 
-        // Create heat segments
+        // Get tournament heat structure (use round 1 as template)
+        let heatStructure = await storage.getRoundTimes(tournamentId, 1);
+        if (!heatStructure) {
+          // Create default heat structure if none exists
+          heatStructure = await storage.setRoundTimes({
+            tournamentId,
+            round: 1,
+            dialInMinutes: 10,
+            cappuccinoMinutes: 3,
+            espressoMinutes: 2,
+            totalMinutes: 15
+          });
+        }
+
+        // Create heat segments using tournament heat structure
         await storage.createHeatSegment({
           matchId: match.id,
           segment: 'DIAL_IN',
           status: 'IDLE',
-          plannedMinutes: roundTimes.dialInMinutes
+          plannedMinutes: heatStructure.dialInMinutes
         });
         
         await storage.createHeatSegment({
           matchId: match.id,
           segment: 'CAPPUCCINO',
           status: 'IDLE',
-          plannedMinutes: roundTimes.cappuccinoMinutes
+          plannedMinutes: heatStructure.cappuccinoMinutes
         });
         
         await storage.createHeatSegment({
           matchId: match.id,
           segment: 'ESPRESSO',
           status: 'IDLE',
-          plannedMinutes: roundTimes.espressoMinutes
+          plannedMinutes: heatStructure.espressoMinutes
         });
 
         // Assign 3 judges to this heat (2 ESPRESSO, 1 CAPPUCCINO)

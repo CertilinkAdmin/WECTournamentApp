@@ -626,25 +626,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Set round times
+  // Set heat structure (tournament-wide timing configuration)
   app.post("/api/tournaments/:id/round-times", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
-      const { round, dialInMinutes, cappuccinoMinutes, espressoMinutes } = req.body;
+      const { round = 1, dialInMinutes, cappuccinoMinutes, espressoMinutes } = req.body;
 
       const totalMinutes = dialInMinutes + cappuccinoMinutes + espressoMinutes;
 
-      const roundTime = await storage.setRoundTimes({
-        tournamentId,
-        round,
-        dialInMinutes,
-        cappuccinoMinutes,
-        espressoMinutes,
-        totalMinutes
-      });
+      // Check if heat structure already exists
+      const existingStructure = await storage.getRoundTimes(tournamentId, 1);
+      
+      let heatStructure;
+      if (existingStructure) {
+        // Update existing structure
+        heatStructure = await storage.updateRoundTimes(tournamentId, 1, {
+          dialInMinutes,
+          cappuccinoMinutes,
+          espressoMinutes,
+          totalMinutes
+        });
+      } else {
+        // Create new structure
+        heatStructure = await storage.setRoundTimes({
+          tournamentId,
+          round: 1, // Always use round 1 as the template
+          dialInMinutes,
+          cappuccinoMinutes,
+          espressoMinutes,
+          totalMinutes
+        });
+      }
 
-      io.to(`tournament:${tournamentId}`).emit("round-times:updated", roundTime);
-      res.json(roundTime);
+      io.to(`tournament:${tournamentId}`).emit("heat-structure:updated", heatStructure);
+      res.json(heatStructure);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

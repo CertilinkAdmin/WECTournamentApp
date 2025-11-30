@@ -95,6 +95,7 @@ export interface IStorage {
   setRoundTimes(times: InsertTournamentRoundTime): Promise<TournamentRoundTime>;
   getRoundTimes(tournamentId: number, round: number): Promise<TournamentRoundTime | undefined>;
   getTournamentRoundTimes(tournamentId: number): Promise<TournamentRoundTime[]>;
+  updateRoundTimes(tournamentId: number, round: number, data: Partial<InsertTournamentRoundTime>): Promise<TournamentRoundTime | undefined>;
 
   // Clear tournament data
   clearTournamentData(tournamentId: number): Promise<void>;
@@ -436,6 +437,17 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(tournamentRoundTimes)
       .where(eq(tournamentRoundTimes.tournamentId, tournamentId));
+  }
+
+  async updateRoundTimes(tournamentId: number, round: number, data: Partial<InsertTournamentRoundTime>): Promise<TournamentRoundTime | undefined> {
+    const result = await db.update(tournamentRoundTimes)
+      .set(data)
+      .where(and(
+        eq(tournamentRoundTimes.tournamentId, tournamentId),
+        eq(tournamentRoundTimes.round, round)
+      ))
+      .returning();
+    return result[0];
   }
 
   // Match Cup Positions
