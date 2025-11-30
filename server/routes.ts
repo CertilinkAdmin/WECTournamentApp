@@ -237,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Assign 3 judges: 2 ESPRESSO (TECHNICAL), 1 CAPPUCCINO (SENSORY)
+        // Assign 3 judges: 2 ESPRESSO, 1 CAPPUCCINO
         const assignedJudges: typeof judges = [];
 
         // Select 3 unique judges (wrap around if needed)
@@ -255,19 +255,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.assignJudge({
           matchId: match.id,
           judgeId: assignedJudges[0].id,
-          role: 'HEAD' // First ESPRESSO judge
+          role: 'ESPRESSO' // First ESPRESSO judge
         });
 
         await storage.assignJudge({
           matchId: match.id,
           judgeId: assignedJudges[1].id,
-          role: 'HEAD' // Second ESPRESSO judge
+          role: 'ESPRESSO' // Second ESPRESSO judge
         });
 
         await storage.assignJudge({
           matchId: match.id,
           judgeId: assignedJudges[2].id,
-          role: 'SENSORY' // CAPPUCCINO judge
+          role: 'CAPPUCCINO' // CAPPUCCINO judge
         });
 
         assignedCount++;
@@ -1433,15 +1433,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         io.to(`tournament:${matchData.tournamentId}`).emit("segment:ended", updatedSegment);
 
         // Notify judges when a segment ends and scoring is needed
-        // CAPPUCCINO segment ending means SENSORY judge needs to score
-        // ESPRESSO segment ending means TECHNICAL and HEAD judges need to score
+        // CAPPUCCINO segment ending means CAPPUCCINO judge needs to score
+        // ESPRESSO segment ending means ESPRESSO judges need to score
         if (segmentCode === 'CAPPUCCINO' || segmentCode === 'ESPRESSO') {
           const matchJudges = await storage.getMatchJudges(matchId);
           const relevantJudges = matchJudges.filter(j => {
             if (segmentCode === 'CAPPUCCINO') {
-              return j.role === 'SENSORY';
+              return j.role === 'CAPPUCCINO';
             } else {
-              return j.role === 'HEAD';
+              return j.role === 'ESPRESSO';
             }
           });
 

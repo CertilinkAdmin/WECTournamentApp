@@ -20,7 +20,7 @@ interface JudgeCompletionStatus {
   judges: Array<{
     judgeId: number;
     judgeName: string;
-    role: 'HEAD' | 'TECHNICAL' | 'SENSORY';
+    role: 'ESPRESSO' | 'CAPPUCCINO';
     completed: boolean;
   }>;
 }

@@ -105,7 +105,7 @@ export default function JudgeScorecard({ heatNumber, competitors, onSubmit }: Ju
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-heading font-bold">Head Judge Score Sheet</h2>
+          <h2 className="text-2xl font-heading font-bold">Judge Score Sheet</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Heat Number: <span className="font-mono font-bold text-foreground">{heatNumber}</span>
           </p>

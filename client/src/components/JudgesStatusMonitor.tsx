@@ -15,7 +15,7 @@ interface JudgesStatusMonitorProps {
 interface JudgeStatus {
   judgeId: number;
   judgeName: string;
-  role: 'HEAD' | 'TECHNICAL' | 'SENSORY';
+  role: 'ESPRESSO' | 'CAPPUCCINO';
   completed: boolean;
   categories: {
     visualLatteArt?: 'complete' | 'incomplete';
@@ -35,7 +35,7 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
     judges: Array<{
       judgeId: number;
       judgeName: string;
-      role: 'HEAD' | 'TECHNICAL' | 'SENSORY';
+      role: 'ESPRESSO' | 'CAPPUCCINO';
       completed: boolean;
     }>;
   }>({
@@ -129,14 +129,12 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
     return 'red';
   };
 
-  const getRoleLabel = (role: 'HEAD' | 'TECHNICAL' | 'SENSORY') => {
+  const getRoleLabel = (role: 'ESPRESSO' | 'CAPPUCCINO') => {
     switch (role) {
-      case 'HEAD':
-        return 'Head Judge';
-      case 'TECHNICAL':
-        return 'Technical Judge';
-      case 'SENSORY':
-        return 'Sensory Judge';
+      case 'ESPRESSO':
+        return 'Espresso Judge';
+      case 'CAPPUCCINO':
+        return 'Cappuccino Judge';
       default:
         return role;
     }
@@ -160,30 +158,30 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
   return (
     <Card>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2 sm:pb-3">
           <CollapsibleTrigger asChild>
             <Button
               variant="ghost"
-              className="w-full justify-between p-0 h-auto hover:bg-transparent"
+              className="w-full justify-between p-0 h-auto hover:bg-transparent min-h-[2.75rem] sm:min-h-[2.5rem]"
             >
-              <div className="flex items-center gap-2">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Gavel className="h-4 w-4" />
-                  Judges Status Monitor
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm min-w-0">
+                  <Gavel className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">Judges Status Monitor</span>
                   {segmentType && (
-                    <Badge variant="outline" className="ml-2 text-xs">
+                    <Badge variant="outline" className="ml-1 sm:ml-2 text-xs flex-shrink-0">
                       {segmentType}
                     </Badge>
                   )}
                 </CardTitle>
                 {!isOpen && summaryStatus && (
-                  <div className="ml-2">
+                  <div className="ml-1 sm:ml-2 flex-shrink-0">
                     {summaryStatus}
                   </div>
                 )}
               </div>
               <ChevronDown
-                className={`h-4 w-4 transition-transform duration-200 ${
+                className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ml-2 ${
                   isOpen ? 'transform rotate-180' : ''
                 }`}
               />
@@ -191,7 +189,7 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
           </CollapsibleTrigger>
         </CardHeader>
         <CollapsibleContent>
-          <CardContent className="space-y-4 pt-0">
+          <CardContent className="space-y-3 sm:space-y-4 pt-0 p-4 sm:p-6">
         {judgeStatuses.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground py-4">
             No judges assigned to this match
@@ -202,21 +200,21 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
             const statusColor = overallStatus === 'green' ? 'bg-green-500' : overallStatus === 'yellow' ? 'bg-yellow-500' : 'bg-red-500';
             
             return (
-              <div key={judge.judgeId} className="space-y-2 p-3 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${statusColor}`} />
-                    <span className="font-medium text-sm">{judge.judgeName}</span>
-                    <Badge variant="outline" className="text-xs">
+              <div key={judge.judgeId} className="space-y-2 p-2.5 sm:p-3 border rounded-lg min-h-[4rem]">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                    <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${statusColor} flex-shrink-0`} />
+                    <span className="font-medium text-xs sm:text-sm truncate">{judge.judgeName}</span>
+                    <Badge variant="outline" className="text-xs flex-shrink-0">
                       {getRoleLabel(judge.role)}
                     </Badge>
                   </div>
                   {judge.completed && (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
                   )}
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 mt-1 sm:mt-2">
                   {segmentType === 'CAPPUCCINO' && judge.categories.visualLatteArt && (
                     <div className="flex items-center gap-1.5 text-xs">
                       <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.visualLatteArt)}`} />
@@ -246,18 +244,18 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
         )}
         
         {completionStatus && (
-          <div className="pt-2 border-t mt-2">
-            <div className="flex items-center justify-between text-xs">
+          <div className="pt-2 sm:pt-3 border-t mt-2 sm:mt-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
               <span className="text-muted-foreground">Overall Status:</span>
-              <Badge variant={completionStatus.allComplete ? 'default' : 'secondary'}>
+              <Badge variant={completionStatus.allComplete ? 'default' : 'secondary'} className="text-xs w-fit">
                 {completionStatus.allComplete ? (
                   <span className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
+                    <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
                     All Complete
                   </span>
                 ) : (
                   <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
+                    <Clock className="h-3 w-3 flex-shrink-0" />
                     In Progress
                   </span>
                 )}

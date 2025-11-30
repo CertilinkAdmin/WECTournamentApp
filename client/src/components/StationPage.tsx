@@ -229,11 +229,13 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
     <div className="space-y-6">
       {/* Station Header */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-6 w-6" />
-            Station {stationName}
-            <Badge variant="outline" className="ml-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-0">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+              <span className="text-lg sm:text-xl">Station {stationName}</span>
+            </div>
+            <Badge variant="outline" className="text-xs sm:text-sm w-fit sm:ml-2">
               {station?.status || 'OFFLINE'}
             </Badge>
           </CardTitle>
@@ -243,19 +245,19 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
       {/* Current Match */}
       {currentMatch && (
         <Card className="border-primary/30">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Trophy className="h-5 w-5" />
-                Round {currentMatch.round} · Heat {currentMatch.heatNumber}
+          <CardHeader className="pb-3">
+            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+              <span className="flex items-center gap-2 min-w-0">
+                <Trophy className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="text-sm sm:text-base truncate">Round {currentMatch.round} · Heat {currentMatch.heatNumber}</span>
               </span>
-              <Badge variant={currentMatch.status === 'RUNNING' ? 'default' : 'secondary'}>
+              <Badge variant={currentMatch.status === 'RUNNING' ? 'default' : 'secondary'} className="text-xs sm:text-sm w-fit">
                 {currentMatch.status}
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Heat Countdown Timer - Show when heat is RUNNING */}
               {currentMatch.status === 'RUNNING' && totalHeatTimeRemaining !== null && (
                 <HeatCountdownTimer 
@@ -265,25 +267,25 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
               )}
 
               {/* Competitors */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <div className="font-medium">Competitor 1</div>
-                  <div className="text-lg font-bold">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="text-center p-3 sm:p-4 bg-muted rounded-lg min-h-[4rem] flex flex-col justify-center">
+                  <div className="font-medium text-xs sm:text-sm mb-1">Competitor 1</div>
+                  <div className="text-base sm:text-lg font-bold truncate">
                     {getCompetitorName(currentMatch.competitor1Id || 0)}
                   </div>
                 </div>
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <div className="font-medium">Competitor 2</div>
-                  <div className="text-lg font-bold">
+                <div className="text-center p-3 sm:p-4 bg-muted rounded-lg min-h-[4rem] flex flex-col justify-center">
+                  <div className="font-medium text-xs sm:text-sm mb-1">Competitor 2</div>
+                  <div className="text-base sm:text-lg font-bold truncate">
                     {getCompetitorName(currentMatch.competitor2Id || 0)}
                   </div>
                 </div>
               </div>
 
               {/* Segment Controls - Manual Start for Each Segment */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">Segment Controls</h4>
-                <div className="space-y-3">
+              <div className="space-y-3 sm:space-y-4">
+                <h4 className="font-semibold text-base sm:text-lg">Segment Controls</h4>
+                <div className="space-y-2 sm:space-y-3">
                   {['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'].map((segmentCode, idx) => {
                     const segment = segments.find(s => s.segment === segmentCode);
                     const status = segment?.status || 'IDLE';
@@ -294,22 +296,22 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
                     return (
                       <div
                         key={segmentCode}
-                        className={`rounded-xl border p-4 ${
+                        className={`rounded-xl border p-3 sm:p-4 ${
                           isRunning ? 'border-primary shadow-primary/40 shadow-lg bg-primary/5' : 
                           isEnded ? 'border-green-200 bg-green-50/50' : 
                           'border-muted-foreground/20 bg-muted/30'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <div className="text-sm uppercase tracking-wide font-medium">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-2 sm:mb-3">
+                          <div className="min-w-0">
+                            <div className="text-xs sm:text-sm uppercase tracking-wide font-medium truncate">
                               {segmentCode.replace('_', ' ')}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {segment?.plannedMinutes || 0} minutes
                             </div>
                           </div>
-                          <Badge variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'}>
+                          <Badge variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'} className="text-xs sm:text-sm w-fit">
                             {status}
                           </Badge>
                         </div>
@@ -323,33 +325,33 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
                               isPaused={pausedSegmentId === segment.id}
                               onComplete={() => handleEndSegment(segment.id)}
                             />
-                            <div className="flex gap-2 mt-3">
+                            <div className="flex flex-col sm:flex-row gap-2 mt-2 sm:mt-3">
                               <Button
                                 variant={pausedSegmentId === segment.id ? "default" : "secondary"}
-                                className="flex-1"
+                                className="flex-1 min-h-[2.75rem] sm:min-h-[2.5rem]"
                                 onClick={() => setPausedSegmentId(pausedSegmentId === segment.id ? null : segment.id)}
                                 size="sm"
                               >
                                 {pausedSegmentId === segment.id ? (
                                   <>
-                                    <Play className="h-4 w-4 mr-2" />
-                                    Resume
+                                    <Play className="h-4 w-4 mr-2 flex-shrink-0" />
+                                    <span className="text-xs sm:text-sm">Resume</span>
                                   </>
                                 ) : (
                                   <>
-                                    <Pause className="h-4 w-4 mr-2" />
-                                    Pause
+                                    <Pause className="h-4 w-4 mr-2 flex-shrink-0" />
+                                    <span className="text-xs sm:text-sm">Pause</span>
                                   </>
                                 )}
                               </Button>
                               <Button
                                 variant="destructive"
-                                className="flex-1"
+                                className="flex-1 min-h-[2.75rem] sm:min-h-[2.5rem]"
                                 onClick={() => handleEndSegment(segment.id)}
                                 size="sm"
                               >
-                                <Square className="h-4 w-4 mr-2" />
-                                End Segment
+                                <Square className="h-4 w-4 mr-2 flex-shrink-0" />
+                                <span className="text-xs sm:text-sm">End Segment</span>
                               </Button>
                             </div>
                           </div>
@@ -359,13 +361,13 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
                         {!isRunning && !isEnded && (
                           <Button
                             variant="default"
-                            className="w-full"
+                            className="w-full min-h-[2.75rem] sm:min-h-[3rem]"
                             onClick={() => segment && handleStartSegment(segment.id)}
                             disabled={!segment || !canStart || currentMatch.status !== 'RUNNING'}
                             size="lg"
                           >
-                            <Play className="h-4 w-4 mr-2" />
-                            Start {segmentCode.replace('_', ' ')}
+                            <Play className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <span className="text-sm sm:text-base">Start {segmentCode.replace('_', ' ')}</span>
                           </Button>
                         )}
 

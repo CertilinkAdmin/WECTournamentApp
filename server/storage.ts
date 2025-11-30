@@ -86,7 +86,7 @@ export interface IStorage {
     judges: Array<{
       judgeId: number;
       judgeName: string;
-      role: 'HEAD' | 'SENSORY';
+      role: 'ESPRESSO' | 'CAPPUCCINO';
       completed: boolean;
     }>;
   }>;
@@ -363,7 +363,7 @@ export class DatabaseStorage implements IStorage {
     judges: Array<{
       judgeId: number;
       judgeName: string;
-      role: 'HEAD' | 'SENSORY';
+      role: 'ESPRESSO' | 'CAPPUCCINO';
       completed: boolean;
     }>;
   }> {
@@ -371,13 +371,13 @@ export class DatabaseStorage implements IStorage {
     const matchJudges = await this.getMatchJudges(matchId);
     
     // Filter judges based on segment type
-    // CAPPUCCINO: SENSORY judge
-    // ESPRESSO: TECHNICAL and HEAD judges
+    // CAPPUCCINO: CAPPUCCINO judge (1 judge scores Cappuccino sensory)
+    // ESPRESSO: ESPRESSO judges (2 judges score Espresso sensory)
     const relevantJudges = matchJudges.filter(j => {
       if (segmentType === 'CAPPUCCINO') {
-        return j.role === 'SENSORY';
+        return j.role === 'CAPPUCCINO';
       } else {
-        return j.role === 'HEAD';
+        return j.role === 'ESPRESSO';
       }
     });
 

@@ -358,22 +358,24 @@ export class BracketGenerator {
             selectedJudges.push(shuffledJudges[i % shuffledJudges.length]);
           }
 
-          // Assign roles: 2 ESPRESSO judges (HEAD), 1 CAPPUCCINO judge (SENSORY)
-          // All 3 judges score latte art
+          // Assign roles: 2 ESPRESSO judges, 1 CAPPUCCINO judge
+          // All 3 judges score latte art first
+          // Then 1 judge scores Cappuccino sensory (CAPPUCCINO)
+          // Then 2 judges score Espresso sensory (ESPRESSO)
           await storage.assignJudge({
             matchId: match.id,
             judgeId: selectedJudges[0].id,
-            role: 'HEAD' // First ESPRESSO judge
+            role: 'ESPRESSO' // First ESPRESSO judge
           });
           await storage.assignJudge({
             matchId: match.id,
             judgeId: selectedJudges[1].id,
-            role: 'HEAD' // Second ESPRESSO judge
+            role: 'ESPRESSO' // Second ESPRESSO judge
           });
           await storage.assignJudge({
             matchId: match.id,
             judgeId: selectedJudges[2].id,
-            role: 'SENSORY' // CAPPUCCINO judge
+            role: 'CAPPUCCINO' // CAPPUCCINO judge
           });
         }
 

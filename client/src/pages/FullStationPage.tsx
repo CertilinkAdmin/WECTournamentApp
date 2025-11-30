@@ -221,75 +221,75 @@ export default function FullStationPage() {
       </Card>
 
       {/* Statistics Dashboard */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total Heats</p>
-                <p className="text-2xl sm:text-3xl font-bold">{stats.totalHeats}</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between min-h-[3.5rem] sm:min-h-[4rem]">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Total Heats</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">{stats.totalHeats}</p>
               </div>
-              <Trophy className="h-8 w-8 text-primary opacity-50" />
+              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary opacity-50 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl sm:text-3xl font-bold text-green-600">{stats.completedHeats}</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between min-h-[3.5rem] sm:min-h-[4rem]">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Completed</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600 leading-tight">{stats.completedHeats}</p>
               </div>
-              <CheckCircle2 className="h-8 w-8 text-green-600 opacity-50" />
+              <CheckCircle2 className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 opacity-50 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl sm:text-3xl font-bold text-blue-600">{stats.activeHeats}</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between min-h-[3.5rem] sm:min-h-[4rem]">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Active</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 leading-tight">{stats.activeHeats}</p>
               </div>
-              <Activity className="h-8 w-8 text-blue-600 opacity-50" />
+              <Activity className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 opacity-50 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Pending</p>
-                <p className="text-2xl sm:text-3xl font-bold text-yellow-600">{stats.pendingHeats}</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between min-h-[3.5rem] sm:min-h-[4rem]">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Pending</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-yellow-600 leading-tight">{stats.pendingHeats}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-600 opacity-50" />
+              <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600 opacity-50 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Completion</p>
-                <p className="text-2xl sm:text-3xl font-bold">{stats.completionRate}%</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between min-h-[3.5rem] sm:min-h-[4rem]">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Completion</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">{stats.completionRate}%</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-primary opacity-50" />
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-primary opacity-50 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Avg Time</p>
-                <p className="text-2xl sm:text-3xl font-bold">{stats.averageTimeMinutes}m</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between min-h-[3.5rem] sm:min-h-[4rem]">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Avg Time</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">{stats.averageTimeMinutes}m</p>
               </div>
-              <Timer className="h-8 w-8 text-primary opacity-50" />
+              <Timer className="h-6 w-6 sm:h-8 sm:w-8 text-primary opacity-50 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
@@ -297,55 +297,55 @@ export default function FullStationPage() {
 
       {/* Current Round Progress */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Round {stats.currentRound} Progress
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Target className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span>Round {stats.currentRound} Progress</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
+            <div className="flex items-center justify-between text-xs sm:text-sm min-h-[1.25rem]">
+              <span className="text-muted-foreground truncate pr-2">
                 {stats.currentRoundCompleted} of {stats.currentRoundMatches} heats completed
               </span>
-              <span className="font-semibold">{stats.currentRoundProgress}%</span>
+              <span className="font-semibold flex-shrink-0 min-w-[2.5rem] text-right">{stats.currentRoundProgress}%</span>
             </div>
-            <Progress value={stats.currentRoundProgress} className="h-3" />
+            <Progress value={stats.currentRoundProgress} className="h-2 sm:h-3" />
           </div>
         </CardContent>
       </Card>
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
+        <TabsList className="grid w-full grid-cols-2 h-auto min-h-[2.75rem] sm:min-h-[2.5rem]">
+          <TabsTrigger value="overview" className="flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm">
+            <BarChart3 className="h-4 w-4 flex-shrink-0" />
             <span className="hidden sm:inline">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="heats" className="flex items-center gap-2">
-            <Trophy className="h-4 w-4" />
+          <TabsTrigger value="heats" className="flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm">
+            <Trophy className="h-4 w-4 flex-shrink-0" />
             <span className="hidden sm:inline">Heats</span>
           </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4 mt-6">
+        <TabsContent value="overview" className="space-y-4 mt-4 sm:mt-6">
           {/* Current Heat */}
           {currentMatch ? (
             <Card className="border-2 border-primary">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Play className="h-5 w-5 text-primary" />
-                    <span>Current Heat - Round {currentMatch.round}, Heat {currentMatch.heatNumber}</span>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Play className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                    <span className="text-sm sm:text-base truncate">Current Heat - Round {currentMatch.round}, Heat {currentMatch.heatNumber}</span>
                   </div>
-                  <Badge variant="default" className="animate-pulse">LIVE</Badge>
+                  <Badge variant="default" className="animate-pulse min-w-[3rem] text-xs sm:text-sm flex-shrink-0">LIVE</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-4 sm:p-6">
                 {/* Competitors */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <CompetitorCard
                     competitor={getUserById(currentMatch.competitor1Id)}
                     isWinner={currentMatch.winnerId === currentMatch.competitor1Id}
@@ -360,9 +360,9 @@ export default function FullStationPage() {
 
                 {/* Segments */}
                 {segments.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold">Segments</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="space-y-2 sm:space-y-3">
+                    <h4 className="text-xs sm:text-sm font-semibold">Segments</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                       {segments.map((segment) => (
                         <SegmentCard key={segment.id} segment={segment} />
                       ))}
@@ -373,13 +373,13 @@ export default function FullStationPage() {
                 {/* Judges */}
                 {currentMatchJudges.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold mb-2">Judges ({currentMatchJudges.length})</h4>
+                    <h4 className="text-xs sm:text-sm font-semibold mb-2">Judges ({currentMatchJudges.length})</h4>
                     <div className="flex flex-wrap gap-2">
                       {currentMatchJudges.map((judge) => {
                         const judgeUser = getUserById(judge.judgeId);
                         return judgeUser ? (
-                          <Badge key={judge.id} variant="outline">
-                            {judgeUser.name} ({judge.role})
+                          <Badge key={judge.id} variant="outline" className="text-xs">
+                            <span className="truncate max-w-[8rem] sm:max-w-none">{judgeUser.name}</span> ({judge.role})
                           </Badge>
                         ) : null;
                       })}
@@ -400,14 +400,14 @@ export default function FullStationPage() {
           {/* Upcoming Heats Queue */}
           {upcomingMatches.length > 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Upcoming Heats ({upcomingMatches.length})
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                  <span>Upcoming Heats ({upcomingMatches.length})</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
+              <CardContent className="p-4 sm:p-6">
+                <div className="space-y-2 sm:space-y-3">
                   {upcomingMatches.slice(0, 5).map((match) => (
                     <UpcomingHeatCard
                       key={match.id}
@@ -422,8 +422,8 @@ export default function FullStationPage() {
         </TabsContent>
 
         {/* Heats Tab */}
-        <TabsContent value="heats" className="space-y-4 mt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <TabsContent value="heats" className="space-y-4 mt-4 sm:mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {stationMatches
               .sort((a, b) => a.heatNumber - b.heatNumber)
               .map((match) => (
@@ -445,8 +445,8 @@ function CompetitorCard({ competitor, isWinner, position }: { competitor: User |
   if (!competitor) {
     return (
       <Card className="border-dashed">
-        <CardContent className="p-4 text-center text-muted-foreground">
-          TBD
+        <CardContent className="p-3 sm:p-4 text-center text-muted-foreground min-h-[4rem] flex items-center justify-center">
+          <span className="text-sm sm:text-base">TBD</span>
         </CardContent>
       </Card>
     );
@@ -454,13 +454,13 @@ function CompetitorCard({ competitor, isWinner, position }: { competitor: User |
 
   return (
     <Card className={isWinner ? 'border-2 border-green-500 bg-green-50 dark:bg-green-950' : ''}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-semibold">{competitor.name}</p>
-            <p className="text-xs text-muted-foreground">{position.toUpperCase()}</p>
+      <CardContent className="p-3 sm:p-4 min-h-[4rem]">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm sm:text-base truncate">{competitor.name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{position.toUpperCase()}</p>
           </div>
-          {isWinner && <Award className="h-5 w-5 text-green-600" />}
+          {isWinner && <Award className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />}
         </div>
       </CardContent>
     </Card>
@@ -478,13 +478,13 @@ function SegmentCard({ segment }: { segment: HeatSegment }) {
 
   return (
     <Card>
-      <CardContent className="p-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold">{segment.segment.replace('_', ' ')}</p>
-            <p className="text-xs text-muted-foreground">{segment.plannedMinutes}m</p>
+      <CardContent className="p-2.5 sm:p-3 min-h-[3.5rem]">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold truncate">{segment.segment.replace('_', ' ')}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{segment.plannedMinutes}m</p>
           </div>
-          <div className={`w-3 h-3 rounded-full ${getStatusColor(segment.status)}`} />
+          <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${getStatusColor(segment.status)} flex-shrink-0`} />
         </div>
       </CardContent>
     </Card>
@@ -497,17 +497,17 @@ function UpcomingHeatCard({ match, getUserById }: { match: Match; getUserById: (
 
   return (
     <Card className="border-l-4 border-l-yellow-500">
-      <CardContent className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-primary" />
-            <span className="font-semibold">Heat {match.heatNumber}</span>
-            <Badge variant="outline" className="text-xs">Round {match.round}</Badge>
+      <CardContent className="p-3 sm:p-4 min-h-[4rem]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+            <span className="font-semibold text-sm sm:text-base">Heat {match.heatNumber}</span>
+            <Badge variant="outline" className="text-xs flex-shrink-0">Round {match.round}</Badge>
           </div>
-          <Badge variant="secondary">{match.status}</Badge>
+          <Badge variant="secondary" className="text-xs sm:text-sm w-fit">{match.status}</Badge>
         </div>
-        <div className="text-sm">
-          <p>{comp1?.name || 'TBD'} vs {comp2?.name || 'TBD'}</p>
+        <div className="text-xs sm:text-sm">
+          <p className="truncate">{comp1?.name || 'TBD'} vs {comp2?.name || 'TBD'}</p>
         </div>
       </CardContent>
     </Card>
@@ -530,24 +530,24 @@ function HeatCard({ match, getUserById }: { match: Match; getUserById: (id: numb
 
   return (
     <Card className={getStatusColor(match.status)}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-primary" />
-            <span className="font-bold">Heat {match.heatNumber}</span>
+      <CardContent className="p-3 sm:p-4 min-h-[8rem]">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+            <span className="font-bold text-sm sm:text-base truncate">Heat {match.heatNumber}</span>
           </div>
-          <Badge variant="outline" className="text-xs">R{match.round}</Badge>
+          <Badge variant="outline" className="text-xs flex-shrink-0">R{match.round}</Badge>
         </div>
-        <div className="space-y-2">
-          <div className="text-sm font-medium">{comp1?.name || 'TBD'}</div>
+        <div className="space-y-1.5 sm:space-y-2">
+          <div className="text-xs sm:text-sm font-medium truncate">{comp1?.name || 'TBD'}</div>
           <div className="text-center text-xs text-muted-foreground">VS</div>
-          <div className="text-sm font-medium">{comp2?.name || 'TBD'}</div>
+          <div className="text-xs sm:text-sm font-medium truncate">{comp2?.name || 'TBD'}</div>
         </div>
         {winner && (
-          <div className="mt-3 pt-3 border-t">
-            <Badge className="bg-green-600">
-              <Award className="h-3 w-3 mr-1" />
-              {winner.name}
+          <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t">
+            <Badge className="bg-green-600 text-xs sm:text-sm">
+              <Award className="h-3 w-3 mr-1 flex-shrink-0" />
+              <span className="truncate">{winner.name}</span>
             </Badge>
           </div>
         )}

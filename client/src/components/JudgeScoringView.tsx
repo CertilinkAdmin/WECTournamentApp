@@ -149,7 +149,7 @@ export default function JudgeScoringView() {
   const effectiveJudgeId = selectedJudgeId || (isJudge ? currentUser?.id : null);
 
   // Fetch assigned matches for selected judge (or current user if judge)
-  const { data: assignedMatches = [] } = useQuery<(Match & { judgeRole: 'HEAD' | 'TECHNICAL' | 'SENSORY' })[]>({
+  const { data: assignedMatches = [] } = useQuery<(Match & { judgeRole: 'ESPRESSO' | 'CAPPUCCINO' })[]>({
     queryKey: [`/api/judges/${effectiveJudgeId}/matches`],
     queryFn: async () => {
       if (!effectiveJudgeId) return [];
@@ -553,7 +553,7 @@ export default function JudgeScoringView() {
                     </div>
                   ) : (
                     tournamentMatches.map((match) => {
-                      const roleLabel = match.judgeRole === 'SENSORY' ? 'Cappuccino Judge' : 'Espresso Judge';
+                      const roleLabel = match.judgeRole === 'CAPPUCCINO' ? 'Cappuccino Judge' : 'Espresso Judge';
                       return (
                         <SelectItem key={match.id} value={match.id.toString()}>
                           Round {match.round}, Heat {match.heatNumber} - {roleLabel} - {match.status}

@@ -487,14 +487,14 @@ function CompetitorCard({ competitor, getInitials, isWinner }: CompetitorCardPro
 
 interface JudgeCardProps {
   judge: User;
-  role?: 'HEAD' | 'TECHNICAL' | 'SENSORY';
+  role?: 'ESPRESSO' | 'CAPPUCCINO';
   getInitials: (name: string) => string;
 }
 
 function JudgeCard({ judge, role, getInitials }: JudgeCardProps) {
   const getRoleColor = (r?: string) => {
     switch (r) {
-      case 'HEAD': return 'default';
+      case 'ESPRESSO': return 'default';
       case 'TECHNICAL': return 'secondary';
       case 'SENSORY': return 'outline';
       default: return 'secondary';

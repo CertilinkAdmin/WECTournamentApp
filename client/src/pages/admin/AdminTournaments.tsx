@@ -1808,11 +1808,11 @@ export default function AdminTournaments() {
                                     <div className="flex flex-wrap gap-1.5">
                                       {allJudgesData[heat.id].map((judge) => {
                                         const judgeUser = users.find(u => u.id === judge.judgeId);
-                                        const roleLabel = judge.role === 'TECHNICAL' ? 'ESPRESSO' : judge.role === 'SENSORY' ? 'CAPPUCCINO' : judge.role;
+                                        const roleLabel = judge.role === 'ESPRESSO' ? 'Espresso Judge' : judge.role === 'CAPPUCCINO' ? 'Cappuccino Judge' : judge.role;
                                         return (
                                           <Badge 
                                             key={judge.id} 
-                                            variant={judge.role === 'SENSORY' ? 'default' : 'secondary'}
+                                            variant={judge.role === 'CAPPUCCINO' ? 'default' : 'secondary'}
                                             className="text-xs"
                                             title={`${judgeUser?.name || 'Unknown'} - ${roleLabel} + Latte Art`}
                                           >

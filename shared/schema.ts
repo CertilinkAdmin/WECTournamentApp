@@ -8,7 +8,7 @@ export const matchStatusEnum = pgEnum('match_status', ['PENDING', 'READY', 'RUNN
 export const segmentTypeEnum = pgEnum('segment_type', ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO']);
 export const segmentStatusEnum = pgEnum('segment_status', ['IDLE', 'RUNNING', 'ENDED']);
 export const stationStatusEnum = pgEnum('station_status', ['AVAILABLE', 'BUSY', 'OFFLINE']);
-export const judgeRoleEnum = pgEnum('judge_role', ['HEAD', 'SENSORY']);
+export const judgeRoleEnum = pgEnum('judge_role', ['ESPRESSO', 'CAPPUCCINO']);
 export const userRoleEnum = pgEnum('user_role', ['ADMIN', 'JUDGE', 'BARISTA', 'STATION_LEAD', 'PUBLIC']);
 
 // Tournament Users table

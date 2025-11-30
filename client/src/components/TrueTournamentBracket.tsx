@@ -134,7 +134,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
         return {
           judgeName: judge?.name || 'Unknown',
           visualLatteArt: 'left' as const, // Default, would need score data
-          sensoryBeverage: hj.role === 'SENSORY' ? 'Cappuccino' as const : 'Espresso' as const,
+          sensoryBeverage: hj.role === 'CAPPUCCINO' ? 'Cappuccino' as const : 'Espresso' as const,
           taste: 'left' as const,
           tactile: 'left' as const,
           flavour: 'left' as const,

@@ -135,7 +135,7 @@ export default function StationsManagement() {
       </Card>
 
       {/* Station Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {[
           { station: stationA, name: 'A', description: 'Starts immediately' },
           { station: stationB, name: 'B', description: 'Starts +10 minutes' },
@@ -143,22 +143,22 @@ export default function StationsManagement() {
         ].map(({ station, name, description }) => (
           <Card key={name} className="cursor-pointer hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                 <span className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Station {name}
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                  <span className="text-base sm:text-lg">Station {name}</span>
                 </span>
-                <Badge variant={getStatusBadgeVariant(getStationStatus(station))}>
+                <Badge variant={getStatusBadgeVariant(getStationStatus(station))} className="text-xs sm:text-sm w-fit">
                   {getStationStatus(station)}
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="text-sm text-muted-foreground">
+            <CardContent className="p-4 sm:p-6">
+              <div className="space-y-2 sm:space-y-3">
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   {description}
                 </div>
-                <div className="text-sm">
+                <div className="text-xs sm:text-sm">
                   Status: <span className={getStatusColor(getStationStatus(station))}>
                     {getStationStatus(station)}
                   </span>
@@ -168,15 +168,15 @@ export default function StationsManagement() {
                     Next available: {new Date(station.nextAvailableAt).toLocaleTimeString()}
                   </div>
                 )}
-                <div className="pt-2">
+                <div className="pt-2 sm:pt-3">
                   {station ? (
-                    <Button asChild size="sm" className="w-full">
+                    <Button asChild size="sm" className="w-full min-h-[2.75rem] sm:min-h-[2.5rem] text-xs sm:text-sm">
                       <Link to={`/station-lead?stationId=${station.id}`}>
                         Manage Station {name}
                       </Link>
                     </Button>
                   ) : (
-                    <Button size="sm" className="w-full" disabled>
+                    <Button size="sm" className="w-full min-h-[2.75rem] sm:min-h-[2.5rem] text-xs sm:text-sm" disabled>
                       Station offline
                     </Button>
                   )}
@@ -190,14 +190,14 @@ export default function StationsManagement() {
       {/* Judges Status Monitor - Overview for All Stations */}
       {(stationAMatch || stationBMatch || stationCMatch) && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
-              Judges Status Monitor
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Trophy className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span>Judges Status Monitor</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {stationA && stationAMatch && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-2">

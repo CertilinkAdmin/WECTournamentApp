@@ -14,7 +14,7 @@ interface JudgeScore {
   overall: 'left' | 'right';
   leftCupCode: string;
   rightCupCode: string;
-  role?: 'HEAD' | 'TECHNICAL' | 'SENSORY'; // Added role to JudgeScore interface
+  role?: 'ESPRESSO' | 'CAPPUCCINO'; // Added role to JudgeScore interface
 }
 
 interface HeatData {
@@ -67,7 +67,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "left",
         leftCupCode: "M7",
         rightCupCode: "K9",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       }
     ],
     leftCompetitor: "Stevo Kühn",
@@ -91,7 +91,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "left",
         leftCupCode: "F5",
         rightCupCode: "X1",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Ali",
@@ -139,7 +139,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "C6",
         rightCupCode: "L4",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Jasper",
@@ -187,7 +187,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "S5",
         rightCupCode: "W6",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Jasper",
@@ -235,7 +235,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "V4",
         rightCupCode: "J1",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Ali",
@@ -283,7 +283,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "left",
         leftCupCode: "G2",
         rightCupCode: "W8",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -331,7 +331,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "Q5",
         rightCupCode: "B1",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Ali",
@@ -379,7 +379,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "T8",
         rightCupCode: "J7",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -427,7 +427,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "E9",
         rightCupCode: "V2",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -475,7 +475,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "M1",
         rightCupCode: "E6",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Ali",
@@ -523,7 +523,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "left",
         leftCupCode: "A7",
         rightCupCode: "F3",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -571,7 +571,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "K5",
         rightCupCode: "J1",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -619,7 +619,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "left",
         leftCupCode: "P3",
         rightCupCode: "M9",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -667,7 +667,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "G8",
         rightCupCode: "F4",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -715,7 +715,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "left",
         leftCupCode: "L2",
         rightCupCode: "Z7",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -763,7 +763,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "left",
         leftCupCode: "N4",
         rightCupCode: "K6",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -811,7 +811,7 @@ const HEAT_DATA: HeatData[] = [
         overall: "right",
         leftCupCode: "22",
         rightCupCode: "99",
-        role: 'HEAD' // Assigning role
+        role: 'ESPRESSO' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -858,12 +858,10 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
         </CardTitle>
         {/* Judge Role Badge */}
         <Badge 
-          variant={judge.role === 'HEAD' ? 'default' : judge.role === 'TECHNICAL' ? 'secondary' : 'outline'}
+          variant={judge.role === 'ESPRESSO' ? 'default' : 'secondary'}
           className="text-xs"
         >
-          {judge.role === 'HEAD' ? 'Head Judge' : 
-           judge.role === 'TECHNICAL' ? 'Espresso Judge' : 
-           'Cappuccino Judge'}
+          {judge.role === 'ESPRESSO' ? 'Espresso Judge' : judge.role === 'CAPPUCCINO' ? 'Cappuccino Judge' : 'Judge'}
         </Badge>
       </CardHeader>
       <CardContent className="space-y-4">
