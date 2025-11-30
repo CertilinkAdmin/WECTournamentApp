@@ -43,10 +43,9 @@ export default function StationPage() {
     enabled: !!currentTournament?.id,
   });
 
-  // Filter matches for this station
+  // Filter matches for this station - match by station ID directly
   const stationMatches = allMatches.filter(match => {
-    const stationName = String.fromCharCode(64 + (match.stationId || 1));
-    return stationName === station?.name;
+    return match.stationId === stationId;
   });
 
   const { data: matches = [], isLoading: matchesLoading } = useQuery<Match[]>({
