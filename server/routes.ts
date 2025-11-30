@@ -1304,9 +1304,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // For ESPRESSO, check if judges have completed scoring for CAPPUCCINO segment
-      // CAPPUCCINO can start after DIAL_IN ends (no judge check needed)
-      // ESPRESSO can only start after CAPPUCCINO ends AND judges complete CAPPUCCINO scoring
+      // Judge completion checks for segment progression:
+      // - DIAL_IN: No scoring, no judge check needed
+      // - CAPPUCCINO: Can start after DIAL_IN ends (no judge check needed)  
+      // - ESPRESSO: Can only start after CAPPUCCINO ends AND judges complete CAPPUCCINO scoring
       if (segmentCode === 'ESPRESSO') {
         try {
           const completionStatus = await storage.getJudgeCompletionStatus(matchId, 'CAPPUCCINO');
@@ -1333,15 +1334,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startTime: new Date()
       });
 
-      const match = await storage.getMatch(matchId);
-      if (match) {
-        io.to(`tournament:${match.tournamentId}`).emit("segment:started", updatedSegment);
+      const matchData = await storage.getMatch(matchId);
+      if (matchData) {
+        io.to(`tournament:${matchData.tournamentId}`).emit("segment:started", updatedSegment);
 
         // Broadcast station timing coordination for DIAL_IN segment
         if (segmentCode === 'DIAL_IN') {
-          const station = await storage.getStation(match.stationId!);
+          const station = await storage.getStation(matchData.stationId!);
           if (station && station.name === 'A') {
-            io.to(`tournament:${match.tournamentId}`).emit("station-timing:dial-in-started", {
+            io.to(`tournament:${matchData.tournamentId}`).emit("station-timing:dial-in-started", {
               stationA: { started: true, startTime: new Date() },
               stationB: { countdown: 10 * 60 }, // 10 minutes countdown
               stationC: { countdown: 20 * 60 }  // 20 minutes countdown
@@ -1388,9 +1389,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endTime: new Date()
       });
 
-      const match = await storage.getMatch(matchId);
-      if (match) {
-        io.to(`tournament:${match.tournamentId}`).emit("segment:ended", updatedSegment);
+      const matchData = await storage.getMatch(matchId);
+      if (matchData) {
+        io.to(`tournament:${matchData.tournamentId}`).emit("segment:ended", updatedSegment);
 
         // Notify judges when a segment ends and scoring is needed
         // CAPPUCCINO segment ending means SENSORY judge needs to score
@@ -1409,10 +1410,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           relevantJudges.forEach(judge => {
             io.to(`judge:${judge.judgeId}`).emit("judge:scoring-required", {
               matchId,
-              heatNumber: match.heatNumber,
-              round: match.round,
+              heatNumber: matchData.heatNumber,
+              round: matchData.round,
               segment: segmentCode,
-              message: `Heat ${match.heatNumber} (Round ${match.round}) - ${segmentCode} segment is ready for scoring`
+              message: `Heat ${matchData.heatNumber} (Round ${matchData.round}) - ${segmentCode} segment is ready for scoring`
             });
           });
         }
