@@ -307,6 +307,40 @@ export default function StationLeadView() {
     }
   });
 
+  const advanceHeatMutation = useMutation({
+    mutationFn: async (stationId: number) => {
+      const response = await fetch(`/api/stations/${stationId}/advance-heat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to advance heat');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/stations`] });
+      
+      if (data.next) {
+        toast({
+          title: "Heat Advanced",
+          description: `Advanced to Heat ${data.next.heatNumber}. Ready to start when competitors are prepared.`,
+        });
+      } else {
+        toast({
+          title: "Heat Completed",
+          description: data.message || "No more heats in queue for this station.",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Advance Heat",
+        description: error.message || "An error occurred while advancing to the next heat.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const populateNextRoundMutation = useMutation({
     mutationFn: async () => {
       const response = await fetch(`/api/tournaments/${currentTournamentId}/populate-next-round`, {
@@ -340,6 +374,12 @@ export default function StationLeadView() {
 
   const handleCompleteMatch = (matchId: number) => {
     completeMatchMutation.mutate(matchId);
+  };
+
+  const handleAdvanceHeat = () => {
+    if (selectedStation) {
+      advanceHeatMutation.mutate(selectedStation);
+    }
   };
 
   const handlePopulateNextRound = () => {
@@ -942,25 +982,43 @@ export default function StationLeadView() {
                 </Button>
               )}
 
-              {/* Complete Current Heat - Only marks current heat as DONE */}
+              {/* Advance Heat - Complete current heat and move to next heat in station */}
               {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
                 <div className="space-y-2">
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="lg"
-                    className="w-full border-dashed border-white/30 text-white"
+                    className="w-full bg-primary hover:bg-primary/90"
+                    onClick={handleAdvanceHeat}
+                    disabled={advanceHeatMutation.isPending}
+                    data-testid="button-advance-heat"
+                  >
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    {advanceHeatMutation.isPending ? "Advancing Heat..." : "Advance Heat"}
+                  </Button>
+                  <p className="text-xs text-center text-white/70">
+                    Complete this heat and advance to next heat in queue for this station
+                  </p>
+                </div>
+              )}
+
+              {/* Manual Complete Heat - Alternative option */}
+              {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
+                <div className="space-y-2 mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-dashed border-white/30 text-white/80"
                     onClick={() => {
-                      // Only complete current heat - does not advance rounds
                       handleCompleteMatch(currentMatch.id);
                     }}
                     disabled={completeMatchMutation.isPending}
-                    data-testid="button-advance-next-heat"
+                    data-testid="button-complete-heat-only"
                   >
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    Complete Current Heat
+                    Complete Heat Only
                   </Button>
                   <p className="text-xs text-center text-white/50">
-                    Mark this heat as complete (all stations must finish before next round)
+                    Mark heat as complete without advancing (all stations must finish round)
                   </p>
                 </div>
               )}

@@ -1725,6 +1725,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Advance to next heat in station queue
+  app.post("/api/stations/:stationId/advance-heat", async (req, res) => {
+    try {
+      const stationId = parseInt(req.params.stationId);
+      
+      // Get current running/ready match for this station
+      const currentMatch = await db.select()
+        .from(matches)
+        .where(
+          eq(matches.stationId, stationId)
+        )
+        .orderBy(matches.heatNumber);
+
+      const runningMatch = currentMatch.find(m => m.status === 'RUNNING');
+      const readyMatch = currentMatch.find(m => m.status === 'READY' || m.status === 'PENDING');
+
+      if (!runningMatch && !readyMatch) {
+        return res.status(404).json({ error: "No active heat found for this station" });
+      }
+
+      let completedMatch = null;
+
+      // Complete the running match if there is one
+      if (runningMatch) {
+        completedMatch = await storage.updateMatch(runningMatch.id, {
+          status: 'DONE',
+          endTime: new Date()
+        });
+
+        if (completedMatch) {
+          io.to(`tournament:${completedMatch.tournamentId}`).emit("heat:completed", completedMatch);
+        }
+      }
+
+      // Find next pending heat for this station
+      const pendingMatches = currentMatch.filter(m => 
+        m.status === 'PENDING' || 
+        (m.status === 'READY' && m.id !== runningMatch?.id)
+      );
+
+      let nextMatch = null;
+      if (pendingMatches.length > 0) {
+        // Start the next heat in queue
+        const nextPendingMatch = pendingMatches[0];
+        nextMatch = await storage.updateMatch(nextPendingMatch.id, {
+          status: 'READY',
+          startTime: new Date()
+        });
+
+        if (nextMatch) {
+          io.to(`tournament:${nextMatch.tournamentId}`).emit("heat:advanced", {
+            completed: completedMatch,
+            next: nextMatch,
+            stationId
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        completed: completedMatch,
+        next: nextMatch,
+        message: nextMatch 
+          ? `Advanced to Heat ${nextMatch.heatNumber}`
+          : completedMatch 
+            ? "Heat completed. No more heats in queue for this station."
+            : "No heat to advance"
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // ===== STATION QUEUE MANAGEMENT =====
   // Get station queue
   app.get("/api/stations/:stationId/queue", async (req, res) => {
