@@ -318,7 +318,7 @@ export default function StationLeadView() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/stations`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stations'] });
 
       if (data.next) {
         toast({
@@ -982,27 +982,22 @@ export default function StationLeadView() {
                 </Button>
               )}
 
-              {/* Advance Heat - Complete current heat and move to next heat in station */}
+              {/* Advance Heat - Complete current heat and move to next heat in station - Available for ALL stations */}
               {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
-                <div className="space-y-2">
-                  <Button
-                    variant="default"
-                    size="lg"
-                    className="w-full bg-primary hover:bg-primary/90"
-                    onClick={handleAdvanceHeat}
-                    disabled={advanceHeatMutation.isPending}
-                    data-testid="button-advance-heat"
-                  >
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    {advanceHeatMutation.isPending ? "Advancing Heat..." : "Advance Heat"}
-                  </Button>
-                  <p className="text-xs text-center text-white/70">
-                    Complete this heat and advance to next heat in queue for this station
-                  </p>
-                </div>
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="w-full bg-primary hover:bg-primary/90"
+                  onClick={handleAdvanceHeat}
+                  disabled={advanceHeatMutation.isPending}
+                  data-testid="button-advance-heat"
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  {advanceHeatMutation.isPending ? "Advancing Heat..." : "Advance Heat"}
+                </Button>
               )}
 
-              {/* Manual Complete Heat - Alternative option */}
+              {/* Manual Complete Heat - Alternative option - Available for ALL stations */}
               {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
                 <div className="space-y-2 mt-3">
                   <Button
