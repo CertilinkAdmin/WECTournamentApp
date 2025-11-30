@@ -197,10 +197,8 @@ export default function JudgeScoringView() {
     return match;
   }, [assignedMatches, selectedMatchId, tournamentIdNum]);
   
-  // Get judge role for selected match
+  // All judges score both segments - no role distinction
   const judgeRoleForMatch = selectedMatch?.judgeRole;
-  const isCappuccinoJudge = judgeRoleForMatch === 'SENSORY';
-  const isEspressoJudge = judgeRoleForMatch === 'TECHNICAL';
   
   // Filter assigned matches by tournament if tournamentId is specified
   const tournamentMatches = useMemo(() => {
@@ -368,11 +366,11 @@ export default function JudgeScoringView() {
       return;
     }
 
-    // For espresso, all judges score visual latte art AND sensory categories
-    if (selectedSegmentType === 'ESPRESSO' && (!visualLatteArt || !taste || !tactile || !flavour || !overall)) {
+    // For espresso, only sensory categories are required (no visual latte art)
+    if (selectedSegmentType === 'ESPRESSO' && (!taste || !tactile || !flavour || !overall)) {
       toast({
         title: 'Validation Error',
-        description: 'Please complete all scoring categories for Espresso (including Visual/Latte Art)',
+        description: 'Please complete all sensory categories for Espresso',
         variant: 'destructive',
       });
       return;
@@ -383,7 +381,7 @@ export default function JudgeScoringView() {
       matchId: selectedMatchId,
       judgeName: selectedJudge.user.name,
       sensoryBeverage: selectedSegmentType === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso',
-      visualLatteArt: visualLatteArt!, // All judges score Visual/Latte Art for both segments
+      visualLatteArt: selectedSegmentType === 'CAPPUCCINO' ? visualLatteArt! : null, // Visual/Latte Art only for Cappuccino
       taste: taste!,
       tactile: tactile!,
       flavour: flavour!,
@@ -395,8 +393,11 @@ export default function JudgeScoringView() {
 
   // Check if scoring is complete
   const isScoringComplete = useMemo(() => {
-    if (selectedSegmentType === 'CAPPUCCINO' || selectedSegmentType === 'ESPRESSO') {
+    if (selectedSegmentType === 'CAPPUCCINO') {
       return visualLatteArt !== null && taste !== null && tactile !== null && flavour !== null && overall !== null;
+    }
+    if (selectedSegmentType === 'ESPRESSO') {
+      return taste !== null && tactile !== null && flavour !== null && overall !== null;
     }
     return false;
   }, [selectedSegmentType, visualLatteArt, taste, tactile, flavour, overall]);
@@ -613,7 +614,7 @@ export default function JudgeScoringView() {
           {selectedSegmentType && selectedMatchId && competitor1 && competitor2 && (
             <Card>
               <CardHeader>
-                <CardTitle>Scoring: {selectedSegmentType === 'CAPPUCCINO' ? 'Cappuccino (including Visual Latte Art)' : 'Espresso'}</CardTitle>
+                <CardTitle>Scoring: {selectedSegmentType === 'CAPPUCCINO' ? 'Cappuccino (including Visual Latte Art)' : 'Espresso (sensory categories only)'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Blind Judging Notice - Judges don't see cup codes */}
@@ -624,8 +625,8 @@ export default function JudgeScoringView() {
                   </div>
                 </div>
 
-                {/* Visual/Latte Art (3 points) - ALL judges score this for both CAPPUCCINO and ESPRESSO */}
-                {(selectedSegmentType === 'CAPPUCCINO' || selectedSegmentType === 'ESPRESSO') && (
+                {/* Visual/Latte Art (3 points) - ONLY on CAPPUCCINO */}
+                {selectedSegmentType === 'CAPPUCCINO' && (
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-4">
                       <Label className="text-base font-semibold">Visual/Latte Art (3 points)</Label>

@@ -239,23 +239,24 @@ router.post('/:id/assign-judges', async (req, res) => {
         judgeIndex++;
       }
       
-      // Assign roles: 1 CAPPUCCINO judge, 2 ESPRESSO judges
-      // Using SENSORY for CAPPUCCINO and TECHNICAL for ESPRESSO
+      // Assign 3 judges - all are sensory judges (no distinction)
+      // All judges score both Cappuccino and Espresso segments
+      // Visual Latte Art is only scored on Cappuccino
       await db.insert(heatJudges).values([
         {
           matchId: match.id,
           judgeId: assignedJudges[0].id,
-          role: 'SENSORY' // CAPPUCCINO judge
+          role: 'SENSORY' // Judge 1
         },
         {
           matchId: match.id,
           judgeId: assignedJudges[1].id,
-          role: 'TECHNICAL' // First ESPRESSO judge
+          role: 'SENSORY' // Judge 2
         },
         {
           matchId: match.id,
           judgeId: assignedJudges[2].id,
-          role: 'TECHNICAL' // Second ESPRESSO judge
+          role: 'SENSORY' // Judge 3
         }
       ]);
       
