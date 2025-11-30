@@ -33,6 +33,10 @@ import AdminTournaments from './pages/admin/AdminTournaments';
 import CreateTournament from './pages/admin/CreateTournament';
 import ManageBaristas from './pages/admin/ManageBaristas';
 import ManageJudges from './pages/admin/ManageJudges';
+import JudgeScoringView from './components/JudgeScoringView';
+import AdminCupPositionAssignmentPage from './pages/admin/AdminCupPositionAssignmentPage';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 import BottomNav from './components/BottomNav';
 import './App.css';
 
@@ -44,6 +48,10 @@ const App: React.FC = () => {
         <div className="App">
           <BottomNav />
           <Routes>
+          {/* Auth Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          
           {/* Landing Page - Entry Point */}
           <Route path="/" element={<LandingPage />} />
 
@@ -54,6 +62,8 @@ const App: React.FC = () => {
             <Route path="tournaments/create" element={<CreateTournament />} />
             <Route path="competitors" element={<ManageBaristas />} />
             <Route path="judges" element={<ManageJudges />} />
+            <Route path="judges/scoring/:tournamentId" element={<JudgeScoringView />} />
+            <Route path="cup-positions/:matchId" element={<AdminCupPositionAssignmentPage />} />
             <Route path="results-input" element={<ResultsInputPage />} />
             <Route path="bracket-builder" element={<BracketBuilder />} />
             <Route path="stations" element={<div>Stations</div>} />
@@ -69,6 +79,7 @@ const App: React.FC = () => {
             <Route path="heats" element={<LiveHeats />} />
             <Route path="leaderboard" element={<LiveLeaderboard />} />
             <Route path="stations" element={<StationsManagement />} />
+            <Route path="judges/scoring" element={<JudgeScoringView />} />
           </Route>
 
           {/* Station Lead Controls */}

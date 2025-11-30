@@ -92,30 +92,15 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
   // Segment control mutations - using same pattern as StationLeadView
   const startSegmentMutation = useMutation({
     mutationFn: async (segmentId: number) => {
-      // Get competitor cup codes
-      const comp1Participant = currentMatch?.competitor1Id 
-        ? participants.find(p => p.userId === currentMatch.competitor1Id)
-        : null;
-      const comp2Participant = currentMatch?.competitor2Id 
-        ? participants.find(p => p.userId === currentMatch.competitor2Id)
-        : null;
-      
-      const cupCode1 = comp1Participant?.cupCode || null;
-      const cupCode2 = comp2Participant?.cupCode || null;
-      
-      // Randomly assign cup codes to left/right positions
-      const shouldSwap = Math.random() < 0.5;
-      const leftCupCode = shouldSwap ? cupCode2 : cupCode1;
-      const rightCupCode = shouldSwap ? cupCode1 : cupCode2;
-      
+      // Start segment without assigning left/right positions
+      // Cup codes stay with baristas throughout all segments
+      // Left/right positions will be assigned by admin after all judges have scored
       const response = await fetch(`/api/segments/${segmentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'RUNNING',
-          startTime: new Date().toISOString(),
-          leftCupCode,
-          rightCupCode
+          startTime: new Date().toISOString()
         })
       });
       if (!response.ok) throw new Error('Failed to start segment');
@@ -126,7 +111,7 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
       setCurrentSegmentId(data.id);
       toast({ 
         title: "Segment Started", 
-        description: `${data.segment} segment has begun. Cup placement: ${data.leftCupCode || 'L'} / ${data.rightCupCode || 'R'}` 
+        description: `${data.segment} segment has begun.` 
       });
     },
     onError: (error: any) => {
@@ -403,6 +388,30 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
                   </Alert>
                 )}
               </div>
+
+              {/* Judges Status Monitor - Prominent Display */}
+              {currentMatch && (
+                <div className="mt-6 border-t pt-6">
+                  <JudgesStatusMonitor 
+                    matchId={currentMatch.id} 
+                    segmentType={(() => {
+                      const cappuccinoSegment = segments.find(s => s.segment === 'CAPPUCCINO');
+                      const espressoSegment = segments.find(s => s.segment === 'ESPRESSO');
+                      
+                      // Show CAPPUCCINO status if segment has ended or is running
+                      if (cappuccinoSegment && (cappuccinoSegment.status === 'ENDED' || cappuccinoSegment.status === 'RUNNING')) {
+                        return 'CAPPUCCINO';
+                      }
+                      // Show ESPRESSO status if segment has ended or is running
+                      if (espressoSegment && (espressoSegment.status === 'ENDED' || espressoSegment.status === 'RUNNING')) {
+                        return 'ESPRESSO';
+                      }
+                      // Default to CAPPUCCINO if no segment is active
+                      return 'CAPPUCCINO';
+                    })()}
+                  />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

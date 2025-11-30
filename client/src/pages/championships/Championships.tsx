@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trophy, Calendar, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, Calendar, MapPin, ChevronDown, ChevronUp, Gavel } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
 import { extractTournamentSlug } from '@/utils/tournamentUtils';
 
@@ -113,23 +113,35 @@ export default function Championships() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {activeTournaments.map((tournament) => (
-                  <Button
-                    key={tournament.id}
-                    variant="outline"
-                    className="w-full justify-between h-auto py-3"
-                    onClick={() => handleTournamentSelect(tournament.id.toString())}
-                  >
-                    <div className="flex flex-col items-start gap-1">
-                      <span className="font-semibold">{getShortName(tournament.name)}</span>
-                      {tournament.location && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {tournament.location}
-                        </span>
-                      )}
-                    </div>
-                    <Badge variant="default" className="ml-2">Live</Badge>
-                  </Button>
+                  <div key={tournament.id} className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between h-auto py-3"
+                      onClick={() => handleTournamentSelect(tournament.id.toString())}
+                    >
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="font-semibold">{getShortName(tournament.name)}</span>
+                        {tournament.location && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {tournament.location}
+                          </span>
+                        )}
+                      </div>
+                      <Badge variant="default" className="ml-2">Live</Badge>
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/live/${tournament.id}/judges/scoring`);
+                      }}
+                    >
+                      <Gavel className="h-4 w-4 mr-2" />
+                      Judge Scoring
+                    </Button>
+                  </div>
                 ))}
               </CardContent>
             </Card>

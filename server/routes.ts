@@ -6,6 +6,7 @@ import { BracketGenerator } from "./bracketGenerator";
 import tournamentRoutes from "./routes/tournament";
 import { registerBracketRoutes } from "./routes/bracket";
 import adminRoutes from "./routes/admin";
+import { registerAuthRoutes } from "./routes/auth";
 import {
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
@@ -42,6 +43,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     socket.on("join:tournament", (tournamentId: number) => {
       socket.join(`tournament:${tournamentId}`);
       console.log(`Socket ${socket.id} joined tournament ${tournamentId}`);
+    });
+
+    socket.on("join", (room: string) => {
+      socket.join(room);
+      console.log(`Socket ${socket.id} joined room ${room}`);
     });
   });
 
@@ -114,6 +120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== BRACKET ROUTES =====
   registerBracketRoutes(app);
+  
+  // ===== AUTH ROUTES =====
+  registerAuthRoutes(app);
 
   // ===== TOURNAMENT ROUTES =====
   
@@ -862,6 +871,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(judges);
   });
 
+  // Get all matches a judge is assigned to
+  app.get("/api/judges/:judgeId/matches", async (req, res) => {
+    try {
+      const judgeId = parseInt(req.params.judgeId);
+      const judgeMatches = await db.select({
+        match: matches,
+        role: heatJudges.role,
+      })
+        .from(heatJudges)
+        .innerJoin(matches, eq(heatJudges.matchId, matches.id))
+        .where(eq(heatJudges.judgeId, judgeId));
+      
+      res.json(judgeMatches.map(jm => ({
+        ...jm.match,
+        judgeRole: jm.role,
+      })));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  });
+
   // ===== SCORING ROUTES =====
   app.post("/api/scores", async (req, res) => {
     try {
@@ -930,6 +960,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/matches/:id/detailed-scores", async (req, res) => {
     const scores = await storage.getMatchDetailedScores(parseInt(req.params.id));
     res.json(scores);
+  });
+
+  // Match Cup Positions - Admin assignment of left/right positions to cup codes
+  app.post("/api/matches/:matchId/cup-positions", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      
+      // Validate match exists
+      const match = await storage.getMatch(matchId);
+      if (!match) {
+        return res.status(404).json({ error: 'Match not found' });
+      }
+
+      // Validate all judges have scored both CAPPUCCINO and ESPRESSO
+      const cappuccinoStatus = await storage.getJudgeCompletionStatus(matchId, 'CAPPUCCINO');
+      const espressoStatus = await storage.getJudgeCompletionStatus(matchId, 'ESPRESSO');
+      
+      if (!cappuccinoStatus.allComplete || !espressoStatus.allComplete) {
+        return res.status(400).json({ 
+          error: 'All judges must complete scoring before assigning cup positions',
+          cappuccinoStatus,
+          espressoStatus
+        });
+      }
+
+      // Validate request body
+      const { positions, assignedBy } = req.body;
+      if (!Array.isArray(positions) || positions.length !== 2) {
+        return res.status(400).json({ error: 'Must provide exactly 2 cup positions (left and right)' });
+      }
+
+      // Validate positions have required fields
+      for (const pos of positions) {
+        if (!pos.cupCode || !pos.position || !['left', 'right'].includes(pos.position)) {
+          return res.status(400).json({ error: 'Each position must have cupCode and position (left or right)' });
+        }
+      }
+
+      // Validate both left and right are present
+      const hasLeft = positions.some(p => p.position === 'left');
+      const hasRight = positions.some(p => p.position === 'right');
+      if (!hasLeft || !hasRight) {
+        return res.status(400).json({ error: 'Must assign both left and right positions' });
+      }
+
+      // Get current user if available (for assignedBy)
+      const currentUser = (req as any).user;
+      const assignedById = assignedBy || (currentUser?.id ? parseInt(currentUser.id) : undefined);
+
+      // Set cup positions
+      const result = await storage.setMatchCupPositions(matchId, positions, assignedById);
+
+      // Emit to tournament room
+      const updatedMatch = await storage.getMatch(matchId);
+      if (updatedMatch) {
+        io.to(`tournament:${updatedMatch.tournamentId}`).emit("cup-positions:assigned", {
+          matchId,
+          positions: result
+        });
+      }
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Failed to assign cup positions' });
+    }
+  });
+
+  app.get("/api/matches/:matchId/cup-positions", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      const positions = await storage.getMatchCupPositions(matchId);
+      res.json(positions);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Failed to get cup positions' });
+    }
+  });
+
+  // Get judge completion status for a segment
+  app.get("/api/matches/:id/segments/:segmentCode/judges-completion", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.id);
+      const segmentCode = req.params.segmentCode.toUpperCase();
+
+      // Validate segment code
+      if (segmentCode !== 'CAPPUCCINO' && segmentCode !== 'ESPRESSO') {
+        return res.status(400).json({ 
+          error: "Invalid segment code. Must be CAPPUCCINO or ESPRESSO" 
+        });
+      }
+
+      const completionStatus = await storage.getJudgeCompletionStatus(
+        matchId, 
+        segmentCode as 'CAPPUCCINO' | 'ESPRESSO'
+      );
+
+      res.json(completionStatus);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Internal server error' });
+    }
   });
 
   // ===== TOURNAMENT MODE MANAGEMENT =====
@@ -1127,6 +1256,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // For ESPRESSO, check if judges have completed scoring for CAPPUCCINO segment
+      // CAPPUCCINO can start after DIAL_IN ends (no judge check needed)
+      // ESPRESSO can only start after CAPPUCCINO ends AND judges complete CAPPUCCINO scoring
+      if (segmentCode === 'ESPRESSO') {
+        try {
+          const completionStatus = await storage.getJudgeCompletionStatus(matchId, 'CAPPUCCINO');
+          
+          if (!completionStatus.allComplete) {
+            const incompleteJudges = completionStatus.judges
+              .filter(j => !j.completed)
+              .map(j => `${j.judgeName} (${j.role})`)
+              .join(', ');
+            
+            return res.status(400).json({
+              error: `Cannot start ESPRESSO segment. Judges must complete scoring for CAPPUCCINO segment first. Missing scores from: ${incompleteJudges || 'judges'}`,
+              completionStatus
+            });
+          }
+        } catch (error: any) {
+          // If there's an error checking completion, log it but don't block (for now)
+          console.error('Error checking judge completion:', error);
+        }
+      }
+
       const updatedSegment = await storage.updateHeatSegment(segment.id, {
         status: 'RUNNING',
         startTime: new Date()
@@ -1178,6 +1331,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const match = await storage.getMatch(matchId);
       if (match) {
         io.to(`tournament:${match.tournamentId}`).emit("segment:ended", updatedSegment);
+        
+        // Notify judges when a segment ends and scoring is needed
+        // CAPPUCCINO segment ending means SENSORY judge needs to score
+        // ESPRESSO segment ending means TECHNICAL and HEAD judges need to score
+        if (segmentCode === 'CAPPUCCINO' || segmentCode === 'ESPRESSO') {
+          const matchJudges = await storage.getMatchJudges(matchId);
+          const relevantJudges = matchJudges.filter(j => {
+            if (segmentCode === 'CAPPUCCINO') {
+              return j.role === 'SENSORY';
+            } else {
+              return j.role === 'TECHNICAL' || j.role === 'HEAD';
+            }
+          });
+          
+          // Emit notification to each relevant judge
+          relevantJudges.forEach(judge => {
+            io.to(`judge:${judge.judgeId}`).emit("judge:scoring-required", {
+              matchId,
+              heatNumber: match.heatNumber,
+              round: match.round,
+              segment: segmentCode,
+              message: `Heat ${match.heatNumber} (Round ${match.round}) - ${segmentCode} segment is ready for scoring`
+            });
+          });
+        }
       }
 
       res.json(updatedSegment);

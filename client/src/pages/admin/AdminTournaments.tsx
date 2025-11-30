@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { Trophy, Shuffle, Save, RotateCcw, Loader2, Users, Settings2, ArrowLeftRight, Plus, Play, CheckCircle2, Rocket, XCircle, Gavel, Briefcase } from 'lucide-react';
+import { Trophy, Shuffle, Save, RotateCcw, Loader2, Users, Settings2, ArrowLeftRight, Plus, Play, CheckCircle2, Rocket, XCircle, Gavel, Briefcase, Coffee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RandomizeSeeds from '@/components/RandomizeSeeds';
 import DraggableCompetitor from '@/components/DraggableCompetitor';
@@ -31,6 +32,7 @@ interface BracketHeat {
 export default function AdminTournaments() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'approval' | 'seeds' | 'bracket'>('approval');
   const [activeCompetitor, setActiveCompetitor] = useState<User | null>(null);
@@ -1764,6 +1766,24 @@ export default function AdminTournaments() {
                                   </div>
                                 )}
                               </div>
+
+                              {/* Cup Position Assignment */}
+                              {(heat.status === 'DONE' || heat.status === 'RUNNING') && (
+                                <div className="mt-3 pt-3 border-t">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full min-h-[44px] text-sm sm:text-base"
+                                    onClick={() => navigate(`/admin/cup-positions/${heat.id}`)}
+                                  >
+                                    <Coffee className="h-4 w-4 mr-2 flex-shrink-0" />
+                                    <span className="truncate">Assign Cup Positions</span>
+                                  </Button>
+                                  <p className="text-xs text-muted-foreground mt-2 text-center px-2">
+                                    Assign cup codes to left/right after judges score
+                                  </p>
+                                </div>
+                              )}
                               
                               <div className="grid grid-cols-2 gap-3">
                                 <div className="relative">

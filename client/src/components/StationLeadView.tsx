@@ -15,6 +15,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import StationWarning from "./StationWarning";
 import SegmentTimer from "./SegmentTimer";
 import SevenSegmentTimer from "./SevenSegmentTimer";
+import JudgesStatusMonitor from "./JudgesStatusMonitor";
 
 export default function StationLeadView() {
   const { toast } = useToast();
@@ -89,30 +90,15 @@ export default function StationLeadView() {
 
   const startSegmentMutation = useMutation({
     mutationFn: async (segmentId: number) => {
-      // Get competitor cup codes
-      const comp1Participant = currentMatch?.competitor1Id 
-        ? participants.find(p => p.userId === currentMatch.competitor1Id)
-        : null;
-      const comp2Participant = currentMatch?.competitor2Id 
-        ? participants.find(p => p.userId === currentMatch.competitor2Id)
-        : null;
-      
-      const cupCode1 = comp1Participant?.cupCode || null;
-      const cupCode2 = comp2Participant?.cupCode || null;
-      
-      // Randomly assign cup codes to left/right positions
-      const shouldSwap = Math.random() < 0.5;
-      const leftCupCode = shouldSwap ? cupCode2 : cupCode1;
-      const rightCupCode = shouldSwap ? cupCode1 : cupCode2;
-      
+      // Start segment without assigning left/right positions
+      // Cup codes stay with baristas throughout all segments
+      // Left/right positions will be assigned by admin after all judges have scored
       const response = await fetch(`/api/segments/${segmentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'RUNNING',
-          startTime: new Date().toISOString(),
-          leftCupCode,
-          rightCupCode
+          startTime: new Date().toISOString()
         })
       });
       if (!response.ok) throw new Error('Failed to start segment');
@@ -125,7 +111,7 @@ export default function StationLeadView() {
       setCurrentSegmentId(data.id);
       toast({
         title: "Segment Started",
-        description: `${data.segment} segment has begun. Cup placement: ${data.leftCupCode || 'L'} / ${data.rightCupCode || 'R'}`,
+        description: `${data.segment} segment has begun.`,
       });
     },
     onError: (error: any) => {
@@ -768,8 +754,29 @@ export default function StationLeadView() {
                     )}
                   </div>
                 );
-              })}
+              }              )}
             </div>
+
+            {/* Judges Status Monitor */}
+            {currentMatch && (
+              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
+                <JudgesStatusMonitor 
+                  matchId={currentMatch.id} 
+                  segmentType={(() => {
+                    const cappuccinoSegment = segments.find(s => s.segment === 'CAPPUCCINO');
+                    const espressoSegment = segments.find(s => s.segment === 'ESPRESSO');
+                    
+                    if (cappuccinoSegment && (cappuccinoSegment.status === 'ENDED' || cappuccinoSegment.status === 'RUNNING')) {
+                      return 'CAPPUCCINO';
+                    }
+                    if (espressoSegment && (espressoSegment.status === 'ENDED' || espressoSegment.status === 'RUNNING')) {
+                      return 'ESPRESSO';
+                    }
+                    return 'CAPPUCCINO';
+                  })()}
+                />
+              </div>
+            )}
 
             <div className="space-y-2 sm:space-y-3">
               {currentMatch.status !== 'RUNNING' && currentMatch.status !== 'DONE' && (

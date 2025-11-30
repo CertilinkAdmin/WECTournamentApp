@@ -5,13 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Gavel, CheckCircle2, XCircle, Loader2, Trophy } from 'lucide-react';
+import { Gavel, CheckCircle2, XCircle, Loader2, Trophy, ClipboardList } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import type { User, Tournament, TournamentParticipant } from '@shared/schema';
 
 const ManageJudges: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
 
@@ -251,7 +253,19 @@ const ManageJudges: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Approved Judges</span>
-                  <Badge variant="default">{filteredApprovedJudges.length}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default">{filteredApprovedJudges.length}</Badge>
+                    {filteredApprovedJudges.length > 0 && selectedTournamentId && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/admin/judges/scoring/${selectedTournamentId}`)}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Score Heats
+                      </Button>
+                    )}
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">

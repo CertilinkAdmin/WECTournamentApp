@@ -8,7 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MapPin, Clock, Users, Trophy, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StationPage from './StationPage';
-import type { Station } from '@shared/schema';
+import JudgesStatusMonitor from './JudgesStatusMonitor';
+import type { Station, Match, HeatSegment } from '@shared/schema';
 import { getMainStationsForTournament } from '@/utils/stationUtils';
 
 export default function StationsManagement() {
@@ -28,6 +29,57 @@ export default function StationsManagement() {
   const stationA = tournamentScopedStations.find((station) => station.normalizedName === 'A');
   const stationB = tournamentScopedStations.find((station) => station.normalizedName === 'B');
   const stationC = tournamentScopedStations.find((station) => station.normalizedName === 'C');
+
+  // Fetch matches for all stations to show judge status
+  const tournamentIdNum = tournamentId ? parseInt(tournamentId) : undefined;
+  const { data: allMatches = [] } = useQuery<Match[]>({
+    queryKey: [`/api/tournaments/${tournamentIdNum}/matches`],
+    enabled: !!tournamentIdNum,
+    refetchInterval: 5000,
+  });
+
+  // Get current match for each station
+  const getCurrentMatchForStation = (stationId: number | undefined) => {
+    if (!stationId) return null;
+    return allMatches.find(m => m.stationId === stationId && (m.status === 'RUNNING' || m.status === 'READY')) ||
+           allMatches.find(m => m.stationId === stationId);
+  };
+
+  const stationAMatch = getCurrentMatchForStation(stationA?.id);
+  const stationBMatch = getCurrentMatchForStation(stationB?.id);
+  const stationCMatch = getCurrentMatchForStation(stationC?.id);
+
+  // Fetch segments for current matches to determine which segment type to show
+  const { data: segmentsA = [] } = useQuery<HeatSegment[]>({
+    queryKey: [`/api/matches/${stationAMatch?.id}/segments`],
+    enabled: !!stationAMatch,
+    refetchInterval: 5000,
+  });
+
+  const { data: segmentsB = [] } = useQuery<HeatSegment[]>({
+    queryKey: [`/api/matches/${stationBMatch?.id}/segments`],
+    enabled: !!stationBMatch,
+    refetchInterval: 5000,
+  });
+
+  const { data: segmentsC = [] } = useQuery<HeatSegment[]>({
+    queryKey: [`/api/matches/${stationCMatch?.id}/segments`],
+    enabled: !!stationCMatch,
+    refetchInterval: 5000,
+  });
+
+  const getSegmentTypeForMatch = (segments: HeatSegment[]) => {
+    const cappuccinoSegment = segments.find(s => s.segment === 'CAPPUCCINO');
+    const espressoSegment = segments.find(s => s.segment === 'ESPRESSO');
+    
+    if (cappuccinoSegment && (cappuccinoSegment.status === 'ENDED' || cappuccinoSegment.status === 'RUNNING')) {
+      return 'CAPPUCCINO';
+    }
+    if (espressoSegment && (espressoSegment.status === 'ENDED' || espressoSegment.status === 'RUNNING')) {
+      return 'ESPRESSO';
+    }
+    return 'CAPPUCCINO';
+  };
 
   const getStationStatus = (station: Station | undefined) => {
     if (!station) return 'OFFLINE';
@@ -138,6 +190,72 @@ export default function StationsManagement() {
           </Card>
         ))}
       </div>
+
+      {/* Judges Status Monitor - Overview for All Stations */}
+      {(stationAMatch || stationBMatch || stationCMatch) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5" />
+              Judges Status Monitor
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {stationA && stationAMatch && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4" />
+                    <span className="font-semibold">Station A</span>
+                    <Badge variant="outline" className="text-xs">
+                      Heat {stationAMatch.heatNumber}
+                    </Badge>
+                  </div>
+                  <JudgesStatusMonitor 
+                    matchId={stationAMatch.id} 
+                    segmentType={getSegmentTypeForMatch(segmentsA)}
+                  />
+                </div>
+              )}
+              {stationB && stationBMatch && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4" />
+                    <span className="font-semibold">Station B</span>
+                    <Badge variant="outline" className="text-xs">
+                      Heat {stationBMatch.heatNumber}
+                    </Badge>
+                  </div>
+                  <JudgesStatusMonitor 
+                    matchId={stationBMatch.id} 
+                    segmentType={getSegmentTypeForMatch(segmentsB)}
+                  />
+                </div>
+              )}
+              {stationC && stationCMatch && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4" />
+                    <span className="font-semibold">Station C</span>
+                    <Badge variant="outline" className="text-xs">
+                      Heat {stationCMatch.heatNumber}
+                    </Badge>
+                  </div>
+                  <JudgesStatusMonitor 
+                    matchId={stationCMatch.id} 
+                    segmentType={getSegmentTypeForMatch(segmentsC)}
+                  />
+                </div>
+              )}
+            </div>
+            {!stationAMatch && !stationBMatch && !stationCMatch && (
+              <div className="text-center text-sm text-muted-foreground py-4">
+                No active matches to monitor
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Station Details Tabs */}
       <Tabs value={activeStation} onValueChange={setActiveStation}>

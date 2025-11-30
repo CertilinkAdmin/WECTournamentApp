@@ -1,0 +1,280 @@
+{
+  "workflow_name": "Judge Workflow & Tournament Management Enhancement",
+  "description": "Implement judge scoring from championship page, segment progression gating, judge status monitoring, and tournament pagination",
+  "version": "1.0.0",
+  "prompts": [
+    {
+      "id": "prompt_1",
+      "step": 1,
+      "title": "Add Judge Scoring Route from Championship Page",
+      "description": "Create route for judges to access scoring from championship page, not admin side",
+      "type": "route_setup",
+      "files_to_modify": [
+        "client/src/App.tsx",
+        "client/src/pages/championships/Championships.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "Route /live/:tournamentId/judges/scoring exists and accessible from championship page",
+        "Route shows JudgeScoringView component",
+        "Judges can navigate to scoring from active tournament in Championships page"
+      ],
+      "implementation_steps": [
+        "Add route /live/:tournamentId/judges/scoring to App.tsx in LiveLayout routes",
+        "Add 'Judge Scoring' button/link in Championships.tsx for active tournaments",
+        "Ensure route passes tournamentId to JudgeScoringView"
+      ]
+    },
+    {
+      "id": "prompt_2",
+      "step": 2,
+      "title": "Update JudgeScoringView for Championship Context",
+      "description": "Modify JudgeScoringView to auto-detect tournament and show only assigned matches for logged-in judge",
+      "type": "component_refactor",
+      "files_to_modify": [
+        "client/src/components/JudgeScoringView.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "JudgeScoringView auto-detects tournament from route params",
+        "Only shows matches assigned to currently logged-in judge",
+        "Shows available segments based on segment progression (CAPPUCCINO after DIAL_IN, ESPRESSO after CAPPUCCINO)",
+        "Works from both admin and championship routes"
+      ],
+      "implementation_steps": [
+        "Update JudgeScoringView to get tournamentId from route params",
+        "Add logic to filter matches by logged-in judge's assignments",
+        "Update availableSegments logic to show segments based on progression",
+        "Add segment availability check based on previous segment completion"
+      ]
+    },
+    {
+      "id": "prompt_3",
+      "step": 3,
+      "title": "Create API Endpoint for Judge Completion Check",
+      "description": "Create endpoint to check if all judges completed scoring for a segment",
+      "type": "api_development",
+      "files_to_modify": [
+        "server/routes.ts",
+        "server/storage.ts"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "Endpoint GET /api/matches/:id/segments/:segmentCode/judges-completion returns completion status",
+        "Returns which judges have completed scoring and which haven't",
+        "Returns overall completion status (all complete, partial, none)"
+      ],
+      "implementation_steps": [
+        "Create storage method to get judge completion status for a segment",
+        "Query heat_judges and judge_detailed_scores tables",
+        "Return completion status per judge and overall status",
+        "Add endpoint in routes.ts"
+      ]
+    },
+    {
+      "id": "prompt_4",
+      "step": 4,
+      "title": "Add Judge Completion Gate to Segment Progression",
+      "description": "Block CAPPUCCINO and ESPRESSO segments from starting until all judges complete scoring",
+      "type": "business_logic",
+      "files_to_modify": [
+        "server/routes.ts",
+        "client/src/components/StationLeadView.tsx",
+        "client/src/components/StationPage.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "CAPPUCCINO segment cannot start until DIAL_IN is ENDED AND all judges completed scoring",
+        "ESPRESSO segment cannot start until CAPPUCCINO is ENDED AND all judges completed scoring",
+        "Error message shown if trying to start segment without judge completion",
+        "UI shows judge completion status before allowing segment start"
+      ],
+      "implementation_steps": [
+        "Update /api/heats/:id/segment/:code/start endpoint to check judge completion",
+        "For CAPPUCCINO: check if DIAL_IN judges completed",
+        "For ESPRESSO: check if CAPPUCCINO judges completed",
+        "Update StationLeadView and StationPage to show judge completion status",
+        "Disable segment start buttons if judges not completed"
+      ]
+    },
+    {
+      "id": "prompt_5",
+      "step": 5,
+      "title": "Create JudgesStatusMonitor Component",
+      "description": "Create component showing 3 lights (one per judge) with green/yellow/red status for each scorecard category",
+      "type": "component_creation",
+      "files_to_modify": [
+        "client/src/components/JudgesStatusMonitor.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "Component shows 3 judge indicators (one for each judge role: HEAD, TECHNICAL, SENSORY)",
+        "Each judge shows status for all scorecard categories (visualLatteArt, taste, tactile, flavour, overall)",
+        "Green = completed, Yellow = in progress, Red = not started",
+        "Component is responsive and mobile-friendly"
+      ],
+      "implementation_steps": [
+        "Create JudgesStatusMonitor component",
+        "Fetch judge assignments and scores for match",
+        "Calculate status per judge per category",
+        "Display status lights with appropriate colors",
+        "Add tooltips showing judge names and category details"
+      ]
+    },
+    {
+      "id": "prompt_6",
+      "step": 6,
+      "title": "Add JudgesStatusMonitor to Station Management",
+      "description": "Integrate JudgesStatusMonitor into StationsManagement view for each station's current match",
+      "type": "integration",
+      "files_to_modify": [
+        "client/src/components/StationsManagement.tsx",
+        "client/src/components/StationPage.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "JudgesStatusMonitor appears in StationsManagement view",
+        "Shows judge status for current match on each station",
+        "Updates in real-time as judges complete scoring",
+        "Visible and accessible on mobile devices"
+      ],
+      "implementation_steps": [
+        "Import JudgesStatusMonitor into StationsManagement",
+        "Fetch current match for each station",
+        "Pass match data to JudgesStatusMonitor",
+        "Add to StationPage component as well",
+        "Ensure real-time updates via WebSocket or polling"
+      ]
+    },
+    {
+      "id": "prompt_7",
+      "step": 7,
+      "title": "Create Judge Notification System",
+      "description": "Alert judges in their profile when heat segment is done and ready for scoring",
+      "type": "feature_development",
+      "files_to_modify": [
+        "server/routes.ts",
+        "server/storage.ts",
+        "client/src/components/JudgeScoringView.tsx",
+        "client/src/pages/championships/Championships.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "Judges receive notification when segment ends and scoring is ready",
+        "Notifications appear in judge profile/dashboard",
+        "Notifications show which match and segment needs scoring",
+        "Notifications can be dismissed or marked as read"
+      ],
+      "implementation_steps": [
+        "Create notifications table or add to existing schema",
+        "Emit notification when segment ends (in segment stop endpoint)",
+        "Create API endpoint to fetch judge notifications",
+        "Add notification badge/indicator in judge UI",
+        "Show notification list in judge profile"
+      ]
+    },
+    {
+      "id": "prompt_8",
+      "step": 8,
+      "title": "Fix Current Heats Panel Total Tracking",
+      "description": "Update Current Heats panel to track total for entire competition, not just filtered matches",
+      "type": "bug_fix",
+      "files_to_modify": [
+        "client/src/pages/live/LiveHeats.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "Total count shows all matches in tournament, not just filtered",
+        "Active, Ready, Completed counts are accurate for entire tournament",
+        "Total remains consistent regardless of station filter"
+      ],
+      "implementation_steps": [
+        "Separate filtered matches from all matches",
+        "Calculate stats from all matches for total count",
+        "Calculate stats from filtered matches for display",
+        "Update UI to show both tournament-wide and filtered stats"
+      ]
+    },
+    {
+      "id": "prompt_9",
+      "step": 9,
+      "title": "Implement Tournament Pagination",
+      "description": "Add inclusive and practical pagination for tournament matches across all views",
+      "type": "feature_development",
+      "files_to_modify": [
+        "client/src/pages/live/LiveHeats.tsx",
+        "client/src/pages/live/LiveOverview.tsx",
+        "server/routes.ts"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "Pagination works for large tournaments (100+ matches)",
+        "Pagination is accessible and mobile-friendly",
+        "Pagination preserves filters (station, status, etc.)",
+        "Performance is optimized for large datasets"
+      ],
+      "implementation_steps": [
+        "Add pagination state to LiveHeats component",
+        "Create pagination controls component",
+        "Update API to support pagination (limit/offset or cursor-based)",
+        "Add pagination to server endpoints if needed",
+        "Ensure pagination works with filters"
+      ]
+    },
+    {
+      "id": "prompt_10",
+      "step": 10,
+      "title": "Update Segment Progression Logic in JudgeScoringView",
+      "description": "Show available segments based on progression - CAPPUCCINO after DIAL_IN, ESPRESSO after CAPPUCCINO",
+      "type": "business_logic",
+      "files_to_modify": [
+        "client/src/components/JudgeScoringView.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "CAPPUCCINO segment only available after DIAL_IN is ENDED",
+        "ESPRESSO segment only available after CAPPUCCINO is ENDED",
+        "Visual art scoring available for CAPPUCCINO segment",
+        "Sensory scoring available for CAPPUCCINO segment",
+        "UI clearly shows which segments are available and why"
+      ],
+      "implementation_steps": [
+        "Update availableSegments logic to check segment status",
+        "Filter segments based on previous segment completion",
+        "Show helpful messages when segments are not yet available",
+        "Update segment selection UI to reflect availability"
+      ]
+    }
+  ],
+  "dependencies": {
+    "prompt_2": ["prompt_1"],
+    "prompt_4": ["prompt_3"],
+    "prompt_6": ["prompt_5"],
+    "prompt_7": ["prompt_3"],
+    "prompt_10": ["prompt_2", "prompt_4"]
+  },
+  "testing_strategy": {
+    "unit_tests": [
+      "Test judge completion check logic",
+      "Test segment progression gating",
+      "Test pagination calculations"
+    ],
+    "integration_tests": [
+      "Test judge scoring workflow end-to-end",
+      "Test segment progression with judge completion",
+      "Test notification system"
+    ],
+    "e2e_tests": [
+      "Test judge can access scoring from championship page",
+      "Test segment cannot start without judge completion",
+      "Test judge status monitor updates correctly"
+    ]
+  },
+  "opux_checklist": {
+    "mobile_responsive": true,
+    "accessibility": true,
+    "performance": true,
+    "lighthouse_audit": true
+  }
+}
+

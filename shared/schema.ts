@@ -16,6 +16,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  password: text("password"), // Hashed password, nullable for existing users
   role: userRoleEnum("role").notNull().default('BARISTA'),
   approved: boolean("approved").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -156,33 +157,50 @@ export const insertHeatScoreSchema = createInsertSchema(heatScores).omit({ id: t
 export type InsertHeatScore = z.infer<typeof insertHeatScoreSchema>;
 export type HeatScore = typeof heatScores.$inferSelect;
 
+// Match Cup Positions - Admin-assigned left/right positions for cup codes
+export const matchCupPositions = pgTable("match_cup_positions", {
+  id: serial("id").primaryKey(),
+  matchId: integer("match_id").notNull().references(() => matches.id),
+  cupCode: text("cup_code").notNull(),
+  position: text("position").notNull(), // 'left' or 'right'
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  assignedBy: integer("assigned_by").references(() => users.id),
+});
+
+export const insertMatchCupPositionSchema = createInsertSchema(matchCupPositions).omit({ id: true, assignedAt: true });
+export type InsertMatchCupPosition = z.infer<typeof insertMatchCupPositionSchema>;
+export type MatchCupPosition = typeof matchCupPositions.$inferSelect;
+
 // Detailed Judge Scorecards (cup-based scoring)
 export const judgeDetailedScores = pgTable("judge_detailed_scores", {
   id: serial("id").primaryKey(),
   matchId: integer("match_id").notNull().references(() => matches.id),
   judgeName: text("judge_name").notNull(),
   
-  // Cup codes
-  leftCupCode: text("left_cup_code").notNull(),
-  rightCupCode: text("right_cup_code").notNull(),
+  // Legacy fields (kept for backward compatibility during migration)
+  leftCupCode: text("left_cup_code"),
+  rightCupCode: text("right_cup_code"),
+  
+  // New cup code fields - the two cup codes in this match
+  cupCode1: text("cup_code1"),
+  cupCode2: text("cup_code2"),
   
   // Sensory beverage type for this judge
   sensoryBeverage: text("sensory_beverage").notNull(), // 'Cappuccino' or 'Espresso'
   
-  // Visual/Latte Art (3 points) - which cup won
-  visualLatteArt: text("visual_latte_art").notNull(), // 'left' or 'right'
+  // Legacy category fields (kept for backward compatibility)
+  visualLatteArt: text("visual_latte_art"), // 'left' or 'right' (deprecated)
+  taste: text("taste"), // 'left' or 'right' (deprecated)
+  tactile: text("tactile"), // 'left' or 'right' (deprecated)
+  flavour: text("flavour"), // 'left' or 'right' (deprecated)
+  overall: text("overall"), // 'left' or 'right' (deprecated)
   
-  // Taste (1 point) - which cup won
-  taste: text("taste").notNull(), // 'left' or 'right'
-  
-  // Tactile (1 point) - which cup won
-  tactile: text("tactile").notNull(), // 'left' or 'right'
-  
-  // Flavour (1 point) - which cup won
-  flavour: text("flavour").notNull(), // 'left' or 'right'
-  
-  // Overall (5 points) - which cup won
-  overall: text("overall").notNull(), // 'left' or 'right'
+  // New category fields - which cup code won each category
+  winnerCupCodeVisualLatteArt: text("winner_cup_code_visual_latte_art"),
+  winnerCupCodeTaste: text("winner_cup_code_taste"),
+  winnerCupCodeTactile: text("winner_cup_code_tactile"),
+  winnerCupCodeFlavour: text("winner_cup_code_flavour"),
+  winnerCupCodeOverall: text("winner_cup_code_overall"),
   
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
 });

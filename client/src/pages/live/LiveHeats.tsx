@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, Trophy, Users, MapPin, Activity } from 'lucide-react';
+import { Clock, Trophy, Users, MapPin, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getMainStationsForTournament } from '@/utils/stationUtils';
 
@@ -36,6 +37,8 @@ interface Station {
 const LiveHeats: React.FC = () => {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const [selectedStation, setSelectedStation] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 20; // Show 20 matches per page
 
   // API returns { tournament, participants, matches, scores }
   const { data: tournamentData, isLoading: tournamentLoading } = useQuery<{
@@ -81,8 +84,17 @@ const LiveHeats: React.FC = () => {
     return matches.filter(m => m.stationId === station.id);
   }, [matches, mainStations, selectedStation]);
 
-  // Group matches by status
-  const matchesByStatus = useMemo(() => {
+  // Group matches by status - use ALL matches for totals, filtered for display
+  const allMatchesByStatus = useMemo(() => {
+    return {
+      pending: matches.filter(m => m.status === 'PENDING'),
+      ready: matches.filter(m => m.status === 'READY'),
+      running: matches.filter(m => m.status === 'RUNNING'),
+      done: matches.filter(m => m.status === 'DONE'),
+    };
+  }, [matches]);
+
+  const filteredMatchesByStatus = useMemo(() => {
     return {
       pending: filteredMatches.filter(m => m.status === 'PENDING'),
       ready: filteredMatches.filter(m => m.status === 'READY'),
@@ -164,6 +176,17 @@ const LiveHeats: React.FC = () => {
     return station.name.startsWith('Station ') ? station.name.replace(/^Station /, '') : station.name;
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredMatches.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedMatches = filteredMatches.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStation]);
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -178,19 +201,19 @@ const LiveHeats: React.FC = () => {
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 min-h-[2rem] flex items-center justify-center">{matchesByStatus.running.length}</div>
+                <div className="text-2xl font-bold text-green-600 min-h-[2rem] flex items-center justify-center">{allMatchesByStatus.running.length}</div>
                 <div className="text-sm text-muted-foreground mt-1">Active</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 min-h-[2rem] flex items-center justify-center">{matchesByStatus.ready.length}</div>
+                <div className="text-2xl font-bold text-blue-600 min-h-[2rem] flex items-center justify-center">{allMatchesByStatus.ready.length}</div>
                 <div className="text-sm text-muted-foreground mt-1">Ready</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold min-h-[2rem] flex items-center justify-center">{matchesByStatus.done.length}</div>
+                <div className="text-2xl font-bold min-h-[2rem] flex items-center justify-center">{allMatchesByStatus.done.length}</div>
                 <div className="text-sm text-muted-foreground mt-1">Completed</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold min-h-[2rem] flex items-center justify-center">{filteredMatches.length}</div>
+                <div className="text-2xl font-bold min-h-[2rem] flex items-center justify-center">{matches.length}</div>
                 <div className="text-sm text-muted-foreground mt-1">Total</div>
               </div>
             </div>
@@ -270,7 +293,7 @@ const LiveHeats: React.FC = () => {
         )}
 
         {/* Active Heats */}
-        {matchesByStatus.running.length > 0 && (
+        {filteredMatchesByStatus.running.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -280,7 +303,7 @@ const LiveHeats: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {matchesByStatus.running.map(match => (
+                {filteredMatchesByStatus.running.map(match => (
                   <Card key={match.id} className="border-green-500 border-2">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
@@ -313,7 +336,7 @@ const LiveHeats: React.FC = () => {
         )}
 
         {/* Ready Heats */}
-        {matchesByStatus.ready.length > 0 && (
+        {filteredMatchesByStatus.ready.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -323,7 +346,7 @@ const LiveHeats: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {matchesByStatus.ready.map(match => (
+                {filteredMatchesByStatus.ready.map(match => (
                   <Card key={match.id}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
@@ -371,7 +394,7 @@ const LiveHeats: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredMatches
+                {paginatedMatches
                   .sort((a, b) => b.heatNumber - a.heatNumber)
                   .map(match => (
                     <div
@@ -398,6 +421,61 @@ const LiveHeats: React.FC = () => {
                       )}
                     </div>
                   ))}
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {filteredMatches.length > itemsPerPage && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredMatches.length)} of {filteredMatches.length} heats
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="min-w-[2.5rem]"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

@@ -2,7 +2,7 @@ import { db } from "./db";
 import { 
   users, tournaments, tournamentParticipants, tournamentRoundTimes,
   stations, matches, heatSegments, heatJudges, heatScores,
-  judgeDetailedScores,
+  judgeDetailedScores, matchCupPositions,
   type User, type InsertUser,
   type Tournament, type InsertTournament,
   type TournamentParticipant, type InsertTournamentParticipant,
@@ -12,7 +12,8 @@ import {
   type HeatSegment, type InsertHeatSegment,
   type HeatJudge, type InsertHeatJudge,
   type HeatScore, type InsertHeatScore,
-  type JudgeDetailedScore, type InsertJudgeDetailedScore
+  type JudgeDetailedScore, type InsertJudgeDetailedScore,
+  type MatchCupPosition, type InsertMatchCupPosition
 } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 
@@ -80,6 +81,15 @@ export interface IStorage {
   submitDetailedScore(score: InsertJudgeDetailedScore): Promise<JudgeDetailedScore>;
   submitBatchDetailedScores(scores: InsertJudgeDetailedScore[]): Promise<JudgeDetailedScore[]>;
   getMatchDetailedScores(matchId: number): Promise<JudgeDetailedScore[]>;
+  getJudgeCompletionStatus(matchId: number, segmentType: 'CAPPUCCINO' | 'ESPRESSO'): Promise<{
+    allComplete: boolean;
+    judges: Array<{
+      judgeId: number;
+      judgeName: string;
+      role: 'HEAD' | 'TECHNICAL' | 'SENSORY';
+      completed: boolean;
+    }>;
+  }>;
 
   // Tournament Round Times
   setRoundTimes(times: InsertTournamentRoundTime): Promise<TournamentRoundTime>;
@@ -347,6 +357,64 @@ export class DatabaseStorage implements IStorage {
       .where(eq(judgeDetailedScores.matchId, matchId));
   }
 
+  async getJudgeCompletionStatus(matchId: number, segmentType: 'CAPPUCCINO' | 'ESPRESSO'): Promise<{
+    allComplete: boolean;
+    judges: Array<{
+      judgeId: number;
+      judgeName: string;
+      role: 'HEAD' | 'TECHNICAL' | 'SENSORY';
+      completed: boolean;
+    }>;
+  }> {
+    // Get all judges assigned to this match
+    const matchJudges = await this.getMatchJudges(matchId);
+    
+    // Filter judges based on segment type
+    // CAPPUCCINO: SENSORY judge
+    // ESPRESSO: TECHNICAL and HEAD judges
+    const relevantJudges = matchJudges.filter(j => {
+      if (segmentType === 'CAPPUCCINO') {
+        return j.role === 'SENSORY';
+      } else {
+        return j.role === 'TECHNICAL' || j.role === 'HEAD';
+      }
+    });
+
+    // Get all detailed scores for this match
+    const allScores = await this.getMatchDetailedScores(matchId);
+    
+    // Get all users to map judge IDs to names
+    const allUsers = await this.getAllUsers();
+    
+    // Check completion status for each judge
+    const judgesStatus = relevantJudges.map(judge => {
+      const judgeUser = allUsers.find(u => u.id === judge.judgeId);
+      const judgeName = judgeUser?.name || `Judge ${judge.judgeId}`;
+      
+      // Check if this judge has submitted a score for this segment
+      // For CAPPUCCINO: check if sensoryBeverage is 'Cappuccino'
+      // For ESPRESSO: check if sensoryBeverage is 'Espresso'
+      const expectedBeverage = segmentType === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso';
+      const judgeScore = allScores.find(
+        score => score.judgeName === judgeName && score.sensoryBeverage === expectedBeverage
+      );
+      
+      return {
+        judgeId: judge.judgeId,
+        judgeName,
+        role: judge.role,
+        completed: !!judgeScore,
+      };
+    });
+
+    const allComplete = judgesStatus.length > 0 && judgesStatus.every(j => j.completed);
+
+    return {
+      allComplete,
+      judges: judgesStatus,
+    };
+  }
+
   // Tournament Round Times
   async setRoundTimes(times: InsertTournamentRoundTime): Promise<TournamentRoundTime> {
     const result = await db.insert(tournamentRoundTimes).values(times).returning();
@@ -370,6 +438,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tournamentRoundTimes.tournamentId, tournamentId));
   }
 
+  // Match Cup Positions
+  async setMatchCupPositions(matchId: number, positions: Array<{ cupCode: string; position: 'left' | 'right' }>, assignedBy?: number): Promise<MatchCupPosition[]> {
+    // Delete existing positions for this match
+    await db.delete(matchCupPositions).where(eq(matchCupPositions.matchId, matchId));
+    
+    // Insert new positions
+    const insertData: InsertMatchCupPosition[] = positions.map(p => ({
+      matchId,
+      cupCode: p.cupCode,
+      position: p.position,
+      assignedBy: assignedBy || null,
+    }));
+    
+    const result = await db.insert(matchCupPositions).values(insertData).returning();
+    return result;
+  }
+
+  async getMatchCupPositions(matchId: number): Promise<MatchCupPosition[]> {
+    return await db.select()
+      .from(matchCupPositions)
+      .where(eq(matchCupPositions.matchId, matchId));
+  }
+
   async clearTournamentData(tournamentId: number): Promise<void> {
     // First, get all matches for this tournament
     const tournamentMatches = await db.select({ id: matches.id }).from(matches).where(eq(matches.tournamentId, tournamentId));
@@ -382,6 +473,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(judgeDetailedScores).where(inArray(judgeDetailedScores.matchId, matchIds));
       await db.delete(heatJudges).where(inArray(heatJudges.matchId, matchIds));
       await db.delete(heatSegments).where(inArray(heatSegments.matchId, matchIds));
+      await db.delete(matchCupPositions).where(inArray(matchCupPositions.matchId, matchIds));
     }
 
     // Delete matches

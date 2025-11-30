@@ -1,0 +1,260 @@
+{
+  "workflow": "cursor_sidechain",
+  "description": "Refactor judge scoring workflow: Judges score by cup code, admin assigns left/right positions after all scoring is complete",
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Database Schema Updates",
+      "description": "Add cup code position mapping table and update judge_detailed_scores schema",
+      "type": "database",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Create migration file for match_cup_positions table",
+          "details": "Table should have: match_id, cup_code, position (left/right), assigned_at, assigned_by"
+        },
+        {
+          "step": 2,
+          "action": "Update judge_detailed_scores schema",
+          "details": "Change leftCupCode/rightCupCode to cupCode1/cupCode2, change category fields (visualLatteArt, taste, etc.) to store winnerCupCode instead of left/right"
+        },
+        {
+          "step": 3,
+          "action": "Update shared/schema.ts with new types",
+          "details": "Add MatchCupPosition type and update JudgeDetailedScore type"
+        },
+        {
+          "step": 4,
+          "action": "Run migration and verify schema",
+          "details": "Test database connection and verify tables created correctly"
+        }
+      ],
+      "test": "Verify tables exist and schema matches expected structure"
+    },
+    {
+      "id": "2",
+      "title": "Backend API Updates",
+      "description": "Create endpoints for cup position assignment and update score submission",
+      "type": "backend",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Update POST /api/detailed-scores endpoint",
+          "details": "Accept cupCode1, cupCode2, and winnerCupCode per category instead of leftCupCode/rightCupCode and left/right"
+        },
+        {
+          "step": 2,
+          "action": "Create POST /api/matches/:matchId/cup-positions endpoint",
+          "details": "Allow admin to assign left/right positions to cup codes, validate all judges have scored first"
+        },
+        {
+          "step": 3,
+          "action": "Create GET /api/matches/:matchId/cup-positions endpoint",
+          "details": "Return current cup position assignments for a match"
+        },
+        {
+          "step": 4,
+          "action": "Update score calculation logic",
+          "details": "Use cup position mapping to convert cup code scores to left/right for final score calculation"
+        }
+      ],
+      "test": "Test API endpoints with curl or Postman, verify validation logic"
+    },
+    {
+      "id": "3",
+      "title": "Judge Scoring UI Refactor",
+      "description": "Update JudgeScoringView to use cup code selection instead of left/right",
+      "type": "frontend",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Update scoring state management",
+          "details": "Remove leftCupCode/rightCupCode state, add cupCode1/cupCode2 from competitors, change category states to store winnerCupCode"
+        },
+        {
+          "step": 2,
+          "action": "Update UI components",
+          "details": "Replace left/right checkboxes with cup code radio buttons or select dropdowns for each category"
+        },
+        {
+          "step": 3,
+          "action": "Update form submission",
+          "details": "Submit scores with cup codes instead of left/right positions"
+        },
+        {
+          "step": 4,
+          "action": "Remove automatic cup position assignment",
+          "details": "Remove logic that auto-assigns left/right when segment is selected"
+        }
+      ],
+      "test": "Test judge scoring flow: select cup codes, submit scores, verify data saved correctly"
+    },
+    {
+      "id": "4",
+      "title": "Admin Cup Position Assignment UI",
+      "description": "Create component for admin to assign left/right positions after all scoring",
+      "type": "frontend",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Create AdminCupPositionAssignment component",
+          "details": "Component shows both cup codes, allows admin to assign left/right, validates all judges have scored"
+        },
+        {
+          "step": 2,
+          "action": "Add to admin tournament view or create separate route",
+          "details": "Integrate component into admin workflow, show only when ready (all judges scored)"
+        },
+        {
+          "step": 3,
+          "action": "Add validation UI",
+          "details": "Show which judges still need to score, disable assignment until complete"
+        },
+        {
+          "step": 4,
+          "action": "Add confirmation and success feedback",
+          "details": "Confirm assignment, show success message, update UI state"
+        }
+      ],
+      "test": "Test admin assignment flow: verify validation, assign positions, confirm saved"
+    },
+    {
+      "id": "5",
+      "title": "Station Lead View Updates",
+      "description": "Remove automatic left/right assignment when starting segments",
+      "type": "frontend",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Update startSegmentMutation in StationLeadView",
+          "details": "Remove leftCupCode/rightCupCode assignment when starting segments"
+        },
+        {
+          "step": 2,
+          "action": "Update StationPage component",
+          "details": "Remove cup code position assignment logic"
+        },
+        {
+          "step": 3,
+          "action": "Verify cup codes stay with baristas",
+          "details": "Ensure cup codes are only from participant.cupCode, not assigned to positions"
+        }
+      ],
+      "test": "Test segment start: verify no left/right assignment, cup codes remain with baristas"
+    },
+    {
+      "id": "6",
+      "title": "Score Calculation Updates",
+      "description": "Update score calculation to use cup position mapping",
+      "type": "backend",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Update calculateMatchScores function",
+          "details": "Fetch cup position mapping, convert cup code scores to left/right using mapping"
+        },
+        {
+          "step": 2,
+          "action": "Update heat score aggregation",
+          "details": "Ensure final scores use correct left/right mapping from admin assignment"
+        },
+        {
+          "step": 3,
+          "action": "Add error handling",
+          "details": "Handle cases where cup positions not yet assigned, show appropriate errors"
+        }
+      ],
+      "test": "Test score calculation: verify scores calculated correctly using cup position mapping"
+    },
+    {
+      "id": "7",
+      "title": "OPUX Workflow - Performance & Responsive Design",
+      "description": "Run OPUX workflow to optimize UI performance and responsive design",
+      "type": "optimization",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Run Lighthouse MCP audit",
+          "details": "Audit mobile performance, accessibility, and responsive design issues"
+        },
+        {
+          "step": 2,
+          "action": "Run Responsive Refactor MCP",
+          "details": "Fix layout issues, convert to responsive design, improve mobile UX"
+        },
+        {
+          "step": 3,
+          "action": "Run Tailwind Optimizer MCP",
+          "details": "Normalize Tailwind classes, enforce design system, reduce duplication"
+        },
+        {
+          "step": 4,
+          "action": "Run Lighthouse MCP verification",
+          "details": "Re-audit to confirm improvements, iterate if needed"
+        }
+      ],
+      "test": "Verify Lighthouse scores meet targets (Performance 90+, Accessibility 95+, etc.)"
+    }
+  ],
+  "dependencies": {
+    "1": [],
+    "2": ["1"],
+    "3": ["1", "2"],
+    "4": ["1", "2", "3"],
+    "5": ["1"],
+    "6": ["1", "2", "4"],
+    "7": ["3", "4"]
+  },
+  "promptChain": [
+    {
+      "promptId": "p1",
+      "taskId": "1",
+      "title": "Database Schema Migration",
+      "prompt": "Create a database migration to add match_cup_positions table and update judge_detailed_scores schema. The match_cup_positions table should store admin-assigned left/right positions for cup codes after all judges have scored. Update judge_detailed_scores to store cup codes and winner cup code per category instead of left/right positions. Use TDD: write migration, test schema, verify types.",
+      "expectedOutput": "Migration file created, schema.ts updated, types verified"
+    },
+    {
+      "promptId": "p2",
+      "taskId": "2",
+      "title": "Backend API Implementation",
+      "prompt": "Update the detailed-scores POST endpoint to accept cupCode1, cupCode2, and winnerCupCode per category. Create POST /api/matches/:matchId/cup-positions endpoint for admin to assign left/right positions. Create GET endpoint to retrieve positions. Update score calculation to use cup position mapping. Use TDD: write tests first, then implement endpoints.",
+      "expectedOutput": "API endpoints implemented, tests passing, validation working"
+    },
+    {
+      "promptId": "p3",
+      "taskId": "3",
+      "title": "Judge Scoring UI Refactor",
+      "prompt": "Refactor JudgeScoringView component: replace left/right checkboxes with cup code selection (radio buttons or dropdowns) for each scoring category. Update state to store winnerCupCode per category. Remove automatic cup position assignment. Update form submission to send cup codes. Use TDD: write component tests, implement UI, verify submission.",
+      "expectedOutput": "JudgeScoringView updated, cup code selection working, scores submitted correctly"
+    },
+    {
+      "promptId": "p4",
+      "taskId": "4",
+      "title": "Admin Cup Position Assignment UI",
+      "prompt": "Create AdminCupPositionAssignment component that allows admin to assign left/right positions to cup codes after all judges have scored both CAPPUCCINO and ESPRESSO. Show validation status (which judges still need to score). Integrate into admin tournament view. Use TDD: write component tests, implement UI, verify assignment flow.",
+      "expectedOutput": "AdminCupPositionAssignment component created, integrated, validation working"
+    },
+    {
+      "promptId": "p5",
+      "taskId": "5",
+      "title": "Station Lead View Updates",
+      "prompt": "Update StationLeadView and StationPage components to remove automatic left/right cup code assignment when starting segments. Cup codes should stay with baristas throughout all segments. Use TDD: write tests, update components, verify no position assignment occurs.",
+      "expectedOutput": "StationLeadView updated, no automatic position assignment, cup codes stay with baristas"
+    },
+    {
+      "promptId": "p6",
+      "taskId": "6",
+      "title": "Score Calculation Updates",
+      "prompt": "Update score calculation logic to use admin-assigned cup position mapping. Convert cup code scores to left/right using the mapping before calculating final scores. Add error handling for missing position assignments. Use TDD: write calculation tests, implement logic, verify scores calculated correctly.",
+      "expectedOutput": "Score calculation updated, uses cup position mapping, handles edge cases"
+    },
+    {
+      "promptId": "p7",
+      "taskId": "7",
+      "title": "OPUX Performance Optimization",
+      "prompt": "Run OPUX workflow: 1) Lighthouse MCP audit to find issues, 2) Responsive Refactor MCP to fix layouts, 3) Tailwind Optimizer MCP to normalize styles, 4) Lighthouse MCP verification. Focus on JudgeScoringView and AdminCupPositionAssignment components. Use TDD: verify improvements with Lighthouse scores.",
+      "expectedOutput": "Lighthouse scores improved (Performance 90+, Accessibility 95+), responsive design optimized"
+    }
+  ]
+}
+
