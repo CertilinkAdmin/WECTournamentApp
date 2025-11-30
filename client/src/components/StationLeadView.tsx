@@ -50,19 +50,40 @@ export default function StationLeadView() {
     return getMainStationsForTournament(stations, currentTournamentId);
   }, [stations, currentTournamentId]);
 
-  // Check if current round is complete across all stations
+  // Check if current round is complete across ALL stations
   const isCurrentRoundComplete = React.useMemo(() => {
-    if (allMatches.length === 0) return false;
+    if (allMatches.length === 0 || mainStations.length === 0) return false;
 
     // Get current round number
     const currentRound = Math.max(...allMatches.map(m => m.round));
 
-    // Get all matches in current round
+    // Get all matches in current round across ALL stations
     const currentRoundMatches = allMatches.filter(m => m.round === currentRound);
 
-    // Check if ALL matches in current round are DONE
+    // Group matches by station to ensure each station has completed their heats
+    const matchesByStation = new Map<number, any[]>();
+    currentRoundMatches.forEach(match => {
+      if (match.stationId) {
+        if (!matchesByStation.has(match.stationId)) {
+          matchesByStation.set(match.stationId, []);
+        }
+        matchesByStation.get(match.stationId)!.push(match);
+      }
+    });
+
+    // Check if ALL main stations (A, B, C) have completed ALL their heats in current round
+    for (const station of mainStations) {
+      const stationMatches = matchesByStation.get(station.id) || [];
+      
+      // If station has matches assigned but not all are DONE, round is not complete
+      if (stationMatches.length > 0 && !stationMatches.every(m => m.status === 'DONE')) {
+        return false;
+      }
+    }
+
+    // All stations must have at least one match and all matches must be DONE
     return currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.status === 'DONE');
-  }, [allMatches]);
+  }, [allMatches, mainStations]);
 
   // Fetch users for competitor names
   const { data: users = [] } = useQuery<User[]>({
@@ -921,7 +942,7 @@ export default function StationLeadView() {
                 </Button>
               )}
 
-              {/* Heat Advancement - Available to all station leads after current heat completes */}
+              {/* Complete Current Heat - Only marks current heat as DONE */}
               {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
                 <div className="space-y-2">
                   <Button
@@ -929,33 +950,93 @@ export default function StationLeadView() {
                     size="lg"
                     className="w-full border-dashed border-white/30 text-white"
                     onClick={() => {
-                      // This advances to next heat in queue for this station
-                      // Reset timer and prepare for next competitors
+                      // Only complete current heat - does not advance rounds
                       handleCompleteMatch(currentMatch.id);
                     }}
-                    disabled={populateNextRoundMutation.isPending}
+                    disabled={completeMatchMutation.isPending}
                     data-testid="button-advance-next-heat"
                   >
                     <ArrowRight className="h-4 w-4 mr-2" />
-                    Advance to Next Heat
+                    Complete Current Heat
                   </Button>
                   <p className="text-xs text-center text-white/50">
-                    Complete current heat and prepare for next competitors
+                    Mark this heat as complete (all stations must finish before next round)
                   </p>
                 </div>
               )}
 
-              {/* Show round completion status */}
-              {isCurrentRoundComplete && (
-                <div className="text-center space-y-2">
-                  <div className="text-sm font-medium text-white bg-green-600/20 border border-green-500/30 rounded-lg p-3">
-                    ✅ Current Round Complete - All Stations Finished
+              {/* Show round completion status across all stations */}
+              {(() => {
+                if (allMatches.length === 0) return null;
+                
+                const currentRound = Math.max(...allMatches.map(m => m.round));
+                const currentRoundMatches = allMatches.filter(m => m.round === currentRound);
+                
+                // Group matches by station
+                const matchesByStation = new Map<number, any[]>();
+                currentRoundMatches.forEach(match => {
+                  if (match.stationId) {
+                    if (!matchesByStation.has(match.stationId)) {
+                      matchesByStation.set(match.stationId, []);
+                    }
+                    matchesByStation.get(match.stationId)!.push(match);
+                  }
+                });
+
+                // Get completion status for each main station
+                const stationStatus = mainStations.map(station => {
+                  const stationMatches = matchesByStation.get(station.id) || [];
+                  const completedMatches = stationMatches.filter(m => m.status === 'DONE');
+                  
+                  return {
+                    name: station.name,
+                    totalHeats: stationMatches.length,
+                    completedHeats: completedMatches.length,
+                    isComplete: stationMatches.length > 0 && completedMatches.length === stationMatches.length
+                  };
+                });
+
+                const allComplete = stationStatus.every(s => s.isComplete && s.totalHeats > 0);
+
+                return (
+                  <div className="text-center space-y-2">
+                    <div className={`text-sm font-medium text-white border rounded-lg p-3 ${
+                      allComplete 
+                        ? 'bg-green-600/20 border-green-500/30' 
+                        : 'bg-yellow-600/20 border-yellow-500/30'
+                    }`}>
+                      {allComplete ? '✅' : '⏳'} Round {currentRound} Status
+                    </div>
+                    
+                    {/* Station-by-station status */}
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      {stationStatus.map(station => (
+                        <div 
+                          key={station.name}
+                          className={`p-2 rounded border text-center ${
+                            station.isComplete 
+                              ? 'bg-green-600/20 border-green-500/30 text-green-300'
+                              : station.totalHeats > 0
+                                ? 'bg-yellow-600/20 border-yellow-500/30 text-yellow-300'
+                                : 'bg-gray-600/20 border-gray-500/30 text-gray-400'
+                          }`}
+                        >
+                          <div className="font-medium">Station {station.name}</div>
+                          <div>{station.completedHeats}/{station.totalHeats}</div>
+                          {station.totalHeats === 0 && <div className="text-[10px]">No heats</div>}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <p className="text-xs text-white/60">
+                      {allComplete 
+                        ? 'All stations have completed their heats for this round'
+                        : 'Waiting for all stations to complete their heats'
+                      }
+                    </p>
                   </div>
-                  <p className="text-xs text-white/60">
-                    All heats in this round are complete across all stations
-                  </p>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             <p className="text-xs text-center text-white/40 uppercase tracking-wide">

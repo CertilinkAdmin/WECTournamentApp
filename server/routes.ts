@@ -1474,16 +1474,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentRound = Math.max(...currentMatches.map(m => m.round));
       const currentRoundMatches = currentMatches.filter(m => m.round === currentRound);
 
-      // Check if all current round matches are complete AND have winners
+      // Get ALL stations for this tournament to verify round completion
+      const allStations = await storage.getAllStations();
+      const tournamentStations = allStations.filter(s => s.tournamentId === tournamentId && ['A', 'B', 'C'].includes(s.name));
+
+      // Group current round matches by station
+      const matchesByStation = new Map<number, typeof currentRoundMatches>();
+      currentRoundMatches.forEach(match => {
+        if (match.stationId) {
+          if (!matchesByStation.has(match.stationId)) {
+            matchesByStation.set(match.stationId, []);
+          }
+          matchesByStation.get(match.stationId)!.push(match);
+        }
+      });
+
+      // Verify ALL stations have completed ALL their heats in current round
+      const stationCompletionStatus = tournamentStations.map(station => {
+        const stationMatches = matchesByStation.get(station.id) || [];
+        const completedMatches = stationMatches.filter(m => m.status === 'DONE');
+        const incompleteMatches = stationMatches.filter(m => m.status !== 'DONE');
+        
+        return {
+          stationName: station.name,
+          stationId: station.id,
+          totalHeats: stationMatches.length,
+          completedHeats: completedMatches.length,
+          incompleteHeats: incompleteMatches.length,
+          isComplete: stationMatches.length > 0 && incompleteMatches.length === 0,
+          incompleteHeatNumbers: incompleteMatches.map(m => m.heatNumber)
+        };
+      });
+
+      const incompleteStations = stationCompletionStatus.filter(s => !s.isComplete && s.totalHeats > 0);
+      
+      if (incompleteStations.length > 0) {
+        const stationDetails = incompleteStations.map(s => 
+          `Station ${s.stationName}: ${s.incompleteHeats} heats remaining (Heats: ${s.incompleteHeatNumbers.join(', ')})`
+        ).join('; ');
+        
+        return res.status(400).json({ 
+          error: `ALL stations must complete their heats in Round ${currentRound} before advancing. Incomplete stations: ${stationDetails}`,
+          stationCompletionStatus,
+          incompleteStations: incompleteStations.map(s => s.stationName)
+        });
+      }
+
+      // Check if all completed matches have winners
       const allCurrentRoundComplete = currentRoundMatches.every(m => m.status === 'DONE');
       const allHaveWinners = currentRoundMatches.every(m => m.winnerId !== null);
-      const incompleteMatches = currentRoundMatches.filter(m => m.status !== 'DONE');
       const matchesWithoutWinners = currentRoundMatches.filter(m => m.winnerId === null);
 
       if (!allCurrentRoundComplete) {
         return res.status(400).json({ 
-          error: `Current round (Round ${currentRound}) must be complete before advancing. ${incompleteMatches.length} heats still in progress.`,
-          incompleteMatches: incompleteMatches.map(m => `Heat ${m.heatNumber}`)
+          error: `Internal error: Round completion check failed despite station verification.`,
+          stationCompletionStatus
         });
       }
 
