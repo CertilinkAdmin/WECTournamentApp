@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Gavel, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { Gavel, CheckCircle2, Clock, XCircle, ChevronDown } from 'lucide-react';
 import type { Match, JudgeDetailedScore, HeatJudge } from '@shared/schema';
 
 interface JudgesStatusMonitorProps {
@@ -25,6 +27,8 @@ interface JudgeStatus {
 }
 
 export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStatusMonitorProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  
   // Fetch judge completion status
   const { data: completionStatus, isLoading } = useQuery<{
     allComplete: boolean;
@@ -138,20 +142,56 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
     }
   };
 
+  // Calculate summary for collapsed state
+  const summaryStatus = completionStatus ? (
+    completionStatus.allComplete ? (
+      <Badge variant="default" className="text-xs">
+        <CheckCircle2 className="h-3 w-3 mr-1" />
+        All Complete
+      </Badge>
+    ) : (
+      <Badge variant="secondary" className="text-xs">
+        <Clock className="h-3 w-3 mr-1" />
+        {completionStatus.judges.filter(j => j.completed).length} / {completionStatus.judges.length} Complete
+      </Badge>
+    )
+  ) : null;
+
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <Gavel className="h-4 w-4" />
-          Judges Status Monitor
-          {segmentType && (
-            <Badge variant="outline" className="ml-2 text-xs">
-              {segmentType}
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CardHeader className="pb-3">
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full justify-between p-0 h-auto hover:bg-transparent"
+            >
+              <div className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Gavel className="h-4 w-4" />
+                  Judges Status Monitor
+                  {segmentType && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      {segmentType}
+                    </Badge>
+                  )}
+                </CardTitle>
+                {!isOpen && summaryStatus && (
+                  <div className="ml-2">
+                    {summaryStatus}
+                  </div>
+                )}
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${
+                  isOpen ? 'transform rotate-180' : ''
+                }`}
+              />
+            </Button>
+          </CollapsibleTrigger>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="space-y-4 pt-0">
         {judgeStatuses.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground py-4">
             No judges assigned to this match
@@ -225,7 +265,9 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
             </div>
           </div>
         )}
-      </CardContent>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   );
 }

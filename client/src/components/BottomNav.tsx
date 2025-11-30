@@ -108,6 +108,26 @@ export default function BottomNav() {
       ];
     }
     
+    // Station page navigation - show station-related navigation
+    if (pathname.startsWith('/station/')) {
+      // Try to extract tournament ID from pathname (won't work for /station/:id, but keep for consistency)
+      // For station pages, show station-lead and main navigation
+      return [
+        { path: '/station-lead', label: 'Station Lead', icon: MapPin },
+        { path: '/live', label: 'Championships', icon: Play },
+        { path: '/admin', label: 'Admin', icon: Settings },
+      ];
+    }
+    
+    // Station Lead View navigation
+    if (pathname === '/station-lead') {
+      return [
+        { path: '/station-lead', label: 'Station Lead', icon: MapPin },
+        { path: '/admin', label: 'Admin', icon: Settings },
+        { path: '/live', label: 'Championships', icon: Play },
+      ];
+    }
+    
     // Default fallback (shouldn't happen)
     return [];
   };

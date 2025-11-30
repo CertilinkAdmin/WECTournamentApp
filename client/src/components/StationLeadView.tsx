@@ -360,6 +360,50 @@ export default function StationLeadView() {
     }
   });
 
+  const finalizeStationRoundMutation = useMutation({
+    mutationFn: async ({ stationId, round }: { stationId: number; round: number }) => {
+      // First complete the current heat if it's running
+      if (currentMatch && currentMatch.status === 'RUNNING') {
+        const completeResponse = await fetch(`/api/matches/${currentMatch.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'DONE',
+            endTime: new Date().toISOString()
+          })
+        });
+        if (!completeResponse.ok) throw new Error('Failed to complete current heat');
+      }
+      
+      // Then finalize the station's round (calculate winners/losers and advance to next round pool)
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/finalize-station-round`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stationId, round })
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to finalize station round' }));
+        throw new Error(error.error || 'Failed to finalize station round');
+      }
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stations'] });
+      toast({
+        title: "Station Round Finalized",
+        description: `Station ${data.stationName} Round ${data.round} finalized. Winners advanced to next round pool.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Finalize Station Round",
+        description: error.message || "An error occurred while finalizing the station round.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleStartSegment = (segmentId: number) => {
     startSegmentMutation.mutate(segmentId);
   };
@@ -385,6 +429,27 @@ export default function StationLeadView() {
   const handlePopulateNextRound = () => {
     populateNextRoundMutation.mutate();
   };
+
+  const handleFinalizeStationRound = () => {
+    if (selectedStation && currentMatch) {
+      finalizeStationRoundMutation.mutate({ 
+        stationId: selectedStation, 
+        round: currentMatch.round 
+      });
+    }
+  };
+
+  // Check if current heat is the last heat for this station in this round
+  const isLastHeatInRound = React.useMemo(() => {
+    if (!currentMatch || !selectedStation) return false;
+    
+    const currentRound = currentMatch.round;
+    const stationRoundMatches = stationMatches.filter(m => m.round === currentRound);
+    const sortedMatches = stationRoundMatches.sort((a, b) => a.heatNumber - b.heatNumber);
+    const lastMatch = sortedMatches[sortedMatches.length - 1];
+    
+    return currentMatch.id === lastMatch?.id;
+  }, [currentMatch, selectedStation, stationMatches]);
 
   const selectedStationData = stations.find(s => s.id === selectedStation);
   const competitor1 = users.find(u => u.id === currentMatch?.competitor1Id);
@@ -968,57 +1033,47 @@ export default function StationLeadView() {
                 </Button>
               )}
 
-              {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="w-full"
-                  onClick={() => handleCompleteMatch(currentMatch.id)}
-                  disabled={completeMatchMutation.isPending}
-                  data-testid="button-complete-heat"
-                >
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  Complete Heat
-                </Button>
-              )}
-
-              {/* Advance Heat - Complete current heat and move to next heat in station - Available for ALL stations */}
+              {/* Complete and Advance / Finalize Station Round */}
               {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
                 <div className="space-y-2">
-                  <Button
-                    variant="default"
-                    size="lg"
-                    className="w-full bg-primary hover:bg-primary/90"
-                    onClick={handleAdvanceHeat}
-                    disabled={advanceHeatMutation.isPending}
-                    data-testid="button-advance-heat"
-                  >
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    {advanceHeatMutation.isPending ? "Advancing Heat..." : "Advance Heat"}
-                  </Button>
+                  {isLastHeatInRound ? (
+                    // Last heat in round - show finalize button
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={handleFinalizeStationRound}
+                      disabled={finalizeStationRoundMutation.isPending}
+                      data-testid="button-finalize-station-round"
+                    >
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                      {finalizeStationRoundMutation.isPending 
+                        ? "Finalizing..." 
+                        : `Finalize Station ${mainStations.find(s => s.id === selectedStation)?.name || ''} heats for Round ${currentMatch.round}`
+                      }
+                    </Button>
+                  ) : (
+                    // Not last heat - show complete and advance button
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="w-full bg-primary hover:bg-primary/90"
+                      onClick={handleAdvanceHeat}
+                      disabled={advanceHeatMutation.isPending}
+                      data-testid="button-complete-and-advance"
+                    >
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      {advanceHeatMutation.isPending 
+                        ? "Completing and Advancing..." 
+                        : "Complete and Advance to Next Heat"
+                      }
+                    </Button>
+                  )}
                   <p className="text-xs text-center text-white/70">
-                    Complete this heat and advance to next heat in queue for this station
-                  </p>
-                </div>
-              )}
-
-              {/* Manual Complete Heat - Alternative option - Available for ALL stations */}
-              {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
-                <div className="space-y-2 mt-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-dashed border-white/30 text-white/80"
-                    onClick={() => {
-                      handleCompleteMatch(currentMatch.id);
-                    }}
-                    disabled={completeMatchMutation.isPending}
-                    data-testid="button-complete-heat-only"
-                  >
-                    Complete Heat Only
-                  </Button>
-                  <p className="text-xs text-center text-white/50">
-                    Mark heat as complete without advancing (all stations must finish round)
+                    {isLastHeatInRound 
+                      ? `Calculate winners/losers from Station ${mainStations.find(s => s.id === selectedStation)?.name || ''} and advance them to the next round's bracket pool`
+                      : "Complete this heat and advance to next heat in queue for this station"
+                    }
                   </p>
                 </div>
               )}
@@ -1027,8 +1082,22 @@ export default function StationLeadView() {
               {(() => {
                 if (allMatches.length === 0) return null;
 
-                const currentRound = Math.max(...allMatches.map(m => m.round));
-                const currentRoundMatches = allMatches.filter(m => m.round === currentRound);
+                // Get current round from tournament or highest round with station-assigned matches
+                const tournamentCurrentRound = tournaments[0]?.currentRound || 1;
+                
+                // Get all matches that are assigned to stations (have stationId)
+                const matchesWithStations = allMatches.filter(m => m.stationId !== null && m.stationId !== undefined);
+                
+                // Determine the active round: use tournament currentRound, or highest round with station-assigned matches
+                let currentRound = tournamentCurrentRound;
+                if (matchesWithStations.length > 0) {
+                  const highestRoundWithStations = Math.max(...matchesWithStations.map(m => m.round));
+                  // Use the higher of tournament currentRound or highest round with matches
+                  currentRound = Math.max(tournamentCurrentRound, highestRoundWithStations);
+                }
+                
+                // Get all matches in current round that are assigned to stations
+                const currentRoundMatches = matchesWithStations.filter(m => m.round === currentRound);
 
                 // Group matches by station
                 const matchesByStation = new Map<number, any[]>();

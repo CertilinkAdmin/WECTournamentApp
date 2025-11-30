@@ -95,12 +95,15 @@ export class BracketGenerator {
    * @param tournamentId - Tournament ID
    * @param participants - List of tournament participants with seeds
    */
-  static async generateBracket(tournamentId: number, participants: TournamentParticipant[]) {
+  static async generateBracket(tournamentId: number, participants: TournamentParticipant[]): Promise<{ round1Matches: number; totalMatches: number }> {
     const totalParticipants = participants.length;
 
     if (totalParticipants < 2) {
       throw new Error("Need at least 2 participants");
     }
+
+    // Track created matches for Round 1
+    let round1MatchesCreated = 0;
 
     // Validate that participants have consecutive seeds starting from 1
     const sortedParticipants = [...participants].sort((a, b) => a.seed - b.seed);
@@ -217,6 +220,7 @@ export class BracketGenerator {
             startTime: new Date(),
             endTime: new Date()
           });
+          round1MatchesCreated++;
 
           // Create perfect scores for bye (33 points total)
           // 3 judges x 11 points each (3 visual + 1 taste + 1 tactile + 1 flavour + 5 overall)
@@ -287,6 +291,7 @@ export class BracketGenerator {
           status: 'PENDING',
           startTime: station.nextAvailableAt
         });
+        round1MatchesCreated++;
 
         // Get segment times for this round (or use defaults)
         let roundTimes = await storage.getRoundTimes(tournamentId, 1);
@@ -353,17 +358,17 @@ export class BracketGenerator {
             selectedJudges.push(shuffledJudges[i % shuffledJudges.length]);
           }
 
-          // Assign roles: 2 ESPRESSO judges (TECHNICAL), 1 CAPPUCCINO judge (SENSORY)
+          // Assign roles: 2 ESPRESSO judges (HEAD), 1 CAPPUCCINO judge (SENSORY)
           // All 3 judges score latte art
           await storage.assignJudge({
             matchId: match.id,
             judgeId: selectedJudges[0].id,
-            role: 'TECHNICAL' // First ESPRESSO judge
+            role: 'HEAD' // First ESPRESSO judge
           });
           await storage.assignJudge({
             matchId: match.id,
             judgeId: selectedJudges[1].id,
-            role: 'TECHNICAL' // Second ESPRESSO judge
+            role: 'HEAD' // Second ESPRESSO judge
           });
           await storage.assignJudge({
             matchId: match.id,
@@ -381,9 +386,10 @@ export class BracketGenerator {
     }
 
     // Create placeholder matches for subsequent rounds
-    let previousRoundMatches = totalParticipants / 2;
+    let previousRoundMatches = Math.ceil(totalParticipants / 2);
+    let totalMatchesCreated = round1MatchesCreated;
     for (let round = 2; round <= totalRounds; round++) {
-      const matchesInRound = previousRoundMatches / 2;
+      const matchesInRound = Math.ceil(previousRoundMatches / 2);
 
       for (let i = 0; i < matchesInRound; i++) {
         await storage.createMatch({
@@ -392,10 +398,17 @@ export class BracketGenerator {
           heatNumber: heatNumber++,
           status: 'PENDING'
         });
+        totalMatchesCreated++;
       }
 
       previousRoundMatches = matchesInRound;
     }
+
+    console.log(`✅ Bracket generated: ${round1MatchesCreated} Round 1 matches, ${totalMatchesCreated} total matches`);
+    return {
+      round1Matches: round1MatchesCreated,
+      totalMatches: totalMatchesCreated
+    };
   }
 
   /**

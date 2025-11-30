@@ -86,7 +86,7 @@ export interface IStorage {
     judges: Array<{
       judgeId: number;
       judgeName: string;
-      role: 'HEAD' | 'TECHNICAL' | 'SENSORY';
+      role: 'HEAD' | 'SENSORY';
       completed: boolean;
     }>;
   }>;
@@ -363,7 +363,7 @@ export class DatabaseStorage implements IStorage {
     judges: Array<{
       judgeId: number;
       judgeName: string;
-      role: 'HEAD' | 'TECHNICAL' | 'SENSORY';
+      role: 'HEAD' | 'SENSORY';
       completed: boolean;
     }>;
   }> {
@@ -377,7 +377,7 @@ export class DatabaseStorage implements IStorage {
       if (segmentType === 'CAPPUCCINO') {
         return j.role === 'SENSORY';
       } else {
-        return j.role === 'TECHNICAL' || j.role === 'HEAD';
+        return j.role === 'HEAD';
       }
     });
 

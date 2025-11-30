@@ -1,0 +1,85 @@
+{
+  "chainName": "Build Full Station Page with OPUX",
+  "description": "Create comprehensive station page showing all stats, status, heats, judges, and real-time information",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Design Station Page Structure",
+      "action": "design",
+      "description": "Plan the full station page layout with sections for: stats dashboard, current heat, queue, history, judges, station lead",
+      "expected": "Component structure with all required sections"
+    },
+    {
+      "step": 2,
+      "name": "Create Station Statistics Dashboard",
+      "action": "create_component",
+      "file": "client/src/pages/FullStationPage.tsx",
+      "description": "Build statistics dashboard showing: total heats, completed heats, completion rate, average heat time, current round progress",
+      "expected": "Statistics cards with real-time data"
+    },
+    {
+      "step": 3,
+      "name": "Add Current Heat Display",
+      "action": "add_feature",
+      "description": "Show current active heat with segments, timer, competitors, judges, and status",
+      "expected": "Current heat card with all details"
+    },
+    {
+      "step": 4,
+      "name": "Add Upcoming Heats Queue",
+      "action": "add_feature",
+      "description": "Display queue of upcoming heats with estimated start times, competitors, and round info",
+      "expected": "Queue list with estimated times"
+    },
+    {
+      "step": 5,
+      "name": "Add Completed Heats History",
+      "action": "add_feature",
+      "description": "Show history of completed heats with winners, scores, and completion times",
+      "expected": "History list with results"
+    },
+    {
+      "step": 6,
+      "name": "Add Judge Assignments Section",
+      "action": "add_feature",
+      "description": "Display all judges assigned to this station's heats with roles and status",
+      "expected": "Judge assignments with roles"
+    },
+    {
+      "step": 7,
+      "name": "Add Station Lead Information",
+      "action": "add_feature",
+      "description": "Show station lead name, contact, and availability",
+      "expected": "Station lead card"
+    },
+    {
+      "step": 8,
+      "name": "OPUX Step 1: Lighthouse Audit",
+      "action": "lighthouse_audit",
+      "description": "Run mobile Lighthouse audit to identify performance, accessibility, and layout issues",
+      "expected": "Lighthouse report with issues identified"
+    },
+    {
+      "step": 9,
+      "name": "OPUX Step 2: Responsive Refactor",
+      "action": "responsive_refactor",
+      "description": "Fix layout issues, add mobile breakpoints, improve CLS, fix overflow",
+      "expected": "Responsive layout with mobile-first design"
+    },
+    {
+      "step": 10,
+      "name": "OPUX Step 3: Tailwind Optimizer",
+      "action": "tailwind_optimizer",
+      "description": "Normalize Tailwind classes, enforce design system, reduce duplication",
+      "expected": "Optimized Tailwind usage"
+    },
+    {
+      "step": 11,
+      "name": "OPUX Step 4: Lighthouse Verify",
+      "action": "lighthouse_verify",
+      "description": "Re-run Lighthouse to confirm improvements",
+      "expected": "Improved Lighthouse scores"
+    }
+  ]
+}
+

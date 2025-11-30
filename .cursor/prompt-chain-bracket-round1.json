@@ -1,0 +1,46 @@
+{
+  "chainName": "Fix Round 1 Bracket Setup",
+  "description": "Ensure prepare tournament properly sets up Round 1 bracket with correct round numbers",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Investigate Current Implementation",
+      "action": "codebase_search",
+      "query": "How are matches created with round number in bracket generation?",
+      "target": "server/bracketGenerator.ts",
+      "expected": "Find where matches are created and verify round field is set to 1"
+    },
+    {
+      "step": 2,
+      "name": "Write TDD Test",
+      "action": "create_test",
+      "file": "server/__tests__/bracketGenerator.test.ts",
+      "test": "Verify generateBracket creates matches with round=1 for Round 1",
+      "expected": "Test that all matches created have round field set to 1"
+    },
+    {
+      "step": 3,
+      "name": "Fix Bracket Generator",
+      "action": "fix_code",
+      "file": "server/bracketGenerator.ts",
+      "issue": "Ensure all Round 1 matches explicitly have round: 1",
+      "expected": "All matches in generateBracket have round: 1 set"
+    },
+    {
+      "step": 4,
+      "name": "Verify API Response",
+      "action": "fix_code",
+      "file": "server/routes.ts",
+      "issue": "Ensure generate-bracket endpoint returns correct round information",
+      "expected": "API response includes round information for created matches"
+    },
+    {
+      "step": 5,
+      "name": "End-to-End Test",
+      "action": "verify",
+      "test": "Test prepare tournament workflow creates Round 1 bracket correctly",
+      "expected": "All matches created have round=1 and are properly associated with Round 1"
+    }
+  ]
+}
+

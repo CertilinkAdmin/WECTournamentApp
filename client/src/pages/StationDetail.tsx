@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import StationPage from "@/components/StationPage";
+import FullStationPage from "@/pages/FullStationPage";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Station } from "@shared/schema";
 
@@ -39,12 +39,6 @@ export default function StationDetail() {
     );
   }
 
-  return (
-    <StationPage
-      stationId={station.id}
-      stationName={station.name}
-      tournamentId={station.tournamentId}
-    />
-  );
+  return <FullStationPage />;
 }
 

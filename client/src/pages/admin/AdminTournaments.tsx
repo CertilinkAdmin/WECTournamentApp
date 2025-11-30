@@ -383,10 +383,44 @@ export default function AdminTournaments() {
       }
     },
     onError: (error: any) => {
-      console.error('Error generating bracket:', error);
+      // Extract detailed error information
+      let errorMessage = 'Failed to generate bracket';
+      let errorDetails: any = {};
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.toString && error.toString() !== '[object Object]') {
+        errorMessage = error.toString();
+      }
+      
+      // Try to extract more details from error object
+      if (error) {
+        errorDetails = {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          ...Object.getOwnPropertyNames(error).reduce((acc, key) => {
+            try {
+              acc[key] = error[key];
+            } catch {
+              // Skip properties that can't be accessed
+            }
+            return acc;
+          }, {} as any)
+        };
+      }
+      
+      console.error('Error generating bracket:', {
+        message: errorMessage,
+        error: errorDetails,
+        originalError: error
+      });
+      
       toast({
         title: "Error",
-        description: error.message || 'Failed to generate bracket',
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -530,10 +564,44 @@ export default function AdminTournaments() {
       });
     },
     onError: (error: any) => {
-      console.error('Error preparing tournament:', error);
+      // Extract detailed error information
+      let errorMessage = 'Failed to prepare tournament';
+      let errorDetails: any = {};
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.toString && error.toString() !== '[object Object]') {
+        errorMessage = error.toString();
+      }
+      
+      // Try to extract more details from error object
+      if (error) {
+        errorDetails = {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          ...Object.getOwnPropertyNames(error).reduce((acc, key) => {
+            try {
+              acc[key] = error[key];
+            } catch {
+              // Skip properties that can't be accessed
+            }
+            return acc;
+          }, {} as any)
+        };
+      }
+      
+      console.error('Error preparing tournament:', {
+        message: errorMessage,
+        error: errorDetails,
+        originalError: error
+      });
+      
       toast({
         title: "Error",
-        description: error.message || 'Failed to prepare tournament',
+        description: errorMessage,
         variant: "destructive"
       });
     }

@@ -16,8 +16,7 @@ import {
   CheckCircle, 
   AlertTriangle,
   Timer,
-  MapPin,
-  Target
+  MapPin
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Station, Match, HeatSegment, User } from '@shared/schema';
@@ -239,26 +238,6 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
             </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{stationMatches.length}</div>
-              <div className="text-sm text-muted-foreground">Total Matches</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {stationMatches.filter(m => m.status === 'DONE').length}
-              </div>
-              <div className="text-sm text-muted-foreground">Completed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {stationMatches.filter(m => m.status === 'RUNNING').length}
-              </div>
-              <div className="text-sm text-muted-foreground">Active</div>
-            </div>
-          </div>
-        </CardContent>
       </Card>
 
       {/* Current Match */}
@@ -439,55 +418,6 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
           </CardContent>
         </Card>
       )}
-
-      {/* Station Schedule */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Station Schedule
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {stationMatches.length === 0 ? (
-            <div className="text-center p-6 text-muted-foreground">
-              <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No matches scheduled for this station.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {stationMatches.map((match, index) => (
-                <div
-                  key={match.id}
-                  className={`p-3 rounded-lg border ${
-                    match.status === 'RUNNING' ? 'bg-blue-50 border-blue-200' :
-                    match.status === 'DONE' ? 'bg-green-50 border-green-200' :
-                    'bg-muted border-muted-foreground/20'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">
-                        Match {index + 1}: {getCompetitorName(match.competitor1Id || 0)} vs {getCompetitorName(match.competitor2Id || 0)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Round {match.round}, Heat {match.heatNumber}
-                      </div>
-                    </div>
-                    <Badge variant={
-                      match.status === 'RUNNING' ? 'default' :
-                      match.status === 'DONE' ? 'secondary' :
-                      'outline'
-                    }>
-                      {match.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

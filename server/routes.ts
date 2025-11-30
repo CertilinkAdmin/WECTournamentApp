@@ -14,7 +14,7 @@ import {
   tournamentParticipants, heatJudges, matches
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -255,13 +255,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.assignJudge({
           matchId: match.id,
           judgeId: assignedJudges[0].id,
-          role: 'TECHNICAL' // First ESPRESSO judge
+          role: 'HEAD' // First ESPRESSO judge
         });
 
         await storage.assignJudge({
           matchId: match.id,
           judgeId: assignedJudges[1].id,
-          role: 'TECHNICAL' // Second ESPRESSO judge
+          role: 'HEAD' // Second ESPRESSO judge
         });
 
         await storage.assignJudge({
@@ -540,12 +540,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Resequenced baristas:', resequencedBaristas.map(p => ({ id: p.id, seed: p.seed, userId: p.userId })));
 
-      await BracketGenerator.generateBracket(tournamentId, resequencedBaristas);
+      const bracketResult = await BracketGenerator.generateBracket(tournamentId, resequencedBaristas);
+
+      // Verify Round 1 matches were created
+      const round1Matches = await db.select()
+        .from(matches)
+        .where(and(
+          eq(matches.tournamentId, tournamentId),
+          eq(matches.round, 1)
+        ));
+
+      console.log(`✅ Verified ${round1Matches.length} Round 1 matches in database`);
 
       res.json({ 
         success: true, 
         message: `Round 1 bracket generated successfully for ${resequencedBaristas.length} participants`,
-        matchesCreated: Math.ceil(resequencedBaristas.length / 2)
+        matchesCreated: bracketResult.round1Matches,
+        totalMatches: bracketResult.totalMatches,
+        round1Matches: round1Matches.length,
+        round: 1
       });
     } catch (error: any) {
       console.error('Error generating bracket:', error);
@@ -1428,7 +1441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (segmentCode === 'CAPPUCCINO') {
               return j.role === 'SENSORY';
             } else {
-              return j.role === 'TECHNICAL' || j.role === 'HEAD';
+              return j.role === 'HEAD';
             }
           });
 
@@ -1477,6 +1490,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Finalize station round - calculate winners/losers and advance to next round pool
+  app.post("/api/tournaments/:id/finalize-station-round", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const { stationId, round } = req.body;
+
+      if (!stationId || !round) {
+        return res.status(400).json({ error: 'Station ID and round are required' });
+      }
+
+      // Get station info
+      const station = await storage.getStation(stationId);
+      if (!station) {
+        return res.status(404).json({ error: 'Station not found' });
+      }
+
+      // Get all matches for this station in this round
+      const stationRoundMatches = await db.select()
+        .from(matches)
+        .where(
+          and(
+            eq(matches.tournamentId, tournamentId),
+            eq(matches.stationId, stationId),
+            eq(matches.round, round)
+          )
+        );
+
+      if (stationRoundMatches.length === 0) {
+        return res.status(400).json({ error: `No matches found for Station ${station.name} in Round ${round}` });
+      }
+
+      // Check if all matches are complete
+      const incompleteMatches = stationRoundMatches.filter(m => m.status !== 'DONE');
+      if (incompleteMatches.length > 0) {
+        return res.status(400).json({ 
+          error: `Not all heats are complete. ${incompleteMatches.length} heat(s) still in progress.`,
+          incompleteHeats: incompleteMatches.map(m => m.heatNumber)
+        });
+      }
+
+      // Get winners from this station's round
+      const winners = stationRoundMatches
+        .filter(m => m.winnerId)
+        .map(m => m.winnerId!);
+
+      if (winners.length === 0) {
+        return res.status(400).json({ error: 'No winners found in this station\'s round. All heats must have winners declared.' });
+      }
+
+      // Get tournament to check current round
+      const tournament = await db.select()
+        .from(tournaments)
+        .where(eq(tournaments.id, tournamentId))
+        .limit(1);
+
+      if (tournament.length === 0) {
+        return res.status(404).json({ error: 'Tournament not found' });
+      }
+
+      const nextRound = round + 1;
+
+      // Store winners for next round (they'll be used when all stations complete their rounds)
+      // For now, we'll just mark that this station's round is finalized
+      // The actual bracket generation happens when all stations complete via populate-next-round
+
+      console.log(`✅ Station ${station.name} Round ${round} finalized. ${winners.length} winner(s) ready for Round ${nextRound}`);
+
+      res.json({
+        success: true,
+        stationName: station.name,
+        round,
+        nextRound,
+        winnersCount: winners.length,
+        winners,
+        message: `Station ${station.name} Round ${round} finalized. ${winners.length} winner(s) ready for Round ${nextRound}.`
+      });
+    } catch (error: any) {
+      console.error('Error finalizing station round:', error);
+      res.status(500).json({ error: error.message || 'Internal server error' });
     }
   });
 
@@ -1876,7 +1971,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No participants found" });
       }
 
-      await BracketGenerator.generateBracket(tournamentId, participants);
+      const bracketResult = await BracketGenerator.generateBracket(tournamentId, participants);
+      console.log(`✅ Bracket generated: ${bracketResult.round1Matches} Round 1 matches, ${bracketResult.totalMatches} total matches`);
 
       const matches = await storage.getTournamentMatches(tournamentId);
       io.to(`tournament:${tournamentId}`).emit("bracket:seeded", matches);

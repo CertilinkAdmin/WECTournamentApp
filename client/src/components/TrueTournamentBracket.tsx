@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Trophy, Medal, Award, Star, Coffee, Zap, Maximize2, Users } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
@@ -388,6 +388,9 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
               <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-accent flex-shrink-0" />
               <span className="truncate text-[#9a4828]">Heat {selectedHeat?.heatNumber} - Station {selectedHeat?.station}</span>
             </DialogTitle>
+            <DialogDescription>
+              Detailed view of heat {selectedHeat?.heatNumber} at station {selectedHeat?.station}, showing competitor scores and match details.
+            </DialogDescription>
           </DialogHeader>
           
           {selectedHeat && (

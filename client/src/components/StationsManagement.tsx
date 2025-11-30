@@ -1,20 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { MapPin, Clock, Users, Trophy, Target } from 'lucide-react';
+import { MapPin, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import StationPage from './StationPage';
 import JudgesStatusMonitor from './JudgesStatusMonitor';
 import type { Station, Match, HeatSegment } from '@shared/schema';
 import { getMainStationsForTournament } from '@/utils/stationUtils';
 
 export default function StationsManagement() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
-  const [activeStation, setActiveStation] = useState<string>('A');
 
   // Fetch stations - filter by tournament if tournamentId is available
   const { data: allStations = [], isLoading } = useQuery<Station[]>({
@@ -257,117 +253,6 @@ export default function StationsManagement() {
         </Card>
       )}
 
-      {/* Station Details Tabs */}
-      <Tabs value={activeStation} onValueChange={setActiveStation}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="A" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Station A
-            {stationA && (
-              <Badge variant={getStatusBadgeVariant(stationA.status)} className="ml-1 text-xs">
-                {stationA.status}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="B" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Station B
-            {stationB && (
-              <Badge variant={getStatusBadgeVariant(stationB.status)} className="ml-1 text-xs">
-                {stationB.status}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="C" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Station C
-            {stationC && (
-              <Badge variant={getStatusBadgeVariant(stationC.status)} className="ml-1 text-xs">
-                {stationC.status}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="A" className="mt-6">
-          {stationA ? (
-            <StationPage stationId={stationA.id} stationName="A" tournamentId={tournamentId ? parseInt(tournamentId) : undefined} />
-          ) : (
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center text-muted-foreground">
-                  <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Station A not found</p>
-                  <p className="text-sm">Please ensure Station A is properly configured.</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="B" className="mt-6">
-          {stationB ? (
-            <StationPage stationId={stationB.id} stationName="B" tournamentId={tournamentId ? parseInt(tournamentId) : undefined} />
-          ) : (
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center text-muted-foreground">
-                  <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Station B not found</p>
-                  <p className="text-sm">Please ensure Station B is properly configured.</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="C" className="mt-6">
-          {stationC ? (
-            <StationPage stationId={stationC.id} stationName="C" />
-          ) : (
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center text-muted-foreground">
-                  <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Station C not found</p>
-                  <p className="text-sm">Please ensure Station C is properly configured.</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Station Timing Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Station Timing Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <AlertTitle>Staggered Start Times</AlertTitle>
-            <AlertDescription>
-              <div className="space-y-2 mt-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="default">Station A</Badge>
-                  <span>Starts immediately when tournament begins</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">Station B</Badge>
-                  <span>Starts 10 minutes after Station A</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Station C</Badge>
-                  <span>Starts 20 minutes after Station A</span>
-                </div>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
     </div>
   );
 }
