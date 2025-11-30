@@ -50,6 +50,40 @@ export default function StationLeadView() {
     return getMainStationsForTournament(stations, currentTournamentId);
   }, [stations, currentTournamentId]);
 
+  // Fetch users for competitor names
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+  });
+
+  // Fetch participants to get cup codes
+  const { data: participants = [] } = useQuery<any[]>({
+    queryKey: ['/api/tournaments', currentTournamentId, 'participants'],
+    enabled: !!currentTournamentId,
+  });
+
+  // Select station from query param or default to first available
+  useEffect(() => {
+    if (mainStations.length === 0) return;
+
+    const stationParam = searchParams.get('stationId');
+    const stationIdFromParam = stationParam ? Number(stationParam) : null;
+
+    if (stationIdFromParam && mainStations.some(s => s.id === stationIdFromParam)) {
+      setSelectedStation(stationIdFromParam);
+      return;
+    }
+
+    if (!selectedStation) {
+      setSelectedStation(mainStations[0].id);
+    }
+  }, [mainStations, selectedStation, searchParams]);
+
+  // Fetch current matches for tournament
+  const { data: allMatches = [] } = useQuery<Match[]>({
+    queryKey: [`/api/tournaments/${currentTournamentId}/matches`],
+    enabled: !!currentTournamentId,
+  });
+
   // Check if current round is complete across ALL stations
   const isCurrentRoundComplete = React.useMemo(() => {
     if (allMatches.length === 0 || mainStations.length === 0) return false;
@@ -84,40 +118,6 @@ export default function StationLeadView() {
     // All stations must have at least one match and all matches must be DONE
     return currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.status === 'DONE');
   }, [allMatches, mainStations]);
-
-  // Fetch users for competitor names
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ['/api/users'],
-  });
-
-  // Fetch participants to get cup codes
-  const { data: participants = [] } = useQuery<any[]>({
-    queryKey: ['/api/tournaments', currentTournamentId, 'participants'],
-    enabled: !!currentTournamentId,
-  });
-
-  // Select station from query param or default to first available
-  useEffect(() => {
-    if (mainStations.length === 0) return;
-
-    const stationParam = searchParams.get('stationId');
-    const stationIdFromParam = stationParam ? Number(stationParam) : null;
-
-    if (stationIdFromParam && mainStations.some(s => s.id === stationIdFromParam)) {
-      setSelectedStation(stationIdFromParam);
-      return;
-    }
-
-    if (!selectedStation) {
-      setSelectedStation(mainStations[0].id);
-    }
-  }, [mainStations, selectedStation, searchParams]);
-
-  // Fetch current matches for tournament
-  const { data: allMatches = [] } = useQuery<Match[]>({
-    queryKey: [`/api/tournaments/${currentTournamentId}/matches`],
-    enabled: !!currentTournamentId,
-  });
 
   const stationMatches = allMatches.filter(m => m.stationId === selectedStation);
   const currentMatch = stationMatches.find(m => m.status === 'RUNNING') || 
