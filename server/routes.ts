@@ -1416,16 +1416,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if all current round matches are complete AND have winners
       const allCurrentRoundComplete = currentRoundMatches.every(m => m.status === 'DONE');
       const allHaveWinners = currentRoundMatches.every(m => m.winnerId !== null);
+      const incompleteMatches = currentRoundMatches.filter(m => m.status !== 'DONE');
+      const matchesWithoutWinners = currentRoundMatches.filter(m => m.winnerId === null);
       
       if (!allCurrentRoundComplete) {
         return res.status(400).json({ 
-          error: `Current round (Round ${currentRound}) must be complete before populating next round. ${currentRoundMatches.filter(m => m.status !== 'DONE').length} matches still in progress.` 
+          error: `Current round (Round ${currentRound}) must be complete before advancing. ${incompleteMatches.length} heats still in progress.`,
+          incompleteMatches: incompleteMatches.map(m => `Heat ${m.heatNumber}`)
         });
       }
 
       if (!allHaveWinners) {
         return res.status(400).json({ 
-          error: `All matches in Round ${currentRound} must have winners declared before advancing to next round.` 
+          error: `All heats in Round ${currentRound} must have winners declared before advancing to next round.`,
+          matchesWithoutWinners: matchesWithoutWinners.map(m => `Heat ${m.heatNumber}`)
         });
       }
 
@@ -1540,17 +1544,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Update tournament current round
+      await storage.updateTournament(tournamentId, { 
+        currentRound: nextRound 
+      });
+
       // Emit WebSocket update
       io.to(`tournament:${tournamentId}`).emit("next-round-populated", {
         round: nextRound,
-        message: "Next round has been populated with competitors"
+        previousRound: currentRound,
+        totalMatches: heatNumber - 1,
+        message: `Round ${nextRound} has been set up with advancing competitors`
       });
 
       res.json({
         success: true,
+        previousRound: currentRound,
         nextRound,
         matchesCreated: heatNumber - 1,
-        message: "Next round populated successfully"
+        advancingCompetitors: winners.length,
+        message: `Round ${nextRound} successfully created with ${winners.length} advancing competitors`
       });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
