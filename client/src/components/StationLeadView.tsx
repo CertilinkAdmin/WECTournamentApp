@@ -108,7 +108,7 @@ export default function StationLeadView() {
     // Check if ALL main stations (A, B, C) have completed ALL their heats in current round
     for (const station of mainStations) {
       const stationMatches = matchesByStation.get(station.id) || [];
-      
+
       // If station has matches assigned but not all are DONE, round is not complete
       if (stationMatches.length > 0 && !stationMatches.every(m => m.status === 'DONE')) {
         return false;
@@ -319,7 +319,7 @@ export default function StationLeadView() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
       queryClient.invalidateQueries({ queryKey: [`/api/stations`] });
-      
+
       if (data.next) {
         toast({
           title: "Heat Advanced",
@@ -1026,10 +1026,10 @@ export default function StationLeadView() {
               {/* Show round completion status across all stations */}
               {(() => {
                 if (allMatches.length === 0) return null;
-                
+
                 const currentRound = Math.max(...allMatches.map(m => m.round));
                 const currentRoundMatches = allMatches.filter(m => m.round === currentRound);
-                
+
                 // Group matches by station
                 const matchesByStation = new Map<number, any[]>();
                 currentRoundMatches.forEach(match => {
@@ -1045,7 +1045,7 @@ export default function StationLeadView() {
                 const stationStatus = mainStations.map(station => {
                   const stationMatches = matchesByStation.get(station.id) || [];
                   const completedMatches = stationMatches.filter(m => m.status === 'DONE');
-                  
+
                   return {
                     name: station.name,
                     totalHeats: stationMatches.length,
@@ -1065,7 +1065,7 @@ export default function StationLeadView() {
                     }`}>
                       {allComplete ? '✅' : '⏳'} Round {currentRound} Status
                     </div>
-                    
+
                     {/* Station-by-station status */}
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       {stationStatus.map(station => (
@@ -1085,7 +1085,7 @@ export default function StationLeadView() {
                         </div>
                       ))}
                     </div>
-                    
+
                     <p className="text-xs text-white/60">
                       {allComplete 
                         ? 'All stations have completed their heats for this round'

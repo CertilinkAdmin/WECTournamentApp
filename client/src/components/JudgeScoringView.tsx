@@ -27,7 +27,7 @@ export default function JudgeScoringView() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   // Get current logged-in user
   const { data: currentUserData } = useQuery<{ user: User }>({
     queryKey: ['/api/auth/me'],
@@ -41,11 +41,11 @@ export default function JudgeScoringView() {
 
   const currentUser = currentUserData?.user;
   const isJudge = currentUser?.role === 'JUDGE';
-  
+
   const [selectedJudgeId, setSelectedJudgeId] = useState<number | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
   const [selectedSegmentType, setSelectedSegmentType] = useState<'CAPPUCCINO' | 'ESPRESSO' | null>(null);
-  
+
   // Scoring state - judges score left/right (blind, no cup codes shown)
   const [visualLatteArt, setVisualLatteArt] = useState<'left' | 'right' | null>(null);
   const [taste, setTaste] = useState<'left' | 'right' | null>(null);
@@ -93,7 +93,7 @@ export default function JudgeScoringView() {
   // Get approved judges
   const approvedJudges = useMemo(() => {
     if (!participants.length) return [];
-    
+
     return participants
       .map(p => {
         const user = allUsers.find(u => u.id === p.userId && u.role === 'JUDGE');
@@ -130,7 +130,7 @@ export default function JudgeScoringView() {
         ...data,
         timestamp: new Date(),
       }]);
-      
+
       toast({
         title: 'Scoring Required',
         description: data.message,
@@ -196,10 +196,10 @@ export default function JudgeScoringView() {
     }
     return match;
   }, [assignedMatches, selectedMatchId, tournamentIdNum]);
-  
+
   // All judges score both segments - no role distinction
   const judgeRoleForMatch = selectedMatch?.judgeRole;
-  
+
   // Filter assigned matches by tournament if tournamentId is specified
   const tournamentMatches = useMemo(() => {
     if (!tournamentIdNum) return assignedMatches;
@@ -241,23 +241,23 @@ export default function JudgeScoringView() {
   // Get available segments for selected match based on progression
   const availableSegments = useMemo(() => {
     if (!segments.length) return [];
-    
+
     const dialInSegment = segments.find(s => s.segment === 'DIAL_IN');
     const cappuccinoSegment = segments.find(s => s.segment === 'CAPPUCCINO');
     const espressoSegment = segments.find(s => s.segment === 'ESPRESSO');
-    
+
     const available: HeatSegment[] = [];
-    
+
     // CAPPUCCINO is available after DIAL_IN is ENDED
     if (cappuccinoSegment && dialInSegment?.status === 'ENDED') {
       available.push(cappuccinoSegment);
     }
-    
+
     // ESPRESSO is available after CAPPUCCINO is ENDED
     if (espressoSegment && cappuccinoSegment?.status === 'ENDED') {
       available.push(espressoSegment);
     }
-    
+
     return available;
   }, [segments]);
 
@@ -869,4 +869,3 @@ export default function JudgeScoringView() {
     </div>
   );
 }
-

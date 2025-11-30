@@ -14,6 +14,7 @@ interface JudgeScore {
   overall: 'left' | 'right';
   leftCupCode: string;
   rightCupCode: string;
+  role?: 'HEAD' | 'TECHNICAL' | 'SENSORY'; // Added role to JudgeScore interface
 }
 
 interface HeatData {
@@ -41,7 +42,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "K9",
-        rightCupCode: "M7"
+        rightCupCode: "M7",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -52,7 +54,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "M7",
-        rightCupCode: "K9"
+        rightCupCode: "K9",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Michalis",
@@ -63,7 +66,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "left",
         leftCupCode: "M7",
-        rightCupCode: "K9"
+        rightCupCode: "K9",
+        role: 'HEAD' // Assigning role
       }
     ],
     leftCompetitor: "Stevo Kühn",
@@ -86,7 +90,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "F5",
-        rightCupCode: "X1"
+        rightCupCode: "X1",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Ali",
@@ -97,7 +102,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "X1",
-        rightCupCode: "F5"
+        rightCupCode: "F5",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Junior",
@@ -108,7 +114,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "X1",
-        rightCupCode: "F5"
+        rightCupCode: "F5",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Shlyakov Kirill",
@@ -131,7 +138,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "C6",
-        rightCupCode: "L4"
+        rightCupCode: "L4",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Jasper",
@@ -142,7 +150,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "C6",
-        rightCupCode: "L4"
+        rightCupCode: "L4",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -153,7 +162,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "right",
         leftCupCode: "C6",
-        rightCupCode: "L4"
+        rightCupCode: "L4",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Carlos Medina",
@@ -176,7 +186,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "S5",
-        rightCupCode: "W6"
+        rightCupCode: "W6",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Jasper",
@@ -187,7 +198,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "W6",
-        rightCupCode: "S5"
+        rightCupCode: "S5",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -198,7 +210,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "W6",
-        rightCupCode: "S5"
+        rightCupCode: "S5",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Erlend Wessel-Berg",
@@ -221,7 +234,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "V4",
-        rightCupCode: "J1"
+        rightCupCode: "J1",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Ali",
@@ -232,7 +246,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "V4",
-        rightCupCode: "J1"
+        rightCupCode: "J1",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Junior",
@@ -243,7 +258,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "right",
         leftCupCode: "V4",
-        rightCupCode: "J1"
+        rightCupCode: "J1",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Felix Ouma",
@@ -266,7 +282,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "G2",
-        rightCupCode: "W8"
+        rightCupCode: "W8",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -277,7 +294,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "G2",
-        rightCupCode: "W8"
+        rightCupCode: "W8",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Junior",
@@ -288,7 +306,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "G2",
-        rightCupCode: "W8"
+        rightCupCode: "W8",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Artur Kosteniuk",
@@ -311,7 +330,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "Q5",
-        rightCupCode: "B1"
+        rightCupCode: "B1",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Ali",
@@ -322,7 +342,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "Q5",
-        rightCupCode: "B1"
+        rightCupCode: "B1",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Jasper",
@@ -333,7 +354,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "right",
         leftCupCode: "B1",
-        rightCupCode: "Q5"
+        rightCupCode: "Q5",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Faiz Nordin",
@@ -356,7 +378,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "T8",
-        rightCupCode: "J7"
+        rightCupCode: "J7",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -367,7 +390,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "J7",
-        rightCupCode: "T8"
+        rightCupCode: "T8",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Junior",
@@ -378,7 +402,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "J7",
-        rightCupCode: "T8"
+        rightCupCode: "T8",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Stevo Kühn",
@@ -401,7 +426,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "E9",
-        rightCupCode: "V2"
+        rightCupCode: "V2",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -412,7 +438,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "E9",
-        rightCupCode: "V2"
+        rightCupCode: "V2",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Junior",
@@ -423,7 +450,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "V2",
-        rightCupCode: "E9"
+        rightCupCode: "E9",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Shlyakov Kirill",
@@ -446,7 +474,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "M1",
-        rightCupCode: "E6"
+        rightCupCode: "E6",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Ali",
@@ -457,7 +486,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "M1",
-        rightCupCode: "E3"
+        rightCupCode: "E3",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Jasper",
@@ -468,7 +498,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "E3",
-        rightCupCode: "M1"
+        rightCupCode: "M1",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Bill",
@@ -491,7 +522,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "A7",
-        rightCupCode: "F3"
+        rightCupCode: "F3",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -502,7 +534,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "A7",
-        rightCupCode: "F3"
+        rightCupCode: "F3",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Junior",
@@ -513,7 +546,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "A7",
-        rightCupCode: "F3"
+        rightCupCode: "F3",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Penny Chalkiadaki",
@@ -536,7 +570,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "K5",
-        rightCupCode: "J1"
+        rightCupCode: "J1",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -547,7 +582,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "K5",
-        rightCupCode: "J1"
+        rightCupCode: "J1",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Junior",
@@ -558,7 +594,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "K5",
-        rightCupCode: "J1"
+        rightCupCode: "J1",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Hojat",
@@ -581,7 +618,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "P3",
-        rightCupCode: "M9"
+        rightCupCode: "M9",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -592,7 +630,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "K5",
-        rightCupCode: "J1"
+        rightCupCode: "J1",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Junior",
@@ -603,7 +642,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "K5",
-        rightCupCode: "J1"
+        rightCupCode: "J1",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Hojat",
@@ -626,7 +666,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "right",
         leftCupCode: "G8",
-        rightCupCode: "F4"
+        rightCupCode: "F4",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Tess",
@@ -637,7 +678,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "G8",
-        rightCupCode: "F4"
+        rightCupCode: "F4",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Junior",
@@ -648,7 +690,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "F4",
-        rightCupCode: "G8"
+        rightCupCode: "G8",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Engi",
@@ -671,7 +714,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "L2",
-        rightCupCode: "Z7"
+        rightCupCode: "Z7",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -682,7 +726,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "Z7",
-        rightCupCode: "L2"
+        rightCupCode: "L2",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Boss",
@@ -693,7 +738,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "right",
         leftCupCode: "Z7",
-        rightCupCode: "L2"
+        rightCupCode: "L2",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Aga Muhammed",
@@ -716,7 +762,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "N4",
-        rightCupCode: "K6"
+        rightCupCode: "K6",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -727,7 +774,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "N4",
-        rightCupCode: "K6"
+        rightCupCode: "K6",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Boss",
@@ -738,7 +786,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "N4",
-        rightCupCode: "K6"
+        rightCupCode: "K6",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Christos Sotiros",
@@ -748,186 +797,6 @@ const HEAT_DATA: HeatData[] = [
     leftScore: 14,
     rightScore: 19,
     winner: "Jae Kim"
-  },
-  {
-    heatNumber: 21,
-    judges: [
-      {
-        judgeName: "Michalis",
-        visualLatteArt: "right",
-        sensoryBeverage: "Cappuccino",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "Q5",
-        rightCupCode: "B1"
-      },
-      {
-        judgeName: "Ali",
-        visualLatteArt: "right",
-        sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "Q5",
-        rightCupCode: "B1"
-      },
-      {
-        judgeName: "Jasper",
-        visualLatteArt: "right",
-        sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "left",
-        overall: "right",
-        leftCupCode: "B1",
-        rightCupCode: "Q5"
-      }
-    ],
-    leftCompetitor: "Faiz Nordin",
-    rightCompetitor: "Christos Sotiros",
-    leftCupCode: "Q5",
-    rightCupCode: "B1",
-    leftScore: 8,
-    rightScore: 25,
-    winner: "Christos Sotiros"
-  },
-  {
-    heatNumber: 22,
-    judges: [
-      {
-        judgeName: "Shinsaku",
-        visualLatteArt: "right",
-        sensoryBeverage: "Cappuccino",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "T8",
-        rightCupCode: "J7"
-      },
-      {
-        judgeName: "Tess",
-        visualLatteArt: "right",
-        sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "J7",
-        rightCupCode: "T8"
-      },
-      {
-        judgeName: "Junior",
-        visualLatteArt: "left",
-        sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "J7",
-        rightCupCode: "T8"
-      }
-    ],
-    leftCompetitor: "Stevo Kühn",
-    rightCompetitor: "Daniele Ricci",
-    leftCupCode: "T8",
-    rightCupCode: "J7",
-    leftScore: 19,
-    rightScore: 14,
-    winner: "Stevo Kühn"
-  },
-  {
-    heatNumber: 23,
-    judges: [
-      {
-        judgeName: "Shinsaku",
-        visualLatteArt: "right",
-        sensoryBeverage: "Cappuccino",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "E9",
-        rightCupCode: "V2"
-      },
-      {
-        judgeName: "Tess",
-        visualLatteArt: "left",
-        sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "E9",
-        rightCupCode: "V2"
-      },
-      {
-        judgeName: "Junior",
-        visualLatteArt: "left",
-        sensoryBeverage: "Espresso",
-        taste: "left",
-        tactile: "left",
-        flavour: "left",
-        overall: "left",
-        leftCupCode: "V2",
-        rightCupCode: "E9"
-      }
-    ],
-    leftCompetitor: "Shlyakov Kirill",
-    rightCompetitor: "Jae Kim",
-    leftCupCode: "E9",
-    rightCupCode: "V2",
-    leftScore: 6,
-    rightScore: 27,
-    winner: "Jae Kim"
-  },
-  {
-    heatNumber: 24,
-    judges: [
-      {
-        judgeName: "Michalis",
-        visualLatteArt: "right",
-        sensoryBeverage: "Cappuccino",
-        taste: "right",
-        tactile: "left",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "M1",
-        rightCupCode: "E6"
-      },
-      {
-        judgeName: "Ali",
-        visualLatteArt: "right",
-        sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "M1",
-        rightCupCode: "E3"
-      },
-      {
-        judgeName: "Jasper",
-        visualLatteArt: "right",
-        sensoryBeverage: "Espresso",
-        taste: "right",
-        tactile: "right",
-        flavour: "right",
-        overall: "right",
-        leftCupCode: "E3",
-        rightCupCode: "M1"
-      }
-    ],
-    leftCompetitor: "Bill",
-    rightCompetitor: "Engi",
-    leftCupCode: "M1",
-    rightCupCode: "E3",
-    leftScore: 9,
-    rightScore: 24,
-    winner: "Engi"
   },
   {
     heatNumber: 31,
@@ -941,7 +810,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "right",
         overall: "right",
         leftCupCode: "22",
-        rightCupCode: "99"
+        rightCupCode: "99",
+        role: 'HEAD' // Assigning role
       },
       {
         judgeName: "Korn",
@@ -952,7 +822,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "left",
         leftCupCode: "22",
-        rightCupCode: "99"
+        rightCupCode: "99",
+        role: 'TECHNICAL' // Assigning role
       },
       {
         judgeName: "Boss",
@@ -963,7 +834,8 @@ const HEAT_DATA: HeatData[] = [
         flavour: "left",
         overall: "right",
         leftCupCode: "99",
-        rightCupCode: "22"
+        rightCupCode: "22",
+        role: 'TECHNICAL' // Assigning role
       }
     ],
     leftCompetitor: "Aga Muhammed",
@@ -984,6 +856,15 @@ function JudgeScorecard({ judge, heatNumber }: { judge: JudgeScore; heatNumber: 
           <Users className="h-5 w-5" />
           Judge: {judge.judgeName}
         </CardTitle>
+        {/* Judge Role Badge */}
+        <Badge 
+          variant={judge.role === 'HEAD' ? 'default' : judge.role === 'TECHNICAL' ? 'secondary' : 'outline'}
+          className="text-xs"
+        >
+          {judge.role === 'HEAD' ? 'Head Judge' : 
+           judge.role === 'TECHNICAL' ? 'Espresso Judge' : 
+           'Cappuccino Judge'}
+        </Badge>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Cup Codes */}

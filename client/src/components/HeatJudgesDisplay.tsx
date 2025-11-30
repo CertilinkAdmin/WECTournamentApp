@@ -157,7 +157,7 @@ export default function HeatJudgesDisplay({
           )}
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent>
         {/* Competitors */}
         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -175,7 +175,7 @@ export default function HeatJudgesDisplay({
               </div>
             )}
           </div>
-          
+
           <div className={`p-3 rounded-lg border-2 ${
             winner === rightCompetitor ? 'border-chart-3 bg-chart-3/20 dark:bg-chart-3/30' : 'border-border'
           }`}>
