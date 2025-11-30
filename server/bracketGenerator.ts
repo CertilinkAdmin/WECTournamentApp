@@ -102,6 +102,19 @@ export class BracketGenerator {
       throw new Error("Need at least 2 participants");
     }
 
+    // Validate that participants have consecutive seeds starting from 1
+    const sortedParticipants = [...participants].sort((a, b) => a.seed - b.seed);
+    const expectedSeeds = Array.from({ length: totalParticipants }, (_, i) => i + 1);
+    const actualSeeds = sortedParticipants.map(p => p.seed);
+    
+    console.log('Expected seeds:', expectedSeeds);
+    console.log('Actual seeds:', actualSeeds);
+    
+    if (!actualSeeds.every((seed, index) => seed === expectedSeeds[index])) {
+      console.error('Seed mismatch. Expected:', expectedSeeds, 'Got:', actualSeeds);
+      throw new Error(`Invalid seed sequence. Expected consecutive seeds 1-${totalParticipants}, but got: ${actualSeeds.join(', ')}`);
+    }
+
     // Calculate total rounds needed (including byes)
     const totalRounds = Math.ceil(Math.log2(totalParticipants));
 
@@ -170,7 +183,8 @@ export class BracketGenerator {
         const competitor2 = pairing.seed2 === 0 ? null : participants.find(p => p.seed === pairing.seed2);
 
         if (!competitor1) {
-          throw new Error(`Participant not found for seed ${pairing.seed1}`);
+          console.error(`Participant not found for seed ${pairing.seed1}. Available participants:`, participants.map(p => ({ id: p.id, seed: p.seed, userId: p.userId })));
+          throw new Error(`Participant not found for seed ${pairing.seed1}. Available seeds: ${participants.map(p => p.seed).join(', ')}`);
         }
 
         // Check for duplicate assignments in the same round

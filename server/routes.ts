@@ -506,20 +506,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Invalid tournament ID' });
       }
 
-      const participants = await db.select()
+      // Get all participants for this tournament
+      const allParticipants = await db.select()
         .from(tournamentParticipants)
         .where(eq(tournamentParticipants.tournamentId, tournamentId))
         .orderBy(tournamentParticipants.seed);
 
-      if (participants.length === 0) {
+      if (allParticipants.length === 0) {
         return res.status(400).json({ error: 'No participants found for tournament' });
       }
 
-      await BracketGenerator.generateBracket(tournamentId, participants);
+      // Filter to only baristas (competitors) with seeds > 0
+      const allUsers = await storage.getAllUsers();
+      const baristaParticipants = allParticipants.filter(participant => {
+        const user = allUsers.find(u => u.id === participant.userId);
+        return user?.role === 'BARISTA' && participant.seed && participant.seed > 0;
+      });
+
+      console.log(`Found ${allParticipants.length} total participants, ${baristaParticipants.length} barista competitors with seeds > 0`);
+
+      if (baristaParticipants.length < 2) {
+        return res.status(400).json({ 
+          error: `Need at least 2 barista competitors with seeds > 0. Found: ${baristaParticipants.length}` 
+        });
+      }
+
+      // Re-sequence seeds to be consecutive starting from 1
+      const sortedBaristas = [...baristaParticipants].sort((a, b) => a.seed - b.seed);
+      const resequencedBaristas = sortedBaristas.map((participant, index) => ({
+        ...participant,
+        seed: index + 1
+      }));
+
+      console.log('Resequenced baristas:', resequencedBaristas.map(p => ({ id: p.id, seed: p.seed, userId: p.userId })));
+
+      await BracketGenerator.generateBracket(tournamentId, resequencedBaristas);
 
       res.json({ 
         success: true, 
-        message: `Round 1 bracket generated successfully for ${participants.length} participants` 
+        message: `Round 1 bracket generated successfully for ${resequencedBaristas.length} participants`,
+        matchesCreated: Math.ceil(resequencedBaristas.length / 2)
       });
     } catch (error: any) {
       console.error('Error generating bracket:', error);
