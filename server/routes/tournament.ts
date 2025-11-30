@@ -247,17 +247,17 @@ router.post('/:id/assign-judges', async (req, res) => {
         {
           matchId: match.id,
           judgeId: assignedJudges[0].id,
-          role: 'SENSORY' // Cappuccino Judge
+          role: 'SENSORY' // Cappuccino Judge - scores sensory on Cappuccino + Visual Latte Art
         },
         {
           matchId: match.id,
           judgeId: assignedJudges[1].id,
-          role: 'TECHNICAL' // Espresso Judge 1
+          role: 'SENSORY' // Espresso Judge 1 - scores sensory on Espresso + Visual Latte Art
         },
         {
           matchId: match.id,
           judgeId: assignedJudges[2].id,
-          role: 'TECHNICAL' // Espresso Judge 2
+          role: 'SENSORY' // Espresso Judge 2 - scores sensory on Espresso + Visual Latte Art
         }
       ]);
       
