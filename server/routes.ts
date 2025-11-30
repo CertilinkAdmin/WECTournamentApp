@@ -1556,9 +1556,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get stations for this tournament
-      const allStations = await storage.getAllStations();
-      const tournamentStations = allStations.filter(s => s.tournamentId === tournamentId);
-      const availableStations = tournamentStations.filter(s => s.status === 'AVAILABLE');
+      const roundStations = await storage.getAllStations();
+      const availableTournamentStations = roundStations.filter(s => s.tournamentId === tournamentId);
+      const availableStations = availableTournamentStations.filter(s => s.status === 'AVAILABLE');
 
       if (availableStations.length < 3) {
         return res.status(400).json({ error: "Need at least 3 available stations" });
