@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Station, Match, HeatSegment, User } from '@shared/schema';
+import { getMainStationsForTournament, normalizeStationName } from '@/utils/stationUtils';
 import SegmentTimer from '@/components/SegmentTimer';
 import HeatCountdownTimer from '@/components/HeatCountdownTimer';
 
@@ -60,10 +61,31 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
     enabled: !!currentTournamentId,
   });
 
-  // Filter matches for this station - ensure we're matching by station ID correctly
+  // Get main stations for tournament (same logic as LiveHeats)
+  const { data: stations = [] } = useQuery<Station[]>({
+    queryKey: ['/api/stations'],
+  });
+
+  const mainStations = React.useMemo(() => {
+    const tournamentIdNum = tournamentId || undefined;
+    return getMainStationsForTournament(stations, tournamentIdNum);
+  }, [stations, tournamentId]);
+
+  // Filter matches for this station using the same logic as LiveHeats
   const stationMatches = allMatches.filter(match => {
     if (!match.stationId || !station) return false;
-    return match.stationId === station.id;
+    
+    // Find the main station that corresponds to our current station
+    const mainStation = mainStations.find(s => s.id === station.id);
+    if (!mainStation) return false;
+    
+    // Check if the match's station matches our main station
+    const matchStation = stations.find(s => s.id === match.stationId);
+    if (!matchStation) return false;
+    
+    // Use the same normalization logic as LiveHeats
+    const matchStationNormalized = normalizeStationName(matchStation.name);
+    return matchStationNormalized === mainStation.normalizedName;
   });
 
   // Debug logging to help identify the issue
@@ -71,8 +93,9 @@ export default function StationPage({ stationId, stationName, tournamentId }: St
     if (station && allMatches.length > 0) {
       console.log(`Station ${stationName} (ID: ${station.id}) matches:`, stationMatches);
       console.log('All matches:', allMatches.map(m => ({ id: m.id, heatNumber: m.heatNumber, stationId: m.stationId })));
+      console.log('Main stations:', mainStations);
     }
-  }, [station, allMatches, stationMatches, stationName]);
+  }, [station, allMatches, stationMatches, stationName, mainStations]);
   const currentMatch = stationMatches.find(m => m.status === 'RUNNING') || 
                        stationMatches.find(m => m.status === 'READY') ||
                        stationMatches[0];

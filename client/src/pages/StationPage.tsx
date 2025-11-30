@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, ChevronLeft, ChevronRight, Users, Trophy, Clock, Timer, Target } from "lucide-react";
 import TimerPanel from "@/components/TimerPanel";
 import type { Match, User, Station, HeatJudge, Tournament } from "@shared/schema";
+import { getMainStationsForTournament, normalizeStationName } from '@/utils/stationUtils';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -43,9 +44,11 @@ export default function StationPage() {
     enabled: !!currentTournament?.id,
   });
 
-  // Filter matches for this station - match by station ID directly
+  // Filter matches for this station - using the same logic as LiveHeats
   const stationMatches = allMatches.filter(match => {
-    return match.stationId === stationId;
+    // Use normalizeStationName to handle potential inconsistencies
+    // and compare against the current station's normalized name.
+    return normalizeStationName(match.stationId) === normalizeStationName(stationId);
   });
 
   // Debug logging to help identify the issue
