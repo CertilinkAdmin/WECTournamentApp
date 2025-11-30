@@ -1406,13 +1406,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get all matches for the current round
       const currentMatches = await storage.getTournamentMatches(tournamentId);
+      if (currentMatches.length === 0) {
+        return res.status(400).json({ error: "No matches found for this tournament" });
+      }
+
       const currentRound = Math.max(...currentMatches.map(m => m.round));
       const currentRoundMatches = currentMatches.filter(m => m.round === currentRound);
 
-      // Check if all current round matches are complete
+      // Check if all current round matches are complete AND have winners
       const allCurrentRoundComplete = currentRoundMatches.every(m => m.status === 'DONE');
+      const allHaveWinners = currentRoundMatches.every(m => m.winnerId !== null);
+      
       if (!allCurrentRoundComplete) {
-        return res.status(400).json({ error: "Current round must be complete before populating next round" });
+        return res.status(400).json({ 
+          error: `Current round (Round ${currentRound}) must be complete before populating next round. ${currentRoundMatches.filter(m => m.status !== 'DONE').length} matches still in progress.` 
+        });
+      }
+
+      if (!allHaveWinners) {
+        return res.status(400).json({ 
+          error: `All matches in Round ${currentRound} must have winners declared before advancing to next round.` 
+        });
       }
 
       // Get winners from current round

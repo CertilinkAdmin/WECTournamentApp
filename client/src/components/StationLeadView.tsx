@@ -43,6 +43,20 @@ export default function StationLeadView() {
     return getMainStationsForTournament(stations, currentTournamentId);
   }, [stations, currentTournamentId]);
 
+  // Check if current round is complete across all stations
+  const isCurrentRoundComplete = React.useMemo(() => {
+    if (allMatches.length === 0) return false;
+    
+    // Get current round number
+    const currentRound = Math.max(...allMatches.map(m => m.round));
+    
+    // Get all matches in current round
+    const currentRoundMatches = allMatches.filter(m => m.round === currentRound);
+    
+    // Check if ALL matches in current round are DONE
+    return currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.status === 'DONE');
+  }, [allMatches]);
+
   // Fetch users for competitor names
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
@@ -807,19 +821,36 @@ export default function StationLeadView() {
                 </Button>
               )}
 
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full border-dashed border-white/30 text-white"
-                onClick={handlePopulateNextRound}
-                disabled={!allSegmentsEnded || populateNextRoundMutation.isPending}
-                data-testid="button-advance-next-heat"
-              >
-                Advance to Next Heat (Reset Clock)
-              </Button>
-              <p className="text-xs text-center text-white/50">
-                Activates after all three segments are complete.
-              </p>
+              {/* Only show for individual heat completion, not round setup */}
+              {!isCurrentRoundComplete && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full border-dashed border-white/30 text-white"
+                    onClick={handlePopulateNextRound}
+                    disabled={!allSegmentsEnded || populateNextRoundMutation.isPending}
+                    data-testid="button-advance-next-heat"
+                  >
+                    Advance to Next Heat (Reset Clock)
+                  </Button>
+                  <p className="text-xs text-center text-white/50">
+                    Activates after all three segments are complete.
+                  </p>
+                </>
+              )}
+              
+              {/* Show round completion status */}
+              {isCurrentRoundComplete && (
+                <div className="text-center space-y-2">
+                  <div className="text-sm font-medium text-white bg-green-600/20 border border-green-500/30 rounded-lg p-3">
+                    ✅ Current Round Complete
+                  </div>
+                  <p className="text-xs text-white/60">
+                    Station A Lead can now set up the next round
+                  </p>
+                </div>
+              )}
             </div>
 
             <p className="text-xs text-center text-white/40 uppercase tracking-wide">
@@ -830,18 +861,18 @@ export default function StationLeadView() {
       )}
 
       {/* Station A Lead Controls - Populate Next Round */}
-      {normalizeStationName(selectedStationData?.name || '') === 'A' && (
+      {normalizeStationName(selectedStationData?.name || '') === 'A' && isCurrentRoundComplete && (
         <Card className="bg-primary/5 border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-primary">
               <Users className="h-5 w-5" />
-              Station A Lead Controls
+              Round Complete - Station A Lead Controls
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                As Station A lead, you can populate the next round of competitors across all stations.
+                All stations have completed their current round heats. You can now populate the next round with advancing competitors.
               </p>
               <Button
                 variant="default"
@@ -852,8 +883,11 @@ export default function StationLeadView() {
                 data-testid="button-populate-next-round"
               >
                 <Users className="h-5 w-5 mr-2" />
-                {populateNextRoundMutation.isPending ? "Populating..." : "Populate Next Round"}
+                {populateNextRoundMutation.isPending ? "Setting Up Next Round..." : "Set Up Next Round"}
               </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                This will create new heats with winners from the completed round
+              </p>
             </div>
           </CardContent>
         </Card>
