@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, ChevronLeft, ChevronRight, Users, Trophy, Clock, Timer } from "lucide-react";
+import { MapPin, ChevronLeft, ChevronRight, Users, Trophy, Clock, Timer, Target } from "lucide-react";
 import TimerPanel from "@/components/TimerPanel";
 import type { Match, User, Station, HeatJudge, Tournament } from "@shared/schema";
 
@@ -34,7 +34,7 @@ export default function StationPage() {
   const { data: tournaments = [] } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
   });
-  
+
   const currentTournament = tournaments[0];
 
   // Get all tournament matches for bracket view
@@ -143,11 +143,17 @@ export default function StationPage() {
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Loading bracket...</p>
                 </div>
-              ) : stationMatches.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">No heats scheduled for Station {station.name} yet</p>
-                </div>
-              ) : (
+              ) : !currentTournament ? (
+            <div className="text-center p-6 text-muted-foreground">
+              <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No active tournament found.</p>
+            </div>
+          ) : stationMatches.length === 0 ? (
+            <div className="text-center p-6 text-muted-foreground">
+              <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No matches scheduled for this station in the current tournament.</p>
+            </div>
+          ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
                   {stationMatches.map((match) => (
                     <StationHeatCard
@@ -277,7 +283,7 @@ function StationHeatCard({ match, users, getInitials }: StationHeatCardProps) {
             </Badge>
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <div className={`p-2 rounded-md border ${
             !competitor1 ? 'bg-muted text-muted-foreground' : 'bg-secondary dark:bg-card'
@@ -286,9 +292,9 @@ function StationHeatCard({ match, users, getInitials }: StationHeatCardProps) {
               {competitor1?.name || "TBD"}
             </div>
           </div>
-          
+
           <div className="text-center text-muted-foreground font-bold">VS</div>
-          
+
           <div className={`p-2 rounded-md border ${
             !competitor2 ? 'bg-muted text-muted-foreground' : 'bg-secondary dark:bg-card'
           } ${winner?.id === competitor2?.id ? 'ring-2 ring-chart-3' : ''}`}>
@@ -297,7 +303,7 @@ function StationHeatCard({ match, users, getInitials }: StationHeatCardProps) {
             </div>
           </div>
         </div>
-        
+
         {winner && (
           <div className="mt-3 text-center">
             <Badge className="bg-chart-3 text-foreground text-xs font-bold">
