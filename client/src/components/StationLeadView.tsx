@@ -888,7 +888,7 @@ export default function StationLeadView() {
                 return (
                   <div
                     key={segmentCode}
-                    className={`rounded-xl border p-3 sm:p-4 bg-[var(--brand-light-sand)]/80 dark:bg-black/30 min-h-[3rem] sm:min-h-[3.5rem] shadow-sm ${isRunning ? 'border-primary shadow-primary/40 shadow-lg' : 'border-[var(--brand-light-sand)]/70'}`}
+                    className="rounded-xl border p-3 sm:p-4 dark:bg-black/30 min-h-[3rem] sm:min-h-[3.5rem] shadow-sm border-[var(--brand-light-sand)]/70 bg-[#ecdcbb]"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0 flex-1">
@@ -899,7 +899,6 @@ export default function StationLeadView() {
                         {status}
                       </Badge>
                     </div>
-
                     {isRunning && segment?.startTime && (
                       <div className="mt-2 sm:mt-3 space-y-2 sm:space-y-3">
                         <div className="scale-90 sm:scale-100 origin-center">
@@ -972,7 +971,6 @@ export default function StationLeadView() {
                         </div>
                       </div>
                     )}
-
                     {!isRunning && !isEnded && (
                       <Button
                         variant="default"
@@ -986,7 +984,6 @@ export default function StationLeadView() {
                         Start {segmentCode.replace('_', ' ')}
                       </Button>
                     )}
-
                     {isEnded && (
                       <div className="mt-3 text-xs text-foreground/60 dark:text-white/60 text-center">
                         Segment completed
