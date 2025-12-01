@@ -1120,14 +1120,9 @@ export default function StationLeadView() {
 
                 return (
                   <div className="text-center space-y-2">
-                    <div className={`text-sm font-medium text-foreground dark:text-white border rounded-lg p-3 sm:p-4 min-h-[2.75rem] sm:min-h-[2.5rem] ${
-                      allComplete 
-                        ? 'bg-green-600/20 dark:bg-green-600/20 border-green-500/30' 
-                        : 'bg-yellow-600/20 dark:bg-yellow-600/20 border-yellow-500/30'
-                    }`}>
+                    <div className="text-sm font-medium text-foreground dark:text-white border rounded-lg p-3 sm:p-4 min-h-[2.75rem] sm:min-h-[2.5rem] dark:bg-yellow-600/20 border-yellow-500/30 bg-[#312621]">
                       {allComplete ? '✅' : '⏳'} Round {currentRound} Status
                     </div>
-
                     {/* Station-by-station status */}
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       {stationStatus.map(station => (
@@ -1147,7 +1142,6 @@ export default function StationLeadView() {
                         </div>
                       ))}
                     </div>
-
                     <p className="text-xs text-foreground/60 dark:text-white/60">
                       {allComplete 
                         ? 'All stations have completed their heats for this round'
