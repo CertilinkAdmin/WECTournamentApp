@@ -92,35 +92,50 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
         <>
           {/* Previous/Next Buttons - Larger for mobile */}
           <button
-            onClick={previousImage}
-            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 bg-primary/90 hover:bg-primary text-primary-foreground p-3 md:p-4 rounded-full transition-all hover:scale-110 active:scale-95 shadow-lg"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              previousImage();
+            }}
+            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-50 bg-primary/90 hover:bg-primary text-primary-foreground p-3 md:p-4 rounded-full transition-all hover:scale-110 active:scale-95 shadow-lg pointer-events-auto"
             aria-label="Previous image"
             data-testid="button-carousel-previous"
+            style={{ zIndex: 9999 }}
           >
             <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
           </button>
           <button
-            onClick={nextImage}
-            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-30 bg-primary/90 hover:bg-primary text-primary-foreground p-3 md:p-4 rounded-full transition-all hover:scale-110 active:scale-95 shadow-lg"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              nextImage();
+            }}
+            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-50 bg-primary/90 hover:bg-primary text-primary-foreground p-3 md:p-4 rounded-full transition-all hover:scale-110 active:scale-95 shadow-lg pointer-events-auto"
             aria-label="Next image"
             data-testid="button-carousel-next"
+            style={{ zIndex: 9999 }}
           >
             <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
           </button>
 
           {/* Dot Indicators - Larger and easier to tap on mobile */}
-          <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2 md:gap-3">
+          <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex gap-2 md:gap-3">
             {images.map((_, index) => (
               <button
                 key={index}
-                onClick={() => goToImage(index)}
-                className={`rounded-full transition-all duration-300 ${
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  goToImage(index);
+                }}
+                className={`rounded-full transition-all duration-300 pointer-events-auto ${
                   index === currentIndex
                     ? 'bg-primary w-8 md:w-10 h-3 md:h-4 scale-110'
                     : 'bg-white/60 hover:bg-white/90 w-3 md:w-4 h-3 md:h-4'
                 }`}
                 aria-label={`Go to image ${index + 1}`}
                 data-testid={`button-carousel-dot-${index}`}
+                style={{ zIndex: 9999 }}
               />
             ))}
           </div>

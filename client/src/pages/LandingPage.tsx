@@ -25,11 +25,11 @@ const LandingPage: React.FC = () => {
         <img 
           src="/wec_logo_orange.png" 
           alt="WEC Logo" 
-          className="w-96 h-auto opacity-30 filter drop-shadow-lg"
+          className="w-96 h-auto opacity-30 filter drop-shadow-lg pointer-events-none"
         />
       </div>
 
-      <main className="absolute top-[89px] bottom-0 left-0 right-0 z-10 flex flex-col items-center justify-start pt-8">
+      <main className="absolute top-[89px] bottom-0 left-0 right-0 z-10 flex flex-col items-center justify-start pt-8 pointer-events-none">
         {/* Text Overlay */}
         <div className="text-center text-primary-foreground">
           <div className="text-4xl font-bold tracking-widest mb-2">ESPRESSO</div>

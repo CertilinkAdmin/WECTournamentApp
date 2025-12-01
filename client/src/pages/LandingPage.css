@@ -18,6 +18,12 @@
   overflow: hidden;
 }
 
+/* Ensure carousel controls are clickable */
+.landing-background button[data-testid^="button-carousel"] {
+  pointer-events: auto !important;
+  z-index: 9999 !important;
+}
+
 /* Mobile-optimized carousel controls */
 @media (max-width: 640px) {
   .landing-background button[data-testid^="button-carousel"] {
