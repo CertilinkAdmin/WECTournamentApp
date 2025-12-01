@@ -30,18 +30,30 @@ export default function LiveJudgesScoring() {
   }, [tournaments, tournamentIdNum]);
 
   // Fetch all users
-  const { data: allUsers = [] } = useQuery<User[]>({
+  const { data: allUsers = [], isLoading: usersLoading, error: usersError } = useQuery<User[]>({
     queryKey: ['/api/users'],
   });
 
   // Fetch participants for tournament (including judges)
-  const { data: participants = [] } = useQuery<TournamentParticipant[]>({
+  const { 
+    data: participants = [], 
+    isLoading: participantsLoading, 
+    error: participantsError 
+  } = useQuery<TournamentParticipant[]>({
     queryKey: ['/api/tournaments', tournamentIdNum, 'participants'],
     queryFn: async () => {
       if (!tournamentIdNum) return [];
       const response = await fetch(`/api/tournaments/${tournamentIdNum}/participants?includeJudges=true`);
-      if (!response.ok) throw new Error('Failed to fetch participants');
-      return response.json();
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to fetch participants:', response.status, errorText);
+        throw new Error(`Failed to fetch participants: ${response.status} ${errorText}`);
+      }
+      const data = await response.json();
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Fetched participants:', data.length, 'participants');
+      }
+      return data;
     },
     enabled: !!tournamentIdNum,
   });
@@ -56,27 +68,56 @@ export default function LiveJudgesScoring() {
   // Get approved judges (seed > 0 and role === 'JUDGE')
   // Filter out test judges if this is NOT a test tournament
   const approvedJudges = useMemo(() => {
-    if (!participants.length) return [];
+    if (!participants.length || !allUsers.length) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('No participants or users:', { participantsCount: participants.length, usersCount: allUsers.length });
+      }
+      return [];
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Processing judges from participants:', {
+        totalParticipants: participants.length,
+        totalUsers: allUsers.length,
+        isTestTournament,
+      });
+    }
 
     const judges = participants
       .map(p => {
         const user = allUsers.find(u => u.id === p.userId && u.role === 'JUDGE');
-        return user && p.seed && p.seed > 0 ? { ...p, user } : null;
+        if (user && p.seed && p.seed > 0) {
+          return { ...p, user };
+        }
+        return null;
       })
       .filter((j): j is TournamentParticipant & { user: User } => j !== null);
 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Found judges before filtering:', judges.length);
+    }
+
     // If this is NOT a test tournament, filter out test judges
     if (!isTestTournament) {
-      return judges.filter(j => {
+      const filtered = judges.filter(j => {
         const email = j.user.email.toLowerCase();
+        const name = j.user.name.toLowerCase();
         // Filter out test judges (emails containing @test.com or test-judge pattern)
-        return !email.includes('@test.com') && 
-               !email.includes('test-judge') &&
-               !j.user.name.toLowerCase().includes('test judge');
+        const isTestJudge = email.includes('@test.com') || 
+                           email.includes('test-judge') ||
+                           name.includes('test judge');
+        return !isTestJudge;
       });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Filtered judges (non-test tournament):', filtered.length);
+      }
+      return filtered;
     }
 
     // If this IS a test tournament, return all judges (including test judges)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Returning all judges (test tournament):', judges.length);
+    }
     return judges;
   }, [participants, allUsers, isTestTournament]);
 
@@ -221,78 +262,118 @@ export default function LiveJudgesScoring() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="min-h-screen bg-[var(--espresso-foam)] dark:bg-background p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Gavel className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+      <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
+        <CardHeader className="pb-3 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
+            <Gavel className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0" />
             <span>Judges Scoring</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 sm:p-6">
-          <p className="text-sm sm:text-base text-muted-foreground">
+        <CardContent className="p-4 sm:p-6 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+          <p className="text-xs sm:text-sm lg:text-base text-foreground/70 dark:text-muted-foreground">
             Select a judge to view their assigned heats. Activate a heat to begin scoring.
           </p>
         </CardContent>
       </Card>
 
       {/* Judge Selection */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base sm:text-lg">Select Judge</CardTitle>
+      <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
+        <CardHeader className="pb-3 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+          <CardTitle className="text-sm sm:text-base lg:text-lg">Select Judge</CardTitle>
         </CardHeader>
-        <CardContent className="p-4 sm:p-6">
-          <Select
-            value={selectedJudgeId?.toString() || ''}
-            onValueChange={(value) => {
-              setSelectedJudgeId(value ? parseInt(value) : null);
-            }}
-          >
-            <SelectTrigger className="w-full sm:max-w-md min-h-[2.75rem] sm:min-h-[2.5rem]">
-              <SelectValue placeholder="Choose an approved judge..." />
-            </SelectTrigger>
-            <SelectContent>
-              {approvedJudges.length === 0 ? (
-                <div className="px-2 py-1.5 text-sm text-muted-foreground">No approved judges for this tournament</div>
-              ) : (
-                approvedJudges.map((judge) => (
-                  <SelectItem key={judge.id} value={judge.user.id.toString()}>
-                    <div className="flex items-center gap-2">
-                      <span>{judge.user.name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {judge.user.email}
-                      </Badge>
-                    </div>
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+        <CardContent className="p-4 sm:p-6 space-y-4">
+          {/* Loading State */}
+          {(usersLoading || participantsLoading) && (
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
+              <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin flex-shrink-0" />
+              <span>Loading judges...</span>
+            </div>
+          )}
+
+          {/* Error State */}
+          {(usersError || participantsError) && (
+            <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <AlertTitle className="text-sm sm:text-base">Error Loading Judges</AlertTitle>
+              <AlertDescription className="text-xs sm:text-sm">
+                {usersError?.message || participantsError?.message || 'Failed to load judges. Please refresh the page.'}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Judge Selector */}
+          {!usersLoading && !participantsLoading && !usersError && !participantsError && (
+            <Select
+              value={selectedJudgeId?.toString() || ''}
+              onValueChange={(value) => {
+                setSelectedJudgeId(value ? parseInt(value) : null);
+              }}
+            >
+              <SelectTrigger className="w-full sm:max-w-md min-h-[2.75rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation">
+                <SelectValue placeholder="Choose an approved judge..." />
+              </SelectTrigger>
+              <SelectContent>
+                {approvedJudges.length === 0 ? (
+                  <div className="px-2 py-1.5 text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
+                    {participants.length === 0 
+                      ? 'No participants found for this tournament'
+                      : allUsers.length === 0
+                      ? 'No users loaded'
+                      : 'No approved judges found. Judges must have seed > 0 and role = JUDGE.'}
+                  </div>
+                ) : (
+                  approvedJudges.map((judge) => (
+                    <SelectItem key={judge.id} value={judge.user.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        <span>{judge.user.name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {judge.user.email}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          )}
+
+          {/* Debug Info (only in development) */}
+          {process.env.NODE_ENV === 'development' && approvedJudges.length === 0 && !usersLoading && !participantsLoading && (
+            <div className="text-[10px] sm:text-xs text-foreground/70 dark:text-muted-foreground space-y-1 p-3 bg-[var(--brand-light-sand)]/40 dark:bg-muted/30 rounded-md border border-[var(--brand-light-sand)]/50 dark:border-border">
+              <p className="font-semibold">Debug Info:</p>
+              <p>Participants: {participants.length}</p>
+              <p>Users: {allUsers.length}</p>
+              <p>Users with JUDGE role: {allUsers.filter(u => u.role === 'JUDGE').length}</p>
+              <p>Participants with seed &gt; 0: {participants.filter(p => p.seed && p.seed > 0).length}</p>
+              <p>Is Test Tournament: {isTestTournament ? 'Yes' : 'No'}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Judge's Assigned Heats */}
       {selectedJudge && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base sm:text-lg">
+        <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
+          <CardHeader className="pb-3 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+            <CardTitle className="text-sm sm:text-base lg:text-lg">
               Assigned Heats for {selectedJudge.user.name}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6 space-y-4">
+          <CardContent className="p-4 sm:p-6 space-y-3 sm:space-y-4 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
             {tournamentMatches.length === 0 ? (
-              <div className="text-center p-6 text-muted-foreground">
-                <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm sm:text-base">
+              <div className="text-center p-4 sm:p-6 text-foreground/70 dark:text-muted-foreground">
+                <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                <p className="text-xs sm:text-sm lg:text-base">
                   {selectedJudge.user.name} has no assigned heats for this tournament yet.
                 </p>
               </div>
             ) : (
               <>
                 {/* Round Selection */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-4 border-b">
-                  <label className="text-sm font-medium text-foreground sm:min-w-[80px]">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pb-3 sm:pb-4 border-b border-[var(--brand-light-sand)]/50 dark:border-border">
+                  <label className="text-xs sm:text-sm font-medium text-foreground sm:min-w-[80px]">
                     Round:
                   </label>
                   <div className="flex items-center gap-2 flex-1">
@@ -303,7 +384,7 @@ export default function LiveJudgesScoring() {
                         setCurrentHeatPage(1);
                       }}
                     >
-                      <SelectTrigger className="w-full sm:max-w-[200px] min-h-[2.75rem] sm:min-h-[2.5rem]">
+                      <SelectTrigger className="w-full sm:max-w-[200px] min-h-[2.75rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation">
                         <SelectValue placeholder="Select round..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -327,7 +408,7 @@ export default function LiveJudgesScoring() {
                             }
                           }}
                           disabled={!selectedRound || availableRounds.indexOf(selectedRound || 0) === 0}
-                          className="min-h-[2.75rem] sm:min-h-[2.5rem] px-3"
+                          className="min-h-[2.75rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] px-3 touch-manipulation"
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
@@ -342,7 +423,7 @@ export default function LiveJudgesScoring() {
                             }
                           }}
                           disabled={!selectedRound || availableRounds.indexOf(selectedRound || 0) === availableRounds.length - 1}
-                          className="min-h-[2.75rem] sm:min-h-[2.5rem] px-3"
+                          className="min-h-[2.75rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] px-3 touch-manipulation"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </Button>
@@ -354,11 +435,11 @@ export default function LiveJudgesScoring() {
                 {/* Heats List */}
                 {selectedRound && (
                   <>
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {paginatedHeats.length === 0 ? (
-                        <div className="text-center p-6 text-muted-foreground">
-                          <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p className="text-sm sm:text-base">
+                        <div className="text-center p-4 sm:p-6 text-foreground/70 dark:text-muted-foreground">
+                          <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                          <p className="text-xs sm:text-sm lg:text-base">
                             No heats found for Round {selectedRound}.
                           </p>
                         </div>
@@ -369,27 +450,27 @@ export default function LiveJudgesScoring() {
                           return (
                             <div
                               key={match.id}
-                              className={`p-4 rounded-lg border-2 transition-colors ${
+                              className={`p-3 sm:p-4 rounded-lg border-2 transition-colors touch-manipulation ${
                                 isActivated
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-border bg-card hover:bg-muted/50'
+                                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                                  : 'border-[var(--brand-light-sand)]/50 dark:border-border bg-[var(--brand-light-sand)]/60 dark:bg-card hover:bg-[var(--brand-light-sand)]/80 dark:hover:bg-muted/50'
                               }`}
                             >
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Badge variant="outline">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                                    <Badge variant="outline" className="text-[10px] sm:text-xs">
                                       Round {match.round}, Heat {match.heatNumber}
                                     </Badge>
-                                    <Badge variant={match.judgeRole === 'ESPRESSO' ? 'default' : 'secondary'}>
+                                    <Badge variant={match.judgeRole === 'ESPRESSO' ? 'default' : 'secondary'} className="text-[10px] sm:text-xs">
                                       {match.judgeRole}
                                     </Badge>
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    Status: <span className="font-medium">{match.status}</span>
+                                  <div className="text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
+                                    Status: <span className="font-medium text-foreground dark:text-foreground">{match.status}</span>
                                   </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-shrink-0">
                           {!isActivated && (
                             <Button
                               onClick={() => {
@@ -397,10 +478,10 @@ export default function LiveJudgesScoring() {
                               }}
                               variant="default"
                               size="sm"
-                              className="min-h-[2.5rem] sm:min-h-[2.5rem]"
+                              className="min-h-[2.5rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation text-xs sm:text-sm"
                             >
-                              <Play className="h-4 w-4 mr-2" />
-                              Activate Scorecard
+                              <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+                              <span className="whitespace-nowrap">Activate Scorecard</span>
                             </Button>
                           )}
                                   {isActivated && (
@@ -408,9 +489,9 @@ export default function LiveJudgesScoring() {
                                       onClick={() => setActivatedMatchId(null)}
                                       variant="outline"
                                       size="sm"
-                                      className="min-h-[2.5rem] sm:min-h-[2.5rem]"
+                                      className="min-h-[2.5rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation text-xs sm:text-sm"
                                     >
-                                      Close Scorecard
+                                      <span className="whitespace-nowrap">Close Scorecard</span>
                                     </Button>
                                   )}
                                 </div>
@@ -423,8 +504,8 @@ export default function LiveJudgesScoring() {
 
                     {/* Heat Pagination */}
                     {totalHeatPages > 1 && (
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <div className="text-sm text-muted-foreground">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-[var(--brand-light-sand)]/50 dark:border-border">
+                        <div className="text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
                           Showing {startHeatIndex + 1}-{Math.min(endHeatIndex, roundMatches.length)} of {roundMatches.length} heats
                         </div>
                         <div className="flex items-center gap-2">
@@ -433,12 +514,12 @@ export default function LiveJudgesScoring() {
                             size="sm"
                             onClick={() => setCurrentHeatPage(prev => Math.max(1, prev - 1))}
                             disabled={currentHeatPage === 1}
-                            className="min-h-[2.5rem] sm:min-h-[2.5rem]"
+                            className="min-h-[2.5rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation text-xs sm:text-sm"
                           >
-                            <ChevronLeft className="h-4 w-4 mr-1" />
-                            Previous
+                            <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                            <span className="whitespace-nowrap">Previous</span>
                           </Button>
-                          <div className="text-sm text-muted-foreground px-2">
+                          <div className="text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground px-2">
                             Page {currentHeatPage} of {totalHeatPages}
                           </div>
                           <Button
@@ -446,10 +527,10 @@ export default function LiveJudgesScoring() {
                             size="sm"
                             onClick={() => setCurrentHeatPage(prev => Math.min(totalHeatPages, prev + 1))}
                             disabled={currentHeatPage === totalHeatPages}
-                            className="min-h-[2.5rem] sm:min-h-[2.5rem]"
+                            className="min-h-[2.5rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation text-xs sm:text-sm"
                           >
-                            Next
-                            <ChevronRight className="h-4 w-4 ml-1" />
+                            <span className="whitespace-nowrap">Next</span>
+                            <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
                           </Button>
                         </div>
                       </div>
@@ -464,29 +545,29 @@ export default function LiveJudgesScoring() {
 
       {/* Activated Scorecard */}
       {selectedJudge && activatedMatch && (
-        <Card className="border-l-4 border-l-primary">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <Gavel className="h-5 w-5" />
-              <span>
+        <Card className="border-l-4 border-l-primary bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
+          <CardHeader className="pb-3 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+            <CardTitle className="text-sm sm:text-base lg:text-lg flex flex-wrap items-center gap-2">
+              <Gavel className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="break-words">
                 Scorecard - Round {activatedMatch.round}, Heat {activatedMatch.heatNumber}
               </span>
               {activatedMatchScored && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                <Badge variant="outline" className="bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 text-[10px] sm:text-xs">
+                  <CheckCircle2 className="h-3 w-3 mr-1 flex-shrink-0" />
                   Completed
                 </Badge>
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            <div className="p-4 sm:p-6 space-y-4">
+          <CardContent className="p-0 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+            <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
               {/* Pause Period Warning */}
               {isPausePeriod && (
-                <Alert className="border-amber-200 bg-amber-50 animate-pulse">
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
-                  <AlertTitle className="text-amber-900 font-semibold">Judging Pause Period</AlertTitle>
-                  <AlertDescription className="text-amber-800 text-sm sm:text-base">
+                <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 animate-pulse">
+                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <AlertTitle className="text-amber-900 dark:text-amber-200 font-semibold text-xs sm:text-sm lg:text-base">Judging Pause Period</AlertTitle>
+                  <AlertDescription className="text-amber-800 dark:text-amber-300 text-xs sm:text-sm lg:text-base">
                     The Cappuccino segment has ended. Please submit your scores for Visual Latte Art and Cappuccino sensory before the Espresso segment begins.
                   </AlertDescription>
                 </Alert>
@@ -511,10 +592,10 @@ export default function LiveJudgesScoring() {
 
       {/* Instructions */}
       {!selectedJudge && (
-        <Card className="bg-muted/50">
-          <CardContent className="p-4 sm:p-6">
-            <div className="space-y-2 text-sm sm:text-base text-muted-foreground">
-              <p className="font-semibold text-foreground">Instructions:</p>
+        <Card className="bg-[var(--brand-light-sand)]/60 dark:bg-muted/50 border border-[var(--brand-light-sand)]/50 dark:border-border">
+          <CardContent className="p-4 sm:p-6 bg-[var(--brand-light-sand)]/60 dark:bg-transparent">
+            <div className="space-y-2 text-xs sm:text-sm lg:text-base text-foreground/70 dark:text-muted-foreground">
+              <p className="font-semibold text-foreground dark:text-foreground">Instructions:</p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>Select a judge from the dropdown above</li>
                 <li>View their assigned heats for this tournament</li>

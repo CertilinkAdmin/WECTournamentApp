@@ -115,7 +115,7 @@ export default function StationsManagement() {
   }
 
   return (
-    <div className="space-y-6 bg-[#dbc494]">
+    <div className="space-y-6 bg-[#171312]">
       {/* Header */}
       <Card>
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
