@@ -684,7 +684,7 @@ export default function StationLeadView() {
   }, [stationTimingAlert, toast]);
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 bg-[var(--espresso-foam)] dark:bg-background">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 dark:bg-background bg-[#ecdcbb]">
       <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-primary/10 border border-[var(--brand-light-sand)]/70 shadow-sm">
         <CardHeader className="p-4 sm:p-6 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
