@@ -684,9 +684,9 @@ export default function StationLeadView() {
   }, [stationTimingAlert, toast]);
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
-      <Card className="bg-primary/10">
-        <CardHeader className="p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 bg-[var(--espresso-foam)] dark:bg-background">
+      <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-primary/10 border border-[var(--brand-light-sand)]/70 shadow-sm">
+        <CardHeader className="p-4 sm:p-6 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <CardTitle className="flex items-center gap-2 text-primary text-lg sm:text-xl">
               <MapPin className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
@@ -706,7 +706,7 @@ export default function StationLeadView() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6">
+        <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
           <div className="grid grid-cols-3 gap-2">
             {mainStations.map((station) => {
               const stationLead = station.stationLeadId ? users.find(u => u.id === station.stationLeadId) : null;
@@ -717,7 +717,11 @@ export default function StationLeadView() {
                   variant={selectedStation === station.id ? "default" : "outline"}
                   onClick={() => setSelectedStation(station.id)}
                   data-testid={`button-station-${station.normalizedName}`}
-                  className="flex flex-col items-start justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm min-w-0"
+                  className={`flex flex-col items-start justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm min-w-0 ${
+                    selectedStation === station.id 
+                      ? '' 
+                      : 'bg-[var(--brand-light-sand)]/60 dark:bg-background hover:bg-[var(--brand-light-sand)]/80 dark:hover:bg-accent/50'
+                  }`}
                 >
                   <span className="truncate w-full text-center sm:text-left">{displayName}</span>
                   {stationLead && (
@@ -728,13 +732,13 @@ export default function StationLeadView() {
             })}
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button asChild variant="secondary" className="w-full md:w-auto">
+            <Button asChild variant="secondary" className="w-full md:w-auto bg-[var(--brand-light-sand)]/70 dark:bg-secondary hover:bg-[var(--brand-light-sand)]/90 dark:hover:bg-secondary/90">
               <Link to={`/live/${currentTournamentId}/stations`}>
                 Back to Station Management
               </Link>
             </Button>
             {selectedStation && (
-              <Button asChild variant="outline" className="w-full md:w-auto" data-testid="button-view-station-page">
+              <Button asChild variant="outline" className="w-full md:w-auto bg-[var(--brand-light-sand)]/50 dark:bg-background hover:bg-[var(--brand-light-sand)]/70 dark:hover:bg-accent/50" data-testid="button-view-station-page">
                 <Link to={`/station/${selectedStation}`}>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   View Full Station Page
@@ -744,11 +748,10 @@ export default function StationLeadView() {
           </div>
         </CardContent>
       </Card>
-
       {/* Heat Management Rules & Instructions */}
       <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
-        <Card className="border-primary/20">
-          <CardHeader>
+        <Card className="border-primary/20 bg-[var(--brand-light-sand)]/60 dark:bg-card border-[var(--brand-light-sand)]/50">
+          <CardHeader className="bg-[var(--brand-light-sand)]/60 dark:bg-transparent">
             <CollapsibleTrigger className="flex items-center justify-between w-full group" data-testid="button-toggle-rules">
               <div className="flex items-center gap-2">
                 <Info className="w-5 h-5 text-primary" />
@@ -758,8 +761,8 @@ export default function StationLeadView() {
             </CollapsibleTrigger>
           </CardHeader>
           <CollapsibleContent>
-            <CardContent className="space-y-4">
-              <Alert>
+            <CardContent className="space-y-4 bg-[var(--brand-light-sand)]/40 dark:bg-transparent">
+              <Alert className="bg-[var(--brand-light-sand)]/60 dark:bg-blue-950 border-[var(--brand-light-sand)]/80">
                 <AlertTitle className="text-base font-semibold">Segment Sequence</AlertTitle>
                 <AlertDescription className="space-y-2 mt-2">
                   <p className="text-sm">Each heat consists of three timed segments that must run in order:</p>
@@ -771,7 +774,7 @@ export default function StationLeadView() {
                 </AlertDescription>
               </Alert>
 
-              <Alert>
+              <Alert className="bg-[var(--brand-light-sand)]/60 dark:bg-blue-950 border-[var(--brand-light-sand)]/80">
                 <AlertTitle className="text-base font-semibold">Station Lead Responsibilities</AlertTitle>
                 <AlertDescription className="space-y-2 mt-2">
                   <ul className="list-disc list-inside space-y-1 text-sm ml-2">
@@ -786,7 +789,7 @@ export default function StationLeadView() {
                 </AlertDescription>
               </Alert>
 
-              <Alert>
+              <Alert className="bg-[var(--brand-light-sand)]/60 dark:bg-blue-950 border-[var(--brand-light-sand)]/80">
                 <AlertTitle className="text-base font-semibold">Timer Controls</AlertTitle>
                 <AlertDescription className="space-y-2 mt-2">
                   <p className="text-sm">
@@ -803,7 +806,6 @@ export default function StationLeadView() {
           </CollapsibleContent>
         </Card>
       </Collapsible>
-
       {/* Station Warnings - Show when other stations are starting */}
       {stationWarnings.map((warning) => (
         <StationWarning
@@ -813,7 +815,6 @@ export default function StationLeadView() {
           targetStartTime={warning.targetStartTime}
         />
       ))}
-
       {/* Station Timing Alert */}
       {stationTimingAlert?.show && (
         <Alert variant="default" className="bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200">
@@ -827,11 +828,10 @@ export default function StationLeadView() {
           </AlertDescription>
         </Alert>
       )}
-
       {currentMatch && (
-        <Card className="border border-primary/30 bg-[#1b110a] text-white shadow-lg">
-          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs sm:text-sm uppercase tracking-wide text-primary/70">
+        <Card className="border border-primary/30 bg-[var(--brand-light-sand)]/90 dark:bg-[var(--espresso-dark)] text-foreground dark:text-[var(--espresso-cream)] shadow-lg">
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 bg-[var(--brand-light-sand)]/70 dark:bg-transparent">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs sm:text-sm uppercase tracking-wide text-foreground/70 dark:text-primary/70">
               <span className="truncate">Station {selectedStationData?.name || '—'}</span>
               <Badge variant={currentMatch.status === 'RUNNING' ? 'default' : 'secondary'} className="text-xs">
                 Round {currentMatch.round} · Heat {currentMatch.heatNumber}
@@ -859,22 +859,22 @@ export default function StationLeadView() {
                   competitor: competitor2?.name || "Waiting",
                 }
               ].map((slot) => (
-                <div key={slot.label} className="rounded-xl border border-primary/30 bg-black/40 p-3 sm:p-4 space-y-2 sm:space-y-3">
-                  <div className="flex items-center justify-between text-[10px] sm:text-xs text-white/70">
+                <div key={slot.label} className="rounded-xl border border-primary/30 dark:bg-black/40 p-3 sm:p-4 space-y-2 sm:space-y-3 min-h-[3rem] sm:min-h-[3.5rem] shadow-sm bg-[#ecdcbb]">
+                  <div className="flex items-center justify-between text-[10px] sm:text-xs text-foreground/70 dark:text-white/70">
                     <span>{slot.label}</span>
                     <Coffee className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-mono font-bold">{slot.placement}</div>
-                  <div className="text-xs sm:text-sm text-white/70 uppercase">Cup Code</div>
-                  <div className="text-xl sm:text-2xl font-mono truncate">{slot.cupCode}</div>
-                  <div className="text-[10px] sm:text-xs text-white/60 truncate">{slot.competitor}</div>
+                  <div className="text-2xl sm:text-3xl font-mono font-bold text-foreground dark:text-white">{slot.placement}</div>
+                  <div className="text-xs sm:text-sm text-foreground/70 dark:text-white/70 uppercase">Cup Code</div>
+                  <div className="text-xl sm:text-2xl font-mono truncate text-foreground dark:text-white">{slot.cupCode}</div>
+                  <div className="text-[10px] sm:text-xs text-foreground/60 dark:text-white/60 truncate">{slot.competitor}</div>
                 </div>
               ))}
             </div>
 
             <div className="text-center space-y-1">
-              <div className="text-[10px] sm:text-xs text-white/50 uppercase">Heat Status</div>
-              <div className="text-2xl sm:text-3xl font-bold tracking-wide">{currentMatch.status}</div>
+              <div className="text-[10px] sm:text-xs text-foreground/50 dark:text-white/50 uppercase">Heat Status</div>
+              <div className="text-2xl sm:text-3xl font-bold tracking-wide text-foreground dark:text-white">{currentMatch.status}</div>
             </div>
 
             <div className="space-y-2 sm:space-y-3">
@@ -888,12 +888,12 @@ export default function StationLeadView() {
                 return (
                   <div
                     key={segmentCode}
-                    className={`rounded-xl border p-3 sm:p-4 bg-black/30 ${isRunning ? 'border-primary shadow-primary/40 shadow-lg' : 'border-white/10'}`}
+                    className={`rounded-xl border p-3 sm:p-4 bg-[var(--brand-light-sand)]/80 dark:bg-black/30 min-h-[3rem] sm:min-h-[3.5rem] shadow-sm ${isRunning ? 'border-primary shadow-primary/40 shadow-lg' : 'border-[var(--brand-light-sand)]/70'}`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs sm:text-sm uppercase tracking-wide text-white/60 truncate">{segmentCode.replace('_', ' ')}</div>
-                        <div className="text-[10px] sm:text-xs text-white/40">{segment?.plannedMinutes || 0} minutes</div>
+                        <div className="text-xs sm:text-sm uppercase tracking-wide text-foreground/60 dark:text-white/60 truncate">{segmentCode.replace('_', ' ')}</div>
+                        <div className="text-[10px] sm:text-xs text-foreground/40 dark:text-white/40">{segment?.plannedMinutes || 0} minutes</div>
                       </div>
                       <Badge variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'} className="text-[10px] sm:text-xs flex-shrink-0">
                         {status}
@@ -988,7 +988,7 @@ export default function StationLeadView() {
                     )}
 
                     {isEnded && (
-                      <div className="mt-3 text-xs text-white/60 text-center">
+                      <div className="mt-3 text-xs text-foreground/60 dark:text-white/60 text-center">
                         Segment completed
                       </div>
                     )}
@@ -1038,7 +1038,7 @@ export default function StationLeadView() {
                 <div className="space-y-2">
                   {isLastHeatInRound ? (
                     // Last heat in round - show finalize button
-                    <Button
+                    (<Button
                       variant="default"
                       size="lg"
                       className="w-full bg-green-600 hover:bg-green-700"
@@ -1051,10 +1051,10 @@ export default function StationLeadView() {
                         ? "Finalizing..." 
                         : `Finalize Station ${mainStations.find(s => s.id === selectedStation)?.name || ''} heats for Round ${currentMatch.round}`
                       }
-                    </Button>
+                    </Button>)
                   ) : (
                     // Not last heat - show complete and advance button
-                    <Button
+                    (<Button
                       variant="default"
                       size="lg"
                       className="w-full bg-primary hover:bg-primary/90"
@@ -1067,9 +1067,9 @@ export default function StationLeadView() {
                         ? "Completing and Advancing..." 
                         : "Complete and Advance to Next Heat"
                       }
-                    </Button>
+                    </Button>)
                   )}
-                  <p className="text-xs text-center text-white/70">
+                  <p className="text-xs text-center text-foreground/70 dark:text-white/70">
                     {isLastHeatInRound 
                       ? `Calculate winners/losers from Station ${mainStations.find(s => s.id === selectedStation)?.name || ''} and advance them to the next round's bracket pool`
                       : "Complete this heat and advance to next heat in queue for this station"
@@ -1127,10 +1127,10 @@ export default function StationLeadView() {
 
                 return (
                   <div className="text-center space-y-2">
-                    <div className={`text-sm font-medium text-white border rounded-lg p-3 ${
+                    <div className={`text-sm font-medium text-foreground dark:text-white border rounded-lg p-3 sm:p-4 min-h-[2.75rem] sm:min-h-[2.5rem] ${
                       allComplete 
-                        ? 'bg-green-600/20 border-green-500/30' 
-                        : 'bg-yellow-600/20 border-yellow-500/30'
+                        ? 'bg-green-600/20 dark:bg-green-600/20 border-green-500/30' 
+                        : 'bg-yellow-600/20 dark:bg-yellow-600/20 border-yellow-500/30'
                     }`}>
                       {allComplete ? '✅' : '⏳'} Round {currentRound} Status
                     </div>
@@ -1145,7 +1145,7 @@ export default function StationLeadView() {
                               ? 'bg-green-600/20 border-green-500/30 text-green-300'
                               : station.totalHeats > 0
                                 ? 'bg-yellow-600/20 border-yellow-500/30 text-yellow-300'
-                                : 'bg-gray-600/20 border-gray-500/30 text-gray-400'
+                                : 'bg-[var(--brand-light-sand)]/40 border-[var(--brand-light-sand)]/60 text-foreground/60 dark:text-gray-400'
                           }`}
                         >
                           <div className="font-medium">Station {station.name}</div>
@@ -1155,7 +1155,7 @@ export default function StationLeadView() {
                       ))}
                     </div>
 
-                    <p className="text-xs text-white/60">
+                    <p className="text-xs text-foreground/60 dark:text-white/60">
                       {allComplete 
                         ? 'All stations have completed their heats for this round'
                         : 'Waiting for all stations to complete their heats'
@@ -1166,25 +1166,24 @@ export default function StationLeadView() {
               })()}
             </div>
 
-            <p className="text-xs text-center text-white/40 uppercase tracking-wide">
+            <p className="text-xs text-center text-foreground/40 dark:text-white/40 uppercase tracking-wide">
               Cup code will stay with competitor for the entire event. This ID drives scoring.
             </p>
           </CardContent>
         </Card>
       )}
-
       {/* Station A Lead Controls - Round Management */}
       {normalizeStationName(selectedStationData?.name || '') === 'A' && isCurrentRoundComplete && (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader>
+        <Card className="bg-[var(--brand-light-sand)]/50 dark:bg-primary/5 border-primary/20 border-[var(--brand-light-sand)]/60">
+          <CardHeader className="bg-[var(--brand-light-sand)]/50 dark:bg-transparent">
             <CardTitle className="flex items-center gap-2 text-primary">
               <Users className="h-5 w-5" />
               Round Complete - Station A Lead Controls
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-[var(--brand-light-sand)]/50 dark:bg-transparent">
             <div className="space-y-4">
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <div className="bg-[var(--brand-light-sand)]/40 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
                   <CheckCircle2 className="h-4 w-4" />
                   <span className="font-medium">Round {Math.max(...allMatches.map(m => m.round))} Complete</span>
@@ -1206,7 +1205,7 @@ export default function StationLeadView() {
                 {populateNextRoundMutation.isPending ? "Setting Up Next Round..." : "Set Up Next Round"}
               </Button>
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <div className="bg-[var(--brand-light-sand)]/40 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                 <p className="text-xs text-blue-700 dark:text-blue-300">
                   <strong>Next Round Setup:</strong> This will create new bracket with advancing competitors distributed across stations A, B, and C based on their wins from the current round.
                 </p>
@@ -1215,10 +1214,9 @@ export default function StationLeadView() {
           </CardContent>
         </Card>
       )}
-
       {!currentMatch && selectedStationData && (
-        <Card>
-          <CardContent className="p-12 text-center">
+        <Card className="bg-[var(--brand-light-sand)]/60 dark:bg-card border-[var(--brand-light-sand)]/50">
+          <CardContent className="p-12 text-center bg-[var(--brand-light-sand)]/60 dark:bg-transparent">
             <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-medium mb-2">No Active Heat</h3>
             <p className="text-muted-foreground">

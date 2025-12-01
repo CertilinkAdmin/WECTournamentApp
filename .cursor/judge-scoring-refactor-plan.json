@@ -1,0 +1,48 @@
+{
+  "task": "Refactor Judge Scoring System for Segment-Specific Submissions",
+  "description": "Implement pause detection, separate scorecard types (Cappuccino vs Espresso judge), and segment-specific submission buttons",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Fix State Variable References",
+      "description": "Update all UI references from old state variables (visualLatteArt, taste, etc.) to new ones (latteArtVisual, cappuccinoTaste, espressoTaste, etc.)",
+      "files": ["client/src/components/JudgeScoringView.tsx"],
+      "status": "in_progress"
+    },
+    {
+      "step": 2,
+      "title": "Create Separate Scorecard UI Sections",
+      "description": "Create three separate sections: 1) Latte Art (all judges), 2) Cappuccino Sensory (Cappuccino judge only), 3) Espresso Sensory (Espresso judge only)",
+      "files": ["client/src/components/JudgeScoringView.tsx"],
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "title": "Add Segment-Specific Submit Buttons",
+      "description": "Add separate submit buttons for each segment with proper validation and disabled states",
+      "files": ["client/src/components/JudgeScoringView.tsx"],
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "title": "Update Submission Logic",
+      "description": "Ensure handleSubmitLatteArt, handleSubmitCappuccinoSensory, and handleSubmitEspressoSensory work correctly",
+      "files": ["client/src/components/JudgeScoringView.tsx"],
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "title": "Apply OPUX Optimizations",
+      "description": "Mobile-first responsive design, proper touch targets, spacing, and CLS optimizations",
+      "files": ["client/src/components/JudgeScoringView.tsx", "client/src/pages/live/LiveJudgesScoring.tsx"],
+      "status": "pending"
+    }
+  ],
+  "currentIssues": [
+    "Duplicate state variable declarations (latteArtSubmitted, etc.)",
+    "Old state variables still referenced in UI (visualLatteArt, taste, etc.)",
+    "Missing Users import",
+    "judgeHasScored, isScoringComplete, handleSubmit, existingScore not defined"
+  ]
+}
+

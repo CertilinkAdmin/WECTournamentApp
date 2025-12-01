@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Gavel, CheckCircle2, Loader2, Trophy, ArrowLeft, Coffee, Bell, X } from 'lucide-react';
+import { Gavel, CheckCircle2, Loader2, Trophy, ArrowLeft, Coffee, Bell, X, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -25,13 +25,15 @@ const CATEGORY_POINTS = {
 interface JudgeScoringViewProps {
   judgeId?: number;
   matchId?: number;
+  judgeRole?: 'ESPRESSO' | 'CAPPUCCINO';
   isReadOnly?: boolean;
   onScoreSubmitted?: () => void;
 }
 
 export default function JudgeScoringView({ 
   judgeId: propJudgeId, 
-  matchId: propMatchId, 
+  matchId: propMatchId,
+  judgeRole: propJudgeRole,
   isReadOnly: propIsReadOnly = false,
   onScoreSubmitted 
 }: JudgeScoringViewProps = {}) {
@@ -79,12 +81,21 @@ export default function JudgeScoringView({
     }
   }, [propMatchId]);
 
-  // Scoring state - judges score left/right (blind, no cup codes shown)
-  const [visualLatteArt, setVisualLatteArt] = useState<'left' | 'right' | null>(null);
-  const [taste, setTaste] = useState<'left' | 'right' | null>(null);
-  const [tactile, setTactile] = useState<'left' | 'right' | null>(null);
-  const [flavour, setFlavour] = useState<'left' | 'right' | null>(null);
-  const [overall, setOverall] = useState<'left' | 'right' | null>(null);
+  // Scoring state - separate for Latte Art and Sensory segments
+  // Latte Art (all judges score this)
+  const [latteArtVisual, setLatteArtVisual] = useState<'left' | 'right' | null>(null);
+  
+  // Cappuccino sensory (only Cappuccino judge scores this)
+  const [cappuccinoTaste, setCappuccinoTaste] = useState<'left' | 'right' | null>(null);
+  const [cappuccinoTactile, setCappuccinoTactile] = useState<'left' | 'right' | null>(null);
+  const [cappuccinoFlavour, setCappuccinoFlavour] = useState<'left' | 'right' | null>(null);
+  const [cappuccinoOverall, setCappuccinoOverall] = useState<'left' | 'right' | null>(null);
+  
+  // Espresso sensory (only Espresso judge scores this)
+  const [espressoTaste, setEspressoTaste] = useState<'left' | 'right' | null>(null);
+  const [espressoTactile, setEspressoTactile] = useState<'left' | 'right' | null>(null);
+  const [espressoFlavour, setEspressoFlavour] = useState<'left' | 'right' | null>(null);
+  const [espressoOverall, setEspressoOverall] = useState<'left' | 'right' | null>(null);
   const [notifications, setNotifications] = useState<Array<{
     matchId: number;
     heatNumber: number;
@@ -270,8 +281,14 @@ export default function JudgeScoringView({
     return match;
   }, [assignedMatches, selectedMatchId, tournamentIdNum]);
 
-  // All judges score both segments - no role distinction
-  const judgeRoleForMatch = selectedMatch?.judgeRole;
+  // Determine judge role (from prop, match, or assigned matches)
+  const effectiveJudgeRole = useMemo(() => {
+    if (propJudgeRole) return propJudgeRole;
+    if (selectedMatch?.judgeRole) return selectedMatch.judgeRole;
+    // Try to find role from assigned matches
+    const matchWithRole = assignedMatches.find(m => m.id === selectedMatchId);
+    return matchWithRole?.judgeRole || null;
+  }, [propJudgeRole, selectedMatch, assignedMatches, selectedMatchId]);
 
   // Filter assigned matches by tournament if tournamentId is specified
   const tournamentMatches = useMemo(() => {
@@ -301,15 +318,38 @@ export default function JudgeScoringView({
     return participant && user ? { participant, user, cupCode: participant.cupCode || '' } : null;
   }, [selectedMatch, allParticipants, allUsers]);
 
-  // Check if judge has already scored this match and get existing score
-  const existingScore = useMemo(() => {
+  // Check for existing scores by segment type
+  const existingLatteArtScore = useMemo(() => {
     if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
+    // Look for score with visualLatteArt filled (indicates Latte Art was scored)
     return existingScores.find(score => 
-      score.judgeName === selectedJudge.user.name && score.matchId === selectedMatchId
+      score.judgeName === selectedJudge.user.name && 
+      score.matchId === selectedMatchId &&
+      score.visualLatteArt !== null
     ) || null;
   }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
 
-  const judgeHasScored = !!existingScore;
+  const existingCappuccinoScore = useMemo(() => {
+    if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
+    return existingScores.find(score => 
+      score.judgeName === selectedJudge.user.name && 
+      score.matchId === selectedMatchId &&
+      score.sensoryBeverage === 'Cappuccino'
+    ) || null;
+  }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
+
+  const existingEspressoScore = useMemo(() => {
+    if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
+    return existingScores.find(score => 
+      score.judgeName === selectedJudge.user.name && 
+      score.matchId === selectedMatchId &&
+      score.sensoryBeverage === 'Espresso'
+    ) || null;
+  }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
+
+  const latteArtSubmitted = !!existingLatteArtScore;
+  const cappuccinoSensorySubmitted = !!existingCappuccinoScore;
+  const espressoSensorySubmitted = !!existingEspressoScore;
 
   // Get available segments for selected match based on progression
   const availableSegments = useMemo(() => {
@@ -354,34 +394,58 @@ export default function JudgeScoringView({
     return segments.find(s => s.segment === selectedSegmentType);
   }, [segments, selectedSegmentType]);
 
-  // Load existing score if judge has already scored
+  // Load existing scores if judge has already scored
   useEffect(() => {
-    if (existingScore) {
-      // Judges score left/right (blind) - load from visualLatteArt, taste, etc. fields
-      setVisualLatteArt(existingScore.visualLatteArt as 'left' | 'right' | null);
-      setTaste(existingScore.taste as 'left' | 'right' | null);
-      setTactile(existingScore.tactile as 'left' | 'right' | null);
-      setFlavour(existingScore.flavour as 'left' | 'right' | null);
-      setOverall(existingScore.overall as 'left' | 'right' | null);
+    // Load Latte Art score
+    if (existingLatteArtScore) {
+      setLatteArtVisual(existingLatteArtScore.visualLatteArt as 'left' | 'right' | null);
     } else {
-      setVisualLatteArt(null);
-      setTaste(null);
-      setTactile(null);
-      setFlavour(null);
-      setOverall(null);
+      setLatteArtVisual(null);
     }
-  }, [existingScore]);
 
-  // Reset scoring state when match or segment changes (only if no existing score)
-  useEffect(() => {
-    if (!existingScore) {
-      setVisualLatteArt(null);
-      setTaste(null);
-      setTactile(null);
-      setFlavour(null);
-      setOverall(null);
+    // Load Cappuccino sensory scores
+    if (existingCappuccinoScore) {
+      setCappuccinoTaste(existingCappuccinoScore.taste as 'left' | 'right' | null);
+      setCappuccinoTactile(existingCappuccinoScore.tactile as 'left' | 'right' | null);
+      setCappuccinoFlavour(existingCappuccinoScore.flavour as 'left' | 'right' | null);
+      setCappuccinoOverall(existingCappuccinoScore.overall as 'left' | 'right' | null);
+    } else {
+      setCappuccinoTaste(null);
+      setCappuccinoTactile(null);
+      setCappuccinoFlavour(null);
+      setCappuccinoOverall(null);
     }
-  }, [selectedMatchId, selectedSegmentType, existingScore]);
+
+    // Load Espresso sensory scores
+    if (existingEspressoScore) {
+      setEspressoTaste(existingEspressoScore.taste as 'left' | 'right' | null);
+      setEspressoTactile(existingEspressoScore.tactile as 'left' | 'right' | null);
+      setEspressoFlavour(existingEspressoScore.flavour as 'left' | 'right' | null);
+      setEspressoOverall(existingEspressoScore.overall as 'left' | 'right' | null);
+    } else {
+      setEspressoTaste(null);
+      setEspressoTactile(null);
+      setEspressoFlavour(null);
+      setEspressoOverall(null);
+    }
+  }, [existingLatteArtScore, existingCappuccinoScore, existingEspressoScore]);
+
+  // Reset scoring state when match changes (only if no existing scores)
+  useEffect(() => {
+    if (!existingLatteArtScore) setLatteArtVisual(null);
+    if (!existingCappuccinoScore) {
+      setCappuccinoTaste(null);
+      setCappuccinoTactile(null);
+      setCappuccinoFlavour(null);
+      setCappuccinoOverall(null);
+    }
+    if (!existingEspressoScore) {
+      setEspressoTaste(null);
+      setEspressoTactile(null);
+      setEspressoFlavour(null);
+      setEspressoOverall(null);
+    }
+  }, [selectedMatchId, existingLatteArtScore, existingCappuccinoScore, existingEspressoScore]);
 
   const submitScoreMutation = useMutation({
     mutationFn: async (scoreData: InsertJudgeDetailedScore) => {
@@ -403,12 +467,6 @@ export default function JudgeScoringView({
         title: 'Score Submitted',
         description: 'Your score has been submitted successfully.',
       });
-      // Reset form
-      setVisualLatteArt(null);
-      setTaste(null);
-      setTactile(null);
-      setFlavour(null);
-      setOverall(null);
       // Call callback if provided
       if (onScoreSubmitted) {
         onScoreSubmitted();
@@ -423,61 +481,112 @@ export default function JudgeScoringView({
     },
   });
 
-  const handleSubmit = () => {
-    if (!selectedJudge || !selectedMatchId || !selectedSegmentType) {
+  // Submit Latte Art score (all judges)
+  const handleSubmitLatteArt = () => {
+    if (!selectedJudge || !selectedMatchId) {
       toast({
         title: 'Validation Error',
-        description: 'Please select a judge, match, and segment',
+        description: 'Please select a judge and match',
         variant: 'destructive',
       });
       return;
     }
 
-    // For cappuccino, all categories including visual latte art are required
-    if (selectedSegmentType === 'CAPPUCCINO' && (!visualLatteArt || !taste || !tactile || !flavour || !overall)) {
+    if (!latteArtVisual) {
       toast({
         title: 'Validation Error',
-        description: 'Please complete all scoring categories for Cappuccino (including Visual/Latte Art)',
+        description: 'Please select a winner for Visual Latte Art',
         variant: 'destructive',
       });
       return;
     }
 
-    // For espresso, only sensory categories are required (no visual latte art)
-    if (selectedSegmentType === 'ESPRESSO' && (!taste || !tactile || !flavour || !overall)) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please complete all sensory categories for Espresso',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Judges score left/right (blind) - cup codes will be assigned by admin later
     const scoreData: InsertJudgeDetailedScore = {
       matchId: selectedMatchId,
       judgeName: selectedJudge.user.name,
-      sensoryBeverage: selectedSegmentType === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso',
-      visualLatteArt: selectedSegmentType === 'CAPPUCCINO' ? visualLatteArt! : null, // Visual/Latte Art only for Cappuccino
-      taste: taste!,
-      tactile: tactile!,
-      flavour: flavour!,
-      overall: overall!,
+      sensoryBeverage: 'Cappuccino', // Use Cappuccino as default for Latte Art
+      visualLatteArt: latteArtVisual,
+      taste: null,
+      tactile: null,
+      flavour: null,
+      overall: null,
     };
 
     submitScoreMutation.mutate(scoreData);
   };
 
-  // Check if scoring is complete
-  const isScoringComplete = useMemo(() => {
-    if (selectedSegmentType === 'CAPPUCCINO') {
-      return visualLatteArt !== null && taste !== null && tactile !== null && flavour !== null && overall !== null;
+  // Submit Cappuccino sensory score (only Cappuccino judge)
+  const handleSubmitCappuccinoSensory = () => {
+    if (!selectedJudge || !selectedMatchId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a judge and match',
+        variant: 'destructive',
+      });
+      return;
     }
-    if (selectedSegmentType === 'ESPRESSO') {
-      return taste !== null && tactile !== null && flavour !== null && overall !== null;
+
+    if (!cappuccinoTaste || !cappuccinoTactile || !cappuccinoFlavour || !cappuccinoOverall) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please complete all Cappuccino sensory categories',
+        variant: 'destructive',
+      });
+      return;
     }
-    return false;
-  }, [selectedSegmentType, visualLatteArt, taste, tactile, flavour, overall]);
+
+    const scoreData: InsertJudgeDetailedScore = {
+      matchId: selectedMatchId,
+      judgeName: selectedJudge.user.name,
+      sensoryBeverage: 'Cappuccino',
+      visualLatteArt: null, // Latte Art submitted separately
+      taste: cappuccinoTaste,
+      tactile: cappuccinoTactile,
+      flavour: cappuccinoFlavour,
+      overall: cappuccinoOverall,
+    };
+
+    submitScoreMutation.mutate(scoreData);
+  };
+
+  // Submit Espresso sensory score (only Espresso judge)
+  const handleSubmitEspressoSensory = () => {
+    if (!selectedJudge || !selectedMatchId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a judge and match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!espressoTaste || !espressoTactile || !espressoFlavour || !espressoOverall) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please complete all Espresso sensory categories',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const scoreData: InsertJudgeDetailedScore = {
+      matchId: selectedMatchId,
+      judgeName: selectedJudge.user.name,
+      sensoryBeverage: 'Espresso',
+      visualLatteArt: null, // Latte Art submitted separately
+      taste: espressoTaste,
+      tactile: espressoTactile,
+      flavour: espressoFlavour,
+      overall: espressoOverall,
+    };
+
+    submitScoreMutation.mutate(scoreData);
+  };
+
+  // Check if scoring is complete for each segment
+  const isLatteArtComplete = latteArtVisual !== null;
+  const isCappuccinoSensoryComplete = cappuccinoTaste !== null && cappuccinoTactile !== null && cappuccinoFlavour !== null && cappuccinoOverall !== null;
+  const isEspressoSensoryComplete = espressoTaste !== null && espressoTactile !== null && espressoFlavour !== null && espressoOverall !== null;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -687,288 +796,443 @@ export default function JudgeScoringView({
             </Card>
           )}
 
-          {/* Scoring Interface */}
-          {selectedSegmentType && selectedMatchId && competitor1 && competitor2 && (
-            <Card className="border-l-4 border-l-primary bg-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2 text-[#93401f]">
-                  <Users className="h-5 w-5" />
-                  <span className="font-bold">Judge Scorecard</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Cup Codes - Only show after match is completed (DONE status) */}
-                {selectedMatch?.status === 'DONE' && (
-                  <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
-                    <div className="text-center">
-                      <div className="text-xs text-muted-foreground font-medium">Left Cup</div>
-                      <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[#2d1b12]">
-                        {(() => {
-                          // Try to get cup code from cup positions if assigned
-                          const leftPosition = cupPositions?.find(p => p.position === 'left');
-                          return leftPosition?.cupCode || dialInSegment?.leftCupCode || '—';
-                        })()}
+          {/* Scoring Interface - Show when match is selected (no segment selection needed, judge role determines what to show) */}
+          {selectedMatchId && competitor1 && competitor2 && effectiveJudgeRole && (
+            <div className="space-y-4 sm:space-y-6">
+              {/* Latte Art Scorecard - All Judges */}
+              <Card className="border-l-4 border-l-blue-500 bg-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-[var(--brand-cinnamon-brown)] dark:text-[var(--brand-cinnamon-brown)]">
+                    <Users className="h-5 w-5" />
+                    <span className="font-bold">Visual Latte Art</span>
+                    {latteArtSubmitted && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 ml-auto">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Submitted
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 p-4 sm:p-6">
+                  {/* Cup Codes - Only show after match is completed (DONE status) */}
+                  {selectedMatch?.status === 'DONE' && (
+                    <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
+                      <div className="text-center">
+                        <div className="text-xs text-muted-foreground font-medium">Left Cup</div>
+                        <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[var(--espresso-dark)] dark:bg-[var(--espresso-dark)] text-[var(--espresso-cream)]">
+                          {(() => {
+                            const leftPosition = cupPositions?.find(p => p.position === 'left');
+                            return leftPosition?.cupCode || dialInSegment?.leftCupCode || '—';
+                          })()}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-muted-foreground font-medium">Right Cup</div>
+                        <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[var(--espresso-dark)] dark:bg-[var(--espresso-dark)] text-[var(--espresso-cream)]">
+                          {(() => {
+                            const rightPosition = cupPositions?.find(p => p.position === 'right');
+                            return rightPosition?.cupCode || dialInSegment?.rightCupCode || '—';
+                          })()}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-xs text-muted-foreground font-medium">Right Cup</div>
-                      <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[#2d1b12]">
-                        {(() => {
-                          const rightPosition = cupPositions?.find(p => p.position === 'right');
-                          return rightPosition?.cupCode || dialInSegment?.rightCupCode || '—';
-                        })()}
+                  )}
+
+                  {/* Blind Judging Notice */}
+                  {selectedMatch?.status !== 'DONE' && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                        <Bell className="h-4 w-4 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm font-medium">Blind Judging: Score based on Left/Right cup positions only. Cup codes will be revealed after the round is completed.</span>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Blind Judging Notice - Judges don't see cup codes during scoring */}
-                {selectedMatch?.status !== 'DONE' && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                      <Bell className="h-4 w-4 flex-shrink-0" />
-                      <span className="text-xs sm:text-sm font-medium">Blind Judging: Score based on Left/Right cup positions only. Cup codes will be revealed after the round is completed.</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Visual/Latte Art (3 points) - ONLY on CAPPUCCINO */}
-                {selectedSegmentType === 'CAPPUCCINO' && (
-                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
-                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
+                  {/* Visual Latte Art Scoring */}
+                  <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[var(--espresso-dark)] dark:bg-[var(--espresso-dark)] min-h-[3rem] sm:min-h-[3.5rem]">
+                    <label className="flex items-center gap-2 justify-start text-[var(--brand-cinnamon-brown)] dark:text-[var(--brand-cinnamon-brown)] cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={visualLatteArt === 'left'}
-                        onChange={(e) => setVisualLatteArt(e.target.checked ? 'left' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                        checked={latteArtVisual === 'left'}
+                        onChange={(e) => setLatteArtVisual(e.target.checked ? 'left' : null)}
+                        disabled={latteArtSubmitted || propIsReadOnly}
+                        className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                       />
-                      <span className="text-xs text-muted-foreground">Left</span>
+                      <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                     </label>
-                    <div className="text-center font-semibold text-primary">
+                    <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                       Visual Latte Art
                     </div>
-                    <label className="flex items-center gap-2 justify-end">
-                      <span className="text-xs text-muted-foreground">Right</span>
+                    <label className="flex items-center gap-2 justify-end cursor-pointer">
+                      <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
                       <input
                         type="checkbox"
-                        checked={visualLatteArt === 'right'}
-                        onChange={(e) => setVisualLatteArt(e.target.checked ? 'right' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
-                      />
-                    </label>
-                  </div>
-                )}
-
-                {/* Sensory Beverage Label */}
-                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-[#2d1b12]">
-                  <div></div>
-                  <div className="text-center font-semibold text-primary">
-                    Sensory {selectedSegmentType === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso'}
-                  </div>
-                  <div></div>
-                </div>
-
-                {/* Sensory Categories (for both CAPPUCCINO and ESPRESSO) */}
-                <div className="space-y-3">
-                  {/* Taste (1 point) */}
-                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
-                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
-                      <input
-                        type="checkbox"
-                        checked={taste === 'left'}
-                        onChange={(e) => setTaste(e.target.checked ? 'left' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
-                      />
-                      <span className="text-xs text-muted-foreground">Left</span>
-                    </label>
-                    <div className="text-center font-semibold text-primary">
-                      Taste
-                    </div>
-                    <label className="flex items-center gap-2 justify-end">
-                      <span className="text-xs text-muted-foreground">Right</span>
-                      <input
-                        type="checkbox"
-                        checked={taste === 'right'}
-                        onChange={(e) => setTaste(e.target.checked ? 'right' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                        checked={latteArtVisual === 'right'}
+                        onChange={(e) => setLatteArtVisual(e.target.checked ? 'right' : null)}
+                        disabled={latteArtSubmitted || propIsReadOnly}
+                        className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                       />
                     </label>
                   </div>
 
-                  {/* Tactile (1 point) */}
-                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
-                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
-                      <input
-                        type="checkbox"
-                        checked={tactile === 'left'}
-                        onChange={(e) => setTactile(e.target.checked ? 'left' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
-                      />
-                      <span className="text-xs text-muted-foreground">Left</span>
-                    </label>
-                    <div className="text-center font-semibold text-primary">
-                      Tactile
-                    </div>
-                    <label className="flex items-center gap-2 justify-end">
-                      <span className="text-xs text-muted-foreground">Right</span>
-                      <input
-                        type="checkbox"
-                        checked={tactile === 'right'}
-                        onChange={(e) => setTactile(e.target.checked ? 'right' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
-                      />
-                    </label>
-                  </div>
-
-                  {/* Flavour (1 point) */}
-                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
-                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
-                      <input
-                        type="checkbox"
-                        checked={flavour === 'left'}
-                        onChange={(e) => setFlavour(e.target.checked ? 'left' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
-                      />
-                      <span className="text-xs text-muted-foreground">Left</span>
-                    </label>
-                    <div className="text-center font-semibold text-primary">
-                      Flavour
-                    </div>
-                    <label className="flex items-center gap-2 justify-end">
-                      <span className="text-xs text-muted-foreground">Right</span>
-                      <input
-                        type="checkbox"
-                        checked={flavour === 'right'}
-                        onChange={(e) => setFlavour(e.target.checked ? 'right' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
-                      />
-                    </label>
-                  </div>
-
-                  {/* Overall (5 points) */}
-                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
-                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
-                      <input
-                        type="checkbox"
-                        checked={overall === 'left'}
-                        onChange={(e) => setOverall(e.target.checked ? 'left' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
-                      />
-                      <span className="text-xs text-muted-foreground">Left</span>
-                    </label>
-                    <div className="text-center font-semibold text-primary">
-                      Overall
-                    </div>
-                    <label className="flex items-center gap-2 justify-end">
-                      <span className="text-xs text-muted-foreground">Right</span>
-                      <input
-                        type="checkbox"
-                        checked={overall === 'right'}
-                        onChange={(e) => setOverall(e.target.checked ? 'right' : null)}
-                        disabled={judgeHasScored}
-                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                {/* Completion Status with L/R Checkmarks */}
-                {isScoringComplete && (
-                  <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-                    <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-4">
-                      <CheckCircle2 className="h-5 w-5" />
-                      <span className="font-semibold">Scoring Complete</span>
-                    </div>
-                    <div className={`grid gap-2 ${selectedSegmentType === 'CAPPUCCINO' ? 'grid-cols-5' : 'grid-cols-4'}`}>
-                      {selectedSegmentType === 'CAPPUCCINO' && (
-                        <div className="text-center">
-                          <div className="text-xs font-medium mb-1">Visual/Latte Art</div>
-                          <div className="flex items-center justify-center h-10 w-10 rounded border-2 border-green-500 bg-green-100 dark:bg-green-900">
-                            <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                          </div>
-                          <div className="mt-1 text-xs font-bold">{visualLatteArt?.toUpperCase()}</div>
-                        </div>
-                      )}
-                      <div className="text-center">
-                        <div className="text-xs font-medium mb-1">Taste</div>
-                        <div className="flex items-center justify-center h-10 w-10 rounded border-2 border-green-500 bg-green-100 dark:bg-green-900">
-                          <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="mt-1 text-xs font-bold">{taste?.toUpperCase()}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs font-medium mb-1">Tactile</div>
-                        <div className="flex items-center justify-center h-10 w-10 rounded border-2 border-green-500 bg-green-100 dark:bg-green-900">
-                          <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="mt-1 text-xs font-bold">{tactile?.toUpperCase()}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs font-medium mb-1">Flavour</div>
-                        <div className="flex items-center justify-center h-10 w-10 rounded border-2 border-green-500 bg-green-100 dark:bg-green-900">
-                          <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="mt-1 text-xs font-bold">{flavour?.toUpperCase()}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs font-medium mb-1">Overall</div>
-                        <div className="flex items-center justify-center h-10 w-10 rounded border-2 border-green-500 bg-green-100 dark:bg-green-900">
-                          <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="mt-1 text-xs font-bold">{overall?.toUpperCase()}</div>
+                  {/* Latte Art Completion Status */}
+                  {isLatteArtComplete && !latteArtSubmitted && (
+                    <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="flex items-center gap-2 text-green-700 dark:text-green-300 text-sm">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span className="font-medium">Latte Art scoring complete</span>
                       </div>
                     </div>
-                    <div className="mt-3 text-sm text-green-600 dark:text-green-400 text-center">
-                      All required categories have been scored. You can now submit your scores.
-                    </div>
-                  </div>
-                )}
-
-                {/* Existing Score Notice */}
-                {judgeHasScored && existingScore && (
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-2">
-                      <CheckCircle2 className="h-5 w-5" />
-                      <span className="font-semibold">Score Already Submitted</span>
-                    </div>
-                    <div className="text-sm text-blue-600 dark:text-blue-400">
-                      Submitted at: {new Date(existingScore.submittedAt).toLocaleString()}
-                    </div>
-                  </div>
-                )}
-
-                {/* Submit Button */}
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!isScoringComplete || submitScoreMutation.isPending || judgeHasScored}
-                  className="w-full"
-                  size="lg"
-                >
-                  {submitScoreMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : judgeHasScored ? (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Already Scored
-                    </>
-                  ) : (
-                    'Submit Scores'
                   )}
-                </Button>
-              </CardContent>
-            </Card>
+
+                  {/* Latte Art Submit Button */}
+                  <Button
+                    onClick={handleSubmitLatteArt}
+                    disabled={!isLatteArtComplete || submitScoreMutation.isPending || latteArtSubmitted || propIsReadOnly}
+                    className="w-full min-h-[2.75rem] sm:min-h-[2.5rem]"
+                    size="lg"
+                  >
+                    {submitScoreMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : latteArtSubmitted ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Latte Art Submitted
+                      </>
+                    ) : (
+                      'Submit Latte Art Score'
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Cappuccino Sensory Scorecard - Only for Cappuccino Judge */}
+              {effectiveJudgeRole === 'CAPPUCCINO' && (
+                <Card className="border-l-4 border-l-amber-500 bg-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-[var(--brand-cinnamon-brown)] dark:text-[var(--brand-cinnamon-brown)]">
+                      <Coffee className="h-5 w-5" />
+                      <span className="font-bold">Cappuccino Sensory</span>
+                      {cappuccinoSensorySubmitted && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 ml-auto">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Submitted
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 p-4 sm:p-6">
+                    {/* Cappuccino Sensory Categories */}
+                    <div className="space-y-3">
+                      {/* Taste */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoTaste === 'left'}
+                            onChange={(e) => setCappuccinoTaste(e.target.checked ? 'left' : null)}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                        </label>
+                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
+                          Taste
+                        </div>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer">
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoTaste === 'right'}
+                            onChange={(e) => setCappuccinoTaste(e.target.checked ? 'right' : null)}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Tactile */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoTactile === 'left'}
+                            onChange={(e) => setCappuccinoTactile(e.target.checked ? 'left' : null)}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                        </label>
+                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                          Tactile
+                        </div>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer">
+                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoTactile === 'right'}
+                            onChange={(e) => setCappuccinoTactile(e.target.checked ? 'right' : null)}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Flavour */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoFlavour === 'left'}
+                            onChange={(e) => setCappuccinoFlavour(e.target.checked ? 'left' : null)}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                        </label>
+                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                          Flavour
+                        </div>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer">
+                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoFlavour === 'right'}
+                            onChange={(e) => setCappuccinoFlavour(e.target.checked ? 'right' : null)}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Overall */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoOverall === 'left'}
+                            onChange={(e) => setCappuccinoOverall(e.target.checked ? 'left' : null)}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                        </label>
+                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                          Overall
+                        </div>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer">
+                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoOverall === 'right'}
+                            onChange={(e) => setCappuccinoOverall(e.target.checked ? 'right' : null)}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Cappuccino Sensory Completion Status */}
+                    {isCappuccinoSensoryComplete && !cappuccinoSensorySubmitted && (
+                      <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                        <div className="flex items-center gap-2 text-green-700 dark:text-green-300 text-sm">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span className="font-medium">Cappuccino sensory scoring complete</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cappuccino Sensory Submit Button */}
+                    <Button
+                      onClick={handleSubmitCappuccinoSensory}
+                      disabled={!isCappuccinoSensoryComplete || submitScoreMutation.isPending || cappuccinoSensorySubmitted || propIsReadOnly}
+                      className="w-full min-h-[2.75rem] sm:min-h-[2.5rem]"
+                      size="lg"
+                    >
+                      {submitScoreMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : cappuccinoSensorySubmitted ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Cappuccino Sensory Submitted
+                        </>
+                      ) : (
+                        'Submit Cappuccino Sensory Score'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Espresso Sensory Scorecard - Only for Espresso Judge */}
+              {effectiveJudgeRole === 'ESPRESSO' && (
+                <Card className="border-l-4 border-l-purple-500 bg-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-[var(--brand-cinnamon-brown)] dark:text-[var(--brand-cinnamon-brown)]">
+                      <Coffee className="h-5 w-5" />
+                      <span className="font-bold">Espresso Sensory</span>
+                      {espressoSensorySubmitted && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 ml-auto">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Submitted
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 p-4 sm:p-6">
+                    {/* Espresso Sensory Categories */}
+                    <div className="space-y-3">
+                      {/* Taste */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={espressoTaste === 'left'}
+                            onChange={(e) => setEspressoTaste(e.target.checked ? 'left' : null)}
+                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                        </label>
+                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
+                          Taste
+                        </div>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer">
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                          <input
+                            type="checkbox"
+                            checked={espressoTaste === 'right'}
+                            onChange={(e) => setEspressoTaste(e.target.checked ? 'right' : null)}
+                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Tactile */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={espressoTactile === 'left'}
+                            onChange={(e) => setEspressoTactile(e.target.checked ? 'left' : null)}
+                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                        </label>
+                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                          Tactile
+                        </div>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer">
+                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <input
+                            type="checkbox"
+                            checked={espressoTactile === 'right'}
+                            onChange={(e) => setEspressoTactile(e.target.checked ? 'right' : null)}
+                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Flavour */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={espressoFlavour === 'left'}
+                            onChange={(e) => setEspressoFlavour(e.target.checked ? 'left' : null)}
+                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                        </label>
+                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                          Flavour
+                        </div>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer">
+                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <input
+                            type="checkbox"
+                            checked={espressoFlavour === 'right'}
+                            onChange={(e) => setEspressoFlavour(e.target.checked ? 'right' : null)}
+                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Overall */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={espressoOverall === 'left'}
+                            onChange={(e) => setEspressoOverall(e.target.checked ? 'left' : null)}
+                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                        </label>
+                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                          Overall
+                        </div>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer">
+                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <input
+                            type="checkbox"
+                            checked={espressoOverall === 'right'}
+                            onChange={(e) => setEspressoOverall(e.target.checked ? 'right' : null)}
+                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Espresso Sensory Completion Status */}
+                    {isEspressoSensoryComplete && !espressoSensorySubmitted && (
+                      <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                        <div className="flex items-center gap-2 text-green-700 dark:text-green-300 text-sm">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span className="font-medium">Espresso sensory scoring complete</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Espresso Sensory Submit Button */}
+                    <Button
+                      onClick={handleSubmitEspressoSensory}
+                      disabled={!isEspressoSensoryComplete || submitScoreMutation.isPending || espressoSensorySubmitted || propIsReadOnly}
+                      className="w-full min-h-[2.75rem] sm:min-h-[2.5rem]"
+                      size="lg"
+                    >
+                      {submitScoreMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : espressoSensorySubmitted ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Espresso Sensory Submitted
+                        </>
+                      ) : (
+                        'Submit Espresso Sensory Score'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
         </div>
       )}

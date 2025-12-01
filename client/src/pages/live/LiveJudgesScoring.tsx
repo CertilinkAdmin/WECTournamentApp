@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Gavel, Loader2, AlertCircle, CheckCircle2, Play, Lock } from 'lucide-react';
+import { Gavel, Loader2, AlertCircle, CheckCircle2, Play, Lock, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import JudgeScoringView from '@/components/JudgeScoringView';
 import type { User, Tournament, TournamentParticipant, Match, JudgeDetailedScore } from '@shared/schema';
 
@@ -15,6 +16,9 @@ export default function LiveJudgesScoring() {
   const queryClient = useQueryClient();
   const [selectedJudgeId, setSelectedJudgeId] = useState<number | null>(null);
   const [activatedMatchId, setActivatedMatchId] = useState<number | null>(null);
+  const [selectedRound, setSelectedRound] = useState<number | null>(null);
+  const [currentHeatPage, setCurrentHeatPage] = useState<number>(1);
+  const heatsPerPage = 10;
 
   // Fetch tournament
   const { data: tournaments = [] } = useQuery<Tournament[]>({
@@ -94,11 +98,81 @@ export default function LiveJudgesScoring() {
     enabled: !!selectedJudgeId,
   });
 
+  // Fetch segments for activated match to check pause status
+  const { data: activatedMatchSegments = [] } = useQuery<Array<{ segment: string; status: string }>>({
+    queryKey: [`/api/matches/${activatedMatchId}/segments`],
+    queryFn: async () => {
+      if (!activatedMatchId) return [];
+      const response = await fetch(`/api/matches/${activatedMatchId}/segments`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!activatedMatchId,
+    refetchInterval: 5000, // Poll every 5 seconds to detect segment status changes
+  });
+
+  // Check if we're in a pause period (Cappuccino segment ended, Espresso not started)
+  const isPausePeriod = useMemo(() => {
+    if (!activatedMatchSegments.length) return false;
+    const cappuccinoSegment = activatedMatchSegments.find(s => s.segment === 'CAPPUCCINO');
+    const espressoSegment = activatedMatchSegments.find(s => s.segment === 'ESPRESSO');
+    // Pause period: Cappuccino ended, Espresso not started
+    return cappuccinoSegment?.status === 'ENDED' && espressoSegment?.status !== 'RUNNING' && espressoSegment?.status !== 'ENDED';
+  }, [activatedMatchSegments]);
+
   // Filter matches to current tournament
   const tournamentMatches = useMemo(() => {
     if (!tournamentIdNum) return assignedMatches;
     return assignedMatches.filter(m => (m as any).tournamentId === tournamentIdNum);
   }, [assignedMatches, tournamentIdNum]);
+
+  // Group matches by round
+  const matchesByRound = useMemo(() => {
+    const grouped: Record<number, (Match & { judgeRole: 'ESPRESSO' | 'CAPPUCCINO' })[]> = {};
+    tournamentMatches.forEach(match => {
+      if (!grouped[match.round]) {
+        grouped[match.round] = [];
+      }
+      grouped[match.round].push(match);
+    });
+    // Sort heats within each round
+    Object.keys(grouped).forEach(round => {
+      grouped[parseInt(round)].sort((a, b) => a.heatNumber - b.heatNumber);
+    });
+    return grouped;
+  }, [tournamentMatches]);
+
+  // Get available rounds
+  const availableRounds = useMemo(() => {
+    return Object.keys(matchesByRound)
+      .map(r => parseInt(r))
+      .sort((a, b) => a - b);
+  }, [matchesByRound]);
+
+  // Auto-select first round when matches are available
+  React.useEffect(() => {
+    if (availableRounds.length > 0 && !selectedRound) {
+      setSelectedRound(availableRounds[0]);
+      setCurrentHeatPage(1);
+    }
+  }, [availableRounds, selectedRound]);
+
+  // Reset heat page when round changes
+  React.useEffect(() => {
+    setCurrentHeatPage(1);
+  }, [selectedRound]);
+
+  // Get matches for selected round
+  const roundMatches = useMemo(() => {
+    if (!selectedRound) return [];
+    return matchesByRound[selectedRound] || [];
+  }, [selectedRound, matchesByRound]);
+
+  // Paginate heats within selected round
+  const totalHeatPages = Math.ceil(roundMatches.length / heatsPerPage);
+  const startHeatIndex = (currentHeatPage - 1) * heatsPerPage;
+  const endHeatIndex = startHeatIndex + heatsPerPage;
+  const paginatedHeats = roundMatches.slice(startHeatIndex, endHeatIndex);
 
   // Get activated match
   const activatedMatch = useMemo(() => {
@@ -129,6 +203,8 @@ export default function LiveJudgesScoring() {
   // Reset activated match when judge changes
   React.useEffect(() => {
     setActivatedMatchId(null);
+    setSelectedRound(null);
+    setCurrentHeatPage(1);
   }, [selectedJudgeId]);
 
   if (!tournament) {
@@ -204,7 +280,7 @@ export default function LiveJudgesScoring() {
               Assigned Heats for {selectedJudge.user.name}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="p-4 sm:p-6 space-y-4">
             {tournamentMatches.length === 0 ? (
               <div className="text-center p-6 text-muted-foreground">
                 <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -213,37 +289,112 @@ export default function LiveJudgesScoring() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {tournamentMatches.map((match) => {
-                  const isActivated = activatedMatchId === match.id;
-
-                  return (
-                    <div
-                      key={match.id}
-                      className={`p-4 rounded-lg border-2 transition-colors ${
-                        isActivated
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border bg-card hover:bg-muted/50'
-                      }`}
+              <>
+                {/* Round Selection */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-4 border-b">
+                  <label className="text-sm font-medium text-foreground sm:min-w-[80px]">
+                    Round:
+                  </label>
+                  <div className="flex items-center gap-2 flex-1">
+                    <Select
+                      value={selectedRound?.toString() || ''}
+                      onValueChange={(value) => {
+                        setSelectedRound(value ? parseInt(value) : null);
+                        setCurrentHeatPage(1);
+                      }}
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline">
-                              Round {match.round}, Heat {match.heatNumber}
-                            </Badge>
-                            <Badge variant={match.judgeRole === 'ESPRESSO' ? 'default' : 'secondary'}>
-                              {match.judgeRole}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Status: <span className="font-medium">{match.status}</span>
-                          </div>
+                      <SelectTrigger className="w-full sm:max-w-[200px] min-h-[2.75rem] sm:min-h-[2.5rem]">
+                        <SelectValue placeholder="Select round..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableRounds.map((round) => (
+                          <SelectItem key={round} value={round.toString()}>
+                            Round {round} ({matchesByRound[round]?.length || 0} heats)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {availableRounds.length > 1 && (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const currentIndex = availableRounds.indexOf(selectedRound || 0);
+                            if (currentIndex > 0) {
+                              setSelectedRound(availableRounds[currentIndex - 1]);
+                              setCurrentHeatPage(1);
+                            }
+                          }}
+                          disabled={!selectedRound || availableRounds.indexOf(selectedRound || 0) === 0}
+                          className="min-h-[2.75rem] sm:min-h-[2.5rem] px-3"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const currentIndex = availableRounds.indexOf(selectedRound || 0);
+                            if (currentIndex < availableRounds.length - 1) {
+                              setSelectedRound(availableRounds[currentIndex + 1]);
+                              setCurrentHeatPage(1);
+                            }
+                          }}
+                          disabled={!selectedRound || availableRounds.indexOf(selectedRound || 0) === availableRounds.length - 1}
+                          className="min-h-[2.75rem] sm:min-h-[2.5rem] px-3"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Heats List */}
+                {selectedRound && (
+                  <>
+                    <div className="space-y-3">
+                      {paginatedHeats.length === 0 ? (
+                        <div className="text-center p-6 text-muted-foreground">
+                          <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p className="text-sm sm:text-base">
+                            No heats found for Round {selectedRound}.
+                          </p>
                         </div>
-                        <div className="flex gap-2">
+                      ) : (
+                        paginatedHeats.map((match) => {
+                          const isActivated = activatedMatchId === match.id;
+
+                          return (
+                            <div
+                              key={match.id}
+                              className={`p-4 rounded-lg border-2 transition-colors ${
+                                isActivated
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-border bg-card hover:bg-muted/50'
+                              }`}
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Badge variant="outline">
+                                      Round {match.round}, Heat {match.heatNumber}
+                                    </Badge>
+                                    <Badge variant={match.judgeRole === 'ESPRESSO' ? 'default' : 'secondary'}>
+                                      {match.judgeRole}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Status: <span className="font-medium">{match.status}</span>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
                           {!isActivated && (
                             <Button
-                              onClick={() => setActivatedMatchId(match.id)}
+                              onClick={() => {
+                                setActivatedMatchId(match.id);
+                              }}
                               variant="default"
                               size="sm"
                               className="min-h-[2.5rem] sm:min-h-[2.5rem]"
@@ -252,22 +403,60 @@ export default function LiveJudgesScoring() {
                               Activate Scorecard
                             </Button>
                           )}
-                          {isActivated && (
-                            <Button
-                              onClick={() => setActivatedMatchId(null)}
-                              variant="outline"
-                              size="sm"
-                              className="min-h-[2.5rem] sm:min-h-[2.5rem]"
-                            >
-                              Close Scorecard
-                            </Button>
-                          )}
+                                  {isActivated && (
+                                    <Button
+                                      onClick={() => setActivatedMatchId(null)}
+                                      variant="outline"
+                                      size="sm"
+                                      className="min-h-[2.5rem] sm:min-h-[2.5rem]"
+                                    >
+                                      Close Scorecard
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Heat Pagination */}
+                    {totalHeatPages > 1 && (
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <div className="text-sm text-muted-foreground">
+                          Showing {startHeatIndex + 1}-{Math.min(endHeatIndex, roundMatches.length)} of {roundMatches.length} heats
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentHeatPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentHeatPage === 1}
+                            className="min-h-[2.5rem] sm:min-h-[2.5rem]"
+                          >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Previous
+                          </Button>
+                          <div className="text-sm text-muted-foreground px-2">
+                            Page {currentHeatPage} of {totalHeatPages}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentHeatPage(prev => Math.min(totalHeatPages, prev + 1))}
+                            disabled={currentHeatPage === totalHeatPages}
+                            className="min-h-[2.5rem] sm:min-h-[2.5rem]"
+                          >
+                            Next
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    )}
+                  </>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -291,12 +480,23 @@ export default function LiveJudgesScoring() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="p-4 sm:p-6">
+            <div className="p-4 sm:p-6 space-y-4">
+              {/* Pause Period Warning */}
+              {isPausePeriod && (
+                <Alert className="border-amber-200 bg-amber-50 animate-pulse">
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  <AlertTitle className="text-amber-900 font-semibold">Judging Pause Period</AlertTitle>
+                  <AlertDescription className="text-amber-800 text-sm sm:text-base">
+                    The Cappuccino segment has ended. Please submit your scores for Visual Latte Art and Cappuccino sensory before the Espresso segment begins.
+                  </AlertDescription>
+                </Alert>
+              )}
               {selectedJudgeId && activatedMatch.id && (
                 <JudgeScoringView
                   key={`${selectedJudgeId}-${activatedMatch.id}`}
                   judgeId={selectedJudgeId}
                   matchId={activatedMatch.id}
+                  judgeRole={activatedMatch.judgeRole}
                   isReadOnly={activatedMatchScored}
                   onScoreSubmitted={() => {
                     // Refresh scores after submission
