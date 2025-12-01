@@ -687,7 +687,7 @@ export default function StationLeadView() {
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 dark:bg-background bg-[#ecdcbb]">
       <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-primary/10 border border-[var(--brand-light-sand)]/70 shadow-sm">
         <CardHeader className="flex flex-col space-y-1.5 p-4 sm:p-6 dark:bg-transparent bg-[#bd490f]">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-[#904b34]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-[#9a4828]">
             <CardTitle className="flex items-center gap-2 text-primary text-lg sm:text-xl">
               <MapPin className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
               <span className="truncate">Station Lead Control</span>
@@ -717,7 +717,7 @@ export default function StationLeadView() {
                   variant={selectedStation === station.id ? "default" : "outline"}
                   onClick={() => setSelectedStation(station.id)}
                   data-testid={`button-station-${station.normalizedName}`}
-                  className="gap-2 whitespace-nowrap rounded-md font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover-elevate active-elevate-2 text-primary-foreground border border-primary-border min-h-9 px-4 flex flex-col items-start justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm min-w-0 bg-[#ecdcbb]"
+                  className="gap-2 whitespace-nowrap rounded-md font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover-elevate active-elevate-2 text-primary-foreground border border-primary-border min-h-9 px-4 flex flex-col items-start justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm min-w-0 bg-[#9a4828]"
                 >
                   <span className="truncate w-full text-center sm:text-left">{displayName}</span>
                   {stationLead && (
