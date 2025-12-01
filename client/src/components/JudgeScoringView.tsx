@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,19 @@ const CATEGORY_POINTS = {
   overall: 5,
 };
 
-export default function JudgeScoringView() {
+interface JudgeScoringViewProps {
+  judgeId?: number;
+  matchId?: number;
+  isReadOnly?: boolean;
+  onScoreSubmitted?: () => void;
+}
+
+export default function JudgeScoringView({ 
+  judgeId: propJudgeId, 
+  matchId: propMatchId, 
+  isReadOnly: propIsReadOnly = false,
+  onScoreSubmitted 
+}: JudgeScoringViewProps = {}) {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -42,9 +54,30 @@ export default function JudgeScoringView() {
   const currentUser = currentUserData?.user;
   const isJudge = currentUser?.role === 'JUDGE';
 
-  const [selectedJudgeId, setSelectedJudgeId] = useState<number | null>(null);
-  const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
+  const [searchParams] = useSearchParams();
+  const judgeIdFromUrl = searchParams.get('judgeId');
+  
+  const [selectedJudgeId, setSelectedJudgeId] = useState<number | null>(
+    propJudgeId || (judgeIdFromUrl ? parseInt(judgeIdFromUrl) : null)
+  );
+  const [selectedMatchId, setSelectedMatchId] = useState<number | null>(propMatchId || null);
   const [selectedSegmentType, setSelectedSegmentType] = useState<'CAPPUCCINO' | 'ESPRESSO' | null>(null);
+  
+  // Update selectedJudgeId when prop or URL param changes
+  useEffect(() => {
+    if (propJudgeId) {
+      setSelectedJudgeId(propJudgeId);
+    } else if (judgeIdFromUrl) {
+      setSelectedJudgeId(parseInt(judgeIdFromUrl));
+    }
+  }, [propJudgeId, judgeIdFromUrl]);
+
+  // Update selectedMatchId when prop changes
+  useEffect(() => {
+    if (propMatchId !== undefined && propMatchId !== null) {
+      setSelectedMatchId(propMatchId);
+    }
+  }, [propMatchId]);
 
   // Scoring state - judges score left/right (blind, no cup codes shown)
   const [visualLatteArt, setVisualLatteArt] = useState<'left' | 'right' | null>(null);
@@ -90,30 +123,52 @@ export default function JudgeScoringView() {
     enabled: !!tournamentIdNum,
   });
 
+  // Check if this is a test tournament
+  const isTestTournament = useMemo(() => {
+    if (!tournament) return false;
+    const tournamentName = tournament.name.toLowerCase();
+    return tournamentName.includes('test') || tournamentName.includes('demo');
+  }, [tournament]);
+
   // Get approved judges
+  // Filter out test judges if this is NOT a test tournament
   const approvedJudges = useMemo(() => {
     if (!participants.length) return [];
 
-    return participants
+    const judges = participants
       .map(p => {
         const user = allUsers.find(u => u.id === p.userId && u.role === 'JUDGE');
         return user && p.seed && p.seed > 0 ? { ...p, user } : null;
       })
       .filter((j): j is TournamentParticipant & { user: User } => j !== null);
-  }, [participants, allUsers]);
 
-  // Auto-select current user as judge if they are a judge
-  React.useEffect(() => {
-    if (isJudge && currentUser && !selectedJudgeId) {
+    // If this is NOT a test tournament, filter out test judges
+    if (!isTestTournament) {
+      return judges.filter(j => {
+        const email = j.user.email.toLowerCase();
+        // Filter out test judges (emails containing @test.com or test-judge pattern)
+        return !email.includes('@test.com') && 
+               !email.includes('test-judge') &&
+               !j.user.name.toLowerCase().includes('test judge');
+      });
+    }
+
+    // If this IS a test tournament, return all judges (including test judges)
+    return judges;
+  }, [participants, allUsers, isTestTournament]);
+
+  // Auto-select current user as judge if they are a judge (only if no prop provided)
+  useEffect(() => {
+    if (!propJudgeId && isJudge && currentUser && !selectedJudgeId) {
       const judgeParticipant = approvedJudges.find(j => j.user.id === currentUser.id);
       if (judgeParticipant) {
         setSelectedJudgeId(currentUser.id);
       }
     }
-  }, [isJudge, currentUser, approvedJudges, selectedJudgeId]);
+  }, [propJudgeId, isJudge, currentUser, approvedJudges, selectedJudgeId]);
 
   // Listen for judge notifications via WebSocket
-  React.useEffect(() => {
+  useEffect(() => {
     if (!socket || !currentUser) return;
 
     // Join judge room
@@ -177,6 +232,24 @@ export default function JudgeScoringView() {
     queryKey: [`/api/matches/${selectedMatchId}/detailed-scores`],
     enabled: !!selectedMatchId,
   });
+
+  // Fetch cup positions for selected match (if assigned)
+  const { data: cupPositions = [] } = useQuery<Array<{ cupCode: string; position: 'left' | 'right' }>>({
+    queryKey: [`/api/matches/${selectedMatchId}/cup-positions`],
+    queryFn: async () => {
+      if (!selectedMatchId) return [];
+      const response = await fetch(`/api/matches/${selectedMatchId}/cup-positions`);
+      if (!response.ok) return [];
+      const positions = await response.json();
+      return positions.map((p: any) => ({ cupCode: p.cupCode, position: p.position }));
+    },
+    enabled: !!selectedMatchId,
+  });
+
+  // Get cup codes from segments (dial-in segment has leftCupCode/rightCupCode)
+  const dialInSegment = useMemo(() => {
+    return segments.find(s => s.segment === 'DIAL_IN');
+  }, [segments]);
 
   // Get selected judge (either from selection or current user)
   const selectedJudge = useMemo(() => {
@@ -261,15 +334,15 @@ export default function JudgeScoringView() {
     return available;
   }, [segments]);
 
-  // Auto-select first assigned match when matches are available
-  React.useEffect(() => {
-    if (!selectedMatchId && tournamentMatches.length > 0) {
+  // Auto-select first assigned match when matches are available (only if no prop provided)
+  useEffect(() => {
+    if (!propMatchId && !selectedMatchId && tournamentMatches.length > 0) {
       setSelectedMatchId(tournamentMatches[0].id);
     }
-  }, [selectedMatchId, tournamentMatches]);
+  }, [propMatchId, selectedMatchId, tournamentMatches]);
 
   // Auto-select first available segment when segments are loaded
-  React.useEffect(() => {
+  useEffect(() => {
     if (!selectedSegmentType && availableSegments.length > 0) {
       setSelectedSegmentType(availableSegments[0].segment as 'CAPPUCCINO' | 'ESPRESSO');
     }
@@ -282,7 +355,7 @@ export default function JudgeScoringView() {
   }, [segments, selectedSegmentType]);
 
   // Load existing score if judge has already scored
-  React.useEffect(() => {
+  useEffect(() => {
     if (existingScore) {
       // Judges score left/right (blind) - load from visualLatteArt, taste, etc. fields
       setVisualLatteArt(existingScore.visualLatteArt as 'left' | 'right' | null);
@@ -300,7 +373,7 @@ export default function JudgeScoringView() {
   }, [existingScore]);
 
   // Reset scoring state when match or segment changes (only if no existing score)
-  React.useEffect(() => {
+  useEffect(() => {
     if (!existingScore) {
       setVisualLatteArt(null);
       setTaste(null);
@@ -336,6 +409,10 @@ export default function JudgeScoringView() {
       setTactile(null);
       setFlavour(null);
       setOverall(null);
+      // Call callback if provided
+      if (onScoreSubmitted) {
+        onScoreSubmitted();
+      }
     },
     onError: (error: any) => {
       toast({
@@ -430,8 +507,8 @@ export default function JudgeScoringView() {
         </p>
       </div>
 
-      {/* Notifications */}
-      {notifications.length > 0 && (
+      {/* Notifications - Only show if not embedded (no props) */}
+      {!propJudgeId && !propMatchId && notifications.length > 0 && (
         <div className="space-y-2 mb-6">
           {notifications.map((notification, idx) => (
             <Alert key={idx} className="border-blue-200 bg-blue-50 dark:bg-blue-950">
@@ -477,8 +554,8 @@ export default function JudgeScoringView() {
         </Card>
       ) : (
         <div className="space-y-6">
-          {/* Judge Selection - Only show if not auto-selected or if admin */}
-          {(!isJudge || !currentUser) && (
+          {/* Judge Selection - Only show if not provided as prop and not auto-selected */}
+          {!propJudgeId && (!isJudge || !currentUser) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -514,8 +591,8 @@ export default function JudgeScoringView() {
             </Card>
           )}
 
-          {/* Current Judge Info - Show if auto-selected */}
-          {isJudge && currentUser && (
+          {/* Current Judge Info - Show if auto-selected or prop provided */}
+          {(isJudge && currentUser && !propJudgeId) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -526,8 +603,8 @@ export default function JudgeScoringView() {
             </Card>
           )}
 
-          {/* Match Selection */}
-          {effectiveJudgeId && (
+          {/* Match Selection - Only show if not provided as prop */}
+          {!propMatchId && effectiveJudgeId && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -612,168 +689,197 @@ export default function JudgeScoringView() {
 
           {/* Scoring Interface */}
           {selectedSegmentType && selectedMatchId && competitor1 && competitor2 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Scoring: {selectedSegmentType === 'CAPPUCCINO' ? 'Cappuccino (including Visual Latte Art)' : 'Espresso (sensory categories only)'}</CardTitle>
+            <Card className="border-l-4 border-l-primary bg-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2 text-[#93401f]">
+                  <Users className="h-5 w-5" />
+                  <span className="font-bold">Judge Scorecard</span>
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Blind Judging Notice - Judges don't see cup codes */}
-                <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                    <Bell className="h-4 w-4" />
-                    <span className="text-sm font-medium">Blind Judging: Score based on Left/Right cup positions only</span>
-                  </div>
-                </div>
-
-                {/* Visual/Latte Art (3 points) - ONLY on CAPPUCCINO */}
-                {selectedSegmentType === 'CAPPUCCINO' && (
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-4">
-                      <Label className="text-base font-semibold">Visual/Latte Art (3 points)</Label>
-                      {visualLatteArt && (
-                        <Badge variant="default" className="flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          {visualLatteArt.toUpperCase()}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex gap-4">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={visualLatteArt === 'left'}
-                          onCheckedChange={(checked) => setVisualLatteArt(checked ? 'left' : null)}
-                        />
-                        <Label className="cursor-pointer">Left</Label>
+              <CardContent className="space-y-4">
+                {/* Cup Codes - Only show after match is completed (DONE status) */}
+                {selectedMatch?.status === 'DONE' && (
+                  <div className="grid grid-cols-2 gap-3 p-3 bg-secondary/20 rounded-lg border border-secondary/40">
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground font-medium">Left Cup</div>
+                      <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[#2d1b12]">
+                        {(() => {
+                          // Try to get cup code from cup positions if assigned
+                          const leftPosition = cupPositions?.find(p => p.position === 'left');
+                          return leftPosition?.cupCode || dialInSegment?.leftCupCode || '—';
+                        })()}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={visualLatteArt === 'right'}
-                          onCheckedChange={(checked) => setVisualLatteArt(checked ? 'right' : null)}
-                        />
-                        <Label className="cursor-pointer">Right</Label>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground font-medium">Right Cup</div>
+                      <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[#2d1b12]">
+                        {(() => {
+                          const rightPosition = cupPositions?.find(p => p.position === 'right');
+                          return rightPosition?.cupCode || dialInSegment?.rightCupCode || '—';
+                        })()}
                       </div>
                     </div>
                   </div>
                 )}
 
+                {/* Blind Judging Notice - Judges don't see cup codes during scoring */}
+                {selectedMatch?.status !== 'DONE' && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                      <Bell className="h-4 w-4 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm font-medium">Blind Judging: Score based on Left/Right cup positions only. Cup codes will be revealed after the round is completed.</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Visual/Latte Art (3 points) - ONLY on CAPPUCCINO */}
+                {selectedSegmentType === 'CAPPUCCINO' && (
+                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
+                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
+                      <input
+                        type="checkbox"
+                        checked={visualLatteArt === 'left'}
+                        onChange={(e) => setVisualLatteArt(e.target.checked ? 'left' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                      <span className="text-xs text-muted-foreground">Left</span>
+                    </label>
+                    <div className="text-center font-semibold text-primary">
+                      Visual Latte Art
+                    </div>
+                    <label className="flex items-center gap-2 justify-end">
+                      <span className="text-xs text-muted-foreground">Right</span>
+                      <input
+                        type="checkbox"
+                        checked={visualLatteArt === 'right'}
+                        onChange={(e) => setVisualLatteArt(e.target.checked ? 'right' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {/* Sensory Beverage Label */}
+                <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 bg-[#2d1b12]">
+                  <div></div>
+                  <div className="text-center font-semibold text-primary">
+                    Sensory {selectedSegmentType === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso'}
+                  </div>
+                  <div></div>
+                </div>
+
                 {/* Sensory Categories (for both CAPPUCCINO and ESPRESSO) */}
-                <>
+                <div className="space-y-3">
                   {/* Taste (1 point) */}
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-4">
-                        <Label className="text-base font-semibold">Taste (1 point)</Label>
-                        {taste && (
-                          <Badge variant="default" className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {taste.toUpperCase()}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={taste === 'left'}
-                            onCheckedChange={(checked) => setTaste(checked ? 'left' : null)}
-                          />
-                          <Label className="cursor-pointer">Left</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={taste === 'right'}
-                            onCheckedChange={(checked) => setTaste(checked ? 'right' : null)}
-                          />
-                          <Label className="cursor-pointer">Right</Label>
-                        </div>
-                      </div>
+                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
+                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
+                      <input
+                        type="checkbox"
+                        checked={taste === 'left'}
+                        onChange={(e) => setTaste(e.target.checked ? 'left' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                      <span className="text-xs text-muted-foreground">Left</span>
+                    </label>
+                    <div className="text-center font-semibold text-primary">
+                      Taste
                     </div>
+                    <label className="flex items-center gap-2 justify-end">
+                      <span className="text-xs text-muted-foreground">Right</span>
+                      <input
+                        type="checkbox"
+                        checked={taste === 'right'}
+                        onChange={(e) => setTaste(e.target.checked ? 'right' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                    </label>
+                  </div>
 
-                    {/* Tactile (1 point) */}
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-4">
-                        <Label className="text-base font-semibold">Tactile (1 point)</Label>
-                        {tactile && (
-                          <Badge variant="default" className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {tactile.toUpperCase()}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={tactile === 'left'}
-                            onCheckedChange={(checked) => setTactile(checked ? 'left' : null)}
-                          />
-                          <Label className="cursor-pointer">Left</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={tactile === 'right'}
-                            onCheckedChange={(checked) => setTactile(checked ? 'right' : null)}
-                          />
-                          <Label className="cursor-pointer">Right</Label>
-                        </div>
-                      </div>
+                  {/* Tactile (1 point) */}
+                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
+                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
+                      <input
+                        type="checkbox"
+                        checked={tactile === 'left'}
+                        onChange={(e) => setTactile(e.target.checked ? 'left' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                      <span className="text-xs text-muted-foreground">Left</span>
+                    </label>
+                    <div className="text-center font-semibold text-primary">
+                      Tactile
                     </div>
+                    <label className="flex items-center gap-2 justify-end">
+                      <span className="text-xs text-muted-foreground">Right</span>
+                      <input
+                        type="checkbox"
+                        checked={tactile === 'right'}
+                        onChange={(e) => setTactile(e.target.checked ? 'right' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                    </label>
+                  </div>
 
-                    {/* Flavour (1 point) */}
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-4">
-                        <Label className="text-base font-semibold">Flavour (1 point)</Label>
-                        {flavour && (
-                          <Badge variant="default" className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {flavour.toUpperCase()}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={flavour === 'left'}
-                            onCheckedChange={(checked) => setFlavour(checked ? 'left' : null)}
-                          />
-                          <Label className="cursor-pointer">Left</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={flavour === 'right'}
-                            onCheckedChange={(checked) => setFlavour(checked ? 'right' : null)}
-                          />
-                          <Label className="cursor-pointer">Right</Label>
-                        </div>
-                      </div>
+                  {/* Flavour (1 point) */}
+                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
+                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
+                      <input
+                        type="checkbox"
+                        checked={flavour === 'left'}
+                        onChange={(e) => setFlavour(e.target.checked ? 'left' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                      <span className="text-xs text-muted-foreground">Left</span>
+                    </label>
+                    <div className="text-center font-semibold text-primary">
+                      Flavour
                     </div>
+                    <label className="flex items-center gap-2 justify-end">
+                      <span className="text-xs text-muted-foreground">Right</span>
+                      <input
+                        type="checkbox"
+                        checked={flavour === 'right'}
+                        onChange={(e) => setFlavour(e.target.checked ? 'right' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                    </label>
+                  </div>
 
-                    {/* Overall (5 points) */}
-                    <div className="p-4 border rounded-lg bg-primary/5">
-                      <div className="flex items-center justify-between mb-4">
-                        <Label className="text-base font-semibold">Overall (5 points)</Label>
-                        {overall && (
-                          <Badge variant="default" className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {overall.toUpperCase()}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={overall === 'left'}
-                            onCheckedChange={(checked) => setOverall(checked ? 'left' : null)}
-                          />
-                          <Label className="cursor-pointer font-medium">Left</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={overall === 'right'}
-                            onCheckedChange={(checked) => setOverall(checked ? 'right' : null)}
-                          />
-                          <Label className="cursor-pointer font-medium">Right</Label>
-                        </div>
-                      </div>
+                  {/* Overall (5 points) */}
+                  <div className="grid grid-cols-3 items-center p-3 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12]">
+                    <label className="flex items-center gap-2 justify-start text-[#93401f]">
+                      <input
+                        type="checkbox"
+                        checked={overall === 'left'}
+                        onChange={(e) => setOverall(e.target.checked ? 'left' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                      <span className="text-xs text-muted-foreground">Left</span>
+                    </label>
+                    <div className="text-center font-semibold text-primary">
+                      Overall
                     </div>
-                </>
+                    <label className="flex items-center gap-2 justify-end">
+                      <span className="text-xs text-muted-foreground">Right</span>
+                      <input
+                        type="checkbox"
+                        checked={overall === 'right'}
+                        onChange={(e) => setOverall(e.target.checked ? 'right' : null)}
+                        disabled={judgeHasScored}
+                        className="h-4 w-4 accent-[color:oklch(var(--foreground))]"
+                      />
+                    </label>
+                  </div>
+                </div>
 
                 {/* Completion Status with L/R Checkmarks */}
                 {isScoringComplete && (

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useParams, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, LayoutGrid, ListOrdered, Award, Radio, BarChart3 } from 'lucide-react';
+import { Trophy, LayoutGrid, ListOrdered, Award, Radio, BarChart3, Gavel } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppHeader from '../../components/AppHeader';
@@ -38,6 +38,7 @@ const LiveLayout: React.FC = () => {
     { path: 'heats', label: 'Heats', icon: ListOrdered },
     { path: 'leaderboard', label: 'Leaderboard', icon: Award },
     { path: 'stations', label: 'Stations', icon: Radio },
+    { path: 'judges-scoring', label: 'Judges Scoring', icon: Gavel },
   ];
 
   const isActive = (path: string) => {
@@ -60,6 +61,7 @@ const LiveLayout: React.FC = () => {
     if (path === 'heats') return 'heats';
     if (path === 'leaderboard') return 'leaderboard';
     if (path === 'stations') return 'stations';
+    if (path === 'judges-scoring') return 'judges-scoring';
     return 'overview';
   }, [location.pathname, tournamentId]);
 
@@ -89,7 +91,7 @@ const LiveLayout: React.FC = () => {
               </div>
             </div>
             <Tabs value={currentTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto min-h-[2.75rem] sm:min-h-[2.5rem]">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -97,12 +99,12 @@ const LiveLayout: React.FC = () => {
                       key={item.path}
                       value={item.path}
                       asChild
-                      className="flex items-center gap-2 py-2 text-xs sm:text-sm"
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm"
                     >
                       <Link to={`/live/${tournamentId}/${item.path}`}>
-                        <Icon className="h-4 w-4" />
-                        <span className="hidden sm:inline">{item.label}</span>
-                        <span className="sm:hidden">{item.label.split(' ')[0]}</span>
+                        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="hidden sm:inline truncate">{item.label}</span>
+                        <span className="sm:hidden truncate">{item.label.split(' ')[0]}</span>
                       </Link>
                     </TabsTrigger>
                   );

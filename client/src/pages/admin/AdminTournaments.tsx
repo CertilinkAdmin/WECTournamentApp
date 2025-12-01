@@ -224,10 +224,40 @@ export default function AdminTournaments() {
   }, [allStationLeads, participants]);
 
   // Judges not yet added to tournament
+  // Filter based on whether this is a test tournament
   const availableJudgesToAdd = useMemo(() => {
     const addedJudgeIds = new Set(judgeParticipants.map(j => j.userId));
-    return allJudges.filter(j => !addedJudgeIds.has(j.id));
-  }, [allJudges, judgeParticipants]);
+    let filteredJudges = allJudges.filter(j => !addedJudgeIds.has(j.id));
+
+    // Check if selected tournament is a test tournament
+    const selectedTournament = tournaments.find(t => t.id === selectedTournamentId);
+    const isTestTournament = selectedTournament 
+      ? (selectedTournament.name.toLowerCase().includes('test') || selectedTournament.name.toLowerCase().includes('demo'))
+      : false;
+
+    // If this is NOT a test tournament, filter out test judges
+    if (!isTestTournament) {
+      filteredJudges = filteredJudges.filter(j => {
+        const email = j.email.toLowerCase();
+        // Filter out test judges (emails containing @test.com or test-judge pattern)
+        return !email.includes('@test.com') && 
+               !email.includes('test-judge') &&
+               !j.name.toLowerCase().includes('test judge');
+      });
+    } else {
+      // If this IS a test tournament, show only test judges
+      filteredJudges = filteredJudges.filter(j => {
+        const email = j.email.toLowerCase();
+        const name = j.name.toLowerCase();
+        // Show only test judges
+        return email.includes('@test.com') || 
+               email.includes('test-judge') ||
+               name.includes('test judge');
+      });
+    }
+
+    return filteredJudges;
+  }, [allJudges, judgeParticipants, tournaments, selectedTournamentId]);
 
   // Get approved judges (for judge assignment - these are system-approved judges)
   const approvedJudges = useMemo(() => {

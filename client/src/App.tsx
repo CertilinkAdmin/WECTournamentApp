@@ -17,6 +17,7 @@ import LiveBracket from './pages/live/LiveBracket';
 import LiveOverview from './pages/live/LiveOverview';
 import LiveHeats from './pages/live/LiveHeats';
 import LiveLeaderboard from './pages/live/LiveLeaderboard';
+import LiveJudgesScoring from './pages/live/LiveJudgesScoring';
 import StationsManagement from './components/StationsManagement';
 import StationLeadView from './components/StationLeadView';
 import StationDetail from './pages/StationDetail';
@@ -79,6 +80,7 @@ const App: React.FC = () => {
             <Route path="heats" element={<LiveHeats />} />
             <Route path="leaderboard" element={<LiveLeaderboard />} />
             <Route path="stations" element={<StationsManagement />} />
+            <Route path="judges-scoring" element={<LiveJudgesScoring />} />
             <Route path="judges/scoring" element={<JudgeScoringView />} />
           </Route>
 
