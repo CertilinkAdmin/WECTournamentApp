@@ -1128,13 +1128,7 @@ export default function StationLeadView() {
                       {stationStatus.map(station => (
                         <div 
                           key={station.name}
-                          className={`p-2 rounded border text-center ${
-                            station.isComplete 
-                              ? 'bg-green-600/20 border-green-500/30 text-green-300'
-                              : station.totalHeats > 0
-                                ? 'bg-yellow-600/20 border-yellow-500/30 text-yellow-300'
-                                : 'bg-[var(--brand-light-sand)]/40 border-[var(--brand-light-sand)]/60 text-foreground/60 dark:text-gray-400'
-                          }`}
+                          className="p-2 rounded border text-center border-yellow-500/30 text-yellow-300 bg-[#9a4828]"
                         >
                           <div className="font-medium">Station {station.name}</div>
                           <div>{station.completedHeats}/{station.totalHeats}</div>
