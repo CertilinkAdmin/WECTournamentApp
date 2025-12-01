@@ -686,7 +686,7 @@ export default function StationLeadView() {
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 dark:bg-background bg-[#ecdcbb]">
       <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-primary/10 border border-[var(--brand-light-sand)]/70 shadow-sm">
-        <CardHeader className="p-4 sm:p-6 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+        <CardHeader className="flex flex-col space-y-1.5 p-4 sm:p-6 dark:bg-transparent bg-[#bd490f]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <CardTitle className="flex items-center gap-2 text-primary text-lg sm:text-xl">
               <MapPin className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
