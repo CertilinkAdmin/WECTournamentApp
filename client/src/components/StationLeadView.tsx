@@ -717,11 +717,7 @@ export default function StationLeadView() {
                   variant={selectedStation === station.id ? "default" : "outline"}
                   onClick={() => setSelectedStation(station.id)}
                   data-testid={`button-station-${station.normalizedName}`}
-                  className={`flex flex-col items-start justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm min-w-0 ${
-                    selectedStation === station.id 
-                      ? '' 
-                      : 'bg-[var(--brand-light-sand)]/60 dark:bg-background hover:bg-[var(--brand-light-sand)]/80 dark:hover:bg-accent/50'
-                  }`}
+                  className="gap-2 whitespace-nowrap rounded-md font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover-elevate active-elevate-2 text-primary-foreground border border-primary-border min-h-9 px-4 flex flex-col items-start justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm min-w-0 bg-[#ecdcbb]"
                 >
                   <span className="truncate w-full text-center sm:text-left">{displayName}</span>
                   {stationLead && (
