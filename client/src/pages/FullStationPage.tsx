@@ -311,7 +311,7 @@ export default function FullStationPage() {
               </span>
               <span className="font-semibold flex-shrink-0 min-w-[2.5rem] text-right">{stats.currentRoundProgress}%</span>
             </div>
-            <Progress value={stats.currentRoundProgress} className="h-2 sm:h-3" />
+            <Progress value={stats.currentRoundProgress} className="h-2 sm:h-3 bg-[#171312]" />
           </div>
         </CardContent>
       </Card>
