@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { queryClient } from './lib/queryClient';
@@ -52,7 +52,7 @@ const App: React.FC = () => {
           {/* Auth Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          
+
           {/* Landing Page - Entry Point */}
           <Route path="/" element={<LandingPage />} />
 
@@ -74,14 +74,14 @@ const App: React.FC = () => {
           {/* Live Tournament Routes */}
           <Route path="/live" element={<TournamentList />} />
           <Route path="/live/:tournamentId" element={<LiveLayout />}>
-            <Route index element={<LiveOverview />} />
+            <Route index element={<Navigate to="overview" replace />} />
             <Route path="overview" element={<LiveOverview />} />
             <Route path="bracket" element={<LiveBracket />} />
             <Route path="heats" element={<LiveHeats />} />
             <Route path="leaderboard" element={<LiveLeaderboard />} />
             <Route path="stations" element={<StationsManagement />} />
             <Route path="judges-scoring" element={<LiveJudgesScoring />} />
-            <Route path="judges/scoring" element={<JudgeScoringView />} />
+            <Route path="judges/scoring" element={<LiveJudgesScoring />} />
           </Route>
 
           {/* Station Lead Controls */}

@@ -135,7 +135,7 @@ export default function Championships() {
                       className="w-full"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/live/${tournament.id}/judges/scoring`);
+                        navigate(`/live/${tournament.id}/judges-scoring`);
                       }}
                     >
                       <Gavel className="h-4 w-4 mr-2" />
