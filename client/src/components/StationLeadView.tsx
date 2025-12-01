@@ -706,7 +706,7 @@ export default function StationLeadView() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+        <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 dark:bg-transparent bg-[#bd490f]">
           <div className="grid grid-cols-3 gap-2">
             {mainStations.map((station) => {
               const stationLead = station.stationLeadId ? users.find(u => u.id === station.stationLeadId) : null;
