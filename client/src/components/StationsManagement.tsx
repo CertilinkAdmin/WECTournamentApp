@@ -115,7 +115,7 @@ export default function StationsManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-[#dbc494]">
       {/* Header */}
       <Card>
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -133,7 +133,6 @@ export default function StationsManagement() {
           </p>
         </CardContent>
       </Card>
-
       {/* Station Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {[
@@ -186,7 +185,6 @@ export default function StationsManagement() {
           </Card>
         ))}
       </div>
-
       {/* Judges Status Monitor - Overview for All Stations */}
       {(stationAMatch || stationBMatch || stationCMatch) && (
         <Card>
@@ -252,7 +250,6 @@ export default function StationsManagement() {
           </CardContent>
         </Card>
       )}
-
     </div>
   );
 }
