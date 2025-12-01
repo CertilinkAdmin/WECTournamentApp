@@ -830,7 +830,7 @@ export default function StationLeadView() {
       )}
       {currentMatch && (
         <Card className="border border-primary/30 bg-[var(--brand-light-sand)]/90 dark:bg-[var(--espresso-dark)] text-foreground dark:text-[var(--espresso-cream)] shadow-lg">
-          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 bg-[var(--brand-light-sand)]/70 dark:bg-transparent">
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 dark:bg-transparent bg-[#bd490f]">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs sm:text-sm uppercase tracking-wide text-foreground/70 dark:text-primary/70">
               <span className="truncate">Station {selectedStationData?.name || '—'}</span>
               <Badge variant={currentMatch.status === 'RUNNING' ? 'default' : 'secondary'} className="text-xs">
