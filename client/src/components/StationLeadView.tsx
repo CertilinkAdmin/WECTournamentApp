@@ -751,7 +751,7 @@ export default function StationLeadView() {
       {/* Heat Management Rules & Instructions */}
       <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
         <Card className="border-primary/20 bg-[var(--brand-light-sand)]/60 dark:bg-card border-[var(--brand-light-sand)]/50">
-          <CardHeader className="bg-[var(--brand-light-sand)]/60 dark:bg-transparent">
+          <CardHeader className="flex flex-col space-y-1.5 p-6 dark:bg-transparent bg-[#bd490f]">
             <CollapsibleTrigger className="flex items-center justify-between w-full group" data-testid="button-toggle-rules">
               <div className="flex items-center gap-2">
                 <Info className="w-5 h-5 text-primary" />
