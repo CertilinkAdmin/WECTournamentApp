@@ -99,7 +99,7 @@ const LiveLayout: React.FC = () => {
                       key={item.path}
                       value={item.path}
                       asChild
-                      className="flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm bg-[#dbc494]"
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm bg-[#171312]"
                     >
                       <Link to={`/live/${tournamentId}/${item.path}`}>
                         <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
