@@ -888,6 +888,36 @@ export default function AdminTournaments() {
 
       {/* Tabs - 2x2 button grid, no scroll */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 gap-2 sm:max-w-md bg-[var(--brand-light-sand)]/80 dark:bg-card rounded-2xl p-2">
+          <TabsTrigger
+            value="overview"
+            className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-foreground/80 bg-[var(--espresso-foam)]/40 data-[state=active]:bg-[var(--brand-cinnamon-brown)] data-[state=active]:text-[var(--espresso-cream)] shadow-sm whitespace-nowrap"
+          >
+            <Trophy className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger
+            value="approval"
+            className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-foreground/80 bg-[var(--espresso-foam)]/40 data-[state=active]:bg-[var(--brand-cinnamon-brown)] data-[state=active]:text-[var(--espresso-cream)] shadow-sm whitespace-nowrap"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Approve
+          </TabsTrigger>
+          <TabsTrigger
+            value="seeds"
+            className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-foreground/80 bg-[var(--espresso-foam)]/40 data-[state=active]:bg-[var(--brand-cinnamon-brown)] data-[state=active]:text-[var(--espresso-cream)] shadow-sm whitespace-nowrap"
+          >
+            <Shuffle className="h-4 w-4" />
+            Seeds
+          </TabsTrigger>
+          <TabsTrigger
+            value="bracket"
+            className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-foreground/80 bg-[var(--espresso-foam)]/40 data-[state=active]:bg-[var(--brand-cinnamon-brown)] data-[state=active]:text-[var(--espresso-cream)] shadow-sm whitespace-nowrap"
+          >
+            <Settings2 className="h-4 w-4" />
+            Bracket
+          </TabsTrigger>
+        </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="mt-6">
