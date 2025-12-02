@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Save, Settings } from "lucide-react";
+import { Clock, Save, Settings, CheckCircle } from "lucide-react"; // Import CheckCircle
 import type { Tournament } from "@shared/schema";
 
 interface SegmentTimeConfigProps {
@@ -89,6 +88,12 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
     saveStructureMutation.mutate();
   };
 
+  // This is a placeholder for totalDuration and saveMutation.isPending, assuming they are defined elsewhere in the component.
+  // In a real scenario, totalDuration would be calculated and saveMutation would be the one from useMutation.
+  const totalDuration = dialInMinutes + cappuccinoMinutes + espressoMinutes;
+  const saveMutation = saveStructureMutation; // Alias for clarity in the modified snippet
+  const roundTimes = heatStructure; // Alias for clarity in the modified snippet
+
   return (
     <Card>
       <CardHeader className="bg-primary/10">
@@ -141,44 +146,61 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-muted rounded-md">
-          <div className="flex items-center gap-2 text-sm">
-            <img src="/icons/stopwatch.png" alt="Stopwatch" className="h-4 w-4 opacity-70" />
-            <span className="text-muted-foreground">Total Heat Duration:</span>
-            <span className="ml-2 font-bold text-lg">
-              {dialInMinutes + cappuccinoMinutes + espressoMinutes} minutes
-            </span>
+        {/* Start of modified section for Total Heat Duration */}
+        <div className="p-4 bg-muted/50 rounded-lg border">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <h4 className="font-semibold text-sm sm:text-base">Total Heat Duration:</h4>
+                <p className="text-xl sm:text-2xl font-bold text-primary whitespace-nowrap">
+                  {totalDuration} minutes
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                <Button
+                  onClick={handleSave}
+                  disabled={saveStructureMutation.isPending}
+                  className="gap-2 w-full sm:w-auto"
+                  size="sm"
+                >
+                  <Save className="h-4 w-4" />
+                  {saveStructureMutation.isPending ? 'Saving...' : 'Save Heat Structure'}
+                </Button>
+              </div>
+            </div>
           </div>
-          <Button onClick={handleSave} data-testid="button-save-structure" disabled={saveStructureMutation.isPending}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Heat Structure
-          </Button>
-        </div>
+        {/* End of modified section for Total Heat Duration */}
+
 
         {heatStructure && (
-          <div className="mt-6">
-            <div className="flex items-center gap-2 mb-3">
-              <img src="/icons/stopwatch.png" alt="Stopwatch" className="h-4 w-4" />
-              <h3 className="text-sm font-medium">Current Heat Structure</h3>
+          // Start of modified section for Current Heat Structure
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              <h3 className="text-base sm:text-lg font-semibold">Current Heat Structure</h3>
             </div>
-            <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <img src="/icons/stopwatch.png" alt="Stopwatch" className="h-3 w-3 opacity-60" />
-                  <span className="font-medium text-green-800 dark:text-green-200">All Heats Structure</span>
+
+            <div className="p-3 sm:p-4 bg-primary/10 rounded-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+                <div className="bg-green-600 text-white p-3 rounded-md text-center min-w-0">
+                  <div className="font-semibold text-sm sm:text-base">Dial-In:</div>
+                  <div className="text-base sm:text-lg font-bold whitespace-nowrap">{heatStructure.dialInMinutes}min</div>
                 </div>
-                <div className="flex gap-4 text-green-700 dark:text-green-300">
-                  <span>Dial-In: {heatStructure.dialInMinutes}min</span>
-                  <span>Cappuccino: {heatStructure.cappuccinoMinutes}min</span>
-                  <span>Espresso: {heatStructure.espressoMinutes}min</span>
-                  <span className="font-medium">Total: {heatStructure.totalMinutes}min</span>
+                <div className="bg-blue-600 text-white p-3 rounded-md text-center min-w-0">
+                  <div className="font-semibold text-sm sm:text-base">Cappuccino:</div>
+                  <div className="text-base sm:text-lg font-bold whitespace-nowrap">{heatStructure.cappuccinoMinutes}min</div>
+                </div>
+                <div className="bg-orange-600 text-white p-3 rounded-md text-center min-w-0">
+                  <div className="font-semibold text-sm sm:text-base">Espresso:</div>
+                  <div className="text-base sm:text-lg font-bold whitespace-nowrap">{heatStructure.espressoMinutes}min</div>
                 </div>
               </div>
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                ✓ This timing structure will be applied to all heats in the tournament
-              </p>
+              <div className="flex items-start gap-2 text-xs sm:text-sm text-muted-foreground">
+                <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <span className="leading-relaxed">This timing structure will be applied to all heats in the tournament</span>
+              </div>
             </div>
           </div>
+          // End of modified section for Current Heat Structure
         )}
 
         <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
