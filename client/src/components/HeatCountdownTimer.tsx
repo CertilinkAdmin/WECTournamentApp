@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock } from 'lucide-react';
 
@@ -7,9 +8,30 @@ interface HeatCountdownTimerProps {
 }
 
 export default function HeatCountdownTimer({ totalSeconds, isActive }: HeatCountdownTimerProps) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  const isLowTime = totalSeconds <= 60;
+  // Local display state so the clock visibly ticks every second,
+  // even if the upstream value only updates intermittently.
+  const [displaySeconds, setDisplaySeconds] = useState(totalSeconds);
+
+  // Whenever the server/parent value jumps (new heat or resync), snap to it.
+  useEffect(() => {
+    setDisplaySeconds(totalSeconds);
+  }, [totalSeconds]);
+
+  // Smooth 1s ticking while active – purely visual, does not affect controls.
+  useEffect(() => {
+    if (!isActive) return;
+    if (displaySeconds <= 0) return;
+
+    const interval = setInterval(() => {
+      setDisplaySeconds(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isActive, displaySeconds]);
+
+  const minutes = Math.floor(displaySeconds / 60);
+  const seconds = displaySeconds % 60;
+  const isLowTime = displaySeconds <= 60;
 
   return (
     <Card className={`bg-primary/10 border-primary/30 ${isLowTime ? 'border-destructive/50 bg-destructive/10' : ''}`}>
@@ -22,7 +44,7 @@ export default function HeatCountdownTimer({ totalSeconds, isActive }: HeatCount
           <div className={`text-5xl font-mono font-bold ${isLowTime ? 'text-destructive animate-pulse' : 'text-primary'}`}>
             {minutes}:{seconds.toString().padStart(2, '0')}
           </div>
-          {totalSeconds === 0 && (
+          {displaySeconds === 0 && (
             <div className="text-sm text-destructive font-semibold mt-2">
               Heat Time Complete
             </div>
