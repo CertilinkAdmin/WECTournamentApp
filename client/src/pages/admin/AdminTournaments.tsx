@@ -832,7 +832,7 @@ export default function AdminTournaments() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--espresso-foam)] dark:bg-background p-3 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       {/* Header */}
       <div className="mb-4 sm:mb-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
@@ -886,33 +886,33 @@ export default function AdminTournaments() {
         </div>
       </div>
 
-      {/* Tabs - 2x2 button grid, no scroll */}
+      {/* Tabs - Clean button grid with proper spacing */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 gap-2 sm:max-w-md bg-[var(--brand-light-sand)]/80 dark:bg-card rounded-2xl p-2">
+        <TabsList className="grid w-full grid-cols-2 h-auto p-1 bg-card border border-border rounded-lg shadow-sm">
           <TabsTrigger
             value="overview"
-            className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-foreground/80 bg-[var(--espresso-foam)]/40 data-[state=active]:bg-[var(--brand-cinnamon-brown)] data-[state=active]:text-[var(--espresso-cream)] shadow-sm whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs sm:text-sm font-medium transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap"
           >
             <Trophy className="h-4 w-4" />
             Overview
           </TabsTrigger>
           <TabsTrigger
             value="approval"
-            className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-foreground/80 bg-[var(--espresso-foam)]/40 data-[state=active]:bg-[var(--brand-cinnamon-brown)] data-[state=active]:text-[var(--espresso-cream)] shadow-sm whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs sm:text-sm font-medium transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap"
           >
             <CheckCircle2 className="h-4 w-4" />
             Approve
           </TabsTrigger>
           <TabsTrigger
             value="seeds"
-            className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-foreground/80 bg-[var(--espresso-foam)]/40 data-[state=active]:bg-[var(--brand-cinnamon-brown)] data-[state=active]:text-[var(--espresso-cream)] shadow-sm whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs sm:text-sm font-medium transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap"
           >
             <Shuffle className="h-4 w-4" />
             Seeds
           </TabsTrigger>
           <TabsTrigger
             value="bracket"
-            className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-foreground/80 bg-[var(--espresso-foam)]/40 data-[state=active]:bg-[var(--brand-cinnamon-brown)] data-[state=active]:text-[var(--espresso-cream)] shadow-sm whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs sm:text-sm font-medium transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap"
           >
             <Settings2 className="h-4 w-4" />
             Bracket
