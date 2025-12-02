@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink, Coffee, ArrowRight } from "lucide-react";
+import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink, Coffee, ArrowRight, AlertTriangle, Loader2 } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
 import { getMainStationsForTournament, normalizeStationName } from '@/utils/stationUtils';
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -130,8 +130,57 @@ export default function StationLeadView() {
     enabled: !!currentMatch,
   });
 
+  // Check if Cappuccino segment has ended
+  const cappuccinoSegment = React.useMemo(() => {
+    return segments.find(s => s.segment === 'CAPPUCCINO');
+  }, [segments]);
+
+  const isCappuccinoEnded = cappuccinoSegment?.status === 'ENDED';
+  const espressoSegment = React.useMemo(() => {
+    return segments.find(s => s.segment === 'ESPRESSO');
+  }, [segments]);
+  const isEspressoStarted = espressoSegment?.status === 'RUNNING' || espressoSegment?.status === 'ENDED';
+
+  // Fetch judge completion status for CAPPUCCINO segment when it ends
+  const { data: cappuccinoJudgeCompletion, isLoading: isLoadingJudgeCompletion } = useQuery<{
+    allComplete: boolean;
+    judges: Array<{
+      judgeId: number;
+      judgeName: string;
+      role: 'ESPRESSO' | 'CAPPUCCINO';
+      completed: boolean;
+    }>;
+  }>({
+    queryKey: [`/api/matches/${currentMatch?.id}/segments/CAPPUCCINO/judges-completion`],
+    queryFn: async () => {
+      if (!currentMatch?.id) return { allComplete: false, judges: [] };
+      const response = await fetch(`/api/matches/${currentMatch.id}/segments/CAPPUCCINO/judges-completion`);
+      if (!response.ok) return { allComplete: false, judges: [] };
+      return response.json();
+    },
+    enabled: !!currentMatch?.id && isCappuccinoEnded && !isEspressoStarted,
+    refetchInterval: (query) => {
+      // Poll every 3 seconds if not all complete, stop polling if all complete
+      const data = query.state.data;
+      return data?.allComplete ? false : 3000;
+    },
+  });
+
+  // Determine if ESPRESSO segment can be started
+  const canStartEspresso = React.useMemo(() => {
+    if (!isCappuccinoEnded) return false;
+    if (isEspressoStarted) return false;
+    // If we're still loading completion status, don't allow start
+    if (isLoadingJudgeCompletion) return false;
+    // Only allow start if all judges have completed scoring
+    return cappuccinoJudgeCompletion?.allComplete ?? false;
+  }, [isCappuccinoEnded, isEspressoStarted, isLoadingJudgeCompletion, cappuccinoJudgeCompletion]);
+
   const startSegmentMutation = useMutation({
     mutationFn: async (segmentId: number) => {
+      // Get segment info to check if it's ESPRESSO
+      const segment = segments.find(s => s.id === segmentId);
+      
       // Start segment without assigning left/right positions
       // Cup codes stay with baristas throughout all segments
       // Left/right positions will be assigned by admin after all judges have scored
@@ -143,7 +192,12 @@ export default function StationLeadView() {
           startTime: new Date().toISOString()
         })
       });
-      if (!response.ok) throw new Error('Failed to start segment');
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to start segment' }));
+        throw new Error(errorData.error || 'Failed to start segment');
+      }
+      
       return await response.json();
     },
     onSuccess: (data) => {
@@ -157,11 +211,23 @@ export default function StationLeadView() {
       });
     },
     onError: (error: any) => {
+      // Check if error is about judge completion
+      const errorMessage = error.message || "An error occurred while starting the segment.";
+      const isJudgeCompletionError = errorMessage.includes('judges') || errorMessage.includes('Judges') || errorMessage.includes('scoring');
+      
       toast({
-        title: "Failed to Start Segment",
-        description: error.message || "An error occurred while starting the segment.",
+        title: isJudgeCompletionError ? "Cannot Start Segment" : "Failed to Start Segment",
+        description: errorMessage,
         variant: "destructive",
+        duration: isJudgeCompletionError ? 8000 : 5000, // Longer duration for judge completion errors
       });
+      
+      // Invalidate judge completion query to refresh status
+      if (isJudgeCompletionError && currentMatch?.id) {
+        queryClient.invalidateQueries({ 
+          queryKey: [`/api/matches/${currentMatch.id}/segments/CAPPUCCINO/judges-completion`] 
+        });
+      }
     }
   });
 
@@ -968,17 +1034,63 @@ export default function StationLeadView() {
                       </div>
                     )}
                     {!isRunning && !isEnded && (
-                      <Button
-                        variant="default"
-                        size="lg"
-                        className="w-full mt-3 text-sm sm:text-base"
-                        onClick={() => segment && handleStartSegment(segment.id)}
-                        disabled={!segment || !canStart || (currentMatch.status !== 'RUNNING' && currentMatch.status !== 'READY')}
-                        data-testid={`button-start-${segmentCode}`}
-                      >
-                        <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                        Start {segmentCode.replace('_', ' ')}
-                      </Button>
+                      <>
+                        {/* Judge Completion Warning for ESPRESSO segment */}
+                        {segmentCode === 'ESPRESSO' && isCappuccinoEnded && !canStartEspresso && (
+                          <Alert className="mt-3 mb-2 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+                            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                            <AlertTitle className="text-xs sm:text-sm lg:text-base text-amber-900 dark:text-amber-200 font-semibold">
+                              Waiting for Judge Scores
+                            </AlertTitle>
+                            <AlertDescription className="text-xs sm:text-sm text-amber-800 dark:text-amber-300 mt-1">
+                              {isLoadingJudgeCompletion ? (
+                                <div className="flex items-center gap-2">
+                                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                                  <span>Checking judge completion status...</span>
+                                </div>
+                              ) : cappuccinoJudgeCompletion && cappuccinoJudgeCompletion.judges.length > 0 ? (
+                                <div className="space-y-1">
+                                  <p>Cannot start Espresso segment. The following judges must submit their Cappuccino scores:</p>
+                                  <ul className="list-disc list-inside ml-2 space-y-0.5">
+                                    {cappuccinoJudgeCompletion.judges
+                                      .filter(j => !j.completed)
+                                      .map(j => (
+                                        <li key={j.judgeId} className="text-[10px] sm:text-xs">
+                                          {j.judgeName} ({j.role})
+                                        </li>
+                                      ))}
+                                  </ul>
+                                  <p className="text-[10px] sm:text-xs mt-1.5 font-medium">
+                                    {cappuccinoJudgeCompletion.judges.filter(j => j.completed).length} of {cappuccinoJudgeCompletion.judges.length} judges have submitted scores.
+                                  </p>
+                                </div>
+                              ) : (
+                                <span>Cannot start Espresso segment. Judges must complete scoring for Cappuccino segment first.</span>
+                              )}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        <Button
+                          variant="default"
+                          size="lg"
+                          className={`w-full mt-3 text-sm sm:text-base touch-manipulation ${
+                            segmentCode === 'ESPRESSO' && !canStartEspresso 
+                              ? 'opacity-50 cursor-not-allowed' 
+                              : ''
+                          }`}
+                          onClick={() => segment && handleStartSegment(segment.id)}
+                          disabled={
+                            !segment || 
+                            !canStart || 
+                            (currentMatch.status !== 'RUNNING' && currentMatch.status !== 'READY') ||
+                            (segmentCode === 'ESPRESSO' && !canStartEspresso)
+                          }
+                          data-testid={`button-start-${segmentCode}`}
+                        >
+                          <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                          Start {segmentCode.replace('_', ' ')}
+                        </Button>
+                      </>
                     )}
                     {isEnded && (
                       <div className="mt-3 text-xs text-foreground/60 dark:text-white/60 text-center">

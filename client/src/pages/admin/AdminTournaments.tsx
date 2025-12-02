@@ -34,7 +34,7 @@ export default function AdminTournaments() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'approval' | 'seeds' | 'bracket'>('approval');
+  const [activeTab, setActiveTab] = useState<'overview' | 'approval' | 'seeds' | 'bracket'>('approval');
   const [activeCompetitor, setActiveCompetitor] = useState<User | null>(null);
   const [selectedRound, setSelectedRound] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -832,25 +832,27 @@ export default function AdminTournaments() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-[var(--espresso-foam)] dark:bg-background p-3 sm:p-4 lg:p-6">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
             <Button
               variant="ghost"
               onClick={() => setSelectedTournamentId(null)}
-              className="mb-2"
+              className="mb-2 -ml-2"
             >
               ← Back to Tournaments
             </Button>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Trophy className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+              <Trophy className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
               {selectedTournament?.name}
             </h1>
-            <p className="text-muted-foreground mt-1">Bracket Builder & Seed Management</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Bracket Builder & Seed Management
+            </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Badge variant={selectedTournament?.status === 'ACTIVE' ? 'default' : selectedTournament?.status === 'COMPLETED' ? 'secondary' : 'outline'}>
               {selectedTournament?.status}
             </Badge>
@@ -875,7 +877,7 @@ export default function AdminTournaments() {
               </Button>
             )}
             {selectedTournament?.status === 'SETUP' && (baristaParticipants.length === 0 || matches.length === 0) && (
-              <div className="text-sm text-muted-foreground">
+              <div className="hidden sm:block text-sm text-muted-foreground">
                 {baristaParticipants.length === 0 && "Add participants and generate bracket to initiate"}
                 {baristaParticipants.length > 0 && matches.length === 0 && "Generate bracket to initiate"}
               </div>
@@ -884,22 +886,62 @@ export default function AdminTournaments() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs - 2x2 button grid, no scroll */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="approval" className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4" />
-            Approve Participants
-          </TabsTrigger>
-          <TabsTrigger value="seeds" className="flex items-center gap-2">
-            <Shuffle className="h-4 w-4" />
-            Randomize Seeds
-          </TabsTrigger>
-          <TabsTrigger value="bracket" className="flex items-center gap-2">
-            <Settings2 className="h-4 w-4" />
-            Bracket Builder
-          </TabsTrigger>
-        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Users className="h-4 w-4" />
+                  Participants
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs sm:text-sm text-foreground/80">
+                <div className="flex justify-between">
+                  <span>Total competitors</span>
+                  <span className="font-semibold">{baristaParticipants.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Approved competitors</span>
+                  <span className="font-semibold text-green-700">{approvedBaristasForTournament.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Approved judges</span>
+                  <span className="font-semibold text-green-700">{approvedJudgesForTournament.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Approved station leads</span>
+                  <span className="font-semibold text-green-700">{approvedStationLeadsForTournament.length}</span>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Coffee className="h-4 w-4" />
+                  Bracket Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs sm:text-sm text-foreground/80">
+                <div className="flex justify-between">
+                  <span>Rounds with heats</span>
+                  <span className="font-semibold">{availableRounds.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Heats in selected round</span>
+                  <span className="font-semibold">{currentRoundHeats.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tournament status</span>
+                  <span className="font-semibold">{selectedTournament?.status}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* Approval Tab */}
         <TabsContent value="approval" className="mt-6">
@@ -1522,20 +1564,22 @@ export default function AdminTournaments() {
             </Card>
 
             {/* Approved Station Leads Display */}
-            <Card>
+            <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Briefcase className="h-5 w-5" />
                   Approved Station Leads ({approvedStationLeadsForTournament.length})
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3 sm:space-y-4">
                 {approvedStationLeadsForTournament.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No approved station leads found. Please approve station leads in the Approval tab first.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No approved station leads found. Please approve station leads in the Approval tab first.
+                  </p>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                      <p className="text-xs sm:text-sm text-muted-foreground leading-snug flex-1 min-w-0">
                         {approvedStationLeadsForTournament.length} approved station leads available. They will be randomly assigned to stations A, B, and C during tournament setup.
                       </p>
                       {stations.length >= 3 && (
@@ -1543,7 +1587,7 @@ export default function AdminTournaments() {
                           onClick={() => assignStationLeadsMutation.mutate()}
                           disabled={assignStationLeadsMutation.isPending || approvedStationLeadsForTournament.length === 0}
                           variant="outline"
-                          className="gap-2"
+                          className="gap-2 w-full sm:w-auto justify-center whitespace-normal text-xs sm:text-sm px-3 sm:px-4"
                         >
                           {assignStationLeadsMutation.isPending ? (
                             <>
@@ -1570,17 +1614,17 @@ export default function AdminTournaments() {
             </Card>
 
             {/* Actions */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-4">
+            <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     {availableRounds.length > 0 && (
                       <>
-                        <label className="text-sm font-medium">Round:</label>
+                        <label className="text-xs sm:text-sm font-medium">Round:</label>
                         <select
                           value={selectedRound}
                           onChange={(e) => setSelectedRound(parseInt(e.target.value))}
-                          className="px-3 py-2 border rounded-md bg-background"
+                          className="px-3 py-2 border rounded-md bg-[var(--espresso-foam)] dark:bg-background text-xs sm:text-sm"
                         >
                           {availableRounds.map(round => (
                             <option key={round} value={round}>
@@ -1588,15 +1632,15 @@ export default function AdminTournaments() {
                             </option>
                           ))}
                         </select>
-                        <Badge variant="secondary">
+                        <Badge variant="secondary" className="text-xs sm:text-sm">
                           {currentRoundHeats.length} heats
                         </Badge>
                       </>
                     )}
                   </div>
-                  <div className="flex gap-2 items-center">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 items-stretch sm:items-center w-full lg:w-auto">
                     {approvedBaristasForTournament.length === 0 && (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-left">
                         No approved competitors found. Approve competitors in the Approval tab first.
                       </div>
                     )}
@@ -1605,7 +1649,7 @@ export default function AdminTournaments() {
                         onClick={() => generateBracketMutation.mutate()}
                         disabled={generateBracketMutation.isPending || participantsLoading || approvedBaristasForTournament.length < 2}
                         size="lg"
-                        className="gap-2"
+                        className="gap-2 w-full sm:w-auto justify-center whitespace-normal text-xs sm:text-sm"
                       >
                         {generateBracketMutation.isPending ? (
                           <>
@@ -1621,12 +1665,12 @@ export default function AdminTournaments() {
                       </Button>
                     )}
                     {approvedBaristasForTournament.length < 2 && currentRoundHeats.length === 0 && (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-left">
                         Need at least 2 approved competitors to generate bracket
                       </div>
                     )}
                     {currentRoundHeats.length > 0 && (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-left">
                         Bracket already generated with {currentRoundHeats.length} heats in Round {selectedRound}
                       </div>
                     )}
@@ -1646,7 +1690,7 @@ export default function AdminTournaments() {
                             const j = Math.floor(Math.random() * (i + 1));
                             [allCompetitors[i], allCompetitors[j]] = [allCompetitors[j], allCompetitors[i]];
                           }
-                          
+
                           // Redistribute
                           let compIndex = 0;
                           const updates = shuffled.map(heat => {
@@ -1673,11 +1717,12 @@ export default function AdminTournaments() {
                           ).then(() => {
                             queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'matches'] });
                             toast({
-                              title: "Heats Randomized",
+                              title: "Heats randomized",
                               description: "Competitors have been randomly redistributed within Round " + selectedRound,
                             });
                           });
                         }}
+                        className="w-full sm:w-auto justify-center text-xs sm:text-sm"
                       >
                         <Shuffle className="h-4 w-4 mr-2" />
                         Randomize Round {selectedRound} Heats
