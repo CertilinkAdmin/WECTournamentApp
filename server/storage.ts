@@ -352,9 +352,79 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Detailed Judge Scores
+  // Upsert logic: Check if score exists for this judge/match, and merge fields if it does
+  // This allows visual latte art and sensory scores to be submitted independently
   async submitDetailedScore(score: InsertJudgeDetailedScore): Promise<JudgeDetailedScore> {
-    const result = await db.insert(judgeDetailedScores).values(score).returning();
-    return result[0];
+    // Check if a score already exists for this judge/match combination
+    const existing = await db.select()
+      .from(judgeDetailedScores)
+      .where(
+        and(
+          eq(judgeDetailedScores.matchId, score.matchId),
+          eq(judgeDetailedScores.judgeName, score.judgeName)
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Update existing record by merging provided fields
+      // Only update fields that are explicitly provided (not undefined)
+      // This allows latte art and sensory to be submitted independently
+      const existingScore = existing[0];
+      const updateData: Partial<InsertJudgeDetailedScore> = {};
+      
+      // Only update fields that are explicitly provided (not undefined)
+      // This preserves existing values for fields not included in the submission
+      // This allows visual latte art and sensory scores to be submitted independently
+      if (score.visualLatteArt !== undefined) {
+        updateData.visualLatteArt = score.visualLatteArt;
+      }
+      if (score.taste !== undefined) {
+        updateData.taste = score.taste;
+      }
+      if (score.tactile !== undefined) {
+        updateData.tactile = score.tactile;
+      }
+      if (score.flavour !== undefined) {
+        updateData.flavour = score.flavour;
+      }
+      if (score.overall !== undefined) {
+        updateData.overall = score.overall;
+      }
+      // Update sensoryBeverage if provided
+      if (score.sensoryBeverage !== undefined) {
+        updateData.sensoryBeverage = score.sensoryBeverage;
+      }
+      // Update cup codes if provided
+      if (score.leftCupCode !== undefined) {
+        updateData.leftCupCode = score.leftCupCode;
+      }
+      if (score.rightCupCode !== undefined) {
+        updateData.rightCupCode = score.rightCupCode;
+      }
+      if (score.cupCode1 !== undefined) {
+        updateData.cupCode1 = score.cupCode1;
+      }
+      if (score.cupCode2 !== undefined) {
+        updateData.cupCode2 = score.cupCode2;
+      }
+
+      // Only update if there are fields to update
+      if (Object.keys(updateData).length > 0) {
+        const result = await db.update(judgeDetailedScores)
+          .set(updateData)
+          .where(eq(judgeDetailedScores.id, existingScore.id))
+          .returning();
+        return result[0];
+      } else {
+        // No fields to update, return existing
+        return existingScore;
+      }
+    } else {
+      // Insert new record
+      const result = await db.insert(judgeDetailedScores).values(score).returning();
+      return result[0];
+    }
   }
 
   async submitBatchDetailedScores(scores: InsertJudgeDetailedScore[]): Promise<JudgeDetailedScore[]> {

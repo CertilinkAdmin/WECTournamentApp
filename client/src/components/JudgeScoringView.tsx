@@ -501,15 +501,13 @@ export default function JudgeScoringView({
       return;
     }
 
+    // Only submit visual latte art - don't include sensory fields to preserve existing values
     const scoreData: InsertJudgeDetailedScore = {
       matchId: selectedMatchId,
       judgeName: selectedJudge.user.name,
       sensoryBeverage: 'Cappuccino', // Use Cappuccino as default for Latte Art
       visualLatteArt: latteArtVisual,
-      taste: null,
-      tactile: null,
-      flavour: null,
-      overall: null,
+      // Don't include sensory fields - they should remain independent
     };
 
     submitScoreMutation.mutate(scoreData);
@@ -535,15 +533,16 @@ export default function JudgeScoringView({
       return;
     }
 
+    // Only submit Cappuccino sensory - don't include visualLatteArt to preserve existing value
     const scoreData: InsertJudgeDetailedScore = {
       matchId: selectedMatchId,
       judgeName: selectedJudge.user.name,
       sensoryBeverage: 'Cappuccino',
-      visualLatteArt: null, // Latte Art submitted separately
       taste: cappuccinoTaste,
       tactile: cappuccinoTactile,
       flavour: cappuccinoFlavour,
       overall: cappuccinoOverall,
+      // Don't include visualLatteArt - it should remain independent
     };
 
     submitScoreMutation.mutate(scoreData);
@@ -587,15 +586,16 @@ export default function JudgeScoringView({
       return;
     }
 
+    // Only submit Espresso sensory - don't include visualLatteArt to preserve existing value
     const scoreData: InsertJudgeDetailedScore = {
       matchId: selectedMatchId,
       judgeName: selectedJudge.user.name,
       sensoryBeverage: 'Espresso',
-      visualLatteArt: null, // Latte Art submitted separately
       taste: espressoTaste,
       tactile: espressoTactile,
       flavour: espressoFlavour,
       overall: espressoOverall,
+      // Don't include visualLatteArt - it should remain independent
     };
 
     console.log('Submitting espresso sensory score:', scoreData);
