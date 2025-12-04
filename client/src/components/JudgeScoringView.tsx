@@ -994,13 +994,13 @@ export default function JudgeScoringView({
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
-                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
-                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Tactile
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
                           <input
                             type="checkbox"
                             checked={cappuccinoTactile === 'right'}
@@ -1021,13 +1021,13 @@ export default function JudgeScoringView({
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
-                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
-                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Flavour
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
                           <input
                             type="checkbox"
                             checked={cappuccinoFlavour === 'right'}
@@ -1048,13 +1048,13 @@ export default function JudgeScoringView({
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
-                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
-                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Overall
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
                           <input
                             type="checkbox"
                             checked={cappuccinoOverall === 'right'}
@@ -1174,13 +1174,13 @@ export default function JudgeScoringView({
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
-                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
-                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Tactile
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
                           <input
                             type="checkbox"
                             checked={espressoTactile === 'right'}
@@ -1213,13 +1213,13 @@ export default function JudgeScoringView({
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
-                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
-                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Flavour
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
                           <input
                             type="checkbox"
                             checked={espressoFlavour === 'right'}
@@ -1252,13 +1252,13 @@ export default function JudgeScoringView({
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
-                          <span className="text-xs sm:text-sm text-muted-foreground">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
-                        <div className="text-center font-semibold text-primary text-sm sm:text-base">
+                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Overall
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-muted-foreground">Right</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
                           <input
                             type="checkbox"
                             checked={espressoOverall === 'right'}

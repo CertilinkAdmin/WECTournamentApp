@@ -9,6 +9,14 @@ import { Gavel, Loader2, AlertCircle, CheckCircle2, Play, Lock, ChevronLeft, Che
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import JudgeScoringView from '@/components/JudgeScoringView';
 import type { User, Tournament, TournamentParticipant, Match, JudgeDetailedScore } from '@shared/schema';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerClose,
+} from '@/components/ui/drawer';
 
 export default function LiveJudgesScoring() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
@@ -607,52 +615,62 @@ export default function LiveJudgesScoring() {
         </Card>
       )}
 
-      {/* Activated Scorecard */}
-      {selectedJudge && activatedMatch && (
-        <Card className="border-l-4 border-l-primary bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
-          <CardHeader className="pb-3 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
-            <CardTitle className="text-sm sm:text-base lg:text-lg flex flex-wrap items-center gap-2">
-              <Gavel className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="break-words">
-                Scorecard - Round {activatedMatch.round}, Heat {activatedMatch.heatNumber}
-              </span>
-              {activatedMatchScored && (
-                <Badge variant="outline" className="bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 text-[10px] sm:text-xs">
-                  <CheckCircle2 className="h-3 w-3 mr-1 flex-shrink-0" />
-                  Completed
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
-            <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
-              {/* Pause Period Warning */}
-              {isPausePeriod && (
-                <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 animate-pulse">
-                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                  <AlertTitle className="text-amber-900 dark:text-amber-200 font-semibold text-xs sm:text-sm lg:text-base">Judging Pause Period</AlertTitle>
-                  <AlertDescription className="text-amber-800 dark:text-amber-300 text-xs sm:text-sm lg:text-base">
-                    The Cappuccino segment has ended. Please submit your scores for Visual Latte Art and Cappuccino sensory before the Espresso segment begins.
-                  </AlertDescription>
-                </Alert>
-              )}
-              {selectedJudgeId && activatedMatch.id && (
-                <JudgeScoringView
-                  key={`${selectedJudgeId}-${activatedMatch.id}`}
-                  judgeId={selectedJudgeId}
-                  matchId={activatedMatch.id}
-                  judgeRole={(activatedMatch as any).judgeRole || (allMatchJudges[activatedMatch.id]?.find(j => j.judgeId === selectedJudgeId)?.role || undefined)}
-                  isReadOnly={activatedMatchScored}
-                  onScoreSubmitted={() => {
-                    // Refresh scores after submission
-                    queryClient.invalidateQueries({ queryKey: [`/api/matches/${activatedMatch.id}/detailed-scores`] });
-                  }}
-                />
-              )}
+      {/* Activated Scorecard - Drawer */}
+      <Drawer open={!!(selectedJudge && activatedMatch)} onOpenChange={(open) => {
+        if (!open) {
+          setActivatedMatchId(null);
+        }
+      }}>
+        <DrawerContent className="max-h-[90vh] overflow-y-auto">
+          <DrawerHeader className="border-b bg-[var(--brand-light-sand)]/80 dark:bg-card">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Gavel className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <DrawerTitle className="text-sm sm:text-base lg:text-lg">
+                  Scorecard - Round {activatedMatch?.round}, Heat {activatedMatch?.heatNumber}
+                </DrawerTitle>
+                {activatedMatchScored && (
+                  <Badge variant="outline" className="bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 text-[10px] sm:text-xs">
+                    <CheckCircle2 className="h-3 w-3 mr-1 flex-shrink-0" />
+                    Completed
+                  </Badge>
+                )}
+              </div>
+              <DrawerClose asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <span className="sr-only">Close</span>
+                  <ChevronRight className="h-4 w-4 rotate-90" />
+                </Button>
+              </DrawerClose>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </DrawerHeader>
+          <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+            {/* Pause Period Warning */}
+            {isPausePeriod && activatedMatch && (
+              <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 animate-pulse">
+                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <AlertTitle className="text-amber-900 dark:text-amber-200 font-semibold text-xs sm:text-sm lg:text-base">Judging Pause Period</AlertTitle>
+                <AlertDescription className="text-amber-800 dark:text-amber-300 text-xs sm:text-sm lg:text-base">
+                  The Cappuccino segment has ended. Please submit your scores for Visual Latte Art and Cappuccino sensory before the Espresso segment begins.
+                </AlertDescription>
+              </Alert>
+            )}
+            {selectedJudgeId && activatedMatch?.id && (
+              <JudgeScoringView
+                key={`${selectedJudgeId}-${activatedMatch.id}`}
+                judgeId={selectedJudgeId}
+                matchId={activatedMatch.id}
+                judgeRole={(activatedMatch as any).judgeRole || (allMatchJudges[activatedMatch.id]?.find(j => j.judgeId === selectedJudgeId)?.role || undefined)}
+                isReadOnly={activatedMatchScored}
+                onScoreSubmitted={() => {
+                  // Refresh scores after submission
+                  queryClient.invalidateQueries({ queryKey: [`/api/matches/${activatedMatch.id}/detailed-scores`] });
+                }}
+              />
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* Instructions */}
       {!selectedJudge && (
