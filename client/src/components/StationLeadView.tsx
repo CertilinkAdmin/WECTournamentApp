@@ -728,16 +728,32 @@ export default function StationLeadView() {
   const stationWarnings = getStationWarnings();
   const [rulesOpen, setRulesOpen] = useState(false);
 
+  // Join tournament room for real-time updates
+  useEffect(() => {
+    if (!socket || !currentTournamentId) return;
+    
+    socket.emit("join:tournament", currentTournamentId);
+    console.log(`Joined tournament room: ${currentTournamentId}`);
+    
+    return () => {
+      // Note: Socket.IO doesn't have a direct "leave" event, but leaving the room
+      // happens automatically on disconnect or when component unmounts
+    };
+  }, [socket, currentTournamentId]);
+
   // Listen for WebSocket events
   useEffect(() => {
     if (!socket) return;
 
     const handleSegmentStarted = (data: any) => {
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
+      // Also invalidate all matches to update heat status across all clients
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
     };
 
     const handleSegmentEnded = (data: any) => {
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
     };
 
     const handleStationTimingStart = (data: {
@@ -775,16 +791,34 @@ export default function StationLeadView() {
       }
     };
 
+    const handleHeatStarted = (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+    };
+
+    const handleHeatCompleted = (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+    };
+
+    const handleHeatAdvanced = (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+    };
+
     socket.on("segment:started", handleSegmentStarted);
     socket.on("segment:ended", handleSegmentEnded);
     socket.on("station-timing:dial-in-started", handleStationTimingStart);
+    socket.on("heat:started", handleHeatStarted);
+    socket.on("heat:completed", handleHeatCompleted);
+    socket.on("heat:advanced", handleHeatAdvanced);
 
     return () => {
       socket.off("segment:started", handleSegmentStarted);
       socket.off("segment:ended", handleSegmentEnded);
       socket.off("station-timing:dial-in-started", handleStationTimingStart);
+      socket.off("heat:started", handleHeatStarted);
+      socket.off("heat:completed", handleHeatCompleted);
+      socket.off("heat:advanced", handleHeatAdvanced);
     };
-  }, [socket, currentMatch?.id, selectedStationData?.name]);
+  }, [socket, currentMatch?.id, selectedStationData?.name, currentTournamentId]);
 
   // Countdown for station timing coordination
   useEffect(() => {

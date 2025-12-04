@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, Trophy, Users, MapPin, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getMainStationsForTournament } from '@/utils/stationUtils';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import type { Station } from '@shared/schema';
 
 interface Tournament {
   id: number;
@@ -28,17 +30,61 @@ interface Match {
   winnerId: number | null;
 }
 
-interface Station {
-  id: number;
-  name: string;
-  status: 'AVAILABLE' | 'BUSY' | 'OFFLINE';
-}
-
 const LiveHeats: React.FC = () => {
   const { tournamentId } = useParams<{ tournamentId: string }>();
+  const queryClient = useQueryClient();
+  const socket = useWebSocket();
   const [selectedStation, setSelectedStation] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 20; // Show 20 matches per page
+
+  // Join tournament room for real-time updates
+  useEffect(() => {
+    if (!socket || !tournamentId) return;
+    
+    socket.emit("join:tournament", Number(tournamentId));
+    console.log(`Joined tournament room: ${tournamentId}`);
+    
+    // Listen for real-time updates
+    const handleSegmentStarted = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    const handleSegmentEnded = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    const handleHeatStarted = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    const handleHeatCompleted = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    const handleHeatAdvanced = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    socket.on("segment:started", handleSegmentStarted);
+    socket.on("segment:ended", handleSegmentEnded);
+    socket.on("heat:started", handleHeatStarted);
+    socket.on("heat:completed", handleHeatCompleted);
+    socket.on("heat:advanced", handleHeatAdvanced);
+
+    return () => {
+      socket.off("segment:started", handleSegmentStarted);
+      socket.off("segment:ended", handleSegmentEnded);
+      socket.off("heat:started", handleHeatStarted);
+      socket.off("heat:completed", handleHeatCompleted);
+      socket.off("heat:advanced", handleHeatAdvanced);
+    };
+  }, [socket, tournamentId, queryClient]);
 
   // API returns { tournament, participants, matches, scores }
   const { data: tournamentData, isLoading: tournamentLoading } = useQuery<{
@@ -49,7 +95,7 @@ const LiveHeats: React.FC = () => {
   }>({
     queryKey: [`/api/tournaments/${tournamentId}`],
     enabled: !!tournamentId,
-    refetchInterval: 5000,
+    refetchInterval: 10000, // Reduced polling since we have WebSocket updates
   });
 
   const tournament = tournamentData?.tournament;

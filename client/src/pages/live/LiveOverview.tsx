@@ -1,6 +1,6 @@
-import React, { useMemo, memo } from 'react';
+import React, { useMemo, memo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -16,6 +16,7 @@ import {
   Radio
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface Tournament {
   id: number;
@@ -54,6 +55,56 @@ interface Station {
 
 const LiveOverview: React.FC = () => {
   const { tournamentId } = useParams<{ tournamentId: string }>();
+  const queryClient = useQueryClient();
+  const socket = useWebSocket();
+  
+  // Join tournament room for real-time updates
+  useEffect(() => {
+    if (!socket || !tournamentId) return;
+    
+    socket.emit("join:tournament", Number(tournamentId));
+    console.log(`Joined tournament room: ${tournamentId}`);
+    
+    // Listen for real-time updates
+    const handleSegmentStarted = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    const handleSegmentEnded = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    const handleHeatStarted = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    const handleHeatCompleted = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    const handleHeatAdvanced = () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+    };
+
+    socket.on("segment:started", handleSegmentStarted);
+    socket.on("segment:ended", handleSegmentEnded);
+    socket.on("heat:started", handleHeatStarted);
+    socket.on("heat:completed", handleHeatCompleted);
+    socket.on("heat:advanced", handleHeatAdvanced);
+
+    return () => {
+      socket.off("segment:started", handleSegmentStarted);
+      socket.off("segment:ended", handleSegmentEnded);
+      socket.off("heat:started", handleHeatStarted);
+      socket.off("heat:completed", handleHeatCompleted);
+      socket.off("heat:advanced", handleHeatAdvanced);
+    };
+  }, [socket, tournamentId, queryClient]);
   
   // Fetch tournament data - API returns { tournament, participants, matches, scores }
   const { data: tournamentData, isLoading: tournamentLoading } = useQuery<{
@@ -64,7 +115,7 @@ const LiveOverview: React.FC = () => {
   }>({
     queryKey: [`/api/tournaments/${tournamentId}`],
     enabled: !!tournamentId,
-    refetchInterval: 5000, // Poll every 5s for live updates
+    refetchInterval: 10000, // Reduced polling since we have WebSocket updates
   });
 
   const tournament = tournamentData?.tournament;
