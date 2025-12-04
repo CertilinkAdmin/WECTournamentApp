@@ -921,6 +921,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (match) {
         if (updateData.status === 'RUNNING') {
           io.to(`tournament:${match.tournamentId}`).emit("segment:started", updatedSegment);
+
+          // Broadcast station timing coordination for DIAL_IN segment
+          if (updatedSegment.segment === 'DIAL_IN') {
+            const station = await storage.getStation(match.stationId!);
+            if (station) {
+              if (station.name === 'A') {
+                // Station A started: Station B gets 10 min, Station C gets 20 min (fallback)
+                io.to(`tournament:${match.tournamentId}`).emit("station-timing:dial-in-started", {
+                  stationA: { started: true, startTime: updatedSegment.startTime || new Date() },
+                  stationB: { countdown: 10 * 60 }, // 10 minutes countdown
+                  stationC: { countdown: 20 * 60 }  // 20 minutes countdown (fallback)
+                });
+              } else if (station.name === 'B') {
+                // Station B started: Station C gets 10 min countdown (overrides 20 min fallback)
+                io.to(`tournament:${match.tournamentId}`).emit("station-timing:dial-in-started", {
+                  stationB: { started: true, startTime: updatedSegment.startTime || new Date() },
+                  stationC: { countdown: 10 * 60 }  // 10 minutes countdown after Station B starts
+                });
+              }
+            }
+          }
         } else if (updateData.status === 'ENDED') {
           io.to(`tournament:${match.tournamentId}`).emit("segment:ended", updatedSegment);
         } else {
@@ -1343,30 +1364,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Judge completion checks for segment progression:
+      // Segment progression: Segments can proceed without waiting for judge scores
       // - DIAL_IN: No scoring, no judge check needed
       // - CAPPUCCINO: Can start after DIAL_IN ends (no judge check needed)  
-      // - ESPRESSO: Can only start after CAPPUCCINO ends AND judges complete CAPPUCCINO scoring
-      if (segmentCode === 'ESPRESSO') {
-        try {
-          const completionStatus = await storage.getJudgeCompletionStatus(matchId, 'CAPPUCCINO');
-
-          if (!completionStatus.allComplete) {
-            const incompleteJudges = completionStatus.judges
-              .filter(j => !j.completed)
-              .map(j => `${j.judgeName} (${j.role})`)
-              .join(', ');
-
-            return res.status(400).json({
-              error: `Cannot start ESPRESSO segment. Judges must complete scoring for CAPPUCCINO segment first. Missing scores from: ${incompleteJudges || 'judges'}`,
-              completionStatus
-            });
-          }
-        } catch (error: any) {
-          // If there's an error checking completion, log it but don't block (for now)
-          console.error('Error checking judge completion:', error);
-        }
-      }
+      // - ESPRESSO: Can start after CAPPUCCINO ends (no judge check needed)
+      // Judge completion will be checked at heat advancement instead
 
       const updatedSegment = await storage.updateHeatSegment(segment.id, {
         status: 'RUNNING',
@@ -1380,12 +1382,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Broadcast station timing coordination for DIAL_IN segment
         if (segmentCode === 'DIAL_IN') {
           const station = await storage.getStation(matchData.stationId!);
-          if (station && station.name === 'A') {
-            io.to(`tournament:${matchData.tournamentId}`).emit("station-timing:dial-in-started", {
-              stationA: { started: true, startTime: new Date() },
-              stationB: { countdown: 10 * 60 }, // 10 minutes countdown
-              stationC: { countdown: 20 * 60 }  // 20 minutes countdown
-            });
+          if (station) {
+            if (station.name === 'A') {
+              // Station A started: Station B gets 10 min, Station C gets 20 min (fallback)
+              io.to(`tournament:${matchData.tournamentId}`).emit("station-timing:dial-in-started", {
+                stationA: { started: true, startTime: new Date() },
+                stationB: { countdown: 10 * 60 }, // 10 minutes countdown
+                stationC: { countdown: 20 * 60 }  // 20 minutes countdown (fallback)
+              });
+            } else if (station.name === 'B') {
+              // Station B started: Station C gets 10 min countdown (overrides 20 min fallback)
+              io.to(`tournament:${matchData.tournamentId}`).emit("station-timing:dial-in-started", {
+                stationB: { started: true, startTime: new Date() },
+                stationC: { countdown: 10 * 60 }  // 10 minutes countdown after Station B starts
+              });
+            }
           }
         }
       }
@@ -1869,7 +1880,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let completedMatch = null;
 
       // Complete the running match if there is one
+      // BUT FIRST: Check that all judge scorecards are completed
       if (runningMatch) {
+        // Check judge completion for both CAPPUCCINO and ESPRESSO segments
+        const cappuccinoCompletion = await storage.getJudgeCompletionStatus(runningMatch.id, 'CAPPUCCINO');
+        const espressoCompletion = await storage.getJudgeCompletionStatus(runningMatch.id, 'ESPRESSO');
+
+        const incompleteJudges: string[] = [];
+        
+        if (!cappuccinoCompletion.allComplete) {
+          const incompleteCappuccino = cappuccinoCompletion.judges
+            .filter(j => !j.completed)
+            .map(j => `${j.judgeName} (CAPPUCCINO)`);
+          incompleteJudges.push(...incompleteCappuccino);
+        }
+
+        if (!espressoCompletion.allComplete) {
+          const incompleteEspresso = espressoCompletion.judges
+            .filter(j => !j.completed)
+            .map(j => `${j.judgeName} (ESPRESSO)`);
+          incompleteJudges.push(...incompleteEspresso);
+        }
+
+        if (incompleteJudges.length > 0) {
+          return res.status(400).json({
+            error: `Cannot advance heat. All judges must complete scoring before advancing. Missing scores from: ${incompleteJudges.join(', ')}`,
+            cappuccinoCompletion,
+            espressoCompletion
+          });
+        }
+
+        // Check that cup positions are assigned
+        const cupPositions = await storage.getMatchCupPositions(runningMatch.id);
+        const hasLeftPosition = cupPositions.some(p => p.position === 'left');
+        const hasRightPosition = cupPositions.some(p => p.position === 'right');
+
+        if (!hasLeftPosition || !hasRightPosition) {
+          return res.status(400).json({
+            error: `Cannot advance heat. Cup codes must be assigned to left/right positions before advancing. Please assign cup positions first.`,
+            cupPositions
+          });
+        }
+
+        // All judges have completed and cup positions assigned - safe to complete the match
         completedMatch = await storage.updateMatch(runningMatch.id, {
           status: 'DONE',
           endTime: new Date()

@@ -331,19 +331,23 @@ export default function JudgeScoringView({
 
   const existingCappuccinoScore = useMemo(() => {
     if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
+    // Look for Cappuccino sensory score - must have sensory categories filled (not just visualLatteArt)
     return existingScores.find(score => 
       score.judgeName === selectedJudge.user.name && 
       score.matchId === selectedMatchId &&
-      score.sensoryBeverage === 'Cappuccino'
+      score.sensoryBeverage === 'Cappuccino' &&
+      (score.taste !== null || score.tactile !== null || score.flavour !== null || score.overall !== null)
     ) || null;
   }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
 
   const existingEspressoScore = useMemo(() => {
     if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
+    // Look for Espresso sensory score - must have sensory categories filled
     return existingScores.find(score => 
       score.judgeName === selectedJudge.user.name && 
       score.matchId === selectedMatchId &&
-      score.sensoryBeverage === 'Espresso'
+      score.sensoryBeverage === 'Espresso' &&
+      (score.taste !== null || score.tactile !== null || score.flavour !== null || score.overall !== null)
     ) || null;
   }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
 
@@ -461,8 +465,12 @@ export default function JudgeScoringView({
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Score submitted successfully:', data);
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/detailed-scores`] });
+      // Also invalidate judge completion queries to update completion status
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/segments/ESPRESSO/judges-completion`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/segments/CAPPUCCINO/judges-completion`] });
       toast({
         title: 'Score Submitted',
         description: 'Your score has been submitted successfully.',
@@ -473,10 +481,13 @@ export default function JudgeScoringView({
       }
     },
     onError: (error: any) => {
+      console.error('Submit score mutation error:', error);
+      const errorMessage = error.message || 'Failed to submit score';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to submit score',
+        description: errorMessage,
         variant: 'destructive',
+        duration: 8000,
       });
     },
   });
@@ -551,7 +562,19 @@ export default function JudgeScoringView({
 
   // Submit Espresso sensory score (only Espresso judge)
   const handleSubmitEspressoSensory = () => {
+    console.log('handleSubmitEspressoSensory called', {
+      selectedJudge,
+      selectedMatchId,
+      espressoTaste,
+      espressoTactile,
+      espressoFlavour,
+      espressoOverall,
+      isEspressoSensoryComplete,
+      espressoSensorySubmitted
+    });
+
     if (!selectedJudge || !selectedMatchId) {
+      console.error('Validation failed: missing judge or match', { selectedJudge, selectedMatchId });
       toast({
         title: 'Validation Error',
         description: 'Please select a judge and match',
@@ -561,6 +584,12 @@ export default function JudgeScoringView({
     }
 
     if (!espressoTaste || !espressoTactile || !espressoFlavour || !espressoOverall) {
+      console.error('Validation failed: incomplete categories', {
+        espressoTaste,
+        espressoTactile,
+        espressoFlavour,
+        espressoOverall
+      });
       toast({
         title: 'Validation Error',
         description: 'Please complete all Espresso sensory categories',
@@ -580,6 +609,7 @@ export default function JudgeScoringView({
       overall: espressoOverall,
     };
 
+    console.log('Submitting espresso sensory score:', scoreData);
     submitScoreMutation.mutate(scoreData);
   };
 
@@ -1095,7 +1125,13 @@ export default function JudgeScoringView({
                           <input
                             type="checkbox"
                             checked={espressoTaste === 'left'}
-                            onChange={(e) => setEspressoTaste(e.target.checked ? 'left' : null)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEspressoTaste('left');
+                              } else {
+                                setEspressoTaste(null);
+                              }
+                            }}
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
@@ -1109,7 +1145,13 @@ export default function JudgeScoringView({
                           <input
                             type="checkbox"
                             checked={espressoTaste === 'right'}
-                            onChange={(e) => setEspressoTaste(e.target.checked ? 'right' : null)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEspressoTaste('right');
+                              } else {
+                                setEspressoTaste(null);
+                              }
+                            }}
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
@@ -1122,7 +1164,13 @@ export default function JudgeScoringView({
                           <input
                             type="checkbox"
                             checked={espressoTactile === 'left'}
-                            onChange={(e) => setEspressoTactile(e.target.checked ? 'left' : null)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEspressoTactile('left');
+                              } else {
+                                setEspressoTactile(null);
+                              }
+                            }}
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
@@ -1136,7 +1184,13 @@ export default function JudgeScoringView({
                           <input
                             type="checkbox"
                             checked={espressoTactile === 'right'}
-                            onChange={(e) => setEspressoTactile(e.target.checked ? 'right' : null)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEspressoTactile('right');
+                              } else {
+                                setEspressoTactile(null);
+                              }
+                            }}
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
@@ -1149,7 +1203,13 @@ export default function JudgeScoringView({
                           <input
                             type="checkbox"
                             checked={espressoFlavour === 'left'}
-                            onChange={(e) => setEspressoFlavour(e.target.checked ? 'left' : null)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEspressoFlavour('left');
+                              } else {
+                                setEspressoFlavour(null);
+                              }
+                            }}
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
@@ -1163,7 +1223,13 @@ export default function JudgeScoringView({
                           <input
                             type="checkbox"
                             checked={espressoFlavour === 'right'}
-                            onChange={(e) => setEspressoFlavour(e.target.checked ? 'right' : null)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEspressoFlavour('right');
+                              } else {
+                                setEspressoFlavour(null);
+                              }
+                            }}
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
@@ -1176,7 +1242,13 @@ export default function JudgeScoringView({
                           <input
                             type="checkbox"
                             checked={espressoOverall === 'left'}
-                            onChange={(e) => setEspressoOverall(e.target.checked ? 'left' : null)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEspressoOverall('left');
+                              } else {
+                                setEspressoOverall(null);
+                              }
+                            }}
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
@@ -1190,7 +1262,13 @@ export default function JudgeScoringView({
                           <input
                             type="checkbox"
                             checked={espressoOverall === 'right'}
-                            onChange={(e) => setEspressoOverall(e.target.checked ? 'right' : null)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEspressoOverall('right');
+                              } else {
+                                setEspressoOverall(null);
+                              }
+                            }}
                             disabled={espressoSensorySubmitted || propIsReadOnly}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
@@ -1209,11 +1287,33 @@ export default function JudgeScoringView({
                     )}
 
                     {/* Espresso Sensory Submit Button */}
+                    {!isEspressoSensoryComplete && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded">
+                        Please complete all categories: Taste, Tactile, Flavour, and Overall
+                      </div>
+                    )}
                     <Button
-                      onClick={handleSubmitEspressoSensory}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Submit button clicked', {
+                          isEspressoSensoryComplete,
+                          submitScoreMutation: { isPending: submitScoreMutation.isPending },
+                          espressoSensorySubmitted,
+                          propIsReadOnly,
+                          espressoTaste,
+                          espressoTactile,
+                          espressoFlavour,
+                          espressoOverall,
+                          selectedJudge,
+                          selectedMatchId
+                        });
+                        handleSubmitEspressoSensory();
+                      }}
                       disabled={!isEspressoSensoryComplete || submitScoreMutation.isPending || espressoSensorySubmitted || propIsReadOnly}
                       className="w-full min-h-[2.75rem] sm:min-h-[2.5rem]"
                       size="lg"
+                      type="button"
                     >
                       {submitScoreMutation.isPending ? (
                         <>
@@ -1229,6 +1329,13 @@ export default function JudgeScoringView({
                         'Submit Espresso Sensory Score'
                       )}
                     </Button>
+                    {(!isEspressoSensoryComplete || espressoSensorySubmitted || propIsReadOnly) && (
+                      <div className="text-xs text-muted-foreground mt-2 text-center">
+                        {!isEspressoSensoryComplete && 'Complete all categories to enable submit'}
+                        {espressoSensorySubmitted && 'Score already submitted'}
+                        {propIsReadOnly && 'Read-only mode'}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}

@@ -1,0 +1,213 @@
+{
+  "workflow_name": "Judge Checkpoint Refactor - Move from Segment to Heat Completion",
+  "description": "Remove judge completion checkpoint between CAPPUCCINO and ESPRESSO segments. Add checkpoint at heat advancement to ensure all scorecards are completed before advancing to next heat.",
+  "tasks": [
+    {
+      "id": "prompt_1",
+      "step": 1,
+      "title": "Write Tests for Segment Progression Without Checkpoints",
+      "description": "Create tests to verify CAPPUCCINO and ESPRESSO segments can proceed without waiting for judge scores",
+      "type": "test",
+      "files_to_create": [
+        "tests/segment-progression.test.ts"
+      ],
+      "test_files": [
+        "tests/segment-progression.test.ts"
+      ],
+      "acceptance_criteria": [
+        "Test: ESPRESSO segment can start immediately after CAPPUCCINO ends without judge scores",
+        "Test: CAPPUCCINO segment can start immediately after DIAL_IN ends",
+        "Test: No error thrown when starting ESPRESSO without CAPPUCCINO judge completion",
+        "Test: Segments progress in order: DIAL_IN -> CAPPUCCINO -> ESPRESSO without blocking"
+      ],
+      "implementation_steps": [
+        "Create test file for segment progression",
+        "Test DIAL_IN -> CAPPUCCINO progression (no judge check)",
+        "Test CAPPUCCINO -> ESPRESSO progression (no judge check)",
+        "Verify segments can start without judge completion status"
+      ],
+      "tdd_approach": true
+    },
+    {
+      "id": "prompt_2",
+      "step": 2,
+      "title": "Write Tests for Heat Advancement Checkpoint",
+      "description": "Create tests to verify heat advancement requires all judge scorecards (CAPPUCCINO and ESPRESSO) to be completed",
+      "type": "test",
+      "files_to_create": [
+        "tests/heat-advancement-checkpoint.test.ts"
+      ],
+      "test_files": [
+        "tests/heat-advancement-checkpoint.test.ts"
+      ],
+      "acceptance_criteria": [
+        "Test: Heat advancement fails if CAPPUCCINO judges haven't completed scoring",
+        "Test: Heat advancement fails if ESPRESSO judges haven't completed scoring",
+        "Test: Heat advancement succeeds when all judges (CAPPUCCINO and ESPRESSO) have completed scoring",
+        "Test: Error message shows which judges still need to complete scoring",
+        "Test: Heat advancement works when all segments are ENDED and all judges completed"
+      ],
+      "implementation_steps": [
+        "Create test file for heat advancement checkpoint",
+        "Test heat advancement with incomplete CAPPUCCINO scores",
+        "Test heat advancement with incomplete ESPRESSO scores",
+        "Test heat advancement with all scores complete",
+        "Test error messages for incomplete scores"
+      ],
+      "tdd_approach": true
+    },
+    {
+      "id": "prompt_3",
+      "step": 3,
+      "title": "Remove Judge Completion Check from ESPRESSO Segment Start (Server)",
+      "description": "Remove the judge completion checkpoint from ESPRESSO segment start in server endpoints",
+      "type": "server_refactor",
+      "files_to_modify": [
+        "server/routes.ts"
+      ],
+      "test_files": [
+        "tests/segment-progression.test.ts"
+      ],
+      "acceptance_criteria": [
+        "ESPRESSO segment can start immediately after CAPPUCCINO ends",
+        "No judge completion check in /api/heats/:id/segment/:code/start for ESPRESSO",
+        "No judge completion check in /api/segments/:id PATCH for ESPRESSO",
+        "Segments progress without blocking on judge scores"
+      ],
+      "implementation_steps": [
+        "Remove judge completion check from /api/heats/:id/segment/:code/start endpoint (ESPRESSO case)",
+        "Remove judge completion check from /api/segments/:id PATCH endpoint (ESPRESSO case)",
+        "Keep segment order validation (DIAL_IN -> CAPPUCCINO -> ESPRESSO)",
+        "Run tests to verify ESPRESSO can start without judge completion"
+      ],
+      "tdd_approach": true
+    },
+    {
+      "id": "prompt_4",
+      "step": 4,
+      "title": "Add Judge Completion Check to Heat Advancement (Server)",
+      "description": "Add checkpoint to /api/stations/:stationId/advance-heat to verify all judge scorecards are completed",
+      "type": "server_feature",
+      "files_to_modify": [
+        "server/routes.ts"
+      ],
+      "test_files": [
+        "tests/heat-advancement-checkpoint.test.ts"
+      ],
+      "acceptance_criteria": [
+        "Heat advancement endpoint checks CAPPUCCINO judge completion",
+        "Heat advancement endpoint checks ESPRESSO judge completion",
+        "Returns error with list of incomplete judges if scores not complete",
+        "Allows advancement only when all judges (CAPPUCCINO and ESPRESSO) have completed scoring",
+        "Error message clearly indicates which judges still need to score"
+      ],
+      "implementation_steps": [
+        "Update /api/stations/:stationId/advance-heat endpoint",
+        "Check CAPPUCCINO judge completion status before allowing advancement",
+        "Check ESPRESSO judge completion status before allowing advancement",
+        "Return detailed error if any judges incomplete",
+        "Only complete match and advance if all judges completed",
+        "Run tests to verify checkpoint works correctly"
+      ],
+      "tdd_approach": true
+    },
+    {
+      "id": "prompt_5",
+      "step": 5,
+      "title": "Remove Client-Side Judge Completion Blocking for ESPRESSO",
+      "description": "Remove client-side checks that block ESPRESSO segment start based on judge completion",
+      "type": "client_refactor",
+      "files_to_modify": [
+        "client/src/components/StationLeadView.tsx",
+        "client/src/components/StationPage.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "ESPRESSO segment start button is not disabled by judge completion status",
+        "No judge completion warning shown before ESPRESSO segment",
+        "ESPRESSO can start immediately after CAPPUCCINO ends",
+        "Remove canStartEspresso logic that checks judge completion"
+      ],
+      "implementation_steps": [
+        "Remove canStartEspresso check that requires judge completion",
+        "Remove judge completion query for CAPPUCCINO that blocks ESPRESSO",
+        "Remove UI warnings about judge completion before ESPRESSO",
+        "Keep segment order validation (can only start if previous segment ended)",
+        "Verify ESPRESSO button enables when CAPPUCCINO ends"
+      ],
+      "tdd_approach": false
+    },
+    {
+      "id": "prompt_6",
+      "step": 6,
+      "title": "Add Judge Completion Status Display at Heat Completion",
+      "description": "Show judge completion status when heat is complete and before advancing to next heat",
+      "type": "client_feature",
+      "files_to_modify": [
+        "client/src/components/StationLeadView.tsx"
+      ],
+      "test_files": [],
+      "acceptance_criteria": [
+        "Display judge completion status for CAPPUCCINO segment when heat is complete",
+        "Display judge completion status for ESPRESSO segment when heat is complete",
+        "Show which judges still need to complete scoring",
+        "Disable 'Advance Heat' button if judges haven't completed all scores",
+        "Show clear message explaining why advancement is blocked"
+      ],
+      "implementation_steps": [
+        "Add query to fetch CAPPUCCINO judge completion when heat is complete",
+        "Add query to fetch ESPRESSO judge completion when heat is complete",
+        "Create UI component to display judge completion status",
+        "Disable advance heat button if any judges incomplete",
+        "Show list of incomplete judges with their roles",
+        "Update advance heat mutation to handle server errors gracefully"
+      ],
+      "tdd_approach": false
+    },
+    {
+      "id": "prompt_7",
+      "step": 7,
+      "title": "Integration Testing and Verification",
+      "description": "Verify complete workflow: segments proceed without checkpoints, heat advancement requires all scores",
+      "type": "integration_test",
+      "files_to_modify": [],
+      "test_files": [
+        "tests/segment-progression.test.ts",
+        "tests/heat-advancement-checkpoint.test.ts"
+      ],
+      "acceptance_criteria": [
+        "All segment progression tests pass",
+        "All heat advancement checkpoint tests pass",
+        "End-to-end: Heat can complete with segments proceeding without judge blocking",
+        "End-to-end: Heat advancement blocked until all judges complete scoring",
+        "End-to-end: Heat advancement succeeds when all scores complete"
+      ],
+      "implementation_steps": [
+        "Run all segment progression tests",
+        "Run all heat advancement checkpoint tests",
+        "Manual test: Start heat, progress through segments without judge blocking",
+        "Manual test: Try to advance heat with incomplete scores (should fail)",
+        "Manual test: Complete all scores, then advance heat (should succeed)",
+        "Verify error messages are clear and helpful"
+      ],
+      "tdd_approach": true
+    }
+  ],
+  "execution_order": [
+    "prompt_1",
+    "prompt_2",
+    "prompt_3",
+    "prompt_4",
+    "prompt_5",
+    "prompt_6",
+    "prompt_7"
+  ],
+  "dependencies": {
+    "prompt_3": ["prompt_1"],
+    "prompt_4": ["prompt_2"],
+    "prompt_5": ["prompt_3"],
+    "prompt_6": ["prompt_4"],
+    "prompt_7": ["prompt_1", "prompt_2", "prompt_3", "prompt_4", "prompt_5", "prompt_6"]
+  }
+}
+

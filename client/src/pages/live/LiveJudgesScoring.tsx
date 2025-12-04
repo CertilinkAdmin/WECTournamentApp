@@ -65,36 +65,87 @@ export default function LiveJudgesScoring() {
     return tournamentName.includes('test') || tournamentName.includes('demo');
   }, [tournament]);
 
-  // Get approved judges (seed > 0 and role === 'JUDGE')
-  // Filter out test judges if this is NOT a test tournament
+  // Fetch all matches for tournament to get assigned judges
+  const { data: allTournamentMatches = [] } = useQuery<Match[]>({
+    queryKey: ['/api/tournaments', tournamentIdNum, 'matches'],
+    queryFn: async () => {
+      if (!tournamentIdNum) return [];
+      const response = await fetch(`/api/tournaments/${tournamentIdNum}/matches`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!tournamentIdNum,
+  });
+
+  // Fetch judges for all matches to get all assigned judges
+  const { data: allMatchJudges = {} } = useQuery<Record<number, Array<{ judgeId: number; role: 'ESPRESSO' | 'CAPPUCCINO' }>>>({
+    queryKey: ['/api/tournaments', tournamentIdNum, 'matches', 'judges', allTournamentMatches.map(m => m.id).join(',')],
+    queryFn: async () => {
+      if (!tournamentIdNum || allTournamentMatches.length === 0) return {};
+      const judgesPromises = allTournamentMatches.map(async (match) => {
+        try {
+          const response = await fetch(`/api/matches/${match.id}/judges`);
+          if (!response.ok) return { matchId: match.id, judges: [] };
+          const judges = await response.json();
+          return { matchId: match.id, judges };
+        } catch (error) {
+          return { matchId: match.id, judges: [] };
+        }
+      });
+      const results = await Promise.all(judgesPromises);
+      const judgesMap: Record<number, Array<{ judgeId: number; role: 'ESPRESSO' | 'CAPPUCCINO' }>> = {};
+      results.forEach(({ matchId, judges }) => {
+        judgesMap[matchId] = judges.map((j: any) => ({ judgeId: j.judgeId, role: j.role }));
+      });
+      return judgesMap;
+    },
+    enabled: !!tournamentIdNum && allTournamentMatches.length > 0,
+  });
+
+  // Get all judges assigned to heats in this tournament (not just tournament participants)
+  // This ensures we show all judges who are actually assigned to score heats
   const approvedJudges = useMemo(() => {
-    if (!participants.length || !allUsers.length) {
+    if (!allUsers.length || !allMatchJudges || Object.keys(allMatchJudges).length === 0) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('No participants or users:', { participantsCount: participants.length, usersCount: allUsers.length });
+        console.log('No users or match judges:', { usersCount: allUsers.length, matchJudgesCount: Object.keys(allMatchJudges || {}).length });
       }
       return [];
     }
 
+    // Get all unique judge IDs from assigned heats
+    const assignedJudgeIds = new Set<number>();
+    Object.values(allMatchJudges).forEach(judges => {
+      judges.forEach(j => assignedJudgeIds.add(j.judgeId));
+    });
+
     if (process.env.NODE_ENV === 'development') {
-      console.log('Processing judges from participants:', {
-        totalParticipants: participants.length,
+      console.log('Processing judges from assigned heats:', {
+        uniqueJudgeIds: assignedJudgeIds.size,
         totalUsers: allUsers.length,
         isTestTournament,
       });
     }
 
-    const judges = participants
-      .map(p => {
-        const user = allUsers.find(u => u.id === p.userId && u.role === 'JUDGE');
-        if (user && p.seed && p.seed > 0) {
-          return { ...p, user };
+    // Get all users who are judges and assigned to at least one heat
+    const judges = Array.from(assignedJudgeIds)
+      .map(judgeId => {
+        const user = allUsers.find(u => u.id === judgeId && u.role === 'JUDGE');
+        if (user) {
+          // Find participant record if exists (for seed info)
+          const participant = participants.find(p => p.userId === judgeId);
+          return { 
+            id: participant?.id || 0,
+            userId: user.id,
+            seed: participant?.seed || 0,
+            user 
+          };
         }
         return null;
       })
-      .filter((j): j is TournamentParticipant & { user: User } => j !== null);
+      .filter((j): j is { id: number; userId: number; seed: number; user: User } => j !== null);
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('Found judges before filtering:', judges.length);
+      console.log('Found judges from assigned heats:', judges.length);
     }
 
     // If this is NOT a test tournament, filter out test judges
@@ -119,7 +170,7 @@ export default function LiveJudgesScoring() {
       console.log('Returning all judges (test tournament):', judges.length);
     }
     return judges;
-  }, [participants, allUsers, isTestTournament]);
+  }, [allUsers, allMatchJudges, participants, isTestTournament]);
 
   // Get selected judge
   const selectedJudge = useMemo(() => {
@@ -161,8 +212,8 @@ export default function LiveJudgesScoring() {
     return cappuccinoSegment?.status === 'ENDED' && espressoSegment?.status !== 'RUNNING' && espressoSegment?.status !== 'ENDED';
   }, [activatedMatchSegments]);
 
-  // Filter matches to current tournament
-  const tournamentMatches = useMemo(() => {
+  // Filter assigned matches to current tournament
+  const filteredAssignedMatches = useMemo(() => {
     if (!tournamentIdNum) return assignedMatches;
     return assignedMatches.filter(m => (m as any).tournamentId === tournamentIdNum);
   }, [assignedMatches, tournamentIdNum]);
@@ -170,7 +221,7 @@ export default function LiveJudgesScoring() {
   // Group matches by round
   const matchesByRound = useMemo(() => {
     const grouped: Record<number, (Match & { judgeRole: 'ESPRESSO' | 'CAPPUCCINO' })[]> = {};
-    tournamentMatches.forEach(match => {
+    filteredAssignedMatches.forEach(match => {
       if (!grouped[match.round]) {
         grouped[match.round] = [];
       }
@@ -181,7 +232,7 @@ export default function LiveJudgesScoring() {
       grouped[parseInt(round)].sort((a, b) => a.heatNumber - b.heatNumber);
     });
     return grouped;
-  }, [tournamentMatches]);
+  }, [filteredAssignedMatches]);
 
   // Get available rounds
   const availableRounds = useMemo(() => {
@@ -218,8 +269,21 @@ export default function LiveJudgesScoring() {
   // Get activated match
   const activatedMatch = useMemo(() => {
     if (!activatedMatchId) return null;
-    return tournamentMatches.find(m => m.id === activatedMatchId) || null;
-  }, [activatedMatchId, tournamentMatches]);
+    const match = allTournamentMatches.find(m => m.id === activatedMatchId);
+    if (!match) return null;
+    // Get judge role from assigned matches if available, otherwise from allMatchJudges
+    const assignedMatch = assignedMatches.find(m => m.id === activatedMatchId);
+    if (assignedMatch) {
+      return { ...match, judgeRole: assignedMatch.judgeRole };
+    }
+    // Try to get from allMatchJudges
+    const matchJudges = allMatchJudges[activatedMatchId] || [];
+    const judgeAssignment = matchJudges.find(j => j.judgeId === selectedJudgeId);
+    if (judgeAssignment) {
+      return { ...match, judgeRole: judgeAssignment.role };
+    }
+    return match;
+  }, [activatedMatchId, allTournamentMatches, assignedMatches, allMatchJudges, selectedJudgeId]);
 
   // Fetch scores for activated match to check completion status
   const { data: activatedMatchScores = [] } = useQuery<JudgeDetailedScore[]>({
@@ -362,7 +426,7 @@ export default function LiveJudgesScoring() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 space-y-3 sm:space-y-4 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
-            {tournamentMatches.length === 0 ? (
+            {filteredAssignedMatches.length === 0 ? (
               <div className="text-center p-4 sm:p-6 text-foreground/70 dark:text-muted-foreground">
                 <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
                 <p className="text-xs sm:text-sm lg:text-base">
@@ -577,7 +641,7 @@ export default function LiveJudgesScoring() {
                   key={`${selectedJudgeId}-${activatedMatch.id}`}
                   judgeId={selectedJudgeId}
                   matchId={activatedMatch.id}
-                  judgeRole={activatedMatch.judgeRole}
+                  judgeRole={(activatedMatch as any).judgeRole || (allMatchJudges[activatedMatch.id]?.find(j => j.judgeId === selectedJudgeId)?.role || undefined)}
                   isReadOnly={activatedMatchScored}
                   onScoreSubmitted={() => {
                     // Refresh scores after submission

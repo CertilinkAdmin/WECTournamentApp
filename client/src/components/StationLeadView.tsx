@@ -16,6 +16,7 @@ import StationWarning from "./StationWarning";
 import SegmentTimer from "./SegmentTimer";
 import SevenSegmentTimer from "./SevenSegmentTimer";
 import JudgesStatusMonitor from "./JudgesStatusMonitor";
+import AdminCupPositionAssignment from "./AdminCupPositionAssignment";
 
 export default function StationLeadView() {
   const { toast } = useToast();
@@ -141,8 +142,17 @@ export default function StationLeadView() {
   }, [segments]);
   const isEspressoStarted = espressoSegment?.status === 'RUNNING' || espressoSegment?.status === 'ENDED';
 
-  // Fetch judge completion status for CAPPUCCINO segment when it ends
-  const { data: cappuccinoJudgeCompletion, isLoading: isLoadingJudgeCompletion } = useQuery<{
+  // Determine if ESPRESSO segment can be started (no judge completion check - segments proceed without blocking)
+  const canStartEspresso = React.useMemo(() => {
+    if (!isCappuccinoEnded) return false;
+    if (isEspressoStarted) return false;
+    // ESPRESSO can start immediately after CAPPUCCINO ends - no judge completion check
+    return true;
+  }, [isCappuccinoEnded, isEspressoStarted]);
+
+  // Fetch judge completion status for heat completion (CAPPUCCINO and ESPRESSO)
+  // This is checked before advancing to next heat, not before starting segments
+  const { data: cappuccinoJudgeCompletion } = useQuery<{
     allComplete: boolean;
     judges: Array<{
       judgeId: number;
@@ -158,23 +168,62 @@ export default function StationLeadView() {
       if (!response.ok) return { allComplete: false, judges: [] };
       return response.json();
     },
-    enabled: !!currentMatch?.id && isCappuccinoEnded && !isEspressoStarted,
-    refetchInterval: (query) => {
-      // Poll every 3 seconds if not all complete, stop polling if all complete
-      const data = query.state.data;
-      return data?.allComplete ? false : 3000;
-    },
+    enabled: !!currentMatch?.id && currentMatch?.status === 'RUNNING',
+    refetchInterval: 3000, // Poll every 3 seconds when heat is running
   });
 
-  // Determine if ESPRESSO segment can be started
-  const canStartEspresso = React.useMemo(() => {
-    if (!isCappuccinoEnded) return false;
-    if (isEspressoStarted) return false;
-    // If we're still loading completion status, don't allow start
-    if (isLoadingJudgeCompletion) return false;
-    // Only allow start if all judges have completed scoring
-    return cappuccinoJudgeCompletion?.allComplete ?? false;
-  }, [isCappuccinoEnded, isEspressoStarted, isLoadingJudgeCompletion, cappuccinoJudgeCompletion]);
+  const { data: espressoJudgeCompletion } = useQuery<{
+    allComplete: boolean;
+    judges: Array<{
+      judgeId: number;
+      judgeName: string;
+      role: 'ESPRESSO' | 'CAPPUCCINO';
+      completed: boolean;
+    }>;
+  }>({
+    queryKey: [`/api/matches/${currentMatch?.id}/segments/ESPRESSO/judges-completion`],
+    queryFn: async () => {
+      if (!currentMatch?.id) return { allComplete: false, judges: [] };
+      const response = await fetch(`/api/matches/${currentMatch.id}/segments/ESPRESSO/judges-completion`);
+      if (!response.ok) return { allComplete: false, judges: [] };
+      return response.json();
+    },
+    enabled: !!currentMatch?.id && currentMatch?.status === 'RUNNING',
+    refetchInterval: 3000, // Poll every 3 seconds when heat is running
+  });
+
+  // Check if all judges have completed scoring (for heat advancement)
+  const allJudgesCompleted = React.useMemo(() => {
+    return (cappuccinoJudgeCompletion?.allComplete ?? false) && (espressoJudgeCompletion?.allComplete ?? false);
+  }, [cappuccinoJudgeCompletion, espressoJudgeCompletion]);
+
+  // Fetch cup positions to check if they're assigned
+  const { data: cupPositions = [] } = useQuery<Array<{ cupCode: string; position: 'left' | 'right' }>>({
+    queryKey: [`/api/matches/${currentMatch?.id}/cup-positions`],
+    queryFn: async () => {
+      if (!currentMatch?.id) return [];
+      const response = await fetch(`/api/matches/${currentMatch.id}/cup-positions`);
+      if (!response.ok) return [];
+      const positions = await response.json();
+      return positions.map((p: any) => ({ cupCode: p.cupCode, position: p.position }));
+    },
+    enabled: !!currentMatch?.id && currentMatch?.status === 'RUNNING' && allJudgesCompleted,
+    refetchInterval: 3000, // Poll every 3 seconds when judges are complete
+  });
+
+  // Check if cup positions are assigned
+  const cupPositionsAssigned = React.useMemo(() => {
+    return cupPositions.length === 2 && 
+           cupPositions.some(p => p.position === 'left') && 
+           cupPositions.some(p => p.position === 'right');
+  }, [cupPositions]);
+
+  // Can advance heat only if all judges completed AND cup positions assigned (when match is RUNNING)
+  // If match is not RUNNING, we can advance (no checks needed)
+  const canAdvanceHeat = React.useMemo(() => {
+    if (currentMatch?.status !== 'RUNNING') return true;
+    return allJudgesCompleted && cupPositionsAssigned;
+  }, [currentMatch?.status, allJudgesCompleted, cupPositionsAssigned]);
 
   const startSegmentMutation = useMutation({
     mutationFn: async (segmentId: number) => {
@@ -211,23 +260,14 @@ export default function StationLeadView() {
       });
     },
     onError: (error: any) => {
-      // Check if error is about judge completion
       const errorMessage = error.message || "An error occurred while starting the segment.";
-      const isJudgeCompletionError = errorMessage.includes('judges') || errorMessage.includes('Judges') || errorMessage.includes('scoring');
       
       toast({
-        title: isJudgeCompletionError ? "Cannot Start Segment" : "Failed to Start Segment",
+        title: "Failed to Start Segment",
         description: errorMessage,
         variant: "destructive",
-        duration: isJudgeCompletionError ? 8000 : 5000, // Longer duration for judge completion errors
+        duration: 5000,
       });
-      
-      // Invalidate judge completion query to refresh status
-      if (isJudgeCompletionError && currentMatch?.id) {
-        queryClient.invalidateQueries({ 
-          queryKey: [`/api/matches/${currentMatch.id}/segments/CAPPUCCINO/judges-completion`] 
-        });
-      }
     }
   });
 
@@ -314,14 +354,8 @@ export default function StationLeadView() {
         if (!segmentResponse.ok) throw new Error('Failed to start Dial-In segment');
         const segmentData = await segmentResponse.json();
 
-        // Emit WebSocket event for station timing coordination
-        if (socket) {
-          socket.emit("station-timing:dial-in-started", {
-            stationA: { started: true, startTime: new Date(segmentData.startTime) },
-            stationB: { countdown: 10 * 60 }, // 10 minutes
-            stationC: { countdown: 20 * 60 }, // 20 minutes
-          });
-        }
+        // Server will handle station timing coordination via WebSocket events
+        // No need to emit client-side as server handles it in the PATCH endpoint
 
         return { match: matchData, segment: segmentData };
       }
@@ -379,7 +413,12 @@ export default function StationLeadView() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      if (!response.ok) throw new Error('Failed to advance heat');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to advance heat' }));
+        const error = new Error(errorData.error || 'Failed to advance heat');
+        (error as any).errorData = errorData;
+        throw error;
+      }
       return await response.json();
     },
     onSuccess: (data) => {
@@ -399,10 +438,22 @@ export default function StationLeadView() {
       }
     },
     onError: (error: any) => {
+      // Extract detailed error message
+      let errorMessage = error.message || "An error occurred while advancing to the next heat.";
+      
+      // If error has errorData (from our custom error), use that
+      if (error.errorData?.error) {
+        errorMessage = error.errorData.error;
+      }
+
+      // Check if error is about cup positions
+      const isCupPositionError = errorMessage.includes('cup') || errorMessage.includes('Cup') || errorMessage.includes('position');
+
       toast({
-        title: "Failed to Advance Heat",
-        description: error.message || "An error occurred while advancing to the next heat.",
+        title: "Cannot Advance Heat",
+        description: errorMessage,
         variant: "destructive",
+        duration: isCupPositionError || errorMessage.includes('judge') ? 8000 : 5000, // Longer duration for important errors
       });
     }
   });
@@ -690,24 +741,37 @@ export default function StationLeadView() {
     };
 
     const handleStationTimingStart = (data: {
-      stationA: { started: boolean; startTime: Date };
-      stationB: { countdown: number };
-      stationC: { countdown: number };
+      stationA?: { started: boolean; startTime: Date };
+      stationB?: { countdown?: number; started?: boolean; startTime?: Date };
+      stationC?: { countdown: number };
     }) => {
       const currentStationName = normalizeStationName(selectedStationData?.name || '');
 
-      if (currentStationName === 'B') {
+      if (currentStationName === 'B' && data.stationB?.countdown !== undefined) {
         setStationTimingAlert({
           message: 'Station A has started DIAL-IN. Your station starts in:',
           countdown: data.stationB.countdown,
           show: true
         });
       } else if (currentStationName === 'C') {
-        setStationTimingAlert({
-          message: 'Station A has started DIAL-IN. Your station starts in:',
-          countdown: data.stationC.countdown,
-          show: true
-        });
+        // Station C can receive countdown from either Station A (20 min fallback) or Station B (10 min)
+        if (data.stationC?.countdown !== undefined) {
+          if (data.stationB?.started) {
+            // Station B has started, so Station C gets 10 min countdown
+            setStationTimingAlert({
+              message: 'Station B has started DIAL-IN. Your station starts in:',
+              countdown: data.stationC.countdown,
+              show: true
+            });
+          } else if (data.stationA?.started) {
+            // Station A has started, so Station C gets 20 min fallback countdown
+            setStationTimingAlert({
+              message: 'Station A has started DIAL-IN. Your station starts in:',
+              countdown: data.stationC.countdown,
+              show: true
+            });
+          }
+        }
       }
     };
 
@@ -1034,63 +1098,21 @@ export default function StationLeadView() {
                       </div>
                     )}
                     {!isRunning && !isEnded && (
-                      <>
-                        {/* Judge Completion Warning for ESPRESSO segment */}
-                        {segmentCode === 'ESPRESSO' && isCappuccinoEnded && !canStartEspresso && (
-                          <Alert className="mt-3 mb-2 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
-                            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                            <AlertTitle className="text-xs sm:text-sm lg:text-base text-amber-900 dark:text-amber-200 font-semibold">
-                              Waiting for Judge Scores
-                            </AlertTitle>
-                            <AlertDescription className="text-xs sm:text-sm text-amber-800 dark:text-amber-300 mt-1">
-                              {isLoadingJudgeCompletion ? (
-                                <div className="flex items-center gap-2">
-                                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                                  <span>Checking judge completion status...</span>
-                                </div>
-                              ) : cappuccinoJudgeCompletion && cappuccinoJudgeCompletion.judges.length > 0 ? (
-                                <div className="space-y-1">
-                                  <p>Cannot start Espresso segment. The following judges must submit their Cappuccino scores:</p>
-                                  <ul className="list-disc list-inside ml-2 space-y-0.5">
-                                    {cappuccinoJudgeCompletion.judges
-                                      .filter(j => !j.completed)
-                                      .map(j => (
-                                        <li key={j.judgeId} className="text-[10px] sm:text-xs">
-                                          {j.judgeName} ({j.role})
-                                        </li>
-                                      ))}
-                                  </ul>
-                                  <p className="text-[10px] sm:text-xs mt-1.5 font-medium">
-                                    {cappuccinoJudgeCompletion.judges.filter(j => j.completed).length} of {cappuccinoJudgeCompletion.judges.length} judges have submitted scores.
-                                  </p>
-                                </div>
-                              ) : (
-                                <span>Cannot start Espresso segment. Judges must complete scoring for Cappuccino segment first.</span>
-                              )}
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                        <Button
-                          variant="default"
-                          size="lg"
-                          className={`w-full mt-3 text-sm sm:text-base touch-manipulation ${
-                            segmentCode === 'ESPRESSO' && !canStartEspresso 
-                              ? 'opacity-50 cursor-not-allowed' 
-                              : ''
-                          }`}
-                          onClick={() => segment && handleStartSegment(segment.id)}
-                          disabled={
+                      <Button
+                        variant="default"
+                        size="lg"
+                        className="w-full mt-3 text-sm sm:text-base touch-manipulation"
+                        onClick={() => segment && handleStartSegment(segment.id)}
+                        disabled={
                             !segment || 
                             !canStart || 
-                            (currentMatch.status !== 'RUNNING' && currentMatch.status !== 'READY') ||
-                            (segmentCode === 'ESPRESSO' && !canStartEspresso)
+                            (currentMatch.status !== 'RUNNING' && currentMatch.status !== 'READY')
                           }
                           data-testid={`button-start-${segmentCode}`}
                         >
                           <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
                           Start {segmentCode.replace('_', ' ')}
                         </Button>
-                      </>
                     )}
                     {isEnded && (
                       <div className="mt-3 text-xs text-foreground/60 dark:text-white/60 text-center">
@@ -1159,20 +1181,109 @@ export default function StationLeadView() {
                     </Button>)
                   ) : (
                     // Not last heat - show complete and advance button
-                    (<Button
-                      variant="default"
-                      size="lg"
-                      className="w-full bg-primary hover:bg-primary/90"
-                      onClick={handleAdvanceHeat}
-                      disabled={advanceHeatMutation.isPending}
-                      data-testid="button-complete-and-advance"
-                    >
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                      {advanceHeatMutation.isPending 
-                        ? "Completing and Advancing..." 
-                        : "Complete and Advance to Next Heat"
-                      }
-                    </Button>)
+                    <>
+                      {/* Judge Completion Status and Cup Code Assignment - Required before advancing heat */}
+                      {currentMatch && currentMatch.status === 'RUNNING' && (
+                        <div className="mb-4 space-y-4">
+                          {(!allJudgesCompleted) && (
+                            <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+                              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                              <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                                Judge Scores Required
+                              </AlertTitle>
+                              <AlertDescription className="text-xs text-amber-800 dark:text-amber-300 mt-1">
+                                <p className="mb-2">All judges must complete scoring before advancing to the next heat.</p>
+                                {cappuccinoJudgeCompletion && !cappuccinoJudgeCompletion.allComplete && (
+                                  <div className="mb-2">
+                                    <p className="font-medium">CAPPUCCINO Segment:</p>
+                                    <ul className="list-disc list-inside ml-2 space-y-0.5">
+                                      {cappuccinoJudgeCompletion.judges
+                                        .filter(j => !j.completed)
+                                        .map(j => (
+                                          <li key={j.judgeId}>
+                                            {j.judgeName} ({j.role})
+                                          </li>
+                                        ))}
+                                    </ul>
+                                    <p className="text-xs mt-1">
+                                      {cappuccinoJudgeCompletion.judges.filter(j => j.completed).length} of {cappuccinoJudgeCompletion.judges.length} judges completed
+                                    </p>
+                                  </div>
+                                )}
+                                {espressoJudgeCompletion && !espressoJudgeCompletion.allComplete && (
+                                  <div>
+                                    <p className="font-medium">ESPRESSO Segment:</p>
+                                    <ul className="list-disc list-inside ml-2 space-y-0.5">
+                                      {espressoJudgeCompletion.judges
+                                        .filter(j => !j.completed)
+                                        .map(j => (
+                                          <li key={j.judgeId}>
+                                            {j.judgeName} ({j.role})
+                                          </li>
+                                        ))}
+                                    </ul>
+                                    <p className="text-xs mt-1">
+                                      {espressoJudgeCompletion.judges.filter(j => j.completed).length} of {espressoJudgeCompletion.judges.length} judges completed
+                                    </p>
+                                  </div>
+                                )}
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                          
+                          {/* Cup Code Assignment - Show after judges complete scoring */}
+                          {allJudgesCompleted && currentMatch && currentTournamentId && (
+                            <div className="border rounded-lg p-4 bg-card">
+                              <AdminCupPositionAssignment
+                                matchId={currentMatch.id}
+                                tournamentId={currentTournamentId}
+                                onSuccess={() => {
+                                  queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch.id}/cup-positions`] });
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {allJudgesCompleted && cupPositionsAssigned && (
+                            <Alert className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
+                              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              <AlertTitle className="text-sm font-semibold text-green-900 dark:text-green-200">
+                                Ready to Advance
+                              </AlertTitle>
+                              <AlertDescription className="text-xs text-green-800 dark:text-green-300">
+                                All scorecards are complete and cup codes have been assigned. You can now advance to the next heat.
+                              </AlertDescription>
+                            </Alert>
+                          )}
+
+                          {allJudgesCompleted && !cupPositionsAssigned && (
+                            <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+                              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                              <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                                Cup Code Assignment Required
+                              </AlertTitle>
+                              <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+                                Please assign cup codes to left/right positions above before advancing to the next heat.
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                        </div>
+                      )}
+                      <Button
+                        variant="default"
+                        size="lg"
+                        className="w-full bg-primary hover:bg-primary/90"
+                        onClick={handleAdvanceHeat}
+                        disabled={advanceHeatMutation.isPending || (currentMatch?.status === 'RUNNING' && !canAdvanceHeat)}
+                        data-testid="button-complete-and-advance"
+                      >
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        {advanceHeatMutation.isPending 
+                          ? "Completing and Advancing..." 
+                          : "Complete and Advance to Next Heat"
+                        }
+                      </Button>
+                    </>
                   )}
                   <p className="text-xs text-center text-foreground/70 dark:text-white/70">
                     {isLastHeatInRound 
