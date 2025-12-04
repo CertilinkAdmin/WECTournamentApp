@@ -288,6 +288,17 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async deleteMatch(matchId: number): Promise<void> {
+    // Delete related data first (foreign key constraints)
+    await db.delete(heatScores).where(eq(heatScores.matchId, matchId));
+    await db.delete(judgeDetailedScores).where(eq(judgeDetailedScores.matchId, matchId));
+    await db.delete(heatJudges).where(eq(heatJudges.matchId, matchId));
+    await db.delete(heatSegments).where(eq(heatSegments.matchId, matchId));
+    await db.delete(matchCupPositions).where(eq(matchCupPositions.matchId, matchId));
+    // Delete the match itself
+    await db.delete(matches).where(eq(matches.id, matchId));
+  }
+
   // Heat Segments
   async createHeatSegment(segment: InsertHeatSegment): Promise<HeatSegment> {
     const result = await db.insert(heatSegments).values(segment).returning();

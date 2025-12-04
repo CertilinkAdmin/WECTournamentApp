@@ -102,6 +102,20 @@ export class BracketGenerator {
       throw new Error("Need at least 2 participants");
     }
 
+    // Check for existing Round 1 matches to prevent duplicates
+    const existingMatches = await storage.getTournamentMatches(tournamentId);
+    const existingRound1Matches = existingMatches.filter(m => m.round === 1);
+    
+    if (existingRound1Matches.length > 0) {
+      console.log(`⚠️  Found ${existingRound1Matches.length} existing Round 1 matches. Deleting to prevent duplicates...`);
+      // Delete existing Round 1 matches and their related data
+      for (const match of existingRound1Matches) {
+        // Delete related data first (foreign key constraints)
+        await storage.deleteMatch(match.id);
+      }
+      console.log(`✅ Deleted ${existingRound1Matches.length} existing Round 1 matches`);
+    }
+
     // Track created matches for Round 1
     let round1MatchesCreated = 0;
 

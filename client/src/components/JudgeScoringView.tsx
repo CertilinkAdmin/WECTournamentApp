@@ -63,7 +63,6 @@ export default function JudgeScoringView({
     propJudgeId || (judgeIdFromUrl ? parseInt(judgeIdFromUrl) : null)
   );
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(propMatchId || null);
-  const [selectedSegmentType, setSelectedSegmentType] = useState<'CAPPUCCINO' | 'ESPRESSO' | null>(null);
   
   // Update selectedJudgeId when prop or URL param changes
   useEffect(() => {
@@ -385,18 +384,8 @@ export default function JudgeScoringView({
     }
   }, [propMatchId, selectedMatchId, tournamentMatches]);
 
-  // Auto-select first available segment when segments are loaded
-  useEffect(() => {
-    if (!selectedSegmentType && availableSegments.length > 0) {
-      setSelectedSegmentType(availableSegments[0].segment as 'CAPPUCCINO' | 'ESPRESSO');
-    }
-  }, [selectedSegmentType, availableSegments]);
-
-  // Get selected segment data
-  const selectedSegmentData = useMemo(() => {
-    if (!selectedSegmentType) return null;
-    return segments.find(s => s.segment === selectedSegmentType);
-  }, [segments, selectedSegmentType]);
+  // Judge role is locked - no segment selection needed
+  // Judges can only score for their assigned role (ESPRESSO or CAPPUCCINO)
 
   // Load existing scores if judge has already scored
   useEffect(() => {
@@ -708,7 +697,6 @@ export default function JudgeScoringView({
                   onValueChange={(value) => {
                     setSelectedJudgeId(value ? parseInt(value) : null);
                     setSelectedMatchId(null);
-                    setSelectedSegmentType(null);
                   }}
                 >
                   <SelectTrigger className="w-full max-w-md">
@@ -756,7 +744,6 @@ export default function JudgeScoringView({
                   value={selectedMatchId?.toString() || ''}
                   onValueChange={(value) => {
                     setSelectedMatchId(value ? parseInt(value) : null);
-                    setSelectedSegmentType(null);
                   }}
                 >
                   <SelectTrigger className="w-full max-w-md">
@@ -783,50 +770,24 @@ export default function JudgeScoringView({
             </Card>
           )}
 
-          {/* Segment Selection */}
-          {selectedMatchId && availableSegments.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Coffee className="h-5 w-5" />
-                  Select Segment
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-4">
-                  {availableSegments.map((segment) => (
-                    <Button
-                      key={segment.id}
-                      variant={selectedSegmentType === segment.segment ? 'default' : 'outline'}
-                      onClick={() => setSelectedSegmentType(segment.segment as 'CAPPUCCINO' | 'ESPRESSO')}
-                    >
-                      {segment.segment.replace('_', ' ')}
-                    </Button>
-                  ))}
-                  {availableSegments.length === 0 && segments.length > 0 && (
-                    <div className="text-sm text-muted-foreground">
-                      {(() => {
-                        const dialIn = segments.find(s => s.segment === 'DIAL_IN');
-                        const cappuccino = segments.find(s => s.segment === 'CAPPUCCINO');
-                        if (dialIn && dialIn.status !== 'ENDED') {
-                          return 'Waiting for Dial-In segment to complete...';
-                        }
-                        if (cappuccino && cappuccino.status !== 'ENDED') {
-                          return 'Waiting for Cappuccino segment to complete...';
-                        }
-                        return 'No segments available for scoring yet.';
-                      })()}
-                    </div>
-                  )}
+
+          {/* Judge Role Indicator - Show locked role */}
+          {selectedMatchId && effectiveJudgeRole && (
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <Gavel className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Assigned Role:</span>
+                  <Badge variant={effectiveJudgeRole === 'ESPRESSO' ? 'default' : 'secondary'} className="font-semibold">
+                    {effectiveJudgeRole === 'ESPRESSO' ? 'Espresso Judge' : 'Cappuccino Judge'}
+                  </Badge>
+                  <span className="text-muted-foreground text-xs ml-auto">(Locked - Cannot be changed)</span>
                 </div>
-                {availableSegments.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No cappuccino segments available for this heat</p>
-                )}
               </CardContent>
             </Card>
           )}
 
-          {/* Scoring Interface - Show when match is selected (no segment selection needed, judge role determines what to show) */}
+          {/* Scoring Interface - Show when match is selected (judge role determines what to show) */}
           {selectedMatchId && competitor1 && competitor2 && effectiveJudgeRole && (
             <div className="space-y-4 sm:space-y-6">
               {/* Latte Art Scorecard - All Judges */}

@@ -25,8 +25,7 @@ export default function LiveJudgesScoring() {
   const [selectedJudgeId, setSelectedJudgeId] = useState<number | null>(null);
   const [activatedMatchId, setActivatedMatchId] = useState<number | null>(null);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
-  const [currentHeatPage, setCurrentHeatPage] = useState<number>(1);
-  const heatsPerPage = 10;
+  const [selectedHeatId, setSelectedHeatId] = useState<number | null>(null);
 
   // Fetch tournament
   const { data: tournaments = [] } = useQuery<Tournament[]>({
@@ -110,75 +109,51 @@ export default function LiveJudgesScoring() {
     enabled: !!tournamentIdNum && allTournamentMatches.length > 0,
   });
 
-  // Get all judges assigned to heats in this tournament (not just tournament participants)
-  // This ensures we show all judges who are actually assigned to score heats
+  // Get judges assigned to the selected heat (filtered by round and heat)
   const approvedJudges = useMemo(() => {
-    if (!allUsers.length || !allMatchJudges || Object.keys(allMatchJudges).length === 0) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('No users or match judges:', { usersCount: allUsers.length, matchJudgesCount: Object.keys(allMatchJudges || {}).length });
-      }
+    if (!selectedHeatId || !allUsers.length || !allMatchJudges || Object.keys(allMatchJudges).length === 0) {
       return [];
     }
 
-    // Get all unique judge IDs from assigned heats
-    const assignedJudgeIds = new Set<number>();
-    Object.values(allMatchJudges).forEach(judges => {
-      judges.forEach(j => assignedJudgeIds.add(j.judgeId));
-    });
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Processing judges from assigned heats:', {
-        uniqueJudgeIds: assignedJudgeIds.size,
-        totalUsers: allUsers.length,
-        isTestTournament,
-      });
+    // Get judges assigned to the selected heat
+    const heatJudges = allMatchJudges[selectedHeatId] || [];
+    
+    if (heatJudges.length === 0) {
+      return [];
     }
 
-    // Get all users who are judges and assigned to at least one heat
-    const judges = Array.from(assignedJudgeIds)
-      .map(judgeId => {
-        const user = allUsers.find(u => u.id === judgeId && u.role === 'JUDGE');
+    // Get user info for each judge assigned to this heat
+    const judges = heatJudges
+      .map(judgeAssignment => {
+        const user = allUsers.find(u => u.id === judgeAssignment.judgeId && u.role === 'JUDGE');
         if (user) {
-          // Find participant record if exists (for seed info)
-          const participant = participants.find(p => p.userId === judgeId);
+          const participant = participants.find(p => p.userId === judgeAssignment.judgeId);
           return { 
             id: participant?.id || 0,
             userId: user.id,
             seed: participant?.seed || 0,
-            user 
+            user,
+            role: judgeAssignment.role
           };
         }
         return null;
       })
-      .filter((j): j is { id: number; userId: number; seed: number; user: User } => j !== null);
+      .filter((j): j is { id: number; userId: number; seed: number; user: User; role: 'ESPRESSO' | 'CAPPUCCINO' } => j !== null);
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Found judges from assigned heats:', judges.length);
-    }
-
-    // If this is NOT a test tournament, filter out test judges
+    // Filter out test judges if not a test tournament
     if (!isTestTournament) {
-      const filtered = judges.filter(j => {
+      return judges.filter(j => {
         const email = j.user.email.toLowerCase();
         const name = j.user.name.toLowerCase();
-        // Filter out test judges (emails containing @test.com or test-judge pattern)
         const isTestJudge = email.includes('@test.com') || 
                            email.includes('test-judge') ||
                            name.includes('test judge');
         return !isTestJudge;
       });
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Filtered judges (non-test tournament):', filtered.length);
-      }
-      return filtered;
     }
 
-    // If this IS a test tournament, return all judges (including test judges)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Returning all judges (test tournament):', judges.length);
-    }
     return judges;
-  }, [allUsers, allMatchJudges, participants, isTestTournament]);
+  }, [selectedHeatId, allUsers, allMatchJudges, participants, isTestTournament]);
 
   // Get selected judge
   const selectedJudge = useMemo(() => {
@@ -186,17 +161,6 @@ export default function LiveJudgesScoring() {
     return approvedJudges.find(j => j.user.id === selectedJudgeId);
   }, [selectedJudgeId, approvedJudges]);
 
-  // Fetch assigned matches for selected judge
-  const { data: assignedMatches = [] } = useQuery<(Match & { judgeRole: 'ESPRESSO' | 'CAPPUCCINO' })[]>({
-    queryKey: [`/api/judges/${selectedJudgeId}/matches`],
-    queryFn: async () => {
-      if (!selectedJudgeId) return [];
-      const response = await fetch(`/api/judges/${selectedJudgeId}/matches`);
-      if (!response.ok) throw new Error('Failed to fetch assigned matches');
-      return response.json();
-    },
-    enabled: !!selectedJudgeId,
-  });
 
   // Fetch segments for activated match to check pause status
   const { data: activatedMatchSegments = [] } = useQuery<Array<{ segment: string; status: string }>>({
@@ -220,16 +184,16 @@ export default function LiveJudgesScoring() {
     return cappuccinoSegment?.status === 'ENDED' && espressoSegment?.status !== 'RUNNING' && espressoSegment?.status !== 'ENDED';
   }, [activatedMatchSegments]);
 
-  // Filter assigned matches to current tournament
-  const filteredAssignedMatches = useMemo(() => {
-    if (!tournamentIdNum) return assignedMatches;
-    return assignedMatches.filter(m => (m as any).tournamentId === tournamentIdNum);
-  }, [assignedMatches, tournamentIdNum]);
+  // Get all matches for tournament (for round/heat selection)
+  const tournamentMatches = useMemo(() => {
+    if (!tournamentIdNum) return [];
+    return allTournamentMatches.filter(m => (m as any).tournamentId === tournamentIdNum);
+  }, [tournamentIdNum, allTournamentMatches]);
 
   // Group matches by round
   const matchesByRound = useMemo(() => {
-    const grouped: Record<number, (Match & { judgeRole: 'ESPRESSO' | 'CAPPUCCINO' })[]> = {};
-    filteredAssignedMatches.forEach(match => {
+    const grouped: Record<number, Match[]> = {};
+    tournamentMatches.forEach(match => {
       if (!grouped[match.round]) {
         grouped[match.round] = [];
       }
@@ -240,7 +204,7 @@ export default function LiveJudgesScoring() {
       grouped[parseInt(round)].sort((a, b) => a.heatNumber - b.heatNumber);
     });
     return grouped;
-  }, [filteredAssignedMatches]);
+  }, [tournamentMatches]);
 
   // Get available rounds
   const availableRounds = useMemo(() => {
@@ -253,14 +217,8 @@ export default function LiveJudgesScoring() {
   React.useEffect(() => {
     if (availableRounds.length > 0 && !selectedRound) {
       setSelectedRound(availableRounds[0]);
-      setCurrentHeatPage(1);
     }
   }, [availableRounds, selectedRound]);
-
-  // Reset heat page when round changes
-  React.useEffect(() => {
-    setCurrentHeatPage(1);
-  }, [selectedRound]);
 
   // Get matches for selected round
   const roundMatches = useMemo(() => {
@@ -268,30 +226,31 @@ export default function LiveJudgesScoring() {
     return matchesByRound[selectedRound] || [];
   }, [selectedRound, matchesByRound]);
 
-  // Paginate heats within selected round
-  const totalHeatPages = Math.ceil(roundMatches.length / heatsPerPage);
-  const startHeatIndex = (currentHeatPage - 1) * heatsPerPage;
-  const endHeatIndex = startHeatIndex + heatsPerPage;
-  const paginatedHeats = roundMatches.slice(startHeatIndex, endHeatIndex);
+  // Reset selected heat when round changes
+  React.useEffect(() => {
+    setSelectedHeatId(null);
+    setSelectedJudgeId(null);
+    setActivatedMatchId(null);
+  }, [selectedRound]);
 
-  // Get activated match
+  // Get activated match (use selectedHeatId if activatedMatchId is not set)
   const activatedMatch = useMemo(() => {
-    if (!activatedMatchId) return null;
-    const match = allTournamentMatches.find(m => m.id === activatedMatchId);
+    const matchId = activatedMatchId || selectedHeatId;
+    if (!matchId) return null;
+    const match = allTournamentMatches.find(m => m.id === matchId);
     if (!match) return null;
-    // Get judge role from assigned matches if available, otherwise from allMatchJudges
-    const assignedMatch = assignedMatches.find(m => m.id === activatedMatchId);
-    if (assignedMatch) {
-      return { ...match, judgeRole: assignedMatch.judgeRole };
-    }
-    // Try to get from allMatchJudges
-    const matchJudges = allMatchJudges[activatedMatchId] || [];
+    // Get judge role from allMatchJudges
+    const matchJudges = allMatchJudges[matchId] || [];
     const judgeAssignment = matchJudges.find(j => j.judgeId === selectedJudgeId);
     if (judgeAssignment) {
       return { ...match, judgeRole: judgeAssignment.role };
     }
+    // If no judge selected yet, get first judge's role for display
+    if (matchJudges.length > 0) {
+      return { ...match, judgeRole: matchJudges[0].role };
+    }
     return match;
-  }, [activatedMatchId, allTournamentMatches, assignedMatches, allMatchJudges, selectedJudgeId]);
+  }, [activatedMatchId, selectedHeatId, allTournamentMatches, allMatchJudges, selectedJudgeId]);
 
   // Fetch scores for activated match to check completion status
   const { data: activatedMatchScores = [] } = useQuery<JudgeDetailedScore[]>({
@@ -313,12 +272,12 @@ export default function LiveJudgesScoring() {
     );
   }, [activatedMatchId, selectedJudge, activatedMatchScores]);
 
-  // Reset activated match when judge changes
+  // Auto-activate match when judge is selected
   React.useEffect(() => {
-    setActivatedMatchId(null);
-    setSelectedRound(null);
-    setCurrentHeatPage(1);
-  }, [selectedJudgeId]);
+    if (selectedJudgeId && selectedHeatId && !activatedMatchId) {
+      setActivatedMatchId(selectedHeatId);
+    }
+  }, [selectedJudgeId, selectedHeatId, activatedMatchId]);
 
   if (!tournament) {
     return (
@@ -350,266 +309,125 @@ export default function LiveJudgesScoring() {
         </CardContent>
       </Card>
 
-      {/* Judge Selection */}
+      {/* Round and Heat Selection */}
       <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
         <CardHeader className="pb-3 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
-          <CardTitle className="text-sm sm:text-base lg:text-lg">Select Judge</CardTitle>
+          <CardTitle className="text-sm sm:text-base lg:text-lg">Select Round and Heat</CardTitle>
         </CardHeader>
-        <CardContent className="p-4 sm:p-6 space-y-4">
-          {/* Loading State */}
-          {(usersLoading || participantsLoading) && (
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
-              <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin flex-shrink-0" />
-              <span>Loading judges...</span>
-            </div>
-          )}
-
-          {/* Error State */}
-          {(usersError || participantsError) && (
-            <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
-              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <AlertTitle className="text-sm sm:text-base">Error Loading Judges</AlertTitle>
-              <AlertDescription className="text-xs sm:text-sm">
-                {usersError?.message || participantsError?.message || 'Failed to load judges. Please refresh the page.'}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Judge Selector */}
-          {!usersLoading && !participantsLoading && !usersError && !participantsError && (
+        <CardContent className="p-4 sm:p-6 space-y-4 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+          {/* Round Selection */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <label className="text-xs sm:text-sm font-medium text-foreground sm:min-w-[80px]">
+              Round:
+            </label>
             <Select
-              value={selectedJudgeId?.toString() || ''}
+              value={selectedRound?.toString() || ''}
               onValueChange={(value) => {
-                setSelectedJudgeId(value ? parseInt(value) : null);
+                setSelectedRound(value ? parseInt(value) : null);
               }}
             >
-              <SelectTrigger className="w-full sm:max-w-md min-h-[2.75rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation">
-                <SelectValue placeholder="Choose an approved judge..." />
+              <SelectTrigger className="w-full sm:max-w-[200px] min-h-[2.75rem] sm:min-h-[2.5rem] touch-manipulation">
+                <SelectValue placeholder="Select round..." />
               </SelectTrigger>
               <SelectContent>
-                {approvedJudges.length === 0 ? (
-                  <div className="px-2 py-1.5 text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
-                    {participants.length === 0 
-                      ? 'No participants found for this tournament'
-                      : allUsers.length === 0
-                      ? 'No users loaded'
-                      : 'No approved judges found. Judges must have seed > 0 and role = JUDGE.'}
-                  </div>
+                {availableRounds.length === 0 ? (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">No rounds available</div>
                 ) : (
-                  approvedJudges.map((judge) => (
-                    <SelectItem key={judge.id} value={judge.user.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        <span>{judge.user.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {judge.user.email}
-                        </Badge>
-                      </div>
+                  availableRounds.map((round) => (
+                    <SelectItem key={round} value={round.toString()}>
+                      Round {round} ({matchesByRound[round]?.length || 0} heats)
                     </SelectItem>
                   ))
                 )}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Heat Selection */}
+          {selectedRound && roundMatches.length > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <label className="text-xs sm:text-sm font-medium text-foreground sm:min-w-[80px]">
+                Heat:
+              </label>
+              <Select
+                value={selectedHeatId?.toString() || ''}
+                onValueChange={(value) => {
+                  setSelectedHeatId(value ? parseInt(value) : null);
+                  setSelectedJudgeId(null);
+                  setActivatedMatchId(null);
+                }}
+              >
+                <SelectTrigger className="w-full sm:max-w-[200px] min-h-[2.75rem] sm:min-h-[2.5rem] touch-manipulation">
+                  <SelectValue placeholder="Select heat..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {roundMatches.map((match) => (
+                    <SelectItem key={match.id} value={match.id.toString()}>
+                      Heat {match.heatNumber} - {match.status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
-          {/* Debug Info (only in development) */}
-          {process.env.NODE_ENV === 'development' && approvedJudges.length === 0 && !usersLoading && !participantsLoading && (
-            <div className="text-[10px] sm:text-xs text-foreground/70 dark:text-muted-foreground space-y-1 p-3 bg-[var(--brand-light-sand)]/40 dark:bg-muted/30 rounded-md border border-[var(--brand-light-sand)]/50 dark:border-border">
-              <p className="font-semibold">Debug Info:</p>
-              <p>Participants: {participants.length}</p>
-              <p>Users: {allUsers.length}</p>
-              <p>Users with JUDGE role: {allUsers.filter(u => u.role === 'JUDGE').length}</p>
-              <p>Participants with seed &gt; 0: {participants.filter(p => p.seed && p.seed > 0).length}</p>
-              <p>Is Test Tournament: {isTestTournament ? 'Yes' : 'No'}</p>
+          {selectedRound && roundMatches.length === 0 && (
+            <div className="text-center p-4 text-foreground/70 dark:text-muted-foreground">
+              <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-xs sm:text-sm">No heats found for Round {selectedRound}</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Judge's Assigned Heats */}
-      {selectedJudge && (
+      {/* Judge Selection - Only show judges for selected heat */}
+      {selectedHeatId && (
         <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-card border border-[var(--brand-light-sand)]/70 dark:border-border">
           <CardHeader className="pb-3 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
             <CardTitle className="text-sm sm:text-base lg:text-lg">
-              Assigned Heats for {selectedJudge.user.name}
+              Select Judge for Round {selectedRound}, Heat {roundMatches.find(m => m.id === selectedHeatId)?.heatNumber}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6 space-y-3 sm:space-y-4 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
-            {filteredAssignedMatches.length === 0 ? (
-              <div className="text-center p-4 sm:p-6 text-foreground/70 dark:text-muted-foreground">
-                <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
-                <p className="text-xs sm:text-sm lg:text-base">
-                  {selectedJudge.user.name} has no assigned heats for this tournament yet.
-                </p>
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            {/* Loading State */}
+            {(usersLoading || participantsLoading) && (
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
+                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin flex-shrink-0" />
+                <span>Loading judges...</span>
               </div>
-            ) : (
-              <>
-                {/* Round Selection */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pb-3 sm:pb-4 border-b border-[var(--brand-light-sand)]/50 dark:border-border">
-                  <label className="text-xs sm:text-sm font-medium text-foreground sm:min-w-[80px]">
-                    Round:
-                  </label>
-                  <div className="flex items-center gap-2 flex-1">
-                    <Select
-                      value={selectedRound?.toString() || ''}
-                      onValueChange={(value) => {
-                        setSelectedRound(value ? parseInt(value) : null);
-                        setCurrentHeatPage(1);
-                      }}
-                    >
-                      <SelectTrigger className="w-full sm:max-w-[200px] min-h-[2.75rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation">
-                        <SelectValue placeholder="Select round..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableRounds.map((round) => (
-                          <SelectItem key={round} value={round.toString()}>
-                            Round {round} ({matchesByRound[round]?.length || 0} heats)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {availableRounds.length > 1 && (
-                      <div className="flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const currentIndex = availableRounds.indexOf(selectedRound || 0);
-                            if (currentIndex > 0) {
-                              setSelectedRound(availableRounds[currentIndex - 1]);
-                              setCurrentHeatPage(1);
-                            }
-                          }}
-                          disabled={!selectedRound || availableRounds.indexOf(selectedRound || 0) === 0}
-                          className="min-h-[2.75rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] px-3 touch-manipulation"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const currentIndex = availableRounds.indexOf(selectedRound || 0);
-                            if (currentIndex < availableRounds.length - 1) {
-                              setSelectedRound(availableRounds[currentIndex + 1]);
-                              setCurrentHeatPage(1);
-                            }
-                          }}
-                          disabled={!selectedRound || availableRounds.indexOf(selectedRound || 0) === availableRounds.length - 1}
-                          className="min-h-[2.75rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] px-3 touch-manipulation"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+            )}
 
-                {/* Heats List */}
-                {selectedRound && (
-                  <>
-                    <div className="space-y-2 sm:space-y-3">
-                      {paginatedHeats.length === 0 ? (
-                        <div className="text-center p-4 sm:p-6 text-foreground/70 dark:text-muted-foreground">
-                          <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
-                          <p className="text-xs sm:text-sm lg:text-base">
-                            No heats found for Round {selectedRound}.
-                          </p>
-                        </div>
-                      ) : (
-                        paginatedHeats.map((match) => {
-                          const isActivated = activatedMatchId === match.id;
-
-                          return (
-                            <div
-                              key={match.id}
-                              className={`p-3 sm:p-4 rounded-lg border-2 transition-colors touch-manipulation ${
-                                isActivated
-                                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
-                                  : 'border-[var(--brand-light-sand)]/50 dark:border-border bg-[var(--brand-light-sand)]/60 dark:bg-card hover:bg-[var(--brand-light-sand)]/80 dark:hover:bg-muted/50'
-                              }`}
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                                    <Badge variant="outline" className="text-[10px] sm:text-xs">
-                                      Round {match.round}, Heat {match.heatNumber}
-                                    </Badge>
-                                    <Badge variant={match.judgeRole === 'ESPRESSO' ? 'default' : 'secondary'} className="text-[10px] sm:text-xs">
-                                      {match.judgeRole}
-                                    </Badge>
-                                  </div>
-                                  <div className="text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
-                                    Status: <span className="font-medium text-foreground dark:text-foreground">{match.status}</span>
-                                  </div>
-                                </div>
-                                <div className="flex gap-2 flex-shrink-0">
-                          {!isActivated && (
-                            <Button
-                              onClick={() => {
-                                setActivatedMatchId(match.id);
-                              }}
-                              variant="default"
-                              size="sm"
-                              className="min-h-[2.5rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation text-xs sm:text-sm"
-                            >
-                              <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 flex-shrink-0" />
-                              <span className="whitespace-nowrap">Activate Scorecard</span>
-                            </Button>
-                          )}
-                                  {isActivated && (
-                                    <Button
-                                      onClick={() => setActivatedMatchId(null)}
-                                      variant="outline"
-                                      size="sm"
-                                      className="min-h-[2.5rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation text-xs sm:text-sm"
-                                    >
-                                      <span className="whitespace-nowrap">Close Scorecard</span>
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
+            {/* Judge Selector */}
+            {!usersLoading && !participantsLoading && (
+              <Select
+                value={selectedJudgeId?.toString() || ''}
+                onValueChange={(value) => {
+                  setSelectedJudgeId(value ? parseInt(value) : null);
+                  setActivatedMatchId(selectedHeatId);
+                }}
+              >
+                <SelectTrigger className="w-full sm:max-w-md min-h-[2.75rem] sm:min-h-[2.5rem] touch-manipulation">
+                  <SelectValue placeholder="Choose a judge for this heat..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {approvedJudges.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
+                      No judges assigned to this heat
                     </div>
-
-                    {/* Heat Pagination */}
-                    {totalHeatPages > 1 && (
-                      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-[var(--brand-light-sand)]/50 dark:border-border">
-                        <div className="text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground">
-                          Showing {startHeatIndex + 1}-{Math.min(endHeatIndex, roundMatches.length)} of {roundMatches.length} heats
-                        </div>
+                  ) : (
+                    approvedJudges.map((judge) => (
+                      <SelectItem key={judge.user.id} value={judge.user.id.toString()}>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentHeatPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentHeatPage === 1}
-                            className="min-h-[2.5rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation text-xs sm:text-sm"
-                          >
-                            <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                            <span className="whitespace-nowrap">Previous</span>
-                          </Button>
-                          <div className="text-xs sm:text-sm text-foreground/70 dark:text-muted-foreground px-2">
-                            Page {currentHeatPage} of {totalHeatPages}
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentHeatPage(prev => Math.min(totalHeatPages, prev + 1))}
-                            disabled={currentHeatPage === totalHeatPages}
-                            className="min-h-[2.5rem] sm:min-h-[2.5rem] lg:min-h-[2.5rem] touch-manipulation text-xs sm:text-sm"
-                          >
-                            <span className="whitespace-nowrap">Next</span>
-                            <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
-                          </Button>
+                          <span>{judge.user.name}</span>
+                          <Badge variant={judge.role === 'ESPRESSO' ? 'default' : 'secondary'} className="text-xs">
+                            {judge.role}
+                          </Badge>
                         </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             )}
           </CardContent>
         </Card>
@@ -621,8 +439,8 @@ export default function LiveJudgesScoring() {
           setActivatedMatchId(null);
         }
       }}>
-        <DrawerContent className="max-h-[90vh] overflow-y-auto">
-          <DrawerHeader className="border-b bg-[var(--brand-light-sand)]/80 dark:bg-card">
+        <DrawerContent className="max-h-[95vh] flex flex-col">
+          <DrawerHeader className="border-b bg-[var(--brand-light-sand)]/80 dark:bg-card flex-shrink-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Gavel className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
@@ -644,7 +462,7 @@ export default function LiveJudgesScoring() {
               </DrawerClose>
             </div>
           </DrawerHeader>
-          <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 bg-[var(--brand-light-sand)]/80 dark:bg-transparent">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 bg-[var(--brand-light-sand)]/80 dark:bg-transparent pb-8">
             {/* Pause Period Warning */}
             {isPausePeriod && activatedMatch && (
               <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 animate-pulse">
@@ -673,15 +491,16 @@ export default function LiveJudgesScoring() {
       </Drawer>
 
       {/* Instructions */}
-      {!selectedJudge && (
+      {!selectedHeatId && (
         <Card className="bg-[var(--brand-light-sand)]/60 dark:bg-muted/50 border border-[var(--brand-light-sand)]/50 dark:border-border">
           <CardContent className="p-4 sm:p-6 bg-[var(--brand-light-sand)]/60 dark:bg-transparent">
             <div className="space-y-2 text-xs sm:text-sm lg:text-base text-foreground/70 dark:text-muted-foreground">
               <p className="font-semibold text-foreground dark:text-foreground">Instructions:</p>
               <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Select a judge from the dropdown above</li>
-                <li>View their assigned heats for this tournament</li>
-                <li>Click "Activate Scorecard" to begin scoring a heat</li>
+                <li>Select a round from the dropdown above</li>
+                <li>Select a heat from that round</li>
+                <li>Choose a judge assigned to that heat</li>
+                <li>The scorecard will open automatically for scoring</li>
                 <li>Once scores are submitted, the scorecard becomes read-only</li>
               </ul>
             </div>
