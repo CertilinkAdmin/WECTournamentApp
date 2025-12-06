@@ -1,0 +1,114 @@
+{
+  "name": "Station Deactivation & Scorecard Fixes",
+  "description": "Fix station manager to deactivate stations (mark OFFLINE) instead of migrating heats, and fix scorecard submission issues",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Station Manager - Deactivate Instead of Migrate",
+      "description": "Change station disabling to mark stations as OFFLINE status instead of migrating heats",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "backend",
+          "action": "Update enabledStations endpoint to mark disabled stations as OFFLINE",
+          "file": "server/routes.ts",
+          "details": "When disabling stations (after bracket generation), instead of migrating heats, mark the station status as 'OFFLINE'. Keep matches assigned to that station. Update station status, not match assignments.",
+          "test": "Disable station B after bracket generation - verify station marked OFFLINE, matches stay assigned to B"
+        },
+        {
+          "id": "1.2",
+          "action": "Update UI to show deactivation message instead of migration",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "Change confirmation dialog to say 'Deactivate Station X' instead of 'Migrate heats'. Update message to explain station will be marked OFFLINE and matches will remain assigned but station won't be used for new matches.",
+          "test": "UI shows deactivation message, no migration count shown"
+        },
+        {
+          "id": "1.3",
+          "action": "Update bracket generation to skip OFFLINE stations",
+          "file": "server/bracketGenerator.ts",
+          "details": "Ensure bracket generation filters out stations with status 'OFFLINE' when finding available stations. Only use AVAILABLE stations.",
+          "test": "Generate bracket with OFFLINE stations - verify they're not used"
+        },
+        {
+          "id": "1.4",
+          "action": "Update station filtering to exclude OFFLINE stations",
+          "file": "server/bracketGenerator.ts",
+          "details": "In generateBracket and generateNextRound, filter stations by status !== 'OFFLINE' in addition to enabledStations check.",
+          "test": "Bracket generation ignores OFFLINE stations"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Scorecard Submission Fixes",
+      "description": "Fix scorecard locking and submission issues",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "investigation",
+          "action": "Find scorecard component and understand submission flow",
+          "files": ["client/src/components"],
+          "details": "Search for scorecard component, understand how latte art submission works, how sensory scores are submitted, and why the form locks after latte art submission.",
+          "test": "Identify scorecard component and submission logic"
+        },
+        {
+          "id": "2.2",
+          "action": "Fix scorecard locking after latte art submission",
+          "file": "client/src/components/[ScorecardComponent].tsx",
+          "details": "Allow sensory scores to be submitted even after latte art is submitted. Remove or fix the lock that prevents completing sensory scores after latte art submission.",
+          "test": "Submit latte art, then can still submit sensory scores"
+        },
+        {
+          "id": "2.3",
+          "action": "Fix submit button not working when all scores complete",
+          "file": "client/src/components/[ScorecardComponent].tsx",
+          "details": "Debug why submit button doesn't work when all scores are filled. Check form validation, submission handler, error handling. Ensure button is enabled and click handler fires correctly.",
+          "test": "Fill all scores, submit button works and submits successfully"
+        },
+        {
+          "id": "2.4",
+          "action": "Test complete scorecard flow",
+          "details": "Test: 1) Submit latte art only → can still submit sensory, 2) Submit all scores → submit button works, 3) Verify scores are saved correctly",
+          "test": "Complete scorecard flow works end-to-end"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Integration & Testing",
+      "description": "Test both fixes together",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "test",
+          "action": "Test station deactivation flow",
+          "details": "Generate bracket with A, B, C → Deactivate B → Verify B marked OFFLINE, matches still assigned to B, new rounds don't use B",
+          "test": "Station deactivation works correctly"
+        },
+        {
+          "id": "3.2",
+          "type": "test",
+          "action": "Test scorecard submission flow",
+          "details": "Submit latte art → Complete sensory → Submit → Verify all scores saved",
+          "test": "Scorecard submission works correctly"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "TDD - Test each fix independently then together",
+    "manual_testing": [
+      "Deactivate station after bracket generation",
+      "Submit latte art, then sensory scores",
+      "Submit all scores at once",
+      "Verify scores are saved correctly"
+    ]
+  },
+  "key_requirements": [
+    "Station deactivation = mark OFFLINE, no heat migration",
+    "Scorecard allows completing sensory after latte art submission",
+    "Submit button works when all scores are complete",
+    "No data loss or corruption"
+  ]
+}
+

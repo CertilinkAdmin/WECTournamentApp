@@ -330,23 +330,30 @@ export default function JudgeScoringView({
 
   const existingCappuccinoScore = useMemo(() => {
     if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
-    // Look for Cappuccino sensory score - must have sensory categories filled (not just visualLatteArt)
+    // Look for Cappuccino sensory score - must have ALL sensory categories filled (not just visualLatteArt)
+    // This ensures latte art submission doesn't lock sensory scoring
     return existingScores.find(score => 
       score.judgeName === selectedJudge.user.name && 
       score.matchId === selectedMatchId &&
       score.sensoryBeverage === 'Cappuccino' &&
-      (score.taste !== null || score.tactile !== null || score.flavour !== null || score.overall !== null)
+      score.taste !== null && 
+      score.tactile !== null && 
+      score.flavour !== null && 
+      score.overall !== null
     ) || null;
   }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
 
   const existingEspressoScore = useMemo(() => {
     if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
-    // Look for Espresso sensory score - must have sensory categories filled
+    // Look for Espresso sensory score - must have ALL sensory categories filled
     return existingScores.find(score => 
       score.judgeName === selectedJudge.user.name && 
       score.matchId === selectedMatchId &&
       score.sensoryBeverage === 'Espresso' &&
-      (score.taste !== null || score.tactile !== null || score.flavour !== null || score.overall !== null)
+      score.taste !== null && 
+      score.tactile !== null && 
+      score.flavour !== null && 
+      score.overall !== null
     ) || null;
   }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
 
@@ -515,6 +522,18 @@ export default function JudgeScoringView({
 
   // Submit Cappuccino sensory score (only Cappuccino judge)
   const handleSubmitCappuccinoSensory = () => {
+    console.log('handleSubmitCappuccinoSensory called', {
+      selectedJudge,
+      selectedMatchId,
+      cappuccinoTaste,
+      cappuccinoTactile,
+      cappuccinoFlavour,
+      cappuccinoOverall,
+      isCappuccinoSensoryComplete,
+      cappuccinoSensorySubmitted,
+      submitScoreMutation: { isPending: submitScoreMutation.isPending }
+    });
+
     if (!selectedJudge || !selectedMatchId) {
       toast({
         title: 'Validation Error',
@@ -545,7 +564,21 @@ export default function JudgeScoringView({
       // Don't include visualLatteArt - it should remain independent
     };
 
-    submitScoreMutation.mutate(scoreData);
+    console.log('Submitting cappuccino sensory score:', scoreData);
+    try {
+      submitScoreMutation.mutate(scoreData, {
+        onError: (error) => {
+          console.error('Cappuccino sensory submission error:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error calling submitScoreMutation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit score. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Submit Espresso sensory score (only Espresso judge)
@@ -558,7 +591,8 @@ export default function JudgeScoringView({
       espressoFlavour,
       espressoOverall,
       isEspressoSensoryComplete,
-      espressoSensorySubmitted
+      espressoSensorySubmitted,
+      submitScoreMutation: { isPending: submitScoreMutation.isPending }
     });
 
     if (!selectedJudge || !selectedMatchId) {
@@ -599,7 +633,20 @@ export default function JudgeScoringView({
     };
 
     console.log('Submitting espresso sensory score:', scoreData);
-    submitScoreMutation.mutate(scoreData);
+    try {
+      submitScoreMutation.mutate(scoreData, {
+        onError: (error) => {
+          console.error('Espresso sensory submission error:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error calling submitScoreMutation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit score. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Check if scoring is complete for each segment

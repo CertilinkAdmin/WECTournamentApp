@@ -63,24 +63,25 @@ export const normalizeStationName = (name: string): string => {
   return name.replace(/^Station\s*/i, '').trim().toUpperCase();
 };
 
-export const getStationLetter = (stationName: string): 'A' | 'B' | 'C' | null => {
+export const getStationLetter = (stationName: string, enabledStations: string[] = ['A', 'B', 'C']): string | null => {
   const normalized = normalizeStationName(stationName);
-  return ['A', 'B', 'C'].includes(normalized) ? normalized as 'A' | 'B' | 'C' : null;
+  return enabledStations.includes(normalized) ? normalized : null;
 };
 
-export const isMainStation = (stationName: string): boolean => {
-  return ['A', 'B', 'C'].includes(normalizeStationName(stationName));
+export const isMainStation = (stationName: string, enabledStations: string[] = ['A', 'B', 'C']): boolean => {
+  return enabledStations.includes(normalizeStationName(stationName));
 };
 
-export const findStationByLetter = (stations: Array<{ id: number; name: string }>, letter: 'A' | 'B' | 'C') => {
+export const findStationByLetter = (stations: Array<{ id: number; name: string }>, letter: string) => {
   return stations.find(s => normalizeStationName(s.name) === letter);
 };
 
 export type StationWithNormalizedName = Station & { normalizedName: string };
 
-const LETTER_PRIORITY: Array<'A' | 'B' | 'C'> = ['A', 'B', 'C'];
-
-const dedupeByLetter = (stations: StationWithNormalizedName[]): StationWithNormalizedName[] => {
+const dedupeByLetter = (
+  stations: StationWithNormalizedName[],
+  enabledStations: string[]
+): StationWithNormalizedName[] => {
   const buckets: Record<string, StationWithNormalizedName[]> = {};
 
   for (const station of stations) {
@@ -92,7 +93,8 @@ const dedupeByLetter = (stations: StationWithNormalizedName[]): StationWithNorma
 
   const result: StationWithNormalizedName[] = [];
 
-  for (const letter of LETTER_PRIORITY) {
+  // Use enabledStations order instead of hardcoded LETTER_PRIORITY
+  for (const letter of enabledStations) {
     const bucket = buckets[letter];
     if (bucket && bucket.length > 0) {
       result.push(bucket[0]);
@@ -104,14 +106,15 @@ const dedupeByLetter = (stations: StationWithNormalizedName[]): StationWithNorma
 
 export function getMainStationsForTournament(
   stations: Station[],
-  tournamentId?: number | null
+  tournamentId?: number | null,
+  enabledStations: string[] = ['A', 'B', 'C']
 ): StationWithNormalizedName[] {
   const eligibleStations: StationWithNormalizedName[] = stations
     .map((station) => ({
       ...station,
       normalizedName: normalizeStationName(station.name),
     }))
-    .filter((station) => isMainStation(station.name));
+    .filter((station) => isMainStation(station.name, enabledStations));
 
   if (eligibleStations.length === 0) {
     return [];
@@ -126,7 +129,8 @@ export function getMainStationsForTournament(
 
   const appendFromCandidates = (
     current: StationWithNormalizedName[],
-    candidates: StationWithNormalizedName[]
+    candidates: StationWithNormalizedName[],
+    enabledStations: string[]
   ) => {
     const existingLetters = new Set(current.map((station) => station.normalizedName));
 
@@ -134,28 +138,28 @@ export function getMainStationsForTournament(
       if (existingLetters.has(station.normalizedName)) continue;
       current.push(station);
       existingLetters.add(station.normalizedName);
-      if (current.length === LETTER_PRIORITY.length) {
+      if (current.length === enabledStations.length) {
         break;
       }
     }
   };
 
   const preferredGroup = tournamentId ? groupedByTournament.get(tournamentId) ?? [] : [];
-  const mainStations: StationWithNormalizedName[] = dedupeByLetter(preferredGroup);
+  const mainStations: StationWithNormalizedName[] = dedupeByLetter(preferredGroup, enabledStations);
 
-  if (mainStations.length < LETTER_PRIORITY.length) {
+  if (mainStations.length < enabledStations.length) {
     const sortedGroups = Array.from(groupedByTournament.entries())
       .sort((a, b) => {
         const coverageDifference =
-          dedupeByLetter(b[1]).length - dedupeByLetter(a[1]).length;
+          dedupeByLetter(b[1], enabledStations).length - dedupeByLetter(a[1], enabledStations).length;
         if (coverageDifference !== 0) return coverageDifference;
         return a[0] - b[0];
       });
 
     for (const [groupId, stationsList] of sortedGroups) {
       if (tournamentId && groupId === tournamentId) continue;
-      appendFromCandidates(mainStations, dedupeByLetter(stationsList));
-      if (mainStations.length === LETTER_PRIORITY.length) {
+      appendFromCandidates(mainStations, dedupeByLetter(stationsList, enabledStations), enabledStations);
+      if (mainStations.length === enabledStations.length) {
         break;
       }
     }

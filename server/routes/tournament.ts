@@ -306,19 +306,32 @@ router.post('/:id/assign-station-leads', async (req, res) => {
       });
     }
     
+    // Get tournament to access enabledStations
+    const tournament = await db
+      .select()
+      .from(tournaments)
+      .where(eq(tournaments.id, tournamentId))
+      .limit(1);
+    
+    if (tournament.length === 0) {
+      return res.status(404).json({ error: 'Tournament not found' });
+    }
+    
+    const enabledStations = tournament[0].enabledStations || ['A', 'B', 'C'];
+    
     // Get all stations for this tournament
     const tournamentStations = await db
       .select()
       .from(stations)
       .where(eq(stations.tournamentId, tournamentId));
     
-    // Filter to stations A, B, C
-    const stationsABC = tournamentStations
-      .filter(s => ['A', 'B', 'C'].includes(s.name))
+    // Filter to enabled stations
+    const stationsForAssignment = tournamentStations
+      .filter(s => enabledStations.includes(s.name))
       .sort((a, b) => a.name.localeCompare(b.name));
     
-    if (stationsABC.length === 0) {
-      return res.status(400).json({ error: 'No stations A, B, C found for this tournament' });
+    if (stationsForAssignment.length === 0) {
+      return res.status(400).json({ error: `No enabled stations (${enabledStations.join(', ')}) found for this tournament` });
     }
     
     // Shuffle station leads for randomization
@@ -326,8 +339,8 @@ router.post('/:id/assign-station-leads', async (req, res) => {
     
     // Assign station leads to stations (distribute evenly, wrap around if needed)
     let assignedCount = 0;
-    for (let i = 0; i < stationsABC.length; i++) {
-      const station = stationsABC[i];
+    for (let i = 0; i < stationsForAssignment.length; i++) {
+      const station = stationsForAssignment[i];
       const stationLead = shuffledLeads[i % shuffledLeads.length];
       
       await db.update(stations)

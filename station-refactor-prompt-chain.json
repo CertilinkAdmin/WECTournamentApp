@@ -1,0 +1,302 @@
+{
+  "name": "Station Configuration Refactor - Dynamic Station Selection",
+  "description": "Refactor tournament system to support configurable station counts (A only, A&B, or A&B&C)",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Database Schema & Migration",
+      "description": "Add enabledStations field to tournaments table with backward-compatible migration",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "schema",
+          "action": "Add enabledStations field to tournaments schema",
+          "file": "shared/schema.ts",
+          "details": "Add enabledStations: text('enabled_stations').array().notNull().default(['A', 'B', 'C']) to tournaments table definition",
+          "test": "Verify schema compiles and type inference works"
+        },
+        {
+          "id": "1.2",
+          "type": "migration",
+          "action": "Create migration to add enabled_stations column",
+          "file": "migrations/XXXX_add_enabled_stations_to_tournaments.sql",
+          "details": "Add column with default ['A', 'B', 'C'] for backward compatibility, update existing tournaments",
+          "test": "Run migration and verify existing tournaments have ['A', 'B', 'C']"
+        },
+        {
+          "id": "1.3",
+          "type": "types",
+          "action": "Update TypeScript types for InsertTournament and Tournament",
+          "file": "shared/schema.ts",
+          "details": "Ensure enabledStations is properly typed as string[] in insertTournamentSchema",
+          "test": "Type check passes"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Backend - Tournament Creation",
+      "description": "Update tournament creation to accept and use enabledStations",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "endpoint",
+          "action": "Update POST /api/tournaments to accept enabledStations",
+          "file": "server/routes.ts",
+          "details": "Parse enabledStations from request body, validate (must be subset of ['A', 'B', 'C'], at least 1), create only enabled stations",
+          "test": "Create tournament with enabledStations: ['A'] and verify only station A is created"
+        },
+        {
+          "id": "2.2",
+          "action": "Update admin test data seeding endpoint",
+          "file": "server/routes/admin.ts",
+          "details": "Update seed-test-data to create stations based on tournament enabledStations",
+          "test": "Seed test data and verify correct stations created"
+        },
+        {
+          "id": "2.3",
+          "action": "Update tournament creation scripts",
+          "files": ["scripts/create-wec2025-tournament-2.ts", "scripts/create-wec2025-tournament-2-fixed.ts"],
+          "details": "Add enabledStations parameter to tournament creation in scripts",
+          "test": "Scripts run without errors"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Backend - Bracket Generator",
+      "description": "Refactor bracket generator to use dynamic station count",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "refactor",
+          "action": "Update generateBracket to get enabledStations from tournament",
+          "file": "server/bracketGenerator.ts",
+          "details": "Fetch tournament, get enabledStations, validate at least 1 station exists, find stations dynamically (not hardcoded A, B, C)",
+          "test": "Generate bracket with 1, 2, and 3 stations - verify correct behavior"
+        },
+        {
+          "id": "3.2",
+          "action": "Update staggered timing logic to be dynamic",
+          "file": "server/bracketGenerator.ts",
+          "details": "Calculate staggered start times based on enabledStations.length (10 min intervals), not hardcoded for A/B/C",
+          "test": "Verify timing: 1 station = 0min, 2 stations = 0min/10min, 3 stations = 0min/10min/20min"
+        },
+        {
+          "id": "3.3",
+          "action": "Update pairing split logic to use dynamic group count",
+          "file": "server/bracketGenerator.ts",
+          "details": "Split round1Pairings into N groups (N = enabledStations.length) instead of hardcoded 3",
+          "test": "Verify pairings are evenly distributed across enabled stations"
+        },
+        {
+          "id": "3.4",
+          "action": "Update generateNextRound to use dynamic stations",
+          "file": "server/bracketGenerator.ts",
+          "details": "Replace hardcoded Station A/B/C lookup with dynamic station finding based on tournament enabledStations",
+          "test": "Generate next round with different station configurations"
+        },
+        {
+          "id": "3.5",
+          "action": "Update assignStation method if needed",
+          "file": "server/bracketGenerator.ts",
+          "details": "Ensure assignStation works with any number of stations, not just A/B/C",
+          "test": "Assign stations correctly regardless of count"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Backend - Station Assignment Routes",
+      "description": "Update routes that filter stations to use tournament enabledStations",
+      "tasks": [
+        {
+          "id": "4.1",
+          "action": "Update tournament activation route station lead assignment",
+          "file": "server/routes.ts",
+          "details": "Replace hardcoded ['A', 'B', 'C'] filter with tournament.enabledStations",
+          "test": "Activate tournament and verify station leads assigned only to enabled stations"
+        },
+        {
+          "id": "4.2",
+          "action": "Update assign-station-leads endpoint",
+          "file": "server/routes/tournament.ts",
+          "details": "Filter stations by tournament.enabledStations instead of hardcoded ['A', 'B', 'C']",
+          "test": "Assign station leads and verify only enabled stations get leads"
+        },
+        {
+          "id": "4.3",
+          "action": "Update any other routes using hardcoded station filters",
+          "file": "server/routes.ts",
+          "details": "Search for other instances of ['A', 'B', 'C'] filtering and update",
+          "test": "All station-related routes work with dynamic stations"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Frontend - Station Utilities",
+      "description": "Update station utilities to work with dynamic station lists",
+      "tasks": [
+        {
+          "id": "5.1",
+          "action": "Update getStationLetter to be more flexible",
+          "file": "client/src/utils/stationUtils.ts",
+          "details": "Remove hardcoded 'A' | 'B' | 'C' return type, make it accept any station letter",
+          "test": "Function works with any letter, not just A/B/C"
+        },
+        {
+          "id": "5.2",
+          "action": "Update isMainStation to accept tournament config",
+          "file": "client/src/utils/stationUtils.ts",
+          "details": "Change from hardcoded ['A', 'B', 'C'] check to check against tournament.enabledStations",
+          "test": "isMainStation returns true for enabled stations only"
+        },
+        {
+          "id": "5.3",
+          "action": "Update LETTER_PRIORITY to be dynamic",
+          "file": "client/src/utils/stationUtils.ts",
+          "details": "Replace hardcoded LETTER_PRIORITY with function that takes tournament enabledStations",
+          "test": "Priority ordering works with any station combination"
+        },
+        {
+          "id": "5.4",
+          "action": "Update getMainStationsForTournament",
+          "file": "client/src/utils/stationUtils.ts",
+          "details": "Use tournament.enabledStations instead of hardcoded ['A', 'B', 'C']",
+          "test": "Returns only enabled stations for tournament"
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Frontend - Tournament Creation Form",
+      "description": "Add UI for selecting enabled stations",
+      "tasks": [
+        {
+          "id": "6.1",
+          "action": "Add station selection UI to CreateTournament form",
+          "file": "client/src/pages/admin/CreateTournament.tsx",
+          "details": "Add checkboxes or radio buttons for station selection: A only, A&B, A&B&C. Default to A&B&C. Include enabledStations in form submission",
+          "test": "Create tournament with different station configurations and verify correct stations created"
+        },
+        {
+          "id": "6.2",
+          "action": "Update form validation",
+          "file": "client/src/pages/admin/CreateTournament.tsx",
+          "details": "Ensure at least one station is selected before submission",
+          "test": "Form validation prevents submission without stations"
+        }
+      ]
+    },
+    {
+      "phase": 7,
+      "name": "Frontend - Component Updates",
+      "description": "Update components using hardcoded station arrays",
+      "tasks": [
+        {
+          "id": "7.1",
+          "action": "Update StationLeadView component",
+          "file": "client/src/components/StationLeadView.tsx",
+          "details": "Replace hardcoded ['A', 'B', 'C'] with tournament.enabledStations. Fetch tournament to get enabledStations",
+          "test": "Component shows only enabled stations for current tournament"
+        },
+        {
+          "id": "7.2",
+          "action": "Update HeatsView component",
+          "file": "client/src/components/HeatsView.tsx",
+          "details": "Replace hardcoded (['A', 'B', 'C'] as const) with dynamic station list from tournament",
+          "test": "Heats view displays only enabled stations"
+        },
+        {
+          "id": "7.3",
+          "action": "Update AdminTournamentSetup component",
+          "file": "client/src/components/AdminTournamentSetup.tsx",
+          "details": "Replace hardcoded ['A', 'B', 'C'] with tournament.enabledStations",
+          "test": "Admin setup shows only enabled stations"
+        },
+        {
+          "id": "7.4",
+          "action": "Update JudgeAssignment component",
+          "file": "client/src/components/JudgeAssignment.tsx",
+          "details": "Replace hardcoded ['A', 'B', 'C'] with tournament.enabledStations",
+          "test": "Judge assignment shows only enabled stations"
+        },
+        {
+          "id": "7.5",
+          "action": "Update StationsManagement component if needed",
+          "file": "client/src/components/StationsManagement.tsx",
+          "details": "Ensure component respects tournament enabledStations configuration",
+          "test": "Station management shows/hides stations based on configuration"
+        }
+      ]
+    },
+    {
+      "phase": 8,
+      "name": "Testing & Verification",
+      "description": "Comprehensive testing of all station configurations",
+      "tasks": [
+        {
+          "id": "8.1",
+          "type": "test",
+          "action": "Test tournament creation with A only",
+          "details": "Create tournament with enabledStations: ['A'], verify only station A created, bracket generation works",
+          "test": "Tournament with A only works end-to-end"
+        },
+        {
+          "id": "8.2",
+          "type": "test",
+          "action": "Test tournament creation with A & B",
+          "details": "Create tournament with enabledStations: ['A', 'B'], verify stations A and B created, bracket generation works, staggered timing correct",
+          "test": "Tournament with A & B works end-to-end"
+        },
+        {
+          "id": "8.3",
+          "type": "test",
+          "action": "Test tournament creation with A, B & C (existing behavior)",
+          "details": "Create tournament with enabledStations: ['A', 'B', 'C'], verify all existing functionality still works",
+          "test": "Tournament with A, B & C works (backward compatibility)"
+        },
+        {
+          "id": "8.4",
+          "type": "test",
+          "action": "Test backward compatibility",
+          "details": "Verify existing tournaments (without enabledStations) default to ['A', 'B', 'C'] and continue working",
+          "test": "Existing tournaments unaffected by changes"
+        },
+        {
+          "id": "8.5",
+          "type": "test",
+          "action": "Test bracket generation edge cases",
+          "details": "Test with small tournaments (4-8 participants) and different station counts, verify pairing distribution",
+          "test": "Bracket generation handles edge cases correctly"
+        },
+        {
+          "id": "8.6",
+          "type": "test",
+          "action": "Test station assignment and station lead assignment",
+          "details": "Verify station leads are assigned only to enabled stations, matches are assigned correctly",
+          "test": "Station assignment respects enabledStations configuration"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "TDD - Write tests first, then implement",
+    "test_files": [
+      "server/__tests__/bracketGenerator.test.ts",
+      "server/__tests__/tournament.test.ts",
+      "client/src/__tests__/stationUtils.test.ts"
+    ],
+    "manual_testing": [
+      "Create tournament with each configuration",
+      "Generate brackets",
+      "Assign station leads",
+      "Run matches through different rounds"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Migration can be reversed, code changes are backward compatible with default ['A', 'B', 'C']"
+  }
+}
+

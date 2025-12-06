@@ -135,64 +135,79 @@ export class BracketGenerator {
     // Calculate total rounds needed (including byes)
     const totalRounds = Math.ceil(Math.log2(totalParticipants));
 
-    // Get stations
-    const allStations = await storage.getAllStations();
-    const availableStations = allStations.filter(s => s.status === 'AVAILABLE');
+    // Get tournament to access enabledStations (always fetch fresh data)
+    const tournament = await storage.getTournament(tournamentId);
+    if (!tournament) {
+      throw new Error(`Tournament ${tournamentId} not found`);
+    }
+
+    // Get enabled stations for this tournament
+    const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
+    console.log(`[BracketGenerator] Tournament ${tournamentId} enabledStations:`, enabledStations);
+    
+    if (enabledStations.length < 1) {
+      throw new Error("Tournament must have at least 1 enabled station");
+    }
+
+    // Get tournament-specific stations
+    const tournamentStations = await storage.getTournamentStations(tournamentId);
+    console.log(`[BracketGenerator] Found ${tournamentStations.length} tournament stations:`, tournamentStations.map(s => `${s.name}(${s.status})`));
+    
+    // Filter to only enabled stations that are AVAILABLE (not OFFLINE)
+    const availableStations = tournamentStations.filter(s => 
+      s.status === 'AVAILABLE' && enabledStations.includes(s.name)
+    );
+    console.log(`[BracketGenerator] Filtered to ${availableStations.length} enabled stations:`, availableStations.map(s => s.name));
+
+    if (availableStations.length < enabledStations.length) {
+      throw new Error(`Need at least ${enabledStations.length} stations (${enabledStations.join(', ')})`);
+    }
+
+    // Find stations by name in enabled order
+    const stationsByOrder = enabledStations.map(name => 
+      availableStations.find(s => s.name === name)
+    ).filter((s): s is Station => s !== undefined);
+
+    if (stationsByOrder.length !== enabledStations.length) {
+      const missing = enabledStations.filter(name => !stationsByOrder.some(s => s.name === name));
+      throw new Error(`Missing stations: ${missing.join(', ')}`);
+    }
+    
+    console.log(`[BracketGenerator] Using ${stationsByOrder.length} stations for bracket:`, stationsByOrder.map(s => s.name));
 
     // Track assigned baristas per round to prevent duplicates
     const assignedBaristasInRound: Set<number> = new Set();
 
-    if (availableStations.length < 3) {
-      throw new Error("Need at least 3 stations (A, B, C)");
-    }
-
-    // Set initial staggered start times
+    // Set initial staggered start times dynamically
     const now = new Date();
-    const stationA = availableStations.find(s => s.name === 'A');
-    const stationB = availableStations.find(s => s.name === 'B');
-    const stationC = availableStations.find(s => s.name === 'C');
-
-    if (!stationA || !stationB || !stationC) {
-      throw new Error("Stations A, B, C must exist");
+    for (let i = 0; i < stationsByOrder.length; i++) {
+      const station = stationsByOrder[i];
+      const offsetMinutes = i * 10; // 0, 10, 20, etc.
+      await storage.updateStation(station.id, { 
+        nextAvailableAt: new Date(now.getTime() + offsetMinutes * 60 * 1000),
+        status: 'AVAILABLE'
+      });
     }
-
-    // Set staggered start times with proper timing
-    // Station A starts immediately
-    await storage.updateStation(stationA.id, { 
-      nextAvailableAt: now,
-      status: 'AVAILABLE'
-    });
-
-    // Station B starts 10 minutes after Station A
-    await storage.updateStation(stationB.id, { 
-      nextAvailableAt: new Date(now.getTime() + 10 * 60 * 1000),
-      status: 'AVAILABLE'
-    });
-
-    // Station C starts 20 minutes after Station A
-    await storage.updateStation(stationC.id, { 
-      nextAvailableAt: new Date(now.getTime() + 20 * 60 * 1000),
-      status: 'AVAILABLE'
-    });
 
     // Generate Round 1 matches with proper bracket splitting
     const round1Pairings = this.generateRound1Pairings(totalParticipants);
     let heatNumber = 1;
 
-    // Split pairings into 3 groups for stations A, B, C
-    const groupSize = Math.ceil(round1Pairings.length / 3);
-    const groups = [
-      round1Pairings.slice(0, groupSize),
-      round1Pairings.slice(groupSize, groupSize * 2),
-      round1Pairings.slice(groupSize * 2)
-    ].filter(group => group.length > 0);
+    // Split pairings into N groups (where N = number of enabled stations)
+    const numStations = stationsByOrder.length;
+    const groupSize = Math.ceil(round1Pairings.length / numStations);
+    const groups: typeof round1Pairings[] = [];
+    for (let i = 0; i < numStations; i++) {
+      const start = i * groupSize;
+      const end = start + groupSize;
+      groups.push(round1Pairings.slice(start, end));
+    }
 
     // Assign each group to a station
-    const stationAssignments = [
-      { station: stationA, pairings: groups[0] || [] },
-      { station: stationB, pairings: groups[1] || [] },
-      { station: stationC, pairings: groups[2] || [] }
-    ];
+    const stationAssignments = stationsByOrder.map((station, index) => ({
+      station,
+      pairings: groups[index] || []
+    }));
 
     for (const { station, pairings } of stationAssignments) {
       for (const pairing of pairings) {
@@ -366,10 +381,24 @@ export class BracketGenerator {
           // Shuffle judges for randomization
           const shuffledJudges = [...approvedJudges].sort(() => Math.random() - 0.5);
 
-          // Select 3 unique judges (wrap around if needed)
+          // Select 3 unique judges per heat, with staggering across heats
+          // Use heatNumber to rotate starting position for proper distribution
           const selectedJudges = [];
+          const usedJudgeIds = new Set<number>();
+          const startIndex = (heatNumber - 1) % shuffledJudges.length;
+          
           for (let i = 0; i < 3; i++) {
-            selectedJudges.push(shuffledJudges[i % shuffledJudges.length]);
+            let judgeIndex = (startIndex + i) % shuffledJudges.length;
+            let judge = shuffledJudges[judgeIndex];
+            
+            // Ensure unique judge (should be rare, but handle edge case)
+            while (usedJudgeIds.has(judge.id) && selectedJudges.length < shuffledJudges.length) {
+              judgeIndex = (judgeIndex + 1) % shuffledJudges.length;
+              judge = shuffledJudges[judgeIndex];
+            }
+            
+            selectedJudges.push(judge);
+            usedJudgeIds.add(judge.id);
           }
 
           // Assign roles: 2 ESPRESSO judges, 1 CAPPUCCINO judge
@@ -582,19 +611,33 @@ export class BracketGenerator {
       heatNumber: assignment.heatNumber + (completedRound * 100) // Offset heat numbers by round
     }));
 
-    // Get available stations
-    const allStations = await storage.getAllStations();
-    const availableStations = allStations.filter(s => s.status === 'AVAILABLE');
-    const stationA = availableStations.find(s => s.name === 'Station A');
-    const stationB = availableStations.find(s => s.name === 'Station B');  
-    const stationC = availableStations.find(s => s.name === 'Station C');
+    // Get tournament to access enabledStations
+    const tournament = await storage.getTournament(tournamentId);
+    if (!tournament) {
+      throw new Error(`Tournament ${tournamentId} not found`);
+    }
 
-    if (!stationA || !stationB || !stationC) {
-      throw new Error("Stations A, B, C must exist for next round");
+    // Get enabled stations for this tournament
+    const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
+    
+    // Get tournament-specific stations
+    const tournamentStations = await storage.getTournamentStations(tournamentId);
+    const availableStations = tournamentStations.filter(s => 
+      s.status === 'AVAILABLE' && enabledStations.includes(s.name)
+    );
+
+    // Find stations by name in enabled order
+    const stationsByOrder = enabledStations.map(name => 
+      availableStations.find(s => s.name === name)
+    ).filter((s): s is Station => s !== undefined);
+
+    if (stationsByOrder.length !== enabledStations.length) {
+      const missing = enabledStations.filter(name => !stationsByOrder.some(s => s.name === name));
+      throw new Error(`Missing stations for next round: ${missing.join(', ')}`);
     }
 
     // Assign to stations
-    const stationAssignments = this.assignRound1ToStations(adjustedAssignments, [stationA, stationB, stationC]);
+    const stationAssignments = this.assignRound1ToStations(adjustedAssignments, stationsByOrder);
 
     // Create matches for next round
     for (const { station, pairings } of stationAssignments) {

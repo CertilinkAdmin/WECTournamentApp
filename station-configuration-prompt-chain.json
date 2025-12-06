@@ -1,0 +1,147 @@
+{
+  "name": "Station Configuration Before Bracket Generation",
+  "description": "Add UI to configure enabled stations (A, A&B, or A&B&C) before bracket generation, with heat migration support for post-generation changes",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Station Configuration UI Before Bracket Generation",
+      "description": "Add station selection UI component that appears before the Generate Bracket button",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "ui",
+          "action": "Add station configuration section in AdminTournaments before bracket generation",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "Add a Card component showing current enabledStations with checkboxes for A, B, C. Place it right before the Generate Bracket button. Show current configuration from selectedTournament.enabledStations",
+          "test": "UI shows current station configuration, allows toggling stations before bracket generation"
+        },
+        {
+          "id": "1.2",
+          "action": "Add state management for station configuration",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "Add useState for enabledStations, sync with selectedTournament.enabledStations via useEffect. Initialize from tournament data",
+          "test": "State syncs correctly when tournament changes"
+        },
+        {
+          "id": "1.3",
+          "action": "Add mutation to update enabledStations before bracket generation",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "Create updateEnabledStationsMutation that calls PATCH /api/tournaments/:id/enabled-stations. Call this before generating bracket if stations changed",
+          "test": "Stations update correctly before bracket generation"
+        },
+        {
+          "id": "1.4",
+          "action": "Update Generate Bracket button to save station config first",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "Modify generateBracketMutation to first update enabledStations if changed, then generate bracket. Show loading state during both operations",
+          "test": "Bracket generation uses correct station configuration"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Station Management After Bracket Generation",
+      "description": "Add UI to disable/enable stations after bracket is generated, with automatic heat migration",
+      "tasks": [
+        {
+          "id": "2.1",
+          "action": "Add station management section in bracket tab",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "Add a collapsible section showing current enabled stations with ability to disable/enable. Show warning if matches exist that will be migrated",
+          "test": "UI shows station management options when bracket exists"
+        },
+        {
+          "id": "2.2",
+          "action": "Add confirmation dialog for station changes with existing matches",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "When disabling stations with existing matches, show dialog explaining that X matches will be migrated to remaining stations. Require confirmation",
+          "test": "User is warned and must confirm before migrating heats"
+        },
+        {
+          "id": "2.3",
+          "action": "Handle migration results in UI",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "After migration, show toast with number of matches migrated. Refresh matches query to show updated station assignments",
+          "test": "User sees confirmation of migration and updated match assignments"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Backend Verification",
+      "description": "Ensure backend properly handles station configuration",
+      "tasks": [
+        {
+          "id": "3.1",
+          "action": "Verify bracket generation uses tournament.enabledStations",
+          "file": "server/bracketGenerator.ts",
+          "details": "Confirm generateBracket reads enabledStations from tournament and only uses those stations. Already implemented, verify it works",
+          "test": "Bracket generation respects enabledStations configuration"
+        },
+        {
+          "id": "3.2",
+          "action": "Test heat migration endpoint",
+          "file": "server/routes.ts",
+          "details": "Verify PATCH /api/tournaments/:id/enabled-stations properly migrates matches when stations are disabled. Already implemented, test edge cases",
+          "test": "Heat migration works correctly for all scenarios"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Testing & Edge Cases",
+      "description": "Test complete flow and edge cases",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "test",
+          "action": "Test flow: Configure A only -> Generate bracket -> Verify only Station A used",
+          "details": "Create tournament, set enabledStations to ['A'], generate bracket, verify all matches assigned to Station A only",
+          "test": "A-only configuration works end-to-end"
+        },
+        {
+          "id": "4.2",
+          "type": "test",
+          "action": "Test flow: Configure A&B -> Generate bracket -> Disable B -> Verify migration",
+          "details": "Generate bracket with A&B, then disable B, verify matches from B migrate to A",
+          "test": "Station disabling with migration works correctly"
+        },
+        {
+          "id": "4.3",
+          "type": "test",
+          "action": "Test edge case: Try to disable all stations",
+          "details": "Attempt to disable all stations, verify error message and prevention",
+          "test": "Cannot disable all stations - proper error handling"
+        },
+        {
+          "id": "4.4",
+          "type": "test",
+          "action": "Test edge case: Enable station after bracket generation",
+          "details": "Generate bracket with A only, then enable B, verify new matches can use B",
+          "test": "Enabling stations after bracket generation works"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "TDD - Test each phase as implemented",
+    "manual_testing": [
+      "Configure stations before bracket generation",
+      "Generate bracket and verify correct station usage",
+      "Disable stations after bracket and verify migration",
+      "Enable stations after bracket and verify new assignments"
+    ]
+  },
+  "user_flow": {
+    "before_bracket": "Configure stations (A, A&B, or A&B&C) -> Save configuration -> Generate bracket",
+    "after_bracket": "View current stations -> Disable station -> Confirm migration -> View migrated matches"
+  },
+  "key_requirements": [
+    "Station configuration MUST happen before bracket generation",
+    "Heat migration only occurs when stations are disabled AFTER bracket exists",
+    "Cannot disable all stations (at least 1 must remain)",
+    "User must confirm before migrating heats",
+    "Clear visual feedback for all operations"
+  ]
+}
+

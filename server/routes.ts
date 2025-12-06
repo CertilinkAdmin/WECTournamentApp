@@ -11,7 +11,7 @@ import {
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
   insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
-  tournamentParticipants, heatJudges, matches
+  tournamentParticipants, heatJudges, matches, stations
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -152,14 +152,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get all stations for this tournament
-      const tournamentStations = await storage.getAllStations();
-      const stationsABC = tournamentStations
-        .filter(s => s.tournamentId === tournamentId && ['A', 'B', 'C'].includes(s.name))
+      // Get tournament to access enabledStations
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: 'Tournament not found' });
+      }
+
+      const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
+      
+      // Get tournament-specific stations
+      const tournamentStations = await storage.getTournamentStations(tournamentId);
+      const stationsForAssignment = tournamentStations
+        .filter(s => enabledStations.includes(s.name))
         .sort((a, b) => a.name.localeCompare(b.name));
 
-      if (stationsABC.length === 0) {
-        return res.status(400).json({ error: 'No stations A, B, C found for this tournament' });
+      if (stationsForAssignment.length === 0) {
+        return res.status(400).json({ error: `No enabled stations (${enabledStations.join(', ')}) found for this tournament` });
       }
 
       // Shuffle station leads for randomization
@@ -167,8 +175,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Assign station leads to stations (distribute evenly, wrap around if needed)
       let assignedCount = 0;
-      for (let i = 0; i < stationsABC.length; i++) {
-        const station = stationsABC[i];
+      for (let i = 0; i < stationsForAssignment.length; i++) {
+        const station = stationsForAssignment[i];
         const stationLead = shuffledLeads[i % shuffledLeads.length];
 
         await storage.updateStation(station.id, { stationLeadId: stationLead.id });
@@ -224,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const shuffledJudges = [...judges].sort(() => Math.random() - 0.5);
 
       let assignedCount = 0;
-      let judgeIndex = 0;
+      let judgeRotationIndex = 0; // Track position in rotation for staggering
 
       for (const match of tournamentMatches) {
         // Skip if match already has judges assigned
@@ -238,18 +246,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Assign 3 judges: 2 ESPRESSO, 1 CAPPUCCINO
+        // Ensure 3 UNIQUE judges per heat, with proper staggering across heats
         const assignedJudges: typeof judges = [];
+        const usedJudgeIds = new Set<number>();
 
-        // Select 3 unique judges (wrap around if needed)
-        for (let i = 0; i < 3; i++) {
-          if (judgeIndex >= shuffledJudges.length) {
-            // Reshuffle if we've used all judges
-            shuffledJudges.sort(() => Math.random() - 0.5);
-            judgeIndex = 0;
+        // Select 3 unique judges, starting from rotation index and wrapping around
+        while (assignedJudges.length < 3) {
+          const judgeIndex = (judgeRotationIndex + assignedJudges.length) % shuffledJudges.length;
+          const judge = shuffledJudges[judgeIndex];
+          
+          // Only add if not already used in this heat
+          if (!usedJudgeIds.has(judge.id)) {
+            assignedJudges.push(judge);
+            usedJudgeIds.add(judge.id);
+          } else {
+            // If judge already in this heat, skip to next judge
+            // This should rarely happen, but handle edge case
+            const nextIndex = (judgeIndex + 1) % shuffledJudges.length;
+            const nextJudge = shuffledJudges[nextIndex];
+            if (!usedJudgeIds.has(nextJudge.id)) {
+              assignedJudges.push(nextJudge);
+              usedJudgeIds.add(nextJudge.id);
+            }
           }
-          assignedJudges.push(shuffledJudges[judgeIndex]);
-          judgeIndex++;
         }
+
+        // Rotate starting position for next heat to stagger judges
+        judgeRotationIndex = (judgeRotationIndex + 1) % shuffledJudges.length;
 
         // Create judge assignments
         await storage.assignJudge({
@@ -290,25 +313,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tournamentData = insertTournamentSchema.parse(req.body);
       const tournament = await storage.createTournament(tournamentData);
 
-      // Create tournament-specific stations (with tournament_id)
-      await storage.createStation({
-        tournamentId: tournament.id,
-        name: "A",
-        status: "AVAILABLE",
-        nextAvailableAt: new Date()
-      });
-      await storage.createStation({
-        tournamentId: tournament.id,
-        name: "B",
-        status: "AVAILABLE",
-        nextAvailableAt: new Date()
-      });
-      await storage.createStation({
-        tournamentId: tournament.id,
-        name: "C",
-        status: "AVAILABLE",
-        nextAvailableAt: new Date()
-      });
+      // Create tournament-specific stations based on enabledStations
+      const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
+      for (const stationName of enabledStations) {
+        await storage.createStation({
+          tournamentId: tournament.id,
+          name: stationName,
+          status: "AVAILABLE",
+          nextAvailableAt: new Date()
+        });
+      }
 
       io.emit("tournament:created", tournament);
       res.json(tournament);
@@ -409,6 +423,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
       io.to(`tournament:${tournament.id}`).emit("tournament:updated", tournament);
       res.json(tournament);
     } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Update tournament enabledStations with heat migration support
+  app.patch("/api/tournaments/:id/enabled-stations", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const { enabledStations } = req.body;
+
+      if (!Array.isArray(enabledStations) || enabledStations.length < 1) {
+        return res.status(400).json({ error: "enabledStations must be an array with at least one station" });
+      }
+
+      // Validate stations are A, B, or C
+      const validStations = ['A', 'B', 'C'];
+      if (!enabledStations.every(s => validStations.includes(s))) {
+        return res.status(400).json({ error: "enabledStations can only contain A, B, or C" });
+      }
+
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      const oldEnabledStations = tournament.enabledStations || ['A', 'B', 'C'];
+      const disabledStations = oldEnabledStations.filter(s => !enabledStations.includes(s));
+      const newlyEnabledStations = enabledStations.filter(s => !oldEnabledStations.includes(s));
+
+      // Get all matches for this tournament
+      const allMatches = await storage.getTournamentMatches(tournamentId);
+      const hasMatches = allMatches.length > 0;
+
+      // Get existing tournament stations
+      const tournamentStations = await storage.getTournamentStations(tournamentId);
+
+      // If NO matches exist yet (before bracket generation), create/delete stations
+      if (!hasMatches) {
+        // Create newly enabled stations
+        for (const stationName of newlyEnabledStations) {
+          const stationExists = tournamentStations.some(s => s.name === stationName);
+          if (!stationExists) {
+            await storage.createStation({
+              tournamentId: tournamentId,
+              name: stationName,
+              status: "AVAILABLE",
+              nextAvailableAt: new Date()
+            });
+            console.log(`Created station ${stationName} for tournament ${tournamentId}`);
+          }
+        }
+
+        // Delete disabled stations (only if they have no matches)
+        for (const stationName of disabledStations) {
+          const stationToDelete = tournamentStations.find(s => s.name === stationName);
+          if (stationToDelete) {
+            // Check if station has any matches (should be 0 since hasMatches is false, but double-check)
+            const stationMatches = allMatches.filter(m => m.stationId === stationToDelete.id);
+            if (stationMatches.length === 0) {
+              // Delete station (cascade will handle related data)
+              await db.delete(stations).where(eq(stations.id, stationToDelete.id));
+              console.log(`Deleted unused station ${stationName} for tournament ${tournamentId}`);
+            }
+          }
+        }
+      }
+
+      // If there are matches and stations are being disabled, mark stations as OFFLINE (don't migrate)
+      if (hasMatches && disabledStations.length > 0) {
+        // Get tournament stations
+        const stationsToDeactivate = tournamentStations.filter(s => disabledStations.includes(s.name));
+        
+        // Mark disabled stations as OFFLINE instead of migrating matches
+        for (const station of stationsToDeactivate) {
+          await storage.updateStation(station.id, { status: 'OFFLINE' });
+          console.log(`Marked station ${station.name} as OFFLINE for tournament ${tournamentId}`);
+        }
+      }
+
+      // If stations are being re-enabled, mark them as AVAILABLE
+      if (newlyEnabledStations.length > 0) {
+        const stationsToReactivate = tournamentStations.filter(s => 
+          newlyEnabledStations.includes(s.name) && s.status === 'OFFLINE'
+        );
+        
+        for (const station of stationsToReactivate) {
+          await storage.updateStation(station.id, { status: 'AVAILABLE' });
+          console.log(`Reactivated station ${station.name} for tournament ${tournamentId}`);
+        }
+      }
+
+      // Update tournament enabledStations
+      const updatedTournament = await storage.updateTournament(tournamentId, { enabledStations });
+      if (!updatedTournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      io.to(`tournament:${tournamentId}`).emit("tournament:updated", updatedTournament);
+      res.json({ 
+        tournament: updatedTournament,
+        deactivatedStations: disabledStations.length > 0 ? disabledStations : [],
+        reactivatedStations: newlyEnabledStations.length > 0 ? newlyEnabledStations : []
+      });
+    } catch (error: any) {
+      console.error('Error updating enabledStations:', error);
       res.status(400).json({ error: error.message });
     }
   });
@@ -1241,24 +1360,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
         if (stationLeads.length > 0) {
-          // Get all stations for this tournament
-          const tournamentStations = await storage.getAllStations();
-          const stationsABC = tournamentStations
-            .filter(s => s.tournamentId === tournamentId && ['A', 'B', 'C'].includes(s.name))
-            .sort((a, b) => a.name.localeCompare(b.name));
+          // Get tournament to access enabledStations
+          const tournament = await storage.getTournament(tournamentId);
+          if (tournament) {
+            const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
+            
+            // Get tournament-specific stations
+            const tournamentStations = await storage.getTournamentStations(tournamentId);
+            const stationsForAssignment = tournamentStations
+              .filter(s => enabledStations.includes(s.name))
+              .sort((a, b) => a.name.localeCompare(b.name));
 
-          if (stationsABC.length > 0) {
-            // Shuffle station leads for randomization
-            const shuffledLeads = [...stationLeads].sort(() => Math.random() - 0.5);
+            if (stationsForAssignment.length > 0) {
+              // Shuffle station leads for randomization
+              const shuffledLeads = [...stationLeads].sort(() => Math.random() - 0.5);
 
-            // Assign station leads to stations (distribute evenly, wrap around if needed)
-            for (let i = 0; i < stationsABC.length; i++) {
-              const station = stationsABC[i];
-              const stationLead = shuffledLeads[i % shuffledLeads.length];
+              // Assign station leads to stations (distribute evenly, wrap around if needed)
+              for (let i = 0; i < stationsForAssignment.length; i++) {
+                const station = stationsForAssignment[i];
+                const stationLead = shuffledLeads[i % shuffledLeads.length];
 
-              await storage.updateStation(station.id, { stationLeadId: stationLead.id });
+                await storage.updateStation(station.id, { stationLeadId: stationLead.id });
+              }
+              console.log(`Assigned ${Math.min(stationsForAssignment.length, stationLeads.length)} station leads to stations`);
             }
-            console.log(`Assigned ${Math.min(stationsABC.length, stationLeads.length)} station leads to stations`);
           }
         }
       } catch (error) {
@@ -1608,7 +1733,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get ALL stations for this tournament to verify round completion
       const allStations = await storage.getAllStations();
-      const tournamentStations = allStations.filter(s => s.tournamentId === tournamentId && ['A', 'B', 'C'].includes(s.name));
+      const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
+      const tournamentStations = allStations.filter(s => s.tournamentId === tournamentId && enabledStations.includes(s.name));
 
       // Group current round matches by station
       const matchesByStation = new Map<number, typeof currentRoundMatches>();

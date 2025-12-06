@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { Trophy, Shuffle, Save, RotateCcw, Loader2, Users, Settings2, ArrowLeftRight, Plus, Play, CheckCircle2, Rocket, XCircle, Gavel, Briefcase, Coffee } from 'lucide-react';
+import { Trophy, Shuffle, Save, RotateCcw, Loader2, Users, Settings2, ArrowLeftRight, Plus, Play, CheckCircle2, Rocket, XCircle, Gavel, Briefcase, Coffee, Radio } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RandomizeSeeds from '@/components/RandomizeSeeds';
 import DraggableCompetitor from '@/components/DraggableCompetitor';
@@ -38,6 +39,9 @@ export default function AdminTournaments() {
   const [activeCompetitor, setActiveCompetitor] = useState<User | null>(null);
   const [selectedRound, setSelectedRound] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [enabledStations, setEnabledStations] = useState<string[]>(['A', 'B', 'C']);
+  const [showStationMigrationDialog, setShowStationMigrationDialog] = useState(false);
+  const [pendingStationChange, setPendingStationChange] = useState<string[] | null>(null);
 
   // Configure drag and drop sensors
   const sensors = useSensors(
@@ -64,6 +68,11 @@ export default function AdminTournaments() {
     },
   });
 
+  // Get selected tournament
+  const selectedTournament = useMemo(() => {
+    return tournaments.find(t => t.id === selectedTournamentId);
+  }, [tournaments, selectedTournamentId]);
+
   // Auto-select first tournament if none selected and tournaments are available
   useEffect(() => {
     if (tournaments.length > 0 && !selectedTournamentId && !tournamentsLoading) {
@@ -71,6 +80,13 @@ export default function AdminTournaments() {
       setSelectedTournamentId(tournaments[0].id);
     }
   }, [tournaments, selectedTournamentId, tournamentsLoading]);
+
+  // Sync enabledStations with selected tournament
+  useEffect(() => {
+    if (selectedTournament?.enabledStations) {
+      setEnabledStations(selectedTournament.enabledStations);
+    }
+  }, [selectedTournament]);
 
   // Fetch participants for selected tournament
   const { data: participants = [], isLoading: participantsLoading } = useQuery<TournamentParticipant[]>({
@@ -358,10 +374,68 @@ export default function AdminTournaments() {
     }
   });
 
+  // Update enabledStations mutation
+  const updateEnabledStationsMutation = useMutation({
+    mutationFn: async (newEnabledStations: string[]) => {
+      if (!selectedTournamentId) throw new Error("No tournament selected");
+      const response = await fetch(`/api/tournaments/${selectedTournamentId}/enabled-stations`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ enabledStations: newEnabledStations }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to update stations' }));
+        throw new Error(error.error || 'Failed to update stations');
+      }
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId, 'matches'] });
+      
+      const messages = [];
+      if (data.deactivatedStations?.length > 0) {
+        messages.push(`Deactivated: ${data.deactivatedStations.join(', ')}`);
+      }
+      if (data.reactivatedStations?.length > 0) {
+        messages.push(`Reactivated: ${data.reactivatedStations.join(', ')}`);
+      }
+      
+      toast({
+        title: "Stations Updated",
+        description: messages.length > 0 ? messages.join('. ') : "Station configuration has been updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   // Generate bracket mutation
   const generateBracketMutation = useMutation({
     mutationFn: async () => {
       if (!selectedTournamentId) throw new Error("No tournament selected");
+      
+      // First, update enabledStations if they've changed
+      const currentTournamentStations = selectedTournament?.enabledStations || ['A', 'B', 'C'];
+      const stationsChanged = JSON.stringify([...currentTournamentStations].sort()) !== JSON.stringify([...enabledStations].sort());
+      
+      if (stationsChanged) {
+        await updateEnabledStationsMutation.mutateAsync(enabledStations);
+        // Wait for stations to be created/deleted and queries to invalidate
+        await new Promise(resolve => setTimeout(resolve, 300));
+        // Refresh tournament data to get updated enabledStations
+        await queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+        await queryClient.refetchQueries({ queryKey: ['/api/tournaments', selectedTournamentId] });
+      }
+      
+      // Then generate bracket
       const response = await fetch(`/api/tournaments/${selectedTournamentId}/generate-bracket`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -789,8 +863,6 @@ export default function AdminTournaments() {
       });
     });
   };
-
-  const selectedTournament = tournaments.find(t => t.id === selectedTournamentId);
 
   if (!selectedTournamentId) {
     return (
@@ -1668,6 +1740,51 @@ export default function AdminTournaments() {
                       </>
                     )}
                   </div>
+                  {/* Station Configuration - Only show before bracket generation */}
+                  {currentRoundHeats.length === 0 && approvedBaristasForTournament.length >= 2 && (
+                    <Card className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 mb-4">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Radio className="h-4 w-4 text-blue-600" />
+                          <h3 className="text-sm font-semibold">Station Configuration</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Select which stations will be used for this tournament. Configure this before generating the bracket.
+                        </p>
+                        <div className="flex gap-4 mb-3">
+                          {['A', 'B', 'C'].map((station) => (
+                            <label key={station} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={enabledStations.includes(station)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setEnabledStations(prev => [...prev, station].sort());
+                                  } else {
+                                    if (enabledStations.length > 1) {
+                                      setEnabledStations(prev => prev.filter(s => s !== station));
+                                    } else {
+                                      toast({
+                                        title: 'Validation Error',
+                                        description: 'At least one station must be enabled',
+                                        variant: 'destructive',
+                                      });
+                                    }
+                                  }
+                                }}
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                              />
+                              <span className="text-sm font-medium">Station {station}</span>
+                            </label>
+                          ))}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Current configuration: {enabledStations.join(' & ')} ({enabledStations.length} station{enabledStations.length !== 1 ? 's' : ''})
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 items-stretch sm:items-center w-full lg:w-auto">
                     {approvedBaristasForTournament.length === 0 && (
                       <div className="text-xs sm:text-sm text-muted-foreground text-left">
@@ -1677,14 +1794,14 @@ export default function AdminTournaments() {
                     {approvedBaristasForTournament.length >= 2 && currentRoundHeats.length === 0 && (
                       <Button
                         onClick={() => generateBracketMutation.mutate()}
-                        disabled={generateBracketMutation.isPending || participantsLoading || approvedBaristasForTournament.length < 2}
+                        disabled={generateBracketMutation.isPending || updateEnabledStationsMutation.isPending || participantsLoading || approvedBaristasForTournament.length < 2}
                         size="lg"
                         className="gap-2 w-full sm:w-auto justify-center whitespace-normal text-xs sm:text-sm"
                       >
-                        {generateBracketMutation.isPending ? (
+                        {(generateBracketMutation.isPending || updateEnabledStationsMutation.isPending) ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Generating Bracket...
+                            {updateEnabledStationsMutation.isPending ? 'Updating Stations...' : 'Generating Bracket...'}
                           </>
                         ) : (
                           <>
@@ -1700,9 +1817,75 @@ export default function AdminTournaments() {
                       </div>
                     )}
                     {currentRoundHeats.length > 0 && (
-                      <div className="text-xs sm:text-sm text-muted-foreground text-left">
-                        Bracket already generated with {currentRoundHeats.length} heats in Round {selectedRound}
-                      </div>
+                      <>
+                        <div className="text-xs sm:text-sm text-muted-foreground text-left">
+                          Bracket already generated with {currentRoundHeats.length} heats in Round {selectedRound}
+                        </div>
+                        {/* Station Management - Show after bracket generation */}
+                        <Card className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 mt-4 w-full">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Settings2 className="h-4 w-4 text-amber-600" />
+                              <h3 className="text-sm font-semibold">Station Management</h3>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              Current: {enabledStations.join(' & ')}. Disabling stations will mark them as OFFLINE (no heat migration).
+                            </p>
+                            <div className="flex gap-4 flex-wrap">
+                              {['A', 'B', 'C'].map((station) => {
+                                const isEnabled = enabledStations.includes(station);
+                                const matchesOnStation = currentRoundHeats.filter(m => {
+                                  const stationData = stations.find(s => s.id === m.stationId);
+                                  return stationData?.name === station;
+                                }).length;
+                                
+                                return (
+                                  <label key={station} className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={isEnabled}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          // Enabling - no migration needed
+                                          const newStations = [...enabledStations, station].sort();
+                                          setEnabledStations(newStations);
+                                          updateEnabledStationsMutation.mutate(newStations);
+                                        } else {
+                                          // Disabling - check if matches need migration
+                                          if (enabledStations.length <= 1) {
+                                            toast({
+                                              title: 'Cannot Disable',
+                                              description: 'At least one station must remain enabled',
+                                              variant: 'destructive',
+                                            });
+                                            return;
+                                          }
+                                          
+                                          const newStations = enabledStations.filter(s => s !== station);
+                                          
+                                          // Always allow disabling - will mark station as OFFLINE (no migration)
+                                          setEnabledStations(newStations);
+                                          updateEnabledStationsMutation.mutate(newStations);
+                                        }
+                                      }}
+                                      disabled={updateEnabledStationsMutation.isPending}
+                                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                    />
+                                    <span className="text-sm font-medium">
+                                      Station {station}
+                                      {matchesOnStation > 0 && (
+                                        <span className="text-xs text-muted-foreground ml-1">
+                                          ({matchesOnStation} heat{matchesOnStation !== 1 ? 's' : ''})
+                                        </span>
+                                      )}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </>
                     )}
                     {currentRoundHeats.length > 0 && (
                       <Button
@@ -2042,6 +2225,41 @@ export default function AdminTournaments() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Station Migration Confirmation Dialog */}
+      <AlertDialog open={showStationMigrationDialog} onOpenChange={setShowStationMigrationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate Station?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingStationChange && (() => {
+                const disabledStation = enabledStations.find(s => !pendingStationChange.includes(s));
+                const matchesOnStation = currentRoundHeats.filter(m => {
+                  const stationData = stations.find(s => s.id === m.stationId);
+                  return stationData?.name === disabledStation;
+                }).length;
+                
+                return `Deactivating Station ${disabledStation} will mark it as OFFLINE. ${matchesOnStation > 0 ? `${matchesOnStation} heat${matchesOnStation !== 1 ? 's' : ''} will remain assigned to this station but it won't be used for new matches. ` : ''}The station can be reactivated later.`;
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingStationChange) {
+                  setEnabledStations(pendingStationChange);
+                  updateEnabledStationsMutation.mutate(pendingStationChange);
+                }
+                setShowStationMigrationDialog(false);
+                setPendingStationChange(null);
+              }}
+            >
+              Deactivate Station
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

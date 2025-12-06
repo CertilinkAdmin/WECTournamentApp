@@ -20,6 +20,7 @@ export default function CreateTournament() {
     startDate: '',
     endDate: '',
     totalRounds: 5,
+    enabledStations: ['A', 'B', 'C'] as string[],
   });
 
   const createTournamentMutation = useMutation({
@@ -36,6 +37,7 @@ export default function CreateTournament() {
           endDate: tournamentData.endDate ? new Date(tournamentData.endDate).toISOString() : null,
           totalRounds: tournamentData.totalRounds || 5,
           currentRound: 1,
+          enabledStations: formData.enabledStations,
         }),
       });
       
@@ -70,6 +72,15 @@ export default function CreateTournament() {
       toast({
         title: 'Validation Error',
         description: 'Tournament name is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.enabledStations.length === 0) {
+      toast({
+        title: 'Validation Error',
+        description: 'At least one station must be enabled',
         variant: 'destructive',
       });
       return;
@@ -206,6 +217,49 @@ export default function CreateTournament() {
                 />
                 <p className="text-xs text-muted-foreground">
                   Number of rounds in the tournament bracket (default: 5)
+                </p>
+              </div>
+
+              {/* Station Selection */}
+              <div className="space-y-2">
+                <Label>
+                  Enabled Stations <span className="text-destructive">*</span>
+                </Label>
+                <div className="flex gap-4">
+                  {['A', 'B', 'C'].map((station) => (
+                    <label key={station} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.enabledStations.includes(station)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({
+                              ...prev,
+                              enabledStations: [...prev.enabledStations, station].sort(),
+                            }));
+                          } else {
+                            if (formData.enabledStations.length > 1) {
+                              setFormData(prev => ({
+                                ...prev,
+                                enabledStations: prev.enabledStations.filter(s => s !== station),
+                              }));
+                            } else {
+                              toast({
+                                title: 'Validation Error',
+                                description: 'At least one station must be enabled',
+                                variant: 'destructive',
+                              });
+                            }
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm font-medium">Station {station}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Select which stations will be used for this tournament. At least one station is required.
                 </p>
               </div>
 

@@ -117,6 +117,7 @@ async function createTournament2() {
       currentRound: 5,
       startDate: new Date('2025-01-01'),
       endDate: new Date('2025-01-05'),
+      enabledStations: ['A', 'B', 'C'],
     }).returning();
 
     console.log(`✅ Created tournament: ${tournament.name} (ID: ${tournament.id})\n`);

@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -36,11 +37,14 @@ export const tournaments = pgTable("tournaments", {
   endDate: timestamp("end_date"),
   totalRounds: integer("total_rounds").notNull().default(5),
   currentRound: integer("current_round").notNull().default(1),
+  enabledStations: text("enabled_stations").array().notNull().default(sql`ARRAY['A', 'B', 'C']::text[]`),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTournamentSchema = createInsertSchema(tournaments, {
+  enabledStations: z.array(z.enum(['A', 'B', 'C'])).min(1).default(['A', 'B', 'C']),
+}).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertTournament = z.infer<typeof insertTournamentSchema>;
 export type Tournament = typeof tournaments.$inferSelect;
 

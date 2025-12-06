@@ -268,10 +268,10 @@ router.post('/seed-test-data', async (req, res) => {
     // Judges are NOT participants - they judge matches, not compete
     // Remove the code that adds judges as participants
     
-    // Create tournament-specific stations (with tournament_id)
-    const stationNames = ['A', 'B', 'C'];
+    // Create tournament-specific stations based on enabledStations
+    const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
     const createdStations = [];
-    for (const name of stationNames) {
+    for (const name of enabledStations) {
       try {
         const station = await storage.createStation({ 
         tournamentId: tournament.id,

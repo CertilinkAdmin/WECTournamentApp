@@ -39,17 +39,19 @@ export default function StationLeadView() {
     queryKey: ['/api/tournaments'],
   });
 
-  const currentTournamentId = tournaments[0]?.id || 1;
+  const currentTournament = tournaments[0];
+  const currentTournamentId = currentTournament?.id || 1;
+  const enabledStations = currentTournament?.enabledStations || ['A', 'B', 'C'];
 
   // Fetch stations
   const { data: stations = [] } = useQuery<Station[]>({
     queryKey: ['/api/stations'],
   });
 
-  // Filter to only show stations A, B, and C for the current tournament
+  // Filter to only show enabled stations for the current tournament
   const mainStations = React.useMemo(() => {
-    return getMainStationsForTournament(stations, currentTournamentId);
-  }, [stations, currentTournamentId]);
+    return getMainStationsForTournament(stations, currentTournamentId, enabledStations);
+  }, [stations, currentTournamentId, enabledStations]);
 
   // Fetch users for competitor names
   const { data: users = [] } = useQuery<User[]>({
@@ -670,8 +672,8 @@ export default function StationLeadView() {
   const getStationWarnings = () => {
     const warnings: Array<{ referenceStationName: string; targetStartTime: Date }> = [];
 
-    // Define station order (A, B, C)
-    const stationOrder = ['A', 'B', 'C'];
+    // Use enabled stations from tournament (fallback to A, B, C for backward compatibility)
+    const stationOrder = enabledStations;
     const currentStationNormalizedName = normalizeStationName(selectedStationData?.name || '');
     const currentStationIndex = stationOrder.indexOf(currentStationNormalizedName);
 
