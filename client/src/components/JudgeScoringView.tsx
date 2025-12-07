@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Gavel, CheckCircle2, Loader2, Trophy, ArrowLeft, Coffee, Bell, X, Users } from 'lucide-react';
+import { Gavel, CheckCircle2, Loader2, Trophy, ArrowLeft, Coffee, Bell, X, Users, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

@@ -626,6 +626,11 @@ export default function AdminTournaments() {
       if (!selectedTournamentId) throw new Error("No tournament selected");
       
       // Step 1: Randomize seeds
+      toast({
+        title: "Preparing Tournament",
+        description: "Step 1: Randomizing competitor seeds...",
+      });
+      
       const randomizeResponse = await fetch(`/api/tournaments/${selectedTournamentId}/randomize-seeds`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -636,6 +641,11 @@ export default function AdminTournaments() {
         const error = await randomizeResponse.json().catch(() => ({ error: 'Failed to randomize seeds' }));
         throw new Error(error.error || 'Failed to randomize seeds');
       }
+      
+      toast({
+        title: "Step 1 Complete",
+        description: "Seeds randomized successfully. Generating bracket...",
+      });
       
       // Step 2: Generate bracket (this also auto-assigns judges)
       const bracketResponse = await fetch(`/api/tournaments/${selectedTournamentId}/generate-bracket`, {
