@@ -265,6 +265,9 @@ export default function JudgeScoringView({
     refetchInterval: 5000, // Poll every 5 seconds to detect lock status changes
   });
 
+  // Derive isGloballyLocked from globalLockStatus
+  const isGloballyLocked = globalLockStatus?.isLocked || false;
+
   // Fetch cup positions for selected match (if assigned)
   const { data: cupPositions = [] } = useQuery<Array<{ cupCode: string; position: 'left' | 'right' }>>({
     queryKey: [`/api/matches/${selectedMatchId}/cup-positions`],
