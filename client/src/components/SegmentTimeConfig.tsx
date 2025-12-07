@@ -30,15 +30,15 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
     enabled: !!tournamentId,
   });
 
-  // Fetch existing heat structure (use round 1 as the template)
+  // Fetch existing default heat structure (round 1)
   const { data: heatStructure } = useQuery<any>({
-    queryKey: ['/api/tournaments', tournamentId, 'heat-structure'],
+    queryKey: ['/api/tournaments', tournamentId, 'round-times', 1],
     queryFn: async () => {
       const response = await fetch(`/api/tournaments/${tournamentId}/round-times`);
       if (!response.ok) throw new Error('Failed to fetch heat structure');
       const roundTimes = await response.json();
-      // Return the first configuration as the template, or null if none exists
-      return roundTimes.length > 0 ? roundTimes[0] : null;
+      // Return round 1 structure (default) or first available, or null if none exists
+      return roundTimes.find((rt: any) => rt.round === 1) || roundTimes[0] || null;
     },
     enabled: !!tournamentId,
   });
@@ -68,11 +68,21 @@ export default function SegmentTimeConfig({ tournamentId }: SegmentTimeConfigPro
       if (!response.ok) throw new Error('Failed to save heat structure');
       return await response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tournaments', tournamentId, 'heat-structure'] });
+    onSuccess: async () => {
+      // Invalidate round-times queries to update UI
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/tournaments', tournamentId, 'round-times'],
+        exact: false
+      });
+      // Also invalidate the old heat-structure key for backward compatibility
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/tournaments', tournamentId, 'heat-structure'],
+        exact: false
+      });
       toast({
         title: "Heat Structure Saved",
-        description: `All heats will use this timing structure: ${dialInMinutes + cappuccinoMinutes + espressoMinutes} minutes total.`,
+        description: `Default heat structure saved: ${dialInMinutes + cappuccinoMinutes + espressoMinutes} minutes total. Station managers can adjust timing for individual heats during the tournament.`,
+        duration: 4000,
       });
     },
     onError: (error: any) => {

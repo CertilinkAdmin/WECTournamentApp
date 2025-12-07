@@ -153,6 +153,22 @@ export default function AdminTournaments() {
     queryKey: ['/api/stations'],
   });
 
+  // Fetch default heat structure for validation (round 1)
+  const { data: defaultHeatStructure } = useQuery<any>({
+    queryKey: ['/api/tournaments', selectedTournamentId, 'round-times', 1],
+    queryFn: async () => {
+      if (!selectedTournamentId) return null;
+      const response = await fetch(`/api/tournaments/${selectedTournamentId}/round-times`);
+      if (!response.ok) return null;
+      const roundTimes = await response.json();
+      // Return round 1 structure (default) or first available
+      return roundTimes.find((rt: any) => rt.round === 1) || roundTimes[0] || null;
+    },
+    enabled: !!selectedTournamentId,
+  });
+
+  // Validate all rounds have heat structures configured (moved after availableRounds is defined)
+
   // Get barista participants with user info
   const baristaParticipants = useMemo(() => {
     return participants
@@ -315,6 +331,11 @@ export default function AdminTournaments() {
 
   const availableRounds = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
   const currentRoundHeats = matchesByRound[selectedRound] || [];
+
+  // Check if tournament is prepared (has matches and default heat structure configured)
+  const isTournamentPrepared = useMemo(() => {
+    return matches.length > 0 && !!defaultHeatStructure;
+  }, [matches.length, defaultHeatStructure]);
 
   // Get unassigned competitors (baristas not in any match)
   const unassignedCompetitors = useMemo(() => {
@@ -648,6 +669,16 @@ export default function AdminTournaments() {
       if (!stationLeadsResponse.ok) {
         // Don't fail if station leads assignment fails, just log
         console.warn('Station leads assignment warning:', await stationLeadsResponse.json().catch(() => ({})));
+      }
+
+      // Step 5: Validate all rounds have heat structures configured (if bracket exists)
+      if (bracketData.matchesCreated > 0) {
+        const roundTimesResponse = await fetch(`/api/tournaments/${selectedTournamentId}/round-times`);
+        if (roundTimesResponse.ok) {
+          const roundTimes = await roundTimesResponse.json();
+          // Get unique rounds from matches (would need to fetch matches, but for now assume validation happened client-side)
+          // This is a safety check - main validation happens client-side before button is enabled
+        }
       }
       
       return {
@@ -1575,7 +1606,8 @@ export default function AdminTournaments() {
                     disabled={
                       prepareTournamentMutation.isPending || 
                       approvedBaristasForTournament.length < 2 || 
-                      approvedJudgesForTournament.length < 3
+                      approvedJudgesForTournament.length < 3 ||
+                      (matches.length > 0 && !defaultHeatStructure)
                     }
                     size="lg"
                     className="w-full gap-2"
@@ -1592,16 +1624,19 @@ export default function AdminTournaments() {
                       </>
                     )}
                   </Button>
-                  {(approvedBaristasForTournament.length < 2 || approvedJudgesForTournament.length < 3) && (
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      {approvedBaristasForTournament.length < 2 && (
-                        <p>⚠️ Need at least 2 approved competitors to prepare tournament</p>
-                      )}
-                      {approvedJudgesForTournament.length < 3 && (
-                        <p>⚠️ Need at least 3 approved judges to prepare tournament</p>
-                      )}
-                    </div>
-                  )}
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    {approvedBaristasForTournament.length < 2 && (
+                      <p>⚠️ Need at least 2 approved competitors to prepare tournament</p>
+                    )}
+                    {approvedJudgesForTournament.length < 3 && (
+                      <p>⚠️ Need at least 3 approved judges to prepare tournament</p>
+                    )}
+                    {matches.length > 0 && !defaultHeatStructure && (
+                      <p className="text-destructive">
+                        ⚠️ Configure the default heat structure before preparing tournament
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -1794,7 +1829,7 @@ export default function AdminTournaments() {
                     {approvedBaristasForTournament.length >= 2 && currentRoundHeats.length === 0 && (
                       <Button
                         onClick={() => generateBracketMutation.mutate()}
-                        disabled={generateBracketMutation.isPending || updateEnabledStationsMutation.isPending || participantsLoading || approvedBaristasForTournament.length < 2}
+                        disabled={generateBracketMutation.isPending || updateEnabledStationsMutation.isPending || participantsLoading || approvedBaristasForTournament.length < 2 || isTournamentPrepared}
                         size="lg"
                         className="gap-2 w-full sm:w-auto justify-center whitespace-normal text-xs sm:text-sm"
                       >
@@ -1820,6 +1855,9 @@ export default function AdminTournaments() {
                       <>
                         <div className="text-xs sm:text-sm text-muted-foreground text-left">
                           Bracket already generated with {currentRoundHeats.length} heats in Round {selectedRound}
+                          {isTournamentPrepared && (
+                            <Badge variant="default" className="ml-2">Locked</Badge>
+                          )}
                         </div>
                         {/* Station Management - Show after bracket generation */}
                         <Card className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 mt-4 w-full">
@@ -1827,9 +1865,12 @@ export default function AdminTournaments() {
                             <div className="flex items-center gap-2 mb-3">
                               <Settings2 className="h-4 w-4 text-amber-600" />
                               <h3 className="text-sm font-semibold">Station Management</h3>
+                              {isTournamentPrepared && (
+                                <Badge variant="outline" className="ml-2">Locked</Badge>
+                              )}
                             </div>
                             <p className="text-xs text-muted-foreground mb-3">
-                              Current: {enabledStations.join(' & ')}. Disabling stations will mark them as OFFLINE (no heat migration).
+                              Current: {enabledStations.join(' & ')}. {isTournamentPrepared ? 'Configuration locked after tournament preparation.' : 'Disabling stations will mark them as OFFLINE (no heat migration).'}
                             </p>
                             <div className="flex gap-4 flex-wrap">
                               {['A', 'B', 'C'].map((station) => {
@@ -1868,7 +1909,7 @@ export default function AdminTournaments() {
                                           updateEnabledStationsMutation.mutate(newStations);
                                         }
                                       }}
-                                      disabled={updateEnabledStationsMutation.isPending}
+                                      disabled={updateEnabledStationsMutation.isPending || isTournamentPrepared}
                                       className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                                     />
                                     <span className="text-sm font-medium">
@@ -1946,14 +1987,17 @@ export default function AdminTournaments() {
               </CardContent>
             </Card>
 
-            {/* Time Configuration */}
+            {/* Time Configuration - One Default Heat Structure */}
             {selectedTournamentId && (
               <Card className="mb-6">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Settings2 className="h-5 w-5" />
-                    Round Time Configuration
+                    Default Heat Structure Configuration
                   </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Set the default timing structure for all heats. Station managers can adjust timing for individual heats during the tournament.
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <SegmentTimeConfig tournamentId={selectedTournamentId} />

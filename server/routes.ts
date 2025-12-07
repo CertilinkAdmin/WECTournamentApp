@@ -790,18 +790,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== SEGMENT TIME CONFIGURATION =====
-  // Get round times for a tournament
-  app.get("/api/tournaments/:id/round-times", async (req, res) => {
-    try {
-      const tournamentId = parseInt(req.params.id);
-      const times = await storage.getTournamentRoundTimes(tournamentId);
-      res.json(times);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  // Get round times for tournament
+  // Get round times for a tournament (returns all round structures)
   app.get("/api/tournaments/:id/round-times", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
@@ -812,31 +801,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Set heat structure (tournament-wide timing configuration)
+  // Set heat structure (per-round timing configuration)
   app.post("/api/tournaments/:id/round-times", async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
       const { round = 1, dialInMinutes, cappuccinoMinutes, espressoMinutes } = req.body;
 
+      if (!round || round < 1) {
+        return res.status(400).json({ error: 'Round must be a positive integer' });
+      }
+
       const totalMinutes = dialInMinutes + cappuccinoMinutes + espressoMinutes;
 
-      // Check if heat structure already exists
-      const existingStructure = await storage.getRoundTimes(tournamentId, 1);
+      // Check if heat structure already exists for this specific round
+      const existingStructure = await storage.getRoundTimes(tournamentId, round);
 
       let heatStructure;
       if (existingStructure) {
-        // Update existing structure
-        heatStructure = await storage.updateRoundTimes(tournamentId, 1, {
+        // Update existing structure for this round
+        heatStructure = await storage.updateRoundTimes(tournamentId, round, {
           dialInMinutes,
           cappuccinoMinutes,
           espressoMinutes,
           totalMinutes
         });
       } else {
-        // Create new structure
+        // Create new structure for this round
         heatStructure = await storage.setRoundTimes({
           tournamentId,
-          round: 1, // Always use round 1 as the template
+          round,
           dialInMinutes,
           cappuccinoMinutes,
           espressoMinutes,
@@ -995,6 +988,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!segment) {
         return res.status(404).json({ error: "Segment not found" });
+      }
+
+      // Allow updating plannedMinutes only when segment is IDLE (not started)
+      if (updateData.plannedMinutes !== undefined && segment.status !== 'IDLE') {
+        return res.status(400).json({
+          error: "Cannot update segment timing after segment has started. Only IDLE segments can have their timing adjusted."
+        });
       }
 
       // If starting a segment (status changing to RUNNING), validate segment order
@@ -1182,6 +1182,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/matches/:id/detailed-scores", async (req, res) => {
     const scores = await storage.getMatchDetailedScores(parseInt(req.params.id));
     res.json(scores);
+  });
+
+  // Global lock status - checks if all segments are ended and all judges have submitted
+  app.get("/api/matches/:id/global-lock-status", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.id);
+      const lockStatus = await storage.getGlobalLockStatus(matchId);
+      res.json(lockStatus);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to get global lock status' });
+    }
   });
 
   // Match Cup Positions - Admin assignment of left/right positions to cup codes
@@ -2006,33 +2017,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let completedMatch = null;
 
       // Complete the running match if there is one
-      // BUT FIRST: Check that all judge scorecards are completed
+      // BUT FIRST: Check global lock status - ensures all segments ended AND all judges submitted
       if (runningMatch) {
-        // Check judge completion for both CAPPUCCINO and ESPRESSO segments
-        const cappuccinoCompletion = await storage.getJudgeCompletionStatus(runningMatch.id, 'CAPPUCCINO');
-        const espressoCompletion = await storage.getJudgeCompletionStatus(runningMatch.id, 'ESPRESSO');
+        const globalLockStatus = await storage.getGlobalLockStatus(runningMatch.id);
 
-        const incompleteJudges: string[] = [];
-        
-        if (!cappuccinoCompletion.allComplete) {
-          const incompleteCappuccino = cappuccinoCompletion.judges
-            .filter(j => !j.completed)
-            .map(j => `${j.judgeName} (CAPPUCCINO)`);
-          incompleteJudges.push(...incompleteCappuccino);
-        }
-
-        if (!espressoCompletion.allComplete) {
-          const incompleteEspresso = espressoCompletion.judges
-            .filter(j => !j.completed)
-            .map(j => `${j.judgeName} (ESPRESSO)`);
-          incompleteJudges.push(...incompleteEspresso);
-        }
-
-        if (incompleteJudges.length > 0) {
+        // Check if all segments are ended
+        if (!globalLockStatus.allSegmentsEnded) {
           return res.status(400).json({
-            error: `Cannot advance heat. All judges must complete scoring before advancing. Missing scores from: ${incompleteJudges.join(', ')}`,
-            cappuccinoCompletion,
-            espressoCompletion
+            error: `Cannot advance heat. All segments (DIAL_IN, CAPPUCCINO, ESPRESSO) must be completed before advancing.`,
+            globalLockStatus
+          });
+        }
+
+        // Check if all judges have submitted their scores
+        if (!globalLockStatus.allJudgesSubmitted) {
+          const missingDetails = globalLockStatus.missingSubmissions
+            .map(m => `${m.judgeName} (${m.role}): ${m.missing.join(', ')}`)
+            .join('; ');
+          
+          return res.status(400).json({
+            error: `Cannot advance heat. All judges must complete scoring before advancing. Missing: ${missingDetails}`,
+            globalLockStatus
           });
         }
 

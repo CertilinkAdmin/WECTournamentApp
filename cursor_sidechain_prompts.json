@@ -1,0 +1,52 @@
+{
+  "chain_name": "fix_latte_art_sensory_locking",
+  "description": "Fix issue where submitting latte art locks the entire scoring card preventing sensory scoring",
+  "prompts": [
+    {
+      "id": "prompt_1",
+      "step": 1,
+      "type": "lighthouse_audit",
+      "title": "Lighthouse Audit - Identify Scoring Card Issues",
+      "instructions": "Run mobile Lighthouse audit on the scoring interface to identify UI/UX issues, specifically focusing on disabled states and interaction problems when latte art is submitted.",
+      "expected_output": "JSON report with specific issues related to disabled form elements, accessibility problems, and interaction blockers",
+      "next_prompt": "prompt_2"
+    },
+    {
+      "id": "prompt_2",
+      "step": 2,
+      "type": "code_analysis",
+      "title": "Analyze JudgeScoringView Locking Logic",
+      "instructions": "Examine JudgeScoringView.tsx to identify why sensory scoring sections get disabled when latte art is submitted. Check: 1) existingLatteArtScore detection logic, 2) existingCappuccinoScore/existingEspressoScore detection logic, 3) disabled prop usage on sensory checkboxes, 4) any parent component passing isReadOnly based on latteArtSubmitted",
+      "expected_output": "Analysis report identifying the root cause of the locking issue",
+      "next_prompt": "prompt_3"
+    },
+    {
+      "id": "prompt_3",
+      "step": 3,
+      "type": "code_fix",
+      "title": "Fix Sensory Scoring Lock Logic",
+      "instructions": "Fix the locking logic in JudgeScoringView.tsx to ensure: 1) Sensory scoring sections only disable when their own submission is complete (all categories filled), 2) Latte art submission does not affect sensory scoring availability, 3) Each section (Latte Art, Cappuccino Sensory, Espresso Sensory) operates independently",
+      "expected_output": "Updated JudgeScoringView.tsx with corrected disabled logic",
+      "next_prompt": "prompt_4"
+    },
+    {
+      "id": "prompt_4",
+      "step": 4,
+      "type": "test_verification",
+      "title": "Test Fix - Verify Independent Scoring",
+      "instructions": "Create and run tests to verify: 1) Latte art can be submitted without locking sensory sections, 2) Sensory sections remain enabled after latte art submission, 3) Each section can be submitted independently, 4) UI correctly reflects submission status for each section",
+      "expected_output": "Test results confirming the fix works correctly",
+      "next_prompt": "prompt_5"
+    },
+    {
+      "id": "prompt_5",
+      "step": 5,
+      "type": "lighthouse_verify",
+      "title": "Lighthouse Verification - Confirm Improvements",
+      "instructions": "Re-run mobile Lighthouse audit to verify the fix resolved the interaction issues and improved accessibility scores",
+      "expected_output": "Comparison report showing improvements in accessibility and interaction metrics",
+      "next_prompt": null
+    }
+  ]
+}
+

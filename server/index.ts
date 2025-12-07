@@ -7,6 +7,34 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Content Security Policy - Set proper CSP to override any malformed headers
+app.use((req, res, next) => {
+  // Only set CSP for HTML pages, not API routes
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  
+  // Set a proper CSP header that allows necessary resources
+  // This will override any malformed CSP headers from external sources
+  const cspDirectives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-eval needed for Vite in dev
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "img-src 'self' data: https: blob:",
+    "connect-src 'self' ws: wss: https:",
+    "frame-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+    "upgrade-insecure-requests"
+  ].join('; ');
+  
+  res.setHeader('Content-Security-Policy', cspDirectives);
+  next();
+});
+
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'championship-sidecar-secret-key-change-in-production',

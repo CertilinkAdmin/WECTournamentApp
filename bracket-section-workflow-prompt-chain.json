@@ -1,0 +1,189 @@
+{
+  "workflow": "Bracket Section Workflow Enhancement",
+  "description": "Enhance bracket section to support per-round heat structure configuration after bracket population, then lock everything during tournament preparation",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Verify Existing Station Selection",
+      "description": "Confirm station selection (A/B/C) is working correctly - no changes needed",
+      "type": "verification",
+      "test": "Verify station selection UI exists and functions correctly",
+      "files": ["client/src/pages/admin/AdminTournaments.tsx"],
+      "validation": "Station selection checkboxes work, enabledStations state is managed correctly"
+    },
+    {
+      "step": 2,
+      "name": "Verify Bracket Population and Randomization",
+      "description": "Ensure populate bracket button and all randomization functions (station leads, judges, rounds) work correctly",
+      "type": "verification",
+      "test": "Test bracket generation, judge randomization, station lead randomization, round heat randomization",
+      "files": [
+        "client/src/pages/admin/AdminTournaments.tsx",
+        "server/bracketGenerator.ts",
+        "server/routes.ts"
+      ],
+      "validation": "All randomization buttons work, bracket generates correctly with selected stations"
+    },
+    {
+      "step": 3,
+      "name": "Detect Rounds from Populated Bracket",
+      "description": "After bracket is populated, detect how many rounds exist from the generated matches",
+      "type": "feature",
+      "test": "Write test: Given populated bracket with matches, detect unique rounds",
+      "files": [
+        "client/src/pages/admin/AdminTournaments.tsx"
+      ],
+      "implementation": [
+        "Query matches for tournament to get all rounds",
+        "Extract unique round numbers from matches",
+        "Store detected rounds in state",
+        "Display detected rounds in UI"
+      ],
+      "validation": "Correctly identifies all rounds from populated bracket"
+    },
+    {
+      "step": 4,
+      "name": "Create Per-Round Heat Structure Configuration UI",
+      "description": "Create UI component to configure heat structure (dialInMinutes, cappuccinoMinutes, espressoMinutes) for each detected round",
+      "type": "feature",
+      "test": "Write tests: Component renders per-round configs, saves per-round structures, validates inputs",
+      "files": [
+        "client/src/components/PerRoundHeatStructureConfig.tsx"
+      ],
+      "implementation": [
+        "Create new component PerRoundHeatStructureConfig",
+        "Accept tournamentId and detected rounds as props",
+        "Display heat structure config for each round",
+        "Allow independent configuration of dialInMinutes, cappuccinoMinutes, espressoMinutes per round",
+        "Show current configuration if exists",
+        "Save button to persist per-round configurations"
+      ],
+      "validation": "Can configure different heat structures for each round, saves correctly"
+    },
+    {
+      "step": 5,
+      "name": "Update Backend API for Per-Round Heat Structure",
+      "description": "Update API endpoints to support per-round heat structure configuration",
+      "type": "feature",
+      "test": "Write tests: API accepts round parameter, saves per-round structure, retrieves per-round structure",
+      "files": [
+        "server/routes.ts",
+        "server/storage.ts"
+      ],
+      "implementation": [
+        "Update POST /api/tournaments/:id/round-times to accept round parameter",
+        "Update storage methods to save/retrieve per-round heat structures",
+        "Ensure backward compatibility with existing round 1 structure",
+        "Update GET endpoint to return all round structures or specific round"
+      ],
+      "validation": "API correctly saves and retrieves per-round heat structures"
+    },
+    {
+      "step": 6,
+      "name": "Integrate Per-Round Config into Bracket Tab",
+      "description": "Add per-round heat structure configuration UI to bracket tab, show after bracket is populated",
+      "type": "integration",
+      "test": "Test: Config appears after bracket generation, shows all detected rounds, saves correctly",
+      "files": [
+        "client/src/pages/admin/AdminTournaments.tsx"
+      ],
+      "implementation": [
+        "Import PerRoundHeatStructureConfig component",
+        "Add component to bracket tab after bracket generation section",
+        "Only show when bracket is populated (matches exist)",
+        "Pass detected rounds to component",
+        "Handle save success/error states"
+      ],
+      "validation": "Component appears in correct location, functions correctly"
+    },
+    {
+      "step": 7,
+      "name": "Update Prepare Tournament Validation",
+      "description": "Update Prepare Tournament to validate all detected rounds have heat structures configured",
+      "type": "feature",
+      "test": "Write tests: Validates all rounds have structures, shows error if missing, allows preparation when complete",
+      "files": [
+        "client/src/pages/admin/AdminTournaments.tsx"
+      ],
+      "implementation": [
+        "Before preparing tournament, check all detected rounds have heat structures",
+        "Show validation error if any round is missing heat structure",
+        "Disable Prepare Tournament button if validation fails",
+        "Show which rounds are missing configurations"
+      ],
+      "validation": "Correctly validates all rounds have heat structures before allowing preparation"
+    },
+    {
+      "step": 8,
+      "name": "Update Prepare Tournament to Lock Configurations",
+      "description": "Update Prepare Tournament workflow to lock all configurations (stations, bracket, heat structures per round)",
+      "type": "feature",
+      "test": "Write tests: Locks stations, bracket, all round heat structures, prevents further changes",
+      "files": [
+        "client/src/pages/admin/AdminTournaments.tsx",
+        "server/routes.ts"
+      ],
+      "implementation": [
+        "Update prepareTournamentMutation to validate all configurations are set",
+        "Lock enabled stations (prevent changes after preparation)",
+        "Lock bracket (prevent regeneration after preparation)",
+        "Lock all round heat structures (prevent changes after preparation)",
+        "Update tournament status to indicate locked state",
+        "Show success message with locked configuration summary"
+      ],
+      "validation": "All configurations are locked after preparation, cannot be changed"
+    },
+    {
+      "step": 9,
+      "name": "Update Bracket Generator to Use Per-Round Heat Structures",
+      "description": "Update bracket generator to use the correct heat structure for each round when creating matches",
+      "type": "feature",
+      "test": "Write tests: Uses correct heat structure for round 1, round 2, etc. when generating matches",
+      "files": [
+        "server/bracketGenerator.ts"
+      ],
+      "implementation": [
+        "When creating matches, get heat structure for specific round",
+        "Use round-specific heat structure instead of always using round 1",
+        "Fallback to round 1 structure if round-specific doesn't exist",
+        "Create heat segments with round-specific plannedMinutes"
+      ],
+      "validation": "Matches use correct heat structure for their round"
+    },
+    {
+      "step": 10,
+      "name": "Update SegmentTimeConfig for Per-Round Support",
+      "description": "Update SegmentTimeConfig component to support per-round configuration or create separate per-round component",
+      "type": "refactor",
+      "test": "Test: Component works with per-round structure, displays correct round structure",
+      "files": [
+        "client/src/components/SegmentTimeConfig.tsx"
+      ],
+      "implementation": [
+        "Either update SegmentTimeConfig to accept round parameter",
+        "Or replace with PerRoundHeatStructureConfig in bracket tab",
+        "Ensure backward compatibility if used elsewhere",
+        "Update any references to use new per-round structure"
+      ],
+      "validation": "Heat structure configuration works per-round"
+    }
+  ],
+  "dependencies": {
+    "step_3": [],
+    "step_4": ["step_3"],
+    "step_5": [],
+    "step_6": ["step_3", "step_4"],
+    "step_7": ["step_3", "step_4", "step_5", "step_6"],
+    "step_8": ["step_7"],
+    "step_9": ["step_5"],
+    "step_10": ["step_4", "step_5"]
+  },
+  "testing_strategy": "TDD - Write tests first for each step, then implement",
+  "notes": [
+    "Station selection (A/B/C) already exists - no changes needed",
+    "Keep all existing randomization functions unchanged",
+    "Heat structure should be configurable per round after bracket population",
+    "Prepare Tournament should lock everything in place"
+  ]
+}
+

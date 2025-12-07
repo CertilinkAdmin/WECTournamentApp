@@ -1,0 +1,70 @@
+{
+  "chain_name": "global_lock_after_segments_complete",
+  "description": "Implement global lock condition that locks scoring cards after all segments are complete AND all judges have submitted scores",
+  "prompts": [
+    {
+      "id": "prompt_1",
+      "step": 1,
+      "type": "analysis",
+      "title": "Analyze Segment Completion and Judge Submission Logic",
+      "instructions": "Review how segments are marked as ENDED and how judge completion status is checked. Understand the relationship between segment completion and judge submissions.",
+      "expected_output": "Documentation of current segment/judge completion flow",
+      "next_prompt": "prompt_2"
+    },
+    {
+      "id": "prompt_2",
+      "step": 2,
+      "type": "design",
+      "title": "Design Global Lock Condition",
+      "instructions": "Design a function/API endpoint that checks: 1) All segments (DIAL_IN, CAPPUCCINO, ESPRESSO) are ENDED, 2) All judges have submitted latte art, 3) All judges have submitted their sensory scores (Cappuccino judge for Cappuccino, Espresso judges for Espresso). Return a boolean indicating if the heat should be locked.",
+      "expected_output": "Design specification for global lock check function",
+      "next_prompt": "prompt_3"
+    },
+    {
+      "id": "prompt_3",
+      "step": 3,
+      "type": "backend_implementation",
+      "title": "Implement Backend Global Lock Check",
+      "instructions": "Create a new API endpoint `/api/matches/:id/global-lock-status` that returns whether the match should be globally locked. The endpoint should check all segments are ENDED and all judges have completed their required submissions.",
+      "expected_output": "New API endpoint in server/routes.ts and helper function in server/storage.ts",
+      "next_prompt": "prompt_4"
+    },
+    {
+      "id": "prompt_4",
+      "step": 4,
+      "type": "frontend_implementation",
+      "title": "Update JudgeScoringView to Use Global Lock",
+      "instructions": "Update JudgeScoringView component to fetch global lock status and use it to set isReadOnly. The component should check global lock status in addition to individual judge completion.",
+      "expected_output": "Updated JudgeScoringView.tsx with global lock check",
+      "next_prompt": "prompt_5"
+    },
+    {
+      "id": "prompt_5",
+      "step": 5,
+      "type": "frontend_implementation",
+      "title": "Update LiveJudgesScoring to Use Global Lock",
+      "instructions": "Update LiveJudgesScoring component to check global lock status and pass it to JudgeScoringView. The activatedMatchScored check should also consider global lock.",
+      "expected_output": "Updated LiveJudgesScoring.tsx with global lock integration",
+      "next_prompt": "prompt_6"
+    },
+    {
+      "id": "prompt_6",
+      "step": 6,
+      "type": "testing",
+      "title": "Test Global Lock with Multiple Judges",
+      "instructions": "Test the global lock: 1) Verify lock activates when all segments ENDED and all judges submitted, 2) Verify lock does NOT activate if segments not complete, 3) Verify lock does NOT activate if judges haven't submitted, 4) Test with multiple judges and different roles.",
+      "expected_output": "Test results confirming global lock works correctly",
+      "next_prompt": "prompt_7"
+    },
+    {
+      "id": "prompt_7",
+      "step": 7,
+      "type": "lighthouse_audit",
+      "title": "Lighthouse Audit - Verify Locked State UI/UX",
+      "instructions": "Run mobile Lighthouse audit to verify the locked state UI is accessible and provides clear feedback to users about why scoring is locked.",
+      "expected_output": "Lighthouse report with accessibility and UX scores for locked state",
+      "next_prompt": null
+    }
+  ]
+}
+

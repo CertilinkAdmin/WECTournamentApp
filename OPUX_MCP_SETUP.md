@@ -2,11 +2,20 @@
 
 This guide explains how to install and configure the MCP servers required for the OPUX workflow.
 
+## 🚀 Quick Start
+
+**Fastest way to set up:**
+```bash
+./setup-opux-mcp.sh
+```
+
+For detailed step-by-step instructions, see [OPUX_MCP_SETUP_INSTRUCTIONS.md](./OPUX_MCP_SETUP_INSTRUCTIONS.md)
+
 ## Required MCP Servers
 
 1. **Lighthouse MCP** - For performance audits ✅ Available
-2. **Responsive Refactor MCP** - For layout optimization ⚠️ Custom implementation needed
-3. **Tailwind Optimizer MCP** - For CSS normalization ⚠️ Custom implementation needed
+2. **Responsive Refactor MCP** - For layout optimization ⚠️ Custom implementation needed (handled via code analysis)
+3. **Tailwind Optimizer MCP** - For CSS normalization ⚠️ Custom implementation needed (handled via Tailwind tools)
 
 ## Important: MCP Servers Are Configured in Cursor, Not Your Project
 
@@ -207,10 +216,23 @@ npm install --save-dev tailwindcss-class-sorter
 
 ## Next Steps
 
-1. Install the MCP servers using one of the methods above
-2. Configure Cursor to recognize them
-3. Test the OPUX workflow
-4. Integrate into your development process
+### Quick Setup (Recommended)
+1. **Run the setup script**: `./setup-opux-mcp.sh`
+2. **Restart Cursor** to load the MCP configuration
+3. **Verify in Cursor Settings** > MCP that Lighthouse is connected
+4. **Test the workflow**: Ask Cursor to "Run OPUX Step 1: Lighthouse audit"
+
+### Manual Setup
+1. Follow the instructions in [OPUX_MCP_SETUP_INSTRUCTIONS.md](./OPUX_MCP_SETUP_INSTRUCTIONS.md)
+2. Create the MCP config file manually
+3. Restart Cursor
+4. Test the OPUX workflow
+
+## Files Created
+
+- ✅ `setup-opux-mcp.sh` - Automated setup script
+- ✅ `OPUX_MCP_SETUP_INSTRUCTIONS.md` - Detailed manual setup guide
+- ✅ `mcp-config.example.json` - Example configuration file
 
 ## References
 

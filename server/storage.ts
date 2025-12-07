@@ -90,6 +90,16 @@ export interface IStorage {
       completed: boolean;
     }>;
   }>;
+  getGlobalLockStatus(matchId: number): Promise<{
+    isLocked: boolean;
+    allSegmentsEnded: boolean;
+    allJudgesSubmitted: boolean;
+    missingSubmissions: Array<{
+      judgeName: string;
+      role: 'ESPRESSO' | 'CAPPUCCINO';
+      missing: string[];
+    }>;
+  }>;
 
   // Tournament Round Times
   setRoundTimes(times: InsertTournamentRoundTime): Promise<TournamentRoundTime>;
@@ -494,6 +504,96 @@ export class DatabaseStorage implements IStorage {
     return {
       allComplete,
       judges: judgesStatus,
+    };
+  }
+
+  async getGlobalLockStatus(matchId: number): Promise<{
+    isLocked: boolean;
+    allSegmentsEnded: boolean;
+    allJudgesSubmitted: boolean;
+    missingSubmissions: Array<{
+      judgeName: string;
+      role: 'ESPRESSO' | 'CAPPUCCINO';
+      missing: string[];
+    }>;
+  }> {
+    // Check if all segments are ENDED
+    const segments = await this.getMatchSegments(matchId);
+    const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+    const allSegmentsEnded = requiredSegments.every(segmentType => {
+      const segment = segments.find(s => s.segment === segmentType);
+      return segment?.status === 'ENDED';
+    });
+
+    // Get all judges assigned to this match
+    const matchJudges = await this.getMatchJudges(matchId);
+    const allScores = await this.getMatchDetailedScores(matchId);
+    const allUsers = await this.getAllUsers();
+
+    // Check each judge's submissions
+    const missingSubmissions: Array<{
+      judgeName: string;
+      role: 'ESPRESSO' | 'CAPPUCCINO';
+      missing: string[];
+    }> = [];
+
+    for (const judge of matchJudges) {
+      const judgeUser = allUsers.find(u => u.id === judge.judgeId);
+      const judgeName = judgeUser?.name || `Judge ${judge.judgeId}`;
+      const judgeScores = allScores.filter(score => score.judgeName === judgeName);
+      
+      const missing: string[] = [];
+      
+      // All judges must submit latte art
+      const hasLatteArt = judgeScores.some(score => 
+        score.visualLatteArt === 'left' || score.visualLatteArt === 'right'
+      );
+      if (!hasLatteArt) {
+        missing.push('Latte Art');
+      }
+      
+      // Check sensory submission based on role
+      if (judge.role === 'CAPPUCCINO') {
+        const cappuccinoScore = judgeScores.find(score => 
+          score.sensoryBeverage === 'Cappuccino' &&
+          (score.taste === 'left' || score.taste === 'right') &&
+          (score.tactile === 'left' || score.tactile === 'right') &&
+          (score.flavour === 'left' || score.flavour === 'right') &&
+          (score.overall === 'left' || score.overall === 'right')
+        );
+        if (!cappuccinoScore) {
+          missing.push('Cappuccino Sensory');
+        }
+      } else if (judge.role === 'ESPRESSO') {
+        const espressoScore = judgeScores.find(score => 
+          score.sensoryBeverage === 'Espresso' &&
+          (score.taste === 'left' || score.taste === 'right') &&
+          (score.tactile === 'left' || score.tactile === 'right') &&
+          (score.flavour === 'left' || score.flavour === 'right') &&
+          (score.overall === 'left' || score.overall === 'right')
+        );
+        if (!espressoScore) {
+          missing.push('Espresso Sensory');
+        }
+      }
+      
+      if (missing.length > 0) {
+        missingSubmissions.push({
+          judgeName,
+          role: judge.role,
+          missing,
+        });
+      }
+    }
+
+    const allJudgesSubmitted = missingSubmissions.length === 0;
+    const isLocked = allSegmentsEnded && allJudgesSubmitted;
+
+    return {
+      isLocked,
+      allSegmentsEnded,
+      allJudgesSubmitted,
+      missingSubmissions,
     };
   }
 

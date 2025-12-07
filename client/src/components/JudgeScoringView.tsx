@@ -243,6 +243,28 @@ export default function JudgeScoringView({
     enabled: !!selectedMatchId,
   });
 
+  // Fetch global lock status - locks scoring when all segments ended AND all judges submitted
+  const { data: globalLockStatus } = useQuery<{
+    isLocked: boolean;
+    allSegmentsEnded: boolean;
+    allJudgesSubmitted: boolean;
+    missingSubmissions: Array<{
+      judgeName: string;
+      role: 'ESPRESSO' | 'CAPPUCCINO';
+      missing: string[];
+    }>;
+  }>({
+    queryKey: [`/api/matches/${selectedMatchId}/global-lock-status`],
+    queryFn: async () => {
+      if (!selectedMatchId) return null;
+      const response = await fetch(`/api/matches/${selectedMatchId}/global-lock-status`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!selectedMatchId,
+    refetchInterval: 5000, // Poll every 5 seconds to detect lock status changes
+  });
+
   // Fetch cup positions for selected match (if assigned)
   const { data: cupPositions = [] } = useQuery<Array<{ cupCode: string; position: 'left' | 'right' }>>({
     queryKey: [`/api/matches/${selectedMatchId}/cup-positions`],
@@ -320,40 +342,43 @@ export default function JudgeScoringView({
   // Check for existing scores by segment type
   const existingLatteArtScore = useMemo(() => {
     if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
-    // Look for score with visualLatteArt filled (indicates Latte Art was scored)
+    // Look for score with visualLatteArt filled with valid value (indicates Latte Art was scored)
+    // Only consider it submitted if visualLatteArt has a valid value ('left' or 'right')
     return existingScores.find(score => 
       score.judgeName === selectedJudge.user.name && 
       score.matchId === selectedMatchId &&
-      score.visualLatteArt !== null
+      (score.visualLatteArt === 'left' || score.visualLatteArt === 'right')
     ) || null;
   }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
 
   const existingCappuccinoScore = useMemo(() => {
     if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
-    // Look for Cappuccino sensory score - must have ALL sensory categories filled (not just visualLatteArt)
+    // Look for Cappuccino sensory score - must have ALL sensory categories filled with valid values ('left' or 'right')
     // This ensures latte art submission doesn't lock sensory scoring
+    // Only consider it submitted if ALL four sensory categories have valid values
     return existingScores.find(score => 
       score.judgeName === selectedJudge.user.name && 
       score.matchId === selectedMatchId &&
       score.sensoryBeverage === 'Cappuccino' &&
-      score.taste !== null && 
-      score.tactile !== null && 
-      score.flavour !== null && 
-      score.overall !== null
+      (score.taste === 'left' || score.taste === 'right') && 
+      (score.tactile === 'left' || score.tactile === 'right') && 
+      (score.flavour === 'left' || score.flavour === 'right') && 
+      (score.overall === 'left' || score.overall === 'right')
     ) || null;
   }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
 
   const existingEspressoScore = useMemo(() => {
     if (!effectiveJudgeId || !selectedMatchId || !selectedJudge) return null;
-    // Look for Espresso sensory score - must have ALL sensory categories filled
+    // Look for Espresso sensory score - must have ALL sensory categories filled with valid values ('left' or 'right')
+    // Only consider it submitted if ALL four sensory categories have valid values
     return existingScores.find(score => 
       score.judgeName === selectedJudge.user.name && 
       score.matchId === selectedMatchId &&
       score.sensoryBeverage === 'Espresso' &&
-      score.taste !== null && 
-      score.tactile !== null && 
-      score.flavour !== null && 
-      score.overall !== null
+      (score.taste === 'left' || score.taste === 'right') && 
+      (score.tactile === 'left' || score.tactile === 'right') && 
+      (score.flavour === 'left' || score.flavour === 'right') && 
+      (score.overall === 'left' || score.overall === 'right')
     ) || null;
   }, [existingScores, effectiveJudgeId, selectedMatchId, selectedJudge]);
 
@@ -837,6 +862,18 @@ export default function JudgeScoringView({
           {/* Scoring Interface - Show when match is selected (judge role determines what to show) */}
           {selectedMatchId && competitor1 && competitor2 && effectiveJudgeRole && (
             <div className="space-y-4 sm:space-y-6">
+              {/* Global Lock Notice */}
+              {isGloballyLocked && (
+                <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <AlertTitle className="text-amber-900 dark:text-amber-200 font-semibold text-xs sm:text-sm lg:text-base">
+                    Scoring Locked
+                  </AlertTitle>
+                  <AlertDescription className="text-amber-800 dark:text-amber-300 text-xs sm:text-sm lg:text-base">
+                    All segments have been completed and all judges have submitted their scores. Scoring is now locked for this heat.
+                  </AlertDescription>
+                </Alert>
+              )}
               {/* Latte Art Scorecard - All Judges */}
               <Card className="border-l-4 border-l-blue-500 bg-card">
                 <CardHeader className="pb-3">
@@ -893,7 +930,7 @@ export default function JudgeScoringView({
                         type="checkbox"
                         checked={latteArtVisual === 'left'}
                         onChange={(e) => setLatteArtVisual(e.target.checked ? 'left' : null)}
-                        disabled={latteArtSubmitted || propIsReadOnly}
+                        disabled={latteArtSubmitted || propIsReadOnly || isGloballyLocked}
                         className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                       />
                       <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
@@ -907,7 +944,7 @@ export default function JudgeScoringView({
                         type="checkbox"
                         checked={latteArtVisual === 'right'}
                         onChange={(e) => setLatteArtVisual(e.target.checked ? 'right' : null)}
-                        disabled={latteArtSubmitted || propIsReadOnly}
+                        disabled={latteArtSubmitted || propIsReadOnly || isGloballyLocked}
                         className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                       />
                     </label>
@@ -926,7 +963,7 @@ export default function JudgeScoringView({
                   {/* Latte Art Submit Button */}
                   <Button
                     onClick={handleSubmitLatteArt}
-                    disabled={!isLatteArtComplete || submitScoreMutation.isPending || latteArtSubmitted || propIsReadOnly}
+                    disabled={!isLatteArtComplete || submitScoreMutation.isPending || latteArtSubmitted || propIsReadOnly || isGloballyLocked}
                     className="w-full min-h-[2.75rem] sm:min-h-[2.5rem]"
                     size="lg"
                   >
@@ -972,7 +1009,7 @@ export default function JudgeScoringView({
                             type="checkbox"
                             checked={cappuccinoTaste === 'left'}
                             onChange={(e) => setCappuccinoTaste(e.target.checked ? 'left' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
@@ -986,7 +1023,7 @@ export default function JudgeScoringView({
                             type="checkbox"
                             checked={cappuccinoTaste === 'right'}
                             onChange={(e) => setCappuccinoTaste(e.target.checked ? 'right' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                         </label>
@@ -999,7 +1036,7 @@ export default function JudgeScoringView({
                             type="checkbox"
                             checked={cappuccinoTactile === 'left'}
                             onChange={(e) => setCappuccinoTactile(e.target.checked ? 'left' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
@@ -1013,7 +1050,7 @@ export default function JudgeScoringView({
                             type="checkbox"
                             checked={cappuccinoTactile === 'right'}
                             onChange={(e) => setCappuccinoTactile(e.target.checked ? 'right' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                         </label>
@@ -1026,7 +1063,7 @@ export default function JudgeScoringView({
                             type="checkbox"
                             checked={cappuccinoFlavour === 'left'}
                             onChange={(e) => setCappuccinoFlavour(e.target.checked ? 'left' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
@@ -1040,7 +1077,7 @@ export default function JudgeScoringView({
                             type="checkbox"
                             checked={cappuccinoFlavour === 'right'}
                             onChange={(e) => setCappuccinoFlavour(e.target.checked ? 'right' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                         </label>
@@ -1053,7 +1090,7 @@ export default function JudgeScoringView({
                             type="checkbox"
                             checked={cappuccinoOverall === 'left'}
                             onChange={(e) => setCappuccinoOverall(e.target.checked ? 'left' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
@@ -1067,7 +1104,7 @@ export default function JudgeScoringView({
                             type="checkbox"
                             checked={cappuccinoOverall === 'right'}
                             onChange={(e) => setCappuccinoOverall(e.target.checked ? 'right' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly}
+                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                         </label>
@@ -1087,7 +1124,7 @@ export default function JudgeScoringView({
                     {/* Cappuccino Sensory Submit Button */}
                     <Button
                       onClick={handleSubmitCappuccinoSensory}
-                      disabled={!isCappuccinoSensoryComplete || submitScoreMutation.isPending || cappuccinoSensorySubmitted || propIsReadOnly}
+                      disabled={!isCappuccinoSensoryComplete || submitScoreMutation.isPending || cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                       className="w-full min-h-[2.75rem] sm:min-h-[2.5rem]"
                       size="lg"
                     >
@@ -1140,7 +1177,7 @@ export default function JudgeScoringView({
                                 setEspressoTaste(null);
                               }
                             }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
@@ -1160,7 +1197,7 @@ export default function JudgeScoringView({
                                 setEspressoTaste(null);
                               }
                             }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                         </label>
@@ -1179,7 +1216,7 @@ export default function JudgeScoringView({
                                 setEspressoTactile(null);
                               }
                             }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
@@ -1199,7 +1236,7 @@ export default function JudgeScoringView({
                                 setEspressoTactile(null);
                               }
                             }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                         </label>
@@ -1218,7 +1255,7 @@ export default function JudgeScoringView({
                                 setEspressoFlavour(null);
                               }
                             }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
@@ -1238,7 +1275,7 @@ export default function JudgeScoringView({
                                 setEspressoFlavour(null);
                               }
                             }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                         </label>
@@ -1257,7 +1294,7 @@ export default function JudgeScoringView({
                                 setEspressoOverall(null);
                               }
                             }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
@@ -1277,7 +1314,7 @@ export default function JudgeScoringView({
                                 setEspressoOverall(null);
                               }
                             }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly}
+                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />
                         </label>
@@ -1318,7 +1355,7 @@ export default function JudgeScoringView({
                         });
                         handleSubmitEspressoSensory();
                       }}
-                      disabled={!isEspressoSensoryComplete || submitScoreMutation.isPending || espressoSensorySubmitted || propIsReadOnly}
+                      disabled={!isEspressoSensoryComplete || submitScoreMutation.isPending || espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                       className="w-full min-h-[2.75rem] sm:min-h-[2.5rem]"
                       size="lg"
                       type="button"

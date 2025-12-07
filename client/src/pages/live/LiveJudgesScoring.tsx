@@ -264,13 +264,80 @@ export default function LiveJudgesScoring() {
     enabled: !!activatedMatchId,
   });
 
-  // Check if activated match has been scored by this judge
+  // Fetch global lock status for activated match
+  const { data: globalLockStatus } = useQuery<{
+    isLocked: boolean;
+    allSegmentsEnded: boolean;
+    allJudgesSubmitted: boolean;
+    missingSubmissions: Array<{
+      judgeName: string;
+      role: 'ESPRESSO' | 'CAPPUCCINO';
+      missing: string[];
+    }>;
+  }>({
+    queryKey: [`/api/matches/${activatedMatchId}/global-lock-status`],
+    queryFn: async () => {
+      if (!activatedMatchId) return null;
+      const response = await fetch(`/api/matches/${activatedMatchId}/global-lock-status`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!activatedMatchId,
+    refetchInterval: 5000, // Poll every 5 seconds to detect lock status changes
+  });
+
+  // Check if activated match has been fully scored by this judge
+  // A judge is only "fully scored" when:
+  // 1. Latte art is submitted (all judges must do this)
+  // 2. Sensory scoring is complete (Cappuccino judge for Cappuccino sensory, Espresso judge for Espresso sensory)
+  // OR if global lock is active (all segments ended AND all judges submitted)
   const activatedMatchScored = useMemo(() => {
+    // If global lock is active, consider the match as scored (locked)
+    if (globalLockStatus?.isLocked) {
+      return true;
+    }
     if (!activatedMatchId || !selectedJudge || !activatedMatchScores.length) return false;
-    return activatedMatchScores.some(
+    
+    const judgeScores = activatedMatchScores.filter(
       score => score.judgeName === selectedJudge.user.name
     );
-  }, [activatedMatchId, selectedJudge, activatedMatchScores]);
+    
+    if (judgeScores.length === 0) return false;
+    
+    // Check if latte art is submitted (required for all judges)
+    const latteArtSubmitted = judgeScores.some(
+      score => score.visualLatteArt === 'left' || score.visualLatteArt === 'right'
+    );
+    
+    if (!latteArtSubmitted) return false;
+    
+    // Check sensory scoring based on judge role
+    const judgeRole = selectedJudge.role;
+    
+    if (judgeRole === 'CAPPUCCINO') {
+      // Cappuccino judge must complete Cappuccino sensory (all 4 categories)
+      const cappuccinoSensoryComplete = judgeScores.some(score =>
+        score.sensoryBeverage === 'Cappuccino' &&
+        (score.taste === 'left' || score.taste === 'right') &&
+        (score.tactile === 'left' || score.tactile === 'right') &&
+        (score.flavour === 'left' || score.flavour === 'right') &&
+        (score.overall === 'left' || score.overall === 'right')
+      );
+      return cappuccinoSensoryComplete;
+    } else if (judgeRole === 'ESPRESSO') {
+      // Espresso judge must complete Espresso sensory (all 4 categories)
+      const espressoSensoryComplete = judgeScores.some(score =>
+        score.sensoryBeverage === 'Espresso' &&
+        (score.taste === 'left' || score.taste === 'right') &&
+        (score.tactile === 'left' || score.tactile === 'right') &&
+        (score.flavour === 'left' || score.flavour === 'right') &&
+        (score.overall === 'left' || score.overall === 'right')
+      );
+      return espressoSensoryComplete;
+    }
+    
+    return false;
+  }, [activatedMatchId, selectedJudge, activatedMatchScores, globalLockStatus]);
 
   // Auto-activate match when judge is selected
   React.useEffect(() => {
@@ -461,6 +528,9 @@ export default function LiveJudgesScoring() {
                 </Button>
               </DrawerClose>
             </div>
+            <DrawerDescription className="sr-only">
+              Scoring interface for Round {activatedMatch?.round}, Heat {activatedMatch?.heatNumber}. Submit scores for Visual Latte Art and Sensory categories.
+            </DrawerDescription>
           </DrawerHeader>
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 bg-[var(--brand-light-sand)]/80 dark:bg-transparent pb-8">
             {/* Pause Period Warning */}
@@ -479,10 +549,11 @@ export default function LiveJudgesScoring() {
                 judgeId={selectedJudgeId}
                 matchId={activatedMatch.id}
                 judgeRole={(activatedMatch as any).judgeRole || (allMatchJudges[activatedMatch.id]?.find(j => j.judgeId === selectedJudgeId)?.role || undefined)}
-                isReadOnly={activatedMatchScored}
+                isReadOnly={activatedMatchScored || globalLockStatus?.isLocked || false}
                 onScoreSubmitted={() => {
-                  // Refresh scores after submission
+                  // Refresh scores and global lock status after submission
                   queryClient.invalidateQueries({ queryKey: [`/api/matches/${activatedMatch.id}/detailed-scores`] });
+                  queryClient.invalidateQueries({ queryKey: [`/api/matches/${activatedMatch.id}/global-lock-status`] });
                 }}
               />
             )}

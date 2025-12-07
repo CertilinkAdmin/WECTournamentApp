@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink, Coffee, ArrowRight, AlertTriangle, Loader2 } from "lucide-react";
+import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink, Coffee, ArrowRight, AlertTriangle, Loader2, Edit2, Save, X } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
 import { getMainStationsForTournament, normalizeStationName } from '@/utils/stationUtils';
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -24,6 +24,8 @@ export default function StationLeadView() {
   const [currentSegmentId, setCurrentSegmentId] = useState<number | null>(null);
   const [pausedSegmentId, setPausedSegmentId] = useState<number | null>(null);
   const [pausedTimes, setPausedTimes] = useState<Record<number, { pausedAt: number; elapsedBeforePause: number; pauseDuration: number }>>({});
+  const [editingSegmentId, setEditingSegmentId] = useState<number | null>(null);
+  const [editingMinutes, setEditingMinutes] = useState<number>(0);
   const socket = useWebSocket();
   const [searchParams] = useSearchParams();
 
@@ -458,6 +460,39 @@ export default function StationLeadView() {
         duration: isCupPositionError || errorMessage.includes('judge') ? 8000 : 5000, // Longer duration for important errors
       });
     }
+  });
+
+  // Update segment timing mutation
+  const updateSegmentTimingMutation = useMutation({
+    mutationFn: async ({ segmentId, plannedMinutes }: { segmentId: number; plannedMinutes: number }) => {
+      const response = await fetch(`/api/segments/${segmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ plannedMinutes }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to update segment timing' }));
+        throw new Error(error.error || 'Failed to update segment timing');
+      }
+      return await response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch?.id}/segments`] });
+      setEditingSegmentId(null);
+      toast({
+        title: "Timing Updated",
+        description: `Segment timing updated to ${variables.plannedMinutes} minutes.`,
+        duration: 3000,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to update segment timing',
+        variant: "destructive",
+      });
+    },
   });
 
   const populateNextRoundMutation = useMutation({
@@ -1055,7 +1090,66 @@ export default function StationLeadView() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="text-xs sm:text-sm uppercase tracking-wide text-foreground/60 dark:text-white/60 truncate">{segmentCode.replace('_', ' ')}</div>
-                        <div className="text-[10px] sm:text-xs text-foreground/40 dark:text-white/40">{segment?.plannedMinutes || 0} minutes</div>
+                        {editingSegmentId === segment?.id ? (
+                          <div className="flex items-center gap-2 mt-1">
+                            <input
+                              type="number"
+                              min={1}
+                              value={editingMinutes}
+                              onChange={(e) => setEditingMinutes(Number(e.target.value))}
+                              className="w-16 px-2 py-1 text-xs border rounded bg-background text-foreground"
+                              autoFocus
+                            />
+                            <span className="text-[10px] sm:text-xs text-foreground/40 dark:text-white/40">minutes</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {
+                                if (segment) {
+                                  updateSegmentTimingMutation.mutate({ 
+                                    segmentId: segment.id, 
+                                    plannedMinutes: editingMinutes 
+                                  });
+                                }
+                              }}
+                              disabled={updateSegmentTimingMutation.isPending}
+                            >
+                              <Save className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {
+                                setEditingSegmentId(null);
+                                setEditingMinutes(segment?.plannedMinutes || 0);
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="text-[10px] sm:text-xs text-foreground/40 dark:text-white/40">
+                              {segment?.plannedMinutes || 0} minutes
+                            </div>
+                            {!isRunning && !isEnded && segment && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-5 w-5 p-0 opacity-60 hover:opacity-100"
+                                onClick={() => {
+                                  setEditingSegmentId(segment.id);
+                                  setEditingMinutes(segment.plannedMinutes);
+                                }}
+                                title="Adjust timing"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <Badge variant={isRunning ? 'default' : isEnded ? 'secondary' : 'outline'} className="text-[10px] sm:text-xs flex-shrink-0">
                         {status}
