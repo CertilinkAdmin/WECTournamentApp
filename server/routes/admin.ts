@@ -13,7 +13,7 @@ import {
   heatSegments,
   tournamentRoundTimes
 } from '../../shared/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, like, or, sql } from 'drizzle-orm';
 import os from 'os';
 
 const router = Router();
@@ -304,12 +304,51 @@ router.post('/seed-test-data', async (req, res) => {
 // ===== CLEAR TEST DATA =====
 router.delete('/clear-test-data', async (req, res) => {
   try {
-    // Get all test tournaments (those with "Test" in the name or test emails)
+    // Get all tournaments
     const allTournaments = await storage.getAllTournaments();
-    const testTournaments = allTournaments.filter(t => 
-      t.name.toLowerCase().includes('test') || 
-      t.name.toLowerCase().includes('demo')
-    );
+    
+    // Identify test tournaments by:
+    // 1. Name containing "test" or "demo"
+    // 2. Having participants with test email addresses (@test.com)
+    const testTournamentIds = new Set<number>();
+    
+    // First, find tournaments by name
+    allTournaments.forEach(t => {
+      const nameLower = t.name.toLowerCase();
+      if (nameLower.includes('test') || nameLower.includes('demo')) {
+        testTournamentIds.add(t.id);
+      }
+    });
+    
+    // Also find tournaments that have test users (even if name doesn't contain "test")
+    // Test users have emails like: test-barista-{tournamentId}-{index}-{timestamp}@test.com
+    // or: test-judge-{tournamentId}-{index}-{timestamp}@test.com
+    // or: test-stationlead-{tournamentId}-{index}-{timestamp}@test.com
+    
+    // Get all users with test email patterns
+    const allUsersList = await db.select()
+      .from(users)
+      .where(
+        or(
+          like(users.email, '%@test.com'),
+          like(users.email, 'test-%')
+        )
+      );
+    
+    const testUserIds = new Set(allUsersList.map(u => u.id));
+    
+    // Find tournaments that have test users as participants
+    if (testUserIds.size > 0) {
+      const allParticipants = await db.select()
+        .from(tournamentParticipants)
+        .where(inArray(tournamentParticipants.userId, Array.from(testUserIds)));
+      
+      allParticipants.forEach(p => {
+        testTournamentIds.add(p.tournamentId);
+      });
+    }
+    
+    const testTournaments = allTournaments.filter(t => testTournamentIds.has(t.id));
     
     if (testTournaments.length === 0) {
       return res.json({
@@ -355,23 +394,27 @@ router.delete('/clear-test-data', async (req, res) => {
         // Delete the tournament
         await db.delete(tournaments).where(eq(tournaments.id, tournament.id));
         
-        // Delete test users (those with test emails for this tournament)
-        const testUserEmails = participants.map(p => {
-          // Extract test user emails pattern
-          return `test-%-${tournament.id}-%@test.com`;
-        });
-        
-        // Delete users with test emails matching this tournament
-        await db.delete(users).where(
-          // This is a simplified approach - in production, you'd want more precise matching
-          eq(users.email, `test-${tournament.id}`)
-        );
-        
-      cleared++;
+        cleared++;
       } catch (error: any) {
         errors.push(`Failed to clear tournament ${tournament.id}: ${error.message}`);
         console.error(`Error clearing tournament ${tournament.id}:`, error);
       }
+    }
+    
+    // Delete all test users (those with @test.com emails or test- prefix)
+    // Do this after tournaments to avoid foreign key issues
+    try {
+      const deletedUsers = await db.delete(users).where(
+        or(
+          like(users.email, '%@test.com'),
+          like(users.email, 'test-%')
+        )
+      ).returning();
+      
+      console.log(`Deleted ${deletedUsers.length} test users`);
+    } catch (error: any) {
+      console.error('Error deleting test users:', error);
+      errors.push(`Failed to delete some test users: ${error.message}`);
     }
     
     res.json({
