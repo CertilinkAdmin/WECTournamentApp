@@ -37,11 +37,6 @@ export function calculateCompetitorScore(
     positionToCupCode[pos.position] = pos.cupCode;
   });
 
-  // If no positions assigned, return 0
-  if (!positionToCupCode.left || !positionToCupCode.right) {
-    return 0;
-  }
-
   let total = 0;
 
   for (const score of detailedScores) {
@@ -49,12 +44,10 @@ export function calculateCompetitorScore(
     const isLeftCup = positionToCupCode.left === cupCode;
     const isRightCup = positionToCupCode.right === cupCode;
 
-    if (!isLeftCup && !isRightCup) {
-      // This cup code wasn't in this match
-      continue;
-    }
+    // If neither position matches this cup code, skip this judge entry
+    if (!isLeftCup && !isRightCup) continue;
 
-    // Award points based on judge's left/right selection
+    // Award points based on judge's left/right selections
     // Visual Latte Art (3 points) - only for Cappuccino
     if (score.sensoryBeverage === 'Cappuccino' && score.visualLatteArt) {
       const winnerPosition = score.visualLatteArt as 'left' | 'right';
@@ -87,12 +80,29 @@ export function calculateCompetitorScore(
       }
     }
 
-    // Overall (5 points)
-    if (score.overall) {
-      const winnerPosition = score.overall as 'left' | 'right';
-      if ((winnerPosition === 'left' && isLeftCup) || (winnerPosition === 'right' && isRightCup)) {
-        total += CATEGORY_POINTS.overall;
-      }
+    // Overall (5 points) - derived from majority of sensory categories (Taste, Tactile, Flavour)
+    let leftWins = 0;
+    let rightWins = 0;
+
+    if (score.taste === 'left') leftWins++;
+    if (score.taste === 'right') rightWins++;
+    if (score.tactile === 'left') leftWins++;
+    if (score.tactile === 'right') rightWins++;
+    if (score.flavour === 'left') leftWins++;
+    if (score.flavour === 'right') rightWins++;
+
+    let overallWinner: 'left' | 'right' | null = null;
+    if (leftWins > rightWins) {
+      overallWinner = 'left';
+    } else if (rightWins > leftWins) {
+      overallWinner = 'right';
+    }
+
+    if (
+      overallWinner &&
+      ((overallWinner === 'left' && isLeftCup) || (overallWinner === 'right' && isRightCup))
+    ) {
+      total += CATEGORY_POINTS.overall;
     }
   }
 

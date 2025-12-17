@@ -189,28 +189,16 @@ export class BracketGenerator {
       });
     }
 
-    // Generate Round 1 matches with proper bracket splitting
+    // Generate Round 1 matches
     const round1Pairings = this.generateRound1Pairings(totalParticipants);
     let heatNumber = 1;
 
-    // Split pairings into N groups (where N = number of enabled stations)
-    const numStations = stationsByOrder.length;
-    const groupSize = Math.ceil(round1Pairings.length / numStations);
-    const groups: typeof round1Pairings[] = [];
-    for (let i = 0; i < numStations; i++) {
-      const start = i * groupSize;
-      const end = start + groupSize;
-      groups.push(round1Pairings.slice(start, end));
-    }
-
-    // Assign each group to a station
-    const stationAssignments = stationsByOrder.map((station, index) => ({
-      station,
-      pairings: groups[index] || []
-    }));
-
-    for (const { station, pairings } of stationAssignments) {
-      for (const pairing of pairings) {
+    // Assign Round 1 heats to stations in strict round-robin order:
+    // A, B, C, A, B, C, ... so with stations [A,B,C] and heats [1..9]:
+    // A: 1,4,7  B: 2,5,8  C: 3,6,9
+    for (const pairing of round1Pairings) {
+      const stationIndex = (heatNumber - 1) % stationsByOrder.length;
+      const station = stationsByOrder[stationIndex];
         const competitor1 = participants.find(p => p.seed === pairing.seed1);
         const competitor2 = pairing.seed2 === 0 ? null : participants.find(p => p.seed === pairing.seed2);
 
@@ -427,7 +415,6 @@ export class BracketGenerator {
         await storage.updateStation(station.id, { nextAvailableAt: nextAvailable });
 
         heatNumber++;
-      }
     }
 
     // Create placeholder matches for subsequent rounds
@@ -670,9 +657,9 @@ export class BracketGenerator {
    */
   private static assignRound1ToStations(
     assignments: BracketAssignment[],
-    stations: { id: number; name: string }[]
-  ): { station: { id: number; name: string }; pairings: BracketAssignment[] }[] {
-    const result: { station: { id: number; name: string }; pairings: BracketAssignment[] }[] = [];
+    stations: Station[]
+  ): { station: Station; pairings: BracketAssignment[] }[] {
+    const result: { station: Station; pairings: BracketAssignment[] }[] = [];
 
     // Initialize station assignments
     for (const station of stations) {

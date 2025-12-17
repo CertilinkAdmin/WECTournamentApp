@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Gavel, CheckCircle2, Clock, XCircle, ChevronDown } from 'lucide-react';
-import type { Match, JudgeDetailedScore, HeatJudge } from '@shared/schema';
+import type { HeatJudge, JudgeDetailedScore, User } from '@shared/schema';
 
 interface JudgesStatusMonitorProps {
   matchId: number | null;
-  segmentType?: 'CAPPUCCINO' | 'ESPRESSO';
+  // Kept for API compatibility / labelling, but completion is always based on all segments
+  segmentId?: string;
 }
 
 interface JudgeStatus {
@@ -26,125 +27,145 @@ interface JudgeStatus {
   };
 }
 
-export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStatusMonitorProps) {
+interface GlobalLockStatus {
+  isLocked: boolean;
+  allSegmentsEnded: boolean;
+  allJudgesSubmitted: boolean;
+  missingSubmissions: Array<{
+    judgeName: string;
+    role: 'ESPRESSO' | 'CAPPUCCINO';
+    // e.g. ['Latte Art', 'Cappuccino Sensory'] for an espresso judge who still owes both
+    missing: string[];
+  }>;
+}
+
+export default function JudgesStatusMonitor({ matchId, segmentId }: JudgesStatusMonitorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  
-  // Fetch judge completion status for BOTH segments to show all judges
-  const { data: cappuccinoCompletion, isLoading: cappuccinoLoading } = useQuery<{
-    allComplete: boolean;
-    judges: Array<{
-      judgeId: number;
-      judgeName: string;
-      role: 'ESPRESSO' | 'CAPPUCCINO';
-      completed: boolean;
-    }>;
-  }>({
-    queryKey: [`/api/matches/${matchId}/segments/CAPPUCCINO/judges-completion`],
-    enabled: !!matchId,
-    refetchInterval: 5000, // Poll every 5 seconds
-  });
 
-  const { data: espressoCompletion, isLoading: espressoLoading } = useQuery<{
-    allComplete: boolean;
-    judges: Array<{
-      judgeId: number;
-      judgeName: string;
-      role: 'ESPRESSO' | 'CAPPUCCINO';
-      completed: boolean;
-    }>;
-  }>({
-    queryKey: [`/api/matches/${matchId}/segments/ESPRESSO/judges-completion`],
-    enabled: !!matchId,
-    refetchInterval: 5000, // Poll every 5 seconds
-  });
-
-  // Combine both completion statuses
-  const completionStatus = React.useMemo(() => {
-    if (!cappuccinoCompletion || !espressoCompletion) return null;
-    
-    // Merge judges from both segments, avoiding duplicates
-    const allJudges = new Map<number, {
-      judgeId: number;
-      judgeName: string;
-      role: 'ESPRESSO' | 'CAPPUCCINO';
-      completed: boolean;
-    }>();
-
-    // Add Cappuccino judges
-    cappuccinoCompletion.judges.forEach(judge => {
-      allJudges.set(judge.judgeId, judge);
-    });
-
-    // Add Espresso judges (will update if same judge ID exists)
-    espressoCompletion.judges.forEach(judge => {
-      const existing = allJudges.get(judge.judgeId);
-      if (existing) {
-        // If judge exists, mark as complete if EITHER segment is complete
-        allJudges.set(judge.judgeId, {
-          ...judge,
-          completed: existing.completed || judge.completed,
-        });
-      } else {
-        allJudges.set(judge.judgeId, judge);
-      }
-    });
-
-    const judgesArray = Array.from(allJudges.values());
-    const allComplete = judgesArray.length > 0 && judgesArray.every(j => j.completed);
-
-    return {
-      allComplete,
-      judges: judgesArray,
-    };
-  }, [cappuccinoCompletion, espressoCompletion]);
-
-  const isLoading = cappuccinoLoading || espressoLoading;
-
-  // Fetch detailed scores to get category-level status
-  const { data: detailedScores = [] } = useQuery<JudgeDetailedScore[]>({
-    queryKey: [`/api/matches/${matchId}/detailed-scores`],
+  // Fetch global judge/segment completion status (single source of truth)
+  const { data: globalStatus, isLoading: globalLoading } = useQuery<GlobalLockStatus | null>({
+    queryKey: [`/api/matches/${matchId}/global-lock-status`],
+    queryFn: async () => {
+      if (!matchId) return null;
+      const res = await fetch(`/api/matches/${matchId}/global-lock-status`);
+      if (!res.ok) return null;
+      return res.json();
+    },
     enabled: !!matchId,
     refetchInterval: 5000,
   });
 
-  // Fetch match judges to get all assigned judges
-  const { data: matchJudges = [] } = useQuery<HeatJudge[]>({
+  // Fetch detailed judge scorecards for this match
+  const { data: detailedScores = [], isLoading: scoresLoading } = useQuery<JudgeDetailedScore[]>({
+    queryKey: [`/api/matches/${matchId}/detailed-scores`],
+    queryFn: async () => {
+      if (!matchId) return [];
+      const res = await fetch(`/api/matches/${matchId}/detailed-scores`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!matchId,
+    refetchInterval: 5000,
+  });
+
+  // Fetch all judges on this match
+  const { data: matchJudges = [], isLoading: judgesLoading } = useQuery<HeatJudge[]>({
     queryKey: [`/api/matches/${matchId}/judges`],
+    queryFn: async () => {
+      if (!matchId) return [];
+      const res = await fetch(`/api/matches/${matchId}/judges`);
+      if (!res.ok) return [];
+      return res.json();
+    },
     enabled: !!matchId,
   });
 
-  // Calculate category-level status for each judge
-  const judgeStatuses: JudgeStatus[] = React.useMemo(() => {
-    if (!completionStatus || !detailedScores || !matchJudges) return [];
+  // Fetch all users to resolve judge names
+  const { data: allUsers = [], isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+  });
 
-    return matchJudges.map(judge => {
-      const judgeCompletion = completionStatus.judges.find(j => j.judgeId === judge.judgeId);
-      
-      // Find score based on judge's role (CAPPUCCINO judges score Cappuccino, ESPRESSO judges score Espresso)
-      const expectedBeverage = judge.role === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso';
-      const judgeScore = detailedScores.find(
-        score => score.judgeName === judgeCompletion?.judgeName && score.sensoryBeverage === expectedBeverage
+  const judgeStatuses: JudgeStatus[] = useMemo(() => {
+    if (!matchId || !matchJudges.length || !allUsers.length) return [];
+
+    const missingMap = new Map<string, string[]>();
+    globalStatus?.missingSubmissions?.forEach((m) => {
+      const key = `${m.judgeName}|${m.role}`;
+      missingMap.set(key, m.missing);
+    });
+
+    return matchJudges.map((judge) => {
+      const user = allUsers.find((u) => u.id === judge.judgeId);
+      const judgeName = user?.name || `Judge ${judge.id}`;
+
+      const scoresForJudge = detailedScores.filter(
+        (s) => s.matchId === matchId && s.judgeName === judgeName
       );
 
-      const categories = {
-        ...(judge.role === 'CAPPUCCINO' && {
-          visualLatteArt: judgeScore?.winnerCupCodeVisualLatteArt || judgeScore?.visualLatteArt ? 'complete' as const : 'incomplete' as const,
-        }),
-        taste: judgeScore?.winnerCupCodeTaste || judgeScore?.taste ? 'complete' as const : 'incomplete' as const,
-        tactile: judgeScore?.winnerCupCodeTactile || judgeScore?.tactile ? 'complete' as const : 'incomplete' as const,
-        flavour: judgeScore?.winnerCupCodeFlavour || judgeScore?.flavour ? 'complete' as const : 'incomplete' as const,
-        overall: judgeScore?.winnerCupCodeOverall || judgeScore?.overall ? 'complete' as const : 'incomplete' as const,
-      };
+      const latteArtScore = scoresForJudge.find(
+        (s) => s.visualLatteArt === 'left' || s.visualLatteArt === 'right'
+      );
+
+      const cappuccinoScore = scoresForJudge.find((s) => s.sensoryBeverage === 'Cappuccino');
+      const espressoScore = scoresForJudge.find((s) => s.sensoryBeverage === 'Espresso');
+
+      let visualLatteArt: 'complete' | 'incomplete' | undefined;
+      let taste: 'complete' | 'incomplete';
+      let tactile: 'complete' | 'incomplete';
+      let flavour: 'complete' | 'incomplete';
+      let overall: 'complete' | 'incomplete';
+
+      if (judge.role === 'CAPPUCCINO') {
+        // Cappuccino judge: latte art + cappuccino sensory
+        const latteDone = latteArtScore && (latteArtScore.visualLatteArt === 'left' || latteArtScore.visualLatteArt === 'right');
+        visualLatteArt = latteDone ? 'complete' : 'incomplete';
+
+        const s = cappuccinoScore;
+        const tasteDone = !!s && (s.taste === 'left' || s.taste === 'right');
+        const tactileDone = !!s && (s.tactile === 'left' || s.tactile === 'right');
+        const flavourDone = !!s && (s.flavour === 'left' || s.flavour === 'right');
+        const overallDone = !!s && (s.overall === 'left' || s.overall === 'right');
+
+        taste = tasteDone ? 'complete' : 'incomplete';
+        tactile = tactileDone ? 'complete' : 'incomplete';
+        flavour = flavourDone ? 'complete' : 'incomplete';
+        overall = overallDone ? 'complete' : 'incomplete';
+      } else {
+        // Espresso judges: only espresso sensory
+        visualLatteArt = undefined;
+
+        const s = espressoScore;
+        const tasteDone = !!s && (s.taste === 'left' || s.taste === 'right');
+        const tactileDone = !!s && (s.tactile === 'left' || s.tactile === 'right');
+        const flavourDone = !!s && (s.flavour === 'left' || s.flavour === 'right');
+        const overallDone = !!s && (s.overall === 'left' || s.overall === 'right');
+
+        taste = tasteDone ? 'complete' : 'incomplete';
+        tactile = tactileDone ? 'complete' : 'incomplete';
+        flavour = flavourDone ? 'complete' : 'incomplete';
+        overall = overallDone ? 'complete' : 'incomplete';
+      }
+
+      const missing = missingMap.get(`${judgeName}|${judge.role}`) ?? [];
+      const completed = missing.length === 0;
 
       return {
         judgeId: judge.judgeId,
-        judgeName: judgeCompletion?.judgeName || `Judge ${judge.judgeId}`,
+        judgeName,
         role: judge.role,
-        completed: judgeCompletion?.completed || false,
-        categories: categories as any,
+        completed,
+        categories: {
+          ...(visualLatteArt ? { visualLatteArt } : {}),
+          taste,
+          tactile,
+          flavour,
+          overall,
+        },
       };
     });
-  }, [completionStatus, detailedScores, matchJudges]);
+  }, [matchId, matchJudges, detailedScores, allUsers, globalStatus]);
+
+  const isLoading = globalLoading || scoresLoading || judgesLoading || usersLoading;
 
   if (!matchId) {
     return (
@@ -160,7 +181,7 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
     return (
       <Card>
         <CardContent className="p-4 text-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto" />
         </CardContent>
       </Card>
     );
@@ -179,8 +200,8 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
 
   const getOverallStatus = (judge: JudgeStatus): 'green' | 'yellow' | 'red' => {
     const categoryCount = Object.keys(judge.categories).length;
-    const completedCount = Object.values(judge.categories).filter(c => c === 'complete').length;
-    
+    const completedCount = Object.values(judge.categories).filter((c) => c === 'complete').length;
+
     if (completedCount === categoryCount) return 'green';
     if (completedCount > 0) return 'yellow';
     return 'red';
@@ -191,26 +212,29 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
       case 'ESPRESSO':
         return 'Espresso Judge';
       case 'CAPPUCCINO':
-        return 'Cappuccino Judge';
+        return 'Cappuccino';
       default:
         return role;
     }
   };
 
-  // Calculate summary for collapsed state
-  const summaryStatus = completionStatus ? (
-    completionStatus.allComplete ? (
-      <Badge variant="default" className="text-xs">
-        <CheckCircle2 className="h-3 w-3 mr-1" />
-        All Complete
-      </Badge>
-    ) : (
-      <Badge variant="secondary" className="text-xs">
-        <Clock className="h-3 w-3 mr-1" />
-        {completionStatus.judges.filter(j => j.completed).length} / {completionStatus.judges.length} Complete
-      </Badge>
-    )
-  ) : null;
+  const allComplete = judgeStatuses.length > 0 && judgeStatuses.every((j) => j.completed);
+  const completedCount = judgeStatuses.filter((j) => j.completed).length;
+
+  const summaryStatus =
+    judgeStatuses.length > 0 ? (
+      allComplete ? (
+        <Badge variant="default" className="text-xs">
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          All Complete
+        </Badge>
+      ) : (
+        <Badge className="text-xs flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {completedCount} / {judgeStatuses.length} Complete
+        </Badge>
+      )
+    ) : null;
 
   return (
     <Card>
@@ -224,25 +248,18 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                 <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm min-w-0">
                   <Gavel className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="truncate">Judges Status Monitor</span>
-                  {segmentType && (
-                    <Badge variant="outline" className="ml-1 sm:ml-2 text-xs flex-shrink-0">
-                      {segmentType}
-                    </Badge>
-                  )}
+                  <span className="truncate">Judges Status</span>
                   <Badge variant="outline" className="ml-1 sm:ml-2 text-xs flex-shrink-0">
                     All Judges
                   </Badge>
                 </CardTitle>
                 {!isOpen && summaryStatus && (
-                  <div className="ml-1 sm:ml-2 flex-shrink-0">
-                    {summaryStatus}
-                  </div>
+                  <div className="ml-1 sm:ml-2 flex-shrink-0">{summaryStatus}</div>
                 )}
               </div>
               <ChevronDown
                 className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ml-2 ${
-                  isOpen ? 'transform rotate-180' : ''
+                  isOpen ? 'rotate-180' : ''
                 }`}
               />
             </Button>
@@ -250,83 +267,110 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="space-y-3 sm:space-y-4 pt-0 p-4 sm:p-6">
-        {judgeStatuses.length === 0 ? (
-          <div className="text-center text-sm text-muted-foreground py-4">
-            No judges assigned to this match
-          </div>
-        ) : (
-          judgeStatuses.map((judge) => {
-            const overallStatus = getOverallStatus(judge);
-            const statusColor = overallStatus === 'green' ? 'bg-green-500' : overallStatus === 'yellow' ? 'bg-yellow-500' : 'bg-red-500';
-            
-            return (
-              <div key={judge.judgeId} className="space-y-2 p-2.5 sm:p-3 border rounded-lg min-h-[4rem]">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-                    <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${statusColor} flex-shrink-0`} />
-                    <span className="font-medium text-xs sm:text-sm truncate">{judge.judgeName}</span>
-                    <Badge variant="outline" className="text-xs flex-shrink-0">
-                      {getRoleLabel(judge.role)}
-                    </Badge>
-                  </div>
-                  {judge.completed && (
-                    <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
-                  )}
-                </div>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 mt-1 sm:mt-2">
-                  {judge.role === 'CAPPUCCINO' && judge.categories.visualLatteArt && (
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.visualLatteArt)}`} />
-                      <span className="text-muted-foreground">Visual Art</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.taste)}`} />
-                    <span className="text-muted-foreground">Taste</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.tactile)}`} />
-                    <span className="text-muted-foreground">Tactile</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.flavour)}`} />
-                    <span className="text-muted-foreground">Flavour</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.overall)}`} />
-                    <span className="text-muted-foreground font-medium">Overall</span>
-                  </div>
-                </div>
+            {judgeStatuses.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-4">
+                No judges assigned to this match
               </div>
-            );
-          })
-        )}
-        
-        {completionStatus && (
-          <div className="pt-2 sm:pt-3 border-t mt-2 sm:mt-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
-              <span className="text-muted-foreground">Overall Status:</span>
-              <Badge variant={completionStatus.allComplete ? 'default' : 'secondary'} className="text-xs w-fit">
-                {completionStatus.allComplete ? (
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
-                    All Complete
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3 flex-shrink-0" />
-                    In Progress
-                  </span>
+            ) : (
+              judgeStatuses.map((judge) => {
+                const overallStatus = getOverallStatus(judge);
+                const statusColor =
+                  overallStatus === 'green'
+                    ? 'bg-green-500'
+                    : overallStatus === 'yellow'
+                    ? 'bg-yellow-500'
+                    : 'bg-red-500';
+
+                return (
+                  <div key={judge.judgeId} className="space-y-2 p-2.5 sm:p-3 border rounded-lg min-h-[4rem]">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                        <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${statusColor} flex-shrink-0`} />
+                        <span className="font-medium text-xs sm:text-sm truncate">{judge.judgeName}</span>
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
+                          {getRoleLabel(judge.role)}
+                        </Badge>
+                      </div>
+                      {judge.completed && (
+                        <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 mt-1 sm:mt-2">
+                      {typeof judge.categories.visualLatteArt !== 'undefined' && (
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.visualLatteArt!)}`} />
+                          <span className="text-muted-foreground">Visual Art</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.taste)}`} />
+                        <span className="text-muted-foreground">Taste</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.tactile)}`} />
+                        <span className="text-muted-foreground">Tactile</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.flavour)}`} />
+                        <span className="text-muted-foreground">Flavour</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs">
+                        {judge.categories.overall === 'complete' ? (
+                          <img
+                            src="/icons/overall trophy.png"
+                            alt="Overall winner trophy"
+                            className="w-4 h-4 rounded-sm"
+                          />
+                        ) : (
+                          <div
+                            className={`w-2 h-2 rounded-full ${getStatusColor(
+                              judge.categories.overall
+                            )}`}
+                          />
+                        )}
+                        <span className="text-muted-foreground font-medium">Overall</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {globalStatus && (
+              <div className="pt-2 sm:pt-3 border-t mt-2 sm:mt-3 text-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Heat status</span>
+                  <Badge variant={globalStatus.allJudgesSubmitted && globalStatus.allSegmentsEnded ? 'default' : 'secondary'}>
+                    {globalStatus.allSegmentsEnded
+                      ? globalStatus.allJudgesSubmitted
+                        ? 'All segments + scores complete'
+                        : 'Waiting for judges'
+                      : 'Segments in progress'}
+                  </Badge>
+                </div>
+                {!globalStatus.allJudgesSubmitted && globalStatus.missingSubmissions.length > 0 && (
+                  <div className="flex items-start gap-2 text-red-600">
+                    <Clock className="h-3 w-3 mt-0.5" />
+                    <div>
+                      <div className="font-semibold">Pending scores:</div>
+                      <ul className="list-disc list-inside">
+                        {globalStatus.missingSubmissions.map((m) => (
+                          <li key={`${m.judgeName}-${m.role}`}>
+                            {m.judgeName} ({m.role}) – {m.missing.join(', ')}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 )}
-              </Badge>
-            </div>
-          </div>
-        )}
+              </div>
+            )}
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
     </Card>
   );
 }
+
 

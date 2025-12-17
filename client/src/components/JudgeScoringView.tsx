@@ -88,6 +88,7 @@ export default function JudgeScoringView({
   const [cappuccinoTaste, setCappuccinoTaste] = useState<'left' | 'right' | null>(null);
   const [cappuccinoTactile, setCappuccinoTactile] = useState<'left' | 'right' | null>(null);
   const [cappuccinoFlavour, setCappuccinoFlavour] = useState<'left' | 'right' | null>(null);
+  // Overall for sensory is derived (2 of 3 categories), so we don't take direct input
   const [cappuccinoOverall, setCappuccinoOverall] = useState<'left' | 'right' | null>(null);
   
   // Espresso sensory (only Espresso judge scores this)
@@ -431,31 +432,47 @@ export default function JudgeScoringView({
       setLatteArtVisual(null);
     }
 
-    // Load Cappuccino sensory scores
-    if (existingCappuccinoScore) {
-      setCappuccinoTaste(existingCappuccinoScore.taste as 'left' | 'right' | null);
-      setCappuccinoTactile(existingCappuccinoScore.tactile as 'left' | 'right' | null);
-      setCappuccinoFlavour(existingCappuccinoScore.flavour as 'left' | 'right' | null);
-      setCappuccinoOverall(existingCappuccinoScore.overall as 'left' | 'right' | null);
-    } else {
-      setCappuccinoTaste(null);
-      setCappuccinoTactile(null);
-      setCappuccinoFlavour(null);
-      setCappuccinoOverall(null);
-    }
+        // Load Cappuccino sensory scores (overall is derived from category winners)
+        if (existingCappuccinoScore) {
+          setCappuccinoTaste(existingCappuccinoScore.taste as 'left' | 'right' | null);
+          setCappuccinoTactile(existingCappuccinoScore.tactile as 'left' | 'right' | null);
+          setCappuccinoFlavour(existingCappuccinoScore.flavour as 'left' | 'right' | null);
+          const cappVotes = [
+            existingCappuccinoScore.taste,
+            existingCappuccinoScore.tactile,
+            existingCappuccinoScore.flavour,
+          ];
+          const leftWins = cappVotes.filter((v) => v === 'left').length;
+          const rightWins = cappVotes.filter((v) => v === 'right').length;
+          const derived = leftWins > rightWins ? 'left' : rightWins > leftWins ? 'right' : null;
+          setCappuccinoOverall(derived);
+        } else {
+          setCappuccinoTaste(null);
+          setCappuccinoTactile(null);
+          setCappuccinoFlavour(null);
+          setCappuccinoOverall(null);
+        }
 
-    // Load Espresso sensory scores
-    if (existingEspressoScore) {
-      setEspressoTaste(existingEspressoScore.taste as 'left' | 'right' | null);
-      setEspressoTactile(existingEspressoScore.tactile as 'left' | 'right' | null);
-      setEspressoFlavour(existingEspressoScore.flavour as 'left' | 'right' | null);
-      setEspressoOverall(existingEspressoScore.overall as 'left' | 'right' | null);
-    } else {
-      setEspressoTaste(null);
-      setEspressoTactile(null);
-      setEspressoFlavour(null);
-      setEspressoOverall(null);
-    }
+        // Load Espresso sensory scores (overall is derived from category winners)
+        if (existingEspressoScore) {
+          setEspressoTaste(existingEspressoScore.taste as 'left' | 'right' | null);
+          setEspressoTactile(existingEspressoScore.tactile as 'left' | 'right' | null);
+          setEspressoFlavour(existingEspressoScore.flavour as 'left' | 'right' | null);
+          const espVotes = [
+            existingEspressoScore.taste,
+            existingEspressoScore.tactile,
+            existingEspressoScore.flavour,
+          ];
+          const leftWins = espVotes.filter((v) => v === 'left').length;
+          const rightWins = espVotes.filter((v) => v === 'right').length;
+          const derived = leftWins > rightWins ? 'left' : rightWins > leftWins ? 'right' : null;
+          setEspressoOverall(derived);
+        } else {
+          setEspressoTaste(null);
+          setEspressoTactile(null);
+          setEspressoFlavour(null);
+          setEspressoOverall(null);
+        }
   }, [existingLatteArtScore, existingCappuccinoScore, existingEspressoScore]);
 
   // Reset scoring state when match changes (only if no existing scores)
@@ -495,6 +512,8 @@ export default function JudgeScoringView({
       // Also invalidate judge completion queries to update completion status
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/segments/ESPRESSO/judges-completion`] });
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/segments/CAPPUCCINO/judges-completion`] });
+      // Keep global lock / judges status monitor in sync
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/global-lock-status`] });
       toast({
         title: 'Score Submitted',
         description: 'Your score has been submitted successfully.',
@@ -571,14 +590,21 @@ export default function JudgeScoringView({
       return;
     }
 
-    if (!cappuccinoTaste || !cappuccinoTactile || !cappuccinoFlavour || !cappuccinoOverall) {
+    if (!cappuccinoTaste || !cappuccinoTactile || !cappuccinoFlavour) {
       toast({
         title: 'Validation Error',
-        description: 'Please complete all Cappuccino sensory categories',
+        description: 'Please complete all Cappuccino sensory categories (Taste, Tactile, Flavour)',
         variant: 'destructive',
       });
       return;
     }
+
+    // Derive overall winner from majority of the three sensory categories
+    const cappuccinoVotes = [cappuccinoTaste, cappuccinoTactile, cappuccinoFlavour];
+    const leftWins = cappuccinoVotes.filter(v => v === 'left').length;
+    const rightWins = cappuccinoVotes.filter(v => v === 'right').length;
+    const derivedOverall: 'left' | 'right' = leftWins > rightWins ? 'left' : 'right';
+    setCappuccinoOverall(derivedOverall);
 
     // Only submit Cappuccino sensory - don't include visualLatteArt to preserve existing value
     const scoreData: InsertJudgeDetailedScore = {
@@ -588,7 +614,7 @@ export default function JudgeScoringView({
       taste: cappuccinoTaste,
       tactile: cappuccinoTactile,
       flavour: cappuccinoFlavour,
-      overall: cappuccinoOverall,
+      overall: derivedOverall,
       // Don't include visualLatteArt - it should remain independent
     };
 
@@ -633,20 +659,26 @@ export default function JudgeScoringView({
       return;
     }
 
-    if (!espressoTaste || !espressoTactile || !espressoFlavour || !espressoOverall) {
+    if (!espressoTaste || !espressoTactile || !espressoFlavour) {
       console.error('Validation failed: incomplete categories', {
         espressoTaste,
         espressoTactile,
         espressoFlavour,
-        espressoOverall
       });
       toast({
         title: 'Validation Error',
-        description: 'Please complete all Espresso sensory categories',
+        description: 'Please complete all Espresso sensory categories (Taste, Tactile, Flavour)',
         variant: 'destructive',
       });
       return;
     }
+
+    // Derive overall winner from majority of the three sensory categories
+    const espressoVotes = [espressoTaste, espressoTactile, espressoFlavour];
+    const leftWins = espressoVotes.filter(v => v === 'left').length;
+    const rightWins = espressoVotes.filter(v => v === 'right').length;
+    const derivedOverall: 'left' | 'right' = leftWins > rightWins ? 'left' : 'right';
+    setEspressoOverall(derivedOverall);
 
     // Only submit Espresso sensory - don't include visualLatteArt to preserve existing value
     const scoreData: InsertJudgeDetailedScore = {
@@ -656,7 +688,7 @@ export default function JudgeScoringView({
       taste: espressoTaste,
       tactile: espressoTactile,
       flavour: espressoFlavour,
-      overall: espressoOverall,
+      overall: derivedOverall,
       // Don't include visualLatteArt - it should remain independent
     };
 
@@ -679,8 +711,10 @@ export default function JudgeScoringView({
 
   // Check if scoring is complete for each segment
   const isLatteArtComplete = latteArtVisual !== null;
-  const isCappuccinoSensoryComplete = cappuccinoTaste !== null && cappuccinoTactile !== null && cappuccinoFlavour !== null && cappuccinoOverall !== null;
-  const isEspressoSensoryComplete = espressoTaste !== null && espressoTactile !== null && espressoFlavour !== null && espressoOverall !== null;
+  const isCappuccinoSensoryComplete =
+    cappuccinoTaste !== null && cappuccinoTactile !== null && cappuccinoFlavour !== null;
+  const isEspressoSensoryComplete =
+    espressoTaste !== null && espressoTactile !== null && espressoFlavour !== null;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -1080,33 +1114,6 @@ export default function JudgeScoringView({
                             type="checkbox"
                             checked={cappuccinoFlavour === 'right'}
                             onChange={(e) => setCappuccinoFlavour(e.target.checked ? 'right' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
-                          />
-                        </label>
-                      </div>
-
-                      {/* Overall */}
-                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
-                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={cappuccinoOverall === 'left'}
-                            onChange={(e) => setCappuccinoOverall(e.target.checked ? 'left' : null)}
-                            disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
-                          />
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
-                        </label>
-                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
-                          Overall
-                        </div>
-                        <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
-                          <input
-                            type="checkbox"
-                            checked={cappuccinoOverall === 'right'}
-                            onChange={(e) => setCappuccinoOverall(e.target.checked ? 'right' : null)}
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
                           />

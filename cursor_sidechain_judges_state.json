@@ -1,0 +1,91 @@
+{
+  "name": "Judges State & Status Synchronization",
+  "description": "Ensure Judge Scoring, Judges Status Monitor, cup code assignment, and station heat advancement share a single, consistent state machine.",
+  "tasks": [
+    {
+      "id": "jsm-1",
+      "name": "Analyze current judge scoring data model and APIs",
+      "description": "Map how heatSegments, heatScores, judge_detailed_scores, match_cup_positions, JudgeScoringView, JudgesStatusMonitor, StationLeadView, and LiveJudgesScoring interact. Identify the current state transitions for a heat from start to completion.",
+      "test": "Document the expected state transitions and data flows for one heat from start to finish and verify they match existing code paths.",
+      "prompt": "Read the following files: server/storage.ts, server/routes.ts (sections for segments, detailed-scores, global-lock-status, and advance-heat), shared/schema.ts, client/src/components/JudgeScoringView.tsx, client/src/components/JudgesStatusMonitor.tsx, client/src/components/StationLeadView.tsx, client/src/components/AdminCupPositionAssignment.tsx, and client/src/pages/live/LiveJudgesScoring.tsx. Draw a step-by-step state machine for a single heat covering: Start Heat -> DIAL_IN -> CAPPUCCINO -> ESPRESSO -> Judge scoring (latte + sensory) -> Cup code assignment -> Heat completion -> Station advance. Note where state is stored (tables/fields), which endpoints change it, and which UI components depend on which pieces.",
+      "files": [
+        "server/storage.ts",
+        "server/routes.ts",
+        "shared/schema.ts",
+        "client/src/components/JudgeScoringView.tsx",
+        "client/src/components/JudgesStatusMonitor.tsx",
+        "client/src/components/StationLeadView.tsx",
+        "client/src/components/AdminCupPositionAssignment.tsx",
+        "client/src/pages/live/LiveJudgesScoring.tsx"
+      ],
+      "expected_output": "A written description (or diagram) of the heat lifecycle with explicit list of states, transitions, and which APIs/UI components participate in each step."
+    },
+    {
+      "id": "jsm-2",
+      "name": "Unify judge completion logic and fix JudgesStatusMonitor",
+      "description": "Ensure JudgesStatusMonitor uses the same completion rules as the backend and shows all judges (cappuccino + espresso) as green when their required scorecards are submitted.",
+      "test": "1) Start a test heat, submit latte + cappuccino + espresso scorecards for all judges. 2) Verify JudgesStatusMonitor shows all judges with green status and all categories green. 3) Remove one category from a judge and confirm their row turns partially complete (yellow) or red.",
+      "prompt": "Refactor client/src/components/JudgesStatusMonitor.tsx to use the global lock / judge completion logic instead of duplicating rules. Fetch `/api/matches/:id/global-lock-status`, `/api/matches/:id/detailed-scores`, `/api/matches/:id/judges`, and `/api/users`. For each HeatJudge, derive their display name from users, compute which categories (latte art, cappuccino sensory, espresso sensory) are complete from judge_detailed_scores, and determine if the judge is fully complete by checking that they have a latte art decision and all required sensory categories for their role. Use this per-judge completion instead of the segment-specific `/segments/:segment/judges-completion` response. The overall status (All Complete / In Progress) should be based on whether all judges are complete. Keep the existing visual layout but ensure both cappuccino and espresso judges can turn green when their responsibilities are done, regardless of which segment is currently active.",
+      "files": [
+        "client/src/components/JudgesStatusMonitor.tsx",
+        "server/storage.ts",
+        "server/routes.ts"
+      ],
+      "expected_output": "Updated JudgesStatusMonitor that queries global-lock-status, shows all judges with accurate per-category and overall completion, and stays in sync with judge_detailed_scores and global lock state."
+    },
+    {
+      "id": "jsm-3",
+      "name": "Enforce heat state machine in StationLeadView and backend",
+      "description": "Ensure that for every heat, the flow is strictly: Start Heat (sets match RUNNING and starts DIAL_IN) -> DIAL_IN -> CAPPUCCINO -> ESPRESSO -> all judges submit -> admin assigns cup codes -> scores calculated -> station advances to next heat/round.",
+      "test": "1) In a test tournament, verify that on every round: (a) segments can only start when the heat is RUNNING and the previous segment is ENDED; (b) judges cannot score before their segment is RUNNING; (c) advance-heat is blocked until all segments are ENDED, all judges have submitted, and cup codes are assigned; (d) after advance, next heat is READY and previous heat is DONE.",
+      "prompt": "Review StationLeadView (client/src/components/StationLeadView.tsx) and the corresponding backend routes `/api/matches/:id`, `/api/matches/:id/segments`, `/api/segments/:id`, and `/api/stations/:id/advance-heat`. Ensure that: (1) the `Start Heat` button always sets the match status to RUNNING and automatically starts DIAL_IN for every heat; (2) segment Start buttons are disabled until the heat is RUNNING and the previous segment is ENDED; (3) the espresso and cappuccino segments cannot start before DIAL_IN is ended; (4) the advance-heat route checks global-lock-status and cup positions before marking the heat DONE and advancing to the next heat; (5) any discrepancies between client-side checks (allJudgesCompleted, cupPositionsAssigned) and backend global-lock-status are resolved so both use the same logic.",
+      "files": [
+        "client/src/components/StationLeadView.tsx",
+        "server/routes.ts",
+        "server/storage.ts"
+      ],
+      "expected_output": "Consistent, single-source-of-truth heat state machine where UI controls and backend validations enforce the same sequence: DIAL_IN -> CAPPUCCINO -> ESPRESSO -> judge scoring -> cup codes -> advance."
+    },
+    {
+      "id": "jsm-4",
+      "name": "Align JudgeScoringView and status labels (Pending/Done) with backend state",
+      "description": "Verify and adjust JudgeScoringView so that its Pending/Submitted indicators match the actual presence of judge_detailed_scores and the global-lock-status results.",
+      "test": "For a test heat, (1) submit only latte art and confirm latte art shows Submitted while sensory sections remain Pending; (2) submit cappuccino/espresso sensory and confirm the corresponding sections show Submitted; (3) verify that re-opening the same match correctly reflects existing submissions; (4) verify that once global-lock-status.isLocked becomes true, all scoring controls are disabled and UI shows that scoring is done.",
+      "prompt": "Audit client/src/components/JudgeScoringView.tsx to confirm how it derives `latteArtSubmitted`, `cappuccinoSensorySubmitted`, and `espressoSensorySubmitted` from existing judge_detailed_scores. Ensure these flags are based on the same conditions used by `getGlobalLockStatus` (latte art visual_latte_art set, all four sensory categories set for the judge's role). Update the `existingLatteArtScore`, `existingCappuccinoScore`, and `existingEspressoScore` selectors and the `submitScoreMutation.onSuccess` invalidations so that JudgesStatusMonitor, JudgeScoringView, LiveJudgesScoring, and StationLeadView all observe consistent completion state via `/api/matches/:id/detailed-scores` and `/api/matches/:id/global-lock-status`.",
+      "files": [
+        "client/src/components/JudgeScoringView.tsx",
+        "server/storage.ts"
+      ],
+      "expected_output": "JudgeScoringView Pending/Submitted labels and button disablement are fully consistent with the backend judge_detailed_scores and global-lock-status logic, and they keep JudgesStatusMonitor and LiveJudgesScoring in sync via query invalidations."
+    },
+    {
+      "id": "jsm-5",
+      "name": "Run OPUX on Judge-facing and Station Lead UIs",
+      "description": "Use the Lighthouse MCP + Responsive Refactor + Tailwind Optimizer workflow on JudgeScoringView, JudgesStatusMonitor, LiveJudgesScoring, and StationLeadView to ensure good performance, accessibility, and responsive behavior.",
+      "test": "Run Lighthouse mobile audits on the judge scoring and station lead pages. Achieve >=90 Performance, >=95 Accessibility, >=95 Best Practices, and >=90 SEO. Verify that the Judges Status Monitor and scoring UIs look good on mobile and desktop, with large tap targets and no horizontal scrolling.",
+      "prompt": "1) Use the Lighthouse MCP (mcp_lighthouse_run_audit and mcp_lighthouse_get_accessibility_score) to audit the judge scoring and station lead pages on the deployed environment. 2) Based on the results, apply Responsive Refactor MCP to improve layout (flex/grid, spacing, font sizes) in client/src/components/JudgeScoringView.tsx, client/src/components/JudgesStatusMonitor.tsx, and client/src/components/StationLeadView.tsx. 3) Use Tailwind Optimizer MCP to normalize classes and ensure consistent use of the design system. 4) Re-run Lighthouse to confirm improvements and document the before/after scores in a short note.",
+      "files": [
+        "client/src/components/JudgeScoringView.tsx",
+        "client/src/components/JudgesStatusMonitor.tsx",
+        "client/src/components/StationLeadView.tsx",
+        "client/src/pages/live/LiveJudgesScoring.tsx"
+      ],
+      "expected_output": "Improved, responsive judge and station-lead UIs with verified Lighthouse scores meeting the OPUX target thresholds and consistent visual/state behavior across components."
+    }
+  ],
+  "dependencies": {
+    "jsm-2": ["jsm-1"],
+    "jsm-3": ["jsm-1", "jsm-2"],
+    "jsm-4": ["jsm-1", "jsm-2", "jsm-3"],
+    "jsm-5": ["jsm-2", "jsm-3", "jsm-4"]
+  },
+  "execution_order": [
+    "jsm-1",
+    "jsm-2",
+    "jsm-3",
+    "jsm-4",
+    "jsm-5"
+  ]
+}
+
+
