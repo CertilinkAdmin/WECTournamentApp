@@ -1234,15 +1234,16 @@ export default function StationLeadView() {
                         className="w-full mt-3 text-sm sm:text-base touch-manipulation"
                         onClick={() => segment && handleStartSegment(segment.id)}
                         disabled={
-                            !segment || 
-                            !canStart || 
-                            (currentMatch.status !== 'RUNNING' && currentMatch.status !== 'READY')
-                          }
-                          data-testid={`button-start-${segmentCode}`}
-                        >
-                          <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
-                          Start {segmentCode.replace('_', ' ')}
-                        </Button>
+                          !segment ||
+                          !canStart ||
+                          // Enforce process order: segments can only start after the heat has started (RUNNING)
+                          currentMatch.status !== "RUNNING"
+                        }
+                        data-testid={`button-start-${segmentCode}`}
+                      >
+                        <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                        Start {segmentCode.replace("_", " ")}
+                      </Button>
                     )}
                     {isEnded && (
                       <div className="mt-3 text-xs text-foreground/60 dark:text-white/60 text-center">

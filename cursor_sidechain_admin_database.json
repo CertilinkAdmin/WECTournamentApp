@@ -1,0 +1,76 @@
+{
+  "name": "Admin Database Management Enhancement",
+  "description": "Review database tables, enhance admin database section with user management and approval features, and fix test data clearing",
+  "tasks": [
+    {
+      "id": "task-1",
+      "name": "Review Database Tables Structure",
+      "description": "Review and document all database tables, their relationships, and current schema alignment",
+      "test": "Verify schema.ts matches actual database structure",
+      "prompt": "Review the database schema in shared/schema.ts and compare with migrations. Document all tables: users, tournaments, tournament_participants, matches, stations, heat_segments, heat_judges, heat_scores, judge_detailed_scores, tournament_round_times, match_cup_positions. Verify relationships and foreign keys.",
+      "files": ["shared/schema.ts", "migrations/"],
+      "expected_output": "Documentation of all database tables with their fields and relationships"
+    },
+    {
+      "id": "task-2",
+      "name": "Update Admin Database Section UI",
+      "description": "Update the Database Tables section in AdminDashboard to show actual table data with view/edit capabilities",
+      "test": "Admin can view all database tables with their data in the UI",
+      "prompt": "Update client/src/pages/admin/AdminDashboard.tsx Database Tab section (around line 788-807). Replace static table list with dynamic table viewer that: 1) Fetches actual table data from API endpoint, 2) Displays table structure and row counts, 3) Shows data in a table format with pagination, 4) Includes buttons to view/edit table data. Create API endpoint GET /api/admin/database/tables/:tableName to fetch table data.",
+      "files": ["client/src/pages/admin/AdminDashboard.tsx", "server/routes/admin.ts"],
+      "expected_output": "Functional database table viewer in admin UI showing real data"
+    },
+    {
+      "id": "task-3",
+      "name": "Add User Management (Add/Delete Roles/Individuals)",
+      "description": "Add admin functionality to add new users and delete existing users with role management",
+      "test": "Admin can add new users with roles and delete users from admin panel",
+      "prompt": "Add user management section to AdminDashboard Database tab. Include: 1) Form to add new user (name, email, role, password optional), 2) List of all users with role badges, 3) Delete button for each user (with confirmation), 4) Edit role functionality. Create API endpoints: POST /api/admin/users (create), DELETE /api/admin/users/:id (delete), PATCH /api/admin/users/:id (update role). Use existing storage methods: createUser, getAllUsers, updateUser. Add deleteUser method to storage if missing.",
+      "files": ["client/src/pages/admin/AdminDashboard.tsx", "server/routes/admin.ts", "server/storage.ts"],
+      "expected_output": "Admin can add/delete users and manage roles from database section"
+    },
+    {
+      "id": "task-4",
+      "name": "Add Approval Functionality for Competitors, Judges, Station Leads",
+      "description": "Add admin approval interface for competitors, judges, and station leads in the database section",
+      "test": "Admin can approve/reject competitors, judges, and station leads from database section",
+      "prompt": "Add approval management section to AdminDashboard Database tab. Show: 1) Pending competitors (users with role BARISTA, approved=false or seed=0), 2) Pending judges (users with role JUDGE, approved=false or seed=0), 3) Pending station leads (users with role STATION_LEAD, approved=false or seed=0). For each, show approve/reject buttons. Approval should: set user.approved=true AND if they're tournament participants, set seed > 0. Create API endpoint POST /api/admin/users/:id/approve and POST /api/admin/users/:id/reject. Also handle tournament participant approval (update seed).",
+      "files": ["client/src/pages/admin/AdminDashboard.tsx", "server/routes/admin.ts"],
+      "expected_output": "Admin approval interface for all role types with approve/reject actions"
+    },
+    {
+      "id": "task-5",
+      "name": "Fix Clear Test Data Button",
+      "description": "Ensure clear test data button clears ALL test tournaments, not just those with 'test' in name",
+      "test": "Clear test data button deletes all tournaments with test users or test in name",
+      "prompt": "Review and fix server/routes/admin.ts DELETE /api/admin/clear-test-data endpoint (around line 305). Current logic finds tournaments by name containing 'test' or 'demo' OR tournaments with test users. Verify it correctly identifies ALL test tournaments including: 1) Tournaments with 'test' or 'demo' in name (case-insensitive), 2) Tournaments with participants having @test.com emails, 3) Tournaments with participants having 'test-' email prefix. Ensure it deletes all related data: judge_detailed_scores, heat_scores, heat_judges, heat_segments, matches, tournament_participants, stations, tournament_round_times, tournaments, and test users. Add logging to show which tournaments are being deleted.",
+      "files": ["server/routes/admin.ts"],
+      "expected_output": "Clear test data button successfully deletes all test tournaments and related data"
+    },
+    {
+      "id": "task-6",
+      "name": "Run OPUX Workflow on Admin Pages",
+      "description": "Run Lighthouse audit on admin pages and optimize for performance, accessibility, and responsive design",
+      "test": "Admin pages pass Lighthouse audit with 90+ performance, 95+ accessibility scores",
+      "prompt": "Run OPUX workflow: 1) Use Lighthouse MCP to audit admin pages (AdminDashboard, AdminTournaments) on mobile, 2) Identify layout, performance, accessibility issues, 3) Use Responsive Refactor MCP to fix layout issues, 4) Use Tailwind Optimizer MCP to clean up styles, 5) Re-run Lighthouse to verify improvements. Focus on database section UI improvements.",
+      "files": ["client/src/pages/admin/AdminDashboard.tsx"],
+      "expected_output": "Optimized admin pages with improved performance and accessibility scores"
+    }
+  ],
+  "dependencies": {
+    "task-2": ["task-1"],
+    "task-3": ["task-2"],
+    "task-4": ["task-3"],
+    "task-5": [],
+    "task-6": ["task-2", "task-3", "task-4"]
+  },
+  "execution_order": [
+    "task-1",
+    "task-2",
+    "task-3",
+    "task-4",
+    "task-5",
+    "task-6"
+  ]
+}
+

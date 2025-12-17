@@ -13,7 +13,7 @@ import {
   heatSegments,
   tournamentRoundTimes
 } from '../../shared/schema';
-import { eq, inArray, like, or, sql } from 'drizzle-orm';
+import { eq, inArray, like, or, sql, and } from 'drizzle-orm';
 import os from 'os';
 
 const router = Router();
@@ -304,19 +304,25 @@ router.post('/seed-test-data', async (req, res) => {
 // ===== CLEAR TEST DATA =====
 router.delete('/clear-test-data', async (req, res) => {
   try {
+    console.log('Starting test data cleanup...');
+    
     // Get all tournaments
     const allTournaments = await storage.getAllTournaments();
+    console.log(`Found ${allTournaments.length} total tournaments`);
     
     // Identify test tournaments by:
-    // 1. Name containing "test" or "demo"
-    // 2. Having participants with test email addresses (@test.com)
+    // 1. Name containing "test" or "demo" (case-insensitive)
+    // 2. Having participants with test email addresses (@test.com or test- prefix)
     const testTournamentIds = new Set<number>();
+    const testTournamentNames: string[] = [];
     
-    // First, find tournaments by name
+    // First, find tournaments by name (case-insensitive)
     allTournaments.forEach(t => {
       const nameLower = t.name.toLowerCase();
       if (nameLower.includes('test') || nameLower.includes('demo')) {
         testTournamentIds.add(t.id);
+        testTournamentNames.push(t.name);
+        console.log(`Found test tournament by name: ${t.name} (ID: ${t.id})`);
       }
     });
     
@@ -335,6 +341,7 @@ router.delete('/clear-test-data', async (req, res) => {
         )
       );
     
+    console.log(`Found ${allUsersList.length} test users`);
     const testUserIds = new Set(allUsersList.map(u => u.id));
     
     // Find tournaments that have test users as participants
@@ -343,12 +350,24 @@ router.delete('/clear-test-data', async (req, res) => {
         .from(tournamentParticipants)
         .where(inArray(tournamentParticipants.userId, Array.from(testUserIds)));
       
+      console.log(`Found ${allParticipants.length} test user participants`);
+      
       allParticipants.forEach(p => {
-        testTournamentIds.add(p.tournamentId);
+        if (!testTournamentIds.has(p.tournamentId)) {
+          const tournament = allTournaments.find(t => t.id === p.tournamentId);
+          if (tournament) {
+            testTournamentIds.add(p.tournamentId);
+            testTournamentNames.push(tournament.name);
+            console.log(`Found test tournament by test user: ${tournament.name} (ID: ${tournament.id})`);
+          }
+        }
       });
     }
     
     const testTournaments = allTournaments.filter(t => testTournamentIds.has(t.id));
+    
+    console.log(`Total test tournaments to clear: ${testTournaments.length}`);
+    console.log(`Tournament names: ${testTournamentNames.join(', ')}`);
     
     if (testTournaments.length === 0) {
       return res.json({
@@ -363,6 +382,8 @@ router.delete('/clear-test-data', async (req, res) => {
     
     for (const tournament of testTournaments) {
       try {
+        console.log(`Clearing tournament: ${tournament.name} (ID: ${tournament.id})`);
+        
         // Get all participants for this tournament
         const participants = await db.select()
           .from(tournamentParticipants)
@@ -394,10 +415,12 @@ router.delete('/clear-test-data', async (req, res) => {
         // Delete the tournament
         await db.delete(tournaments).where(eq(tournaments.id, tournament.id));
         
+        console.log(`Successfully cleared tournament: ${tournament.name}`);
         cleared++;
       } catch (error: any) {
-        errors.push(`Failed to clear tournament ${tournament.id}: ${error.message}`);
-        console.error(`Error clearing tournament ${tournament.id}:`, error);
+        const errorMsg = `Failed to clear tournament ${tournament.id} (${tournament.name}): ${error.message}`;
+        errors.push(errorMsg);
+        console.error(errorMsg, error);
       }
     }
     
@@ -417,12 +440,274 @@ router.delete('/clear-test-data', async (req, res) => {
       errors.push(`Failed to delete some test users: ${error.message}`);
     }
     
+    const message = `Cleared ${cleared} test tournament(s): ${testTournamentNames.join(', ')}${errors.length > 0 ? ` (${errors.length} error(s))` : ''}`;
+    console.log(message);
+    
     res.json({
       success: true,
       tournamentsCleared: cleared,
+      tournamentNames: testTournamentNames,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Cleared ${cleared} test tournament(s)${errors.length > 0 ? ` with ${errors.length} error(s)` : ''}`
+      message
     });
+  } catch (error: any) {
+    console.error('Error in clear-test-data:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== DATABASE TABLE MANAGEMENT =====
+// Get list of all database tables with row counts
+router.get('/database/tables', async (req, res) => {
+  try {
+    const tableNames = [
+      'users',
+      'tournaments',
+      'tournament_participants',
+      'matches',
+      'stations',
+      'heat_segments',
+      'heat_judges',
+      'heat_scores',
+      'judge_detailed_scores',
+      'tournament_round_times',
+      'match_cup_positions'
+    ];
+
+    const tables = await Promise.all(
+      tableNames.map(async (tableName) => {
+        try {
+          const result = await db.execute(
+            sql.raw(`SELECT COUNT(*) as count FROM ${tableName}`)
+          );
+          const count = result.rows[0]?.count || 0;
+          return { name: tableName, rowCount: parseInt(count as string, 10) };
+        } catch (error) {
+          return { name: tableName, rowCount: 0, error: 'Unable to read' };
+        }
+      })
+    );
+
+    res.json({ tables });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get table data with pagination
+router.get('/database/tables/:tableName', async (req, res) => {
+  try {
+    const { tableName } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
+
+    // Validate table name to prevent SQL injection
+    const validTables = [
+      'users',
+      'tournaments',
+      'tournament_participants',
+      'matches',
+      'stations',
+      'heat_segments',
+      'heat_judges',
+      'heat_scores',
+      'judge_detailed_scores',
+      'tournament_round_times',
+      'match_cup_positions'
+    ];
+
+    if (!validTables.includes(tableName)) {
+      return res.status(400).json({ error: 'Invalid table name' });
+    }
+
+    // Get total count
+    const countResult = await db.execute(
+      sql.raw(`SELECT COUNT(*) as count FROM ${tableName}`)
+    );
+    const totalCount = parseInt(countResult.rows[0]?.count as string, 10);
+
+    // Get table data
+    const dataResult = await db.execute(
+      sql.raw(`SELECT * FROM ${tableName} ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`)
+    );
+
+    // Get column names
+    const columnsResult = await db.execute(
+      sql.raw(`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '${tableName}' ORDER BY ordinal_position`)
+    );
+
+    res.json({
+      tableName,
+      columns: columnsResult.rows,
+      data: dataResult.rows,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== USER MANAGEMENT =====
+// Create user
+router.post('/users', async (req, res) => {
+  try {
+    const { name, email, role } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+
+    // Check if user already exists
+    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (existingUser.length > 0) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+
+    const newUser = await storage.createUser({
+      name,
+      email,
+      role: role || 'BARISTA',
+      approved: false,
+    });
+
+    res.json({ success: true, user: newUser });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete user
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    // Check if user exists
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if user is referenced in tournament_participants
+    const participants = await db
+      .select()
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.userId, userId))
+      .limit(1);
+
+    if (participants.length > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete user: user is registered in tournaments. Remove from tournaments first.',
+      });
+    }
+
+    // Delete user
+    await db.delete(users).where(eq(users.id, userId));
+
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user role
+router.patch('/users/:id', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { role, approved } = req.body;
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const updateData: any = {};
+    if (role) updateData.role = role;
+    if (approved !== undefined) updateData.approved = approved;
+
+    const updatedUser = await storage.updateUser(userId, updateData);
+    res.json({ success: true, user: updatedUser });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Approve user
+router.post('/users/:id/approve', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update user approval status
+    await storage.updateUser(userId, { approved: true });
+
+    // If user is a tournament participant, update their seed (approve them for tournament)
+    const userParticipants = await db
+      .select()
+      .from(tournamentParticipants)
+      .where(
+        and(
+          eq(tournamentParticipants.userId, userId),
+          eq(tournamentParticipants.seed, 0)
+        )
+      );
+
+    // Assign next available seed for each tournament they're in
+    for (const participant of userParticipants) {
+      const allTournamentParticipants = await db
+        .select()
+        .from(tournamentParticipants)
+        .where(eq(tournamentParticipants.tournamentId, participant.tournamentId));
+
+      const maxSeed = Math.max(
+        0,
+        ...allTournamentParticipants
+          .filter(p => p.seed > 0)
+          .map(p => p.seed)
+      );
+
+      await storage.updateParticipantSeed(participant.id, maxSeed + 1);
+    }
+
+    res.json({ success: true, message: 'User approved successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reject user
+router.post('/users/:id/reject', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update user approval status to false
+    await storage.updateUser(userId, { approved: false });
+
+    // Remove user from tournament participants (set seed to 0)
+    const participants = await db
+      .select()
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.userId, userId));
+
+    for (const participant of participants) {
+      await storage.updateParticipantSeed(participant.id, 0);
+    }
+
+    res.json({ success: true, message: 'User rejected' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

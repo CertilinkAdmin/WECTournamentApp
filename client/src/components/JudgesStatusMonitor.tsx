@@ -29,8 +29,8 @@ interface JudgeStatus {
 export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStatusMonitorProps) {
   const [isOpen, setIsOpen] = useState(false);
   
-  // Fetch judge completion status
-  const { data: completionStatus, isLoading } = useQuery<{
+  // Fetch judge completion status for BOTH segments to show all judges
+  const { data: cappuccinoCompletion, isLoading: cappuccinoLoading } = useQuery<{
     allComplete: boolean;
     judges: Array<{
       judgeId: number;
@@ -39,10 +39,66 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
       completed: boolean;
     }>;
   }>({
-    queryKey: [`/api/matches/${matchId}/segments/${segmentType || 'CAPPUCCINO'}/judges-completion`],
-    enabled: !!matchId && !!segmentType,
+    queryKey: [`/api/matches/${matchId}/segments/CAPPUCCINO/judges-completion`],
+    enabled: !!matchId,
     refetchInterval: 5000, // Poll every 5 seconds
   });
+
+  const { data: espressoCompletion, isLoading: espressoLoading } = useQuery<{
+    allComplete: boolean;
+    judges: Array<{
+      judgeId: number;
+      judgeName: string;
+      role: 'ESPRESSO' | 'CAPPUCCINO';
+      completed: boolean;
+    }>;
+  }>({
+    queryKey: [`/api/matches/${matchId}/segments/ESPRESSO/judges-completion`],
+    enabled: !!matchId,
+    refetchInterval: 5000, // Poll every 5 seconds
+  });
+
+  // Combine both completion statuses
+  const completionStatus = React.useMemo(() => {
+    if (!cappuccinoCompletion || !espressoCompletion) return null;
+    
+    // Merge judges from both segments, avoiding duplicates
+    const allJudges = new Map<number, {
+      judgeId: number;
+      judgeName: string;
+      role: 'ESPRESSO' | 'CAPPUCCINO';
+      completed: boolean;
+    }>();
+
+    // Add Cappuccino judges
+    cappuccinoCompletion.judges.forEach(judge => {
+      allJudges.set(judge.judgeId, judge);
+    });
+
+    // Add Espresso judges (will update if same judge ID exists)
+    espressoCompletion.judges.forEach(judge => {
+      const existing = allJudges.get(judge.judgeId);
+      if (existing) {
+        // If judge exists, mark as complete if EITHER segment is complete
+        allJudges.set(judge.judgeId, {
+          ...judge,
+          completed: existing.completed || judge.completed,
+        });
+      } else {
+        allJudges.set(judge.judgeId, judge);
+      }
+    });
+
+    const judgesArray = Array.from(allJudges.values());
+    const allComplete = judgesArray.length > 0 && judgesArray.every(j => j.completed);
+
+    return {
+      allComplete,
+      judges: judgesArray,
+    };
+  }, [cappuccinoCompletion, espressoCompletion]);
+
+  const isLoading = cappuccinoLoading || espressoLoading;
 
   // Fetch detailed scores to get category-level status
   const { data: detailedScores = [] } = useQuery<JudgeDetailedScore[]>({
@@ -61,22 +117,23 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
   const judgeStatuses: JudgeStatus[] = React.useMemo(() => {
     if (!completionStatus || !detailedScores || !matchJudges) return [];
 
-    const expectedBeverage = segmentType === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso';
-    
     return matchJudges.map(judge => {
       const judgeCompletion = completionStatus.judges.find(j => j.judgeId === judge.judgeId);
+      
+      // Find score based on judge's role (CAPPUCCINO judges score Cappuccino, ESPRESSO judges score Espresso)
+      const expectedBeverage = judge.role === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso';
       const judgeScore = detailedScores.find(
         score => score.judgeName === judgeCompletion?.judgeName && score.sensoryBeverage === expectedBeverage
       );
 
       const categories = {
-        ...(segmentType === 'CAPPUCCINO' && {
-          visualLatteArt: judgeScore?.visualLatteArt ? 'complete' as const : 'incomplete' as const,
+        ...(judge.role === 'CAPPUCCINO' && {
+          visualLatteArt: judgeScore?.winnerCupCodeVisualLatteArt || judgeScore?.visualLatteArt ? 'complete' as const : 'incomplete' as const,
         }),
-        taste: judgeScore?.taste ? 'complete' as const : 'incomplete' as const,
-        tactile: judgeScore?.tactile ? 'complete' as const : 'incomplete' as const,
-        flavour: judgeScore?.flavour ? 'complete' as const : 'incomplete' as const,
-        overall: judgeScore?.overall ? 'complete' as const : 'incomplete' as const,
+        taste: judgeScore?.winnerCupCodeTaste || judgeScore?.taste ? 'complete' as const : 'incomplete' as const,
+        tactile: judgeScore?.winnerCupCodeTactile || judgeScore?.tactile ? 'complete' as const : 'incomplete' as const,
+        flavour: judgeScore?.winnerCupCodeFlavour || judgeScore?.flavour ? 'complete' as const : 'incomplete' as const,
+        overall: judgeScore?.winnerCupCodeOverall || judgeScore?.overall ? 'complete' as const : 'incomplete' as const,
       };
 
       return {
@@ -87,7 +144,7 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
         categories: categories as any,
       };
     });
-  }, [completionStatus, detailedScores, matchJudges, segmentType]);
+  }, [completionStatus, detailedScores, matchJudges]);
 
   if (!matchId) {
     return (
@@ -173,6 +230,9 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
                       {segmentType}
                     </Badge>
                   )}
+                  <Badge variant="outline" className="ml-1 sm:ml-2 text-xs flex-shrink-0">
+                    All Judges
+                  </Badge>
                 </CardTitle>
                 {!isOpen && summaryStatus && (
                   <div className="ml-1 sm:ml-2 flex-shrink-0">
@@ -215,7 +275,7 @@ export default function JudgesStatusMonitor({ matchId, segmentType }: JudgesStat
                 </div>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 mt-1 sm:mt-2">
-                  {segmentType === 'CAPPUCCINO' && judge.categories.visualLatteArt && (
+                  {judge.role === 'CAPPUCCINO' && judge.categories.visualLatteArt && (
                     <div className="flex items-center gap-1.5 text-xs">
                       <div className={`w-2 h-2 rounded-full ${getStatusColor(judge.categories.visualLatteArt)}`} />
                       <span className="text-muted-foreground">Visual Art</span>

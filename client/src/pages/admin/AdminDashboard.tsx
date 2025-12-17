@@ -7,13 +7,105 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Activity, Users, Database, Pause, Play, Trash2, Plus, 
   Image, Settings, AlertTriangle, CheckCircle2, XCircle,
-  Server, Cpu, HardDrive, Wifi, Clock, Loader2
+  Server, Cpu, HardDrive, Wifi, Clock, Loader2, Eye, UserPlus, Shield
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import './AdminDashboard.css';
+
+// Table Data Viewer Component
+const TableDataViewer: React.FC<{ tableName: string }> = ({ tableName }) => {
+  const [page, setPage] = useState(1);
+  const limit = 50;
+
+  const { data, isLoading } = useQuery<{
+    tableName: string;
+    columns: Array<{ column_name: string; data_type: string }>;
+    data: any[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  }>({
+    queryKey: ['/api/admin/database/tables', tableName, page],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/database/tables/${tableName}?page=${page}&limit=${limit}`);
+      if (!response.ok) throw new Error('Failed to fetch table data');
+      return response.json();
+    },
+  });
+
+  if (isLoading) {
+    return <div className="text-center p-4">Loading table data...</div>;
+  }
+
+  if (!data) {
+    return <div className="text-center p-4 text-destructive">Failed to load table data</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse border">
+          <thead>
+            <tr className="bg-muted">
+              {data.columns.map((col) => (
+                <th key={col.column_name} className="border p-2 text-left font-semibold">
+                  {col.column_name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.data.length === 0 ? (
+              <tr>
+                <td colSpan={data.columns.length} className="text-center p-4 text-muted-foreground">
+                  No data found
+                </td>
+              </tr>
+            ) : (
+              data.data.map((row, idx) => (
+                <tr key={idx} className="border-b">
+                  {data.columns.map((col) => (
+                    <td key={col.column_name} className="border p-2 text-sm">
+                      {row[col.column_name] !== null && row[col.column_name] !== undefined
+                        ? String(row[col.column_name])
+                        : 'NULL'}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Showing {data.pagination.page} of {data.pagination.totalPages} pages ({data.pagination.total} total rows)
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(data.pagination.totalPages, p + 1))}
+            disabled={page >= data.pagination.totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Test Tournament Form Component
 const TestTournamentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
@@ -189,6 +281,23 @@ const AdminDashboard: React.FC = () => {
     queryKey: ['/api/persons'],
   });
 
+  // Fetch database tables
+  const { data: dbTables = { tables: [] }, isLoading: tablesLoading } = useQuery<{ tables: Array<{ name: string; rowCount: number }> }>({
+    queryKey: ['/api/admin/database/tables'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/database/tables');
+      if (!response.ok) throw new Error('Failed to fetch tables');
+      return response.json();
+    },
+  });
+
+  // State for user management
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'ADMIN' | 'JUDGE' | 'BARISTA' | 'STATION_LEAD' | 'PUBLIC'>('BARISTA');
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+
   // Fetch tournaments
   const { data: tournaments = [], isLoading: tournamentsLoading } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
@@ -227,10 +336,8 @@ const AdminDashboard: React.FC = () => {
   // User management mutations
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const response = await fetch(`/api/persons`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: userId, deleted: true }),
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete user');
       return response.json();
@@ -240,6 +347,82 @@ const AdminDashboard: React.FC = () => {
       toast({
         title: 'User deleted',
         description: 'User has been successfully deleted.',
+      });
+    },
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: { name: string; email: string; role: string }) => {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+      if (!response.ok) throw new Error('Failed to create user');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/persons'] });
+      setShowAddUserDialog(false);
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserRole('BARISTA');
+      toast({
+        title: 'User created',
+        description: 'User has been successfully created.',
+      });
+    },
+  });
+
+  const updateUserRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      if (!response.ok) throw new Error('Failed to update user role');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/persons'] });
+      toast({
+        title: 'Role updated',
+        description: 'User role has been successfully updated.',
+      });
+    },
+  });
+
+  const approveUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/admin/users/${userId}/approve`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to approve user');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/persons'] });
+      toast({
+        title: 'User approved',
+        description: 'User has been successfully approved.',
+      });
+    },
+  });
+
+  const rejectUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/admin/users/${userId}/reject`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to reject user');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/persons'] });
+      toast({
+        title: 'User rejected',
+        description: 'User has been rejected.',
       });
     },
   });
@@ -305,9 +488,6 @@ const AdminDashboard: React.FC = () => {
   });
 
   const [newImageUrl, setNewImageUrl] = useState('');
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState('BARISTA');
 
   const handleAddImage = () => {
     if (!newImageUrl.trim()) {
@@ -785,26 +965,332 @@ const AdminDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
+            {/* User Management Section */}
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-primary dark:text-foreground">User Management</CardTitle>
+                  <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Add User
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New User</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 mt-4">
+                        <div>
+                          <Label htmlFor="user-name">Name</Label>
+                          <Input
+                            id="user-name"
+                            value={newUserName}
+                            onChange={(e) => setNewUserName(e.target.value)}
+                            placeholder="John Doe"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="user-email">Email</Label>
+                          <Input
+                            id="user-email"
+                            type="email"
+                            value={newUserEmail}
+                            onChange={(e) => setNewUserEmail(e.target.value)}
+                            placeholder="john@example.com"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="user-role">Role</Label>
+                          <Select value={newUserRole} onValueChange={(value: any) => setNewUserRole(value)}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="BARISTA">Barista</SelectItem>
+                              <SelectItem value="JUDGE">Judge</SelectItem>
+                              <SelectItem value="STATION_LEAD">Station Lead</SelectItem>
+                              <SelectItem value="ADMIN">Admin</SelectItem>
+                              <SelectItem value="PUBLIC">Public</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            if (!newUserName || !newUserEmail) {
+                              toast({
+                                title: 'Error',
+                                description: 'Name and email are required',
+                                variant: 'destructive',
+                              });
+                              return;
+                            }
+                            createUserMutation.mutate({
+                              name: newUserName,
+                              email: newUserEmail,
+                              role: newUserRole,
+                            });
+                          }}
+                          disabled={createUserMutation.isPending}
+                          className="w-full"
+                        >
+                          {createUserMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Creating...
+                            </>
+                          ) : (
+                            'Create User'
+                          )}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {usersLoading ? (
+                    <div className="text-center p-4">Loading users...</div>
+                  ) : (
+                    users.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium">{user.name}</div>
+                            <Badge variant={user.approved ? 'default' : 'secondary'}>
+                              {user.role}
+                            </Badge>
+                            {!user.approved && (
+                              <Badge variant="outline" className="text-orange-600">Pending Approval</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!user.approved && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => approveUserMutation.mutate(user.id)}
+                                disabled={approveUserMutation.isPending}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => rejectUserMutation.mutate(user.id)}
+                                disabled={rejectUserMutation.isPending}
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          <Select
+                            value={user.role}
+                            onValueChange={(value) => updateUserRoleMutation.mutate({ userId: user.id, role: value })}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="BARISTA">Barista</SelectItem>
+                              <SelectItem value="JUDGE">Judge</SelectItem>
+                              <SelectItem value="STATION_LEAD">Station Lead</SelectItem>
+                              <SelectItem value="ADMIN">Admin</SelectItem>
+                              <SelectItem value="PUBLIC">Public</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              if (confirm(`Are you sure you want to delete ${user.name}?`)) {
+                                deleteUserMutation.mutate(user.id);
+                              }
+                            }}
+                            disabled={deleteUserMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Approval Management Section */}
+            <Card className="border-2 border-primary/20">
+              <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
+                <CardTitle className="text-primary dark:text-foreground flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Approval Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="competitors" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="competitors">Competitors</TabsTrigger>
+                    <TabsTrigger value="judges">Judges</TabsTrigger>
+                    <TabsTrigger value="station-leads">Station Leads</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="competitors" className="space-y-2">
+                    {users
+                      .filter(u => u.role === 'BARISTA' && !u.approved)
+                      .map(user => (
+                        <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => approveUserMutation.mutate(user.id)}
+                              disabled={approveUserMutation.isPending}
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => rejectUserMutation.mutate(user.id)}
+                              disabled={rejectUserMutation.isPending}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    {users.filter(u => u.role === 'BARISTA' && !u.approved).length === 0 && (
+                      <div className="text-center p-4 text-muted-foreground">No pending competitors</div>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="judges" className="space-y-2">
+                    {users
+                      .filter(u => u.role === 'JUDGE' && !u.approved)
+                      .map(user => (
+                        <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => approveUserMutation.mutate(user.id)}
+                              disabled={approveUserMutation.isPending}
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => rejectUserMutation.mutate(user.id)}
+                              disabled={rejectUserMutation.isPending}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    {users.filter(u => u.role === 'JUDGE' && !u.approved).length === 0 && (
+                      <div className="text-center p-4 text-muted-foreground">No pending judges</div>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="station-leads" className="space-y-2">
+                    {users
+                      .filter(u => u.role === 'STATION_LEAD' && !u.approved)
+                      .map(user => (
+                        <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => approveUserMutation.mutate(user.id)}
+                              disabled={approveUserMutation.isPending}
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => rejectUserMutation.mutate(user.id)}
+                              disabled={rejectUserMutation.isPending}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    {users.filter(u => u.role === 'STATION_LEAD' && !u.approved).length === 0 && (
+                      <div className="text-center p-4 text-muted-foreground">No pending station leads</div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Database Tables Section */}
             <Card className="border-2 border-primary/20">
               <CardHeader className="bg-primary/5 dark:bg-transparent rounded-t-lg">
                 <CardTitle className="text-primary dark:text-foreground">Database Tables</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {['persons', 'tournaments', 'tournament_registrations', 'matches', 'heat_scores', 'stations'].map((table) => (
-                    <div key={table} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{table}</div>
-                        <div className="text-sm text-muted-foreground">View table structure</div>
+                {tablesLoading ? (
+                  <div className="text-center p-4">Loading tables...</div>
+                ) : (
+                  <div className="space-y-2">
+                    {dbTables.tables.map((table) => (
+                      <div key={table.name} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium">{table.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {table.rowCount !== undefined ? `${table.rowCount} rows` : 'Unable to read'}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedTable(table.name)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm">
-                        View
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Table Data Viewer Dialog */}
+            {selectedTable && (
+              <Dialog open={!!selectedTable} onOpenChange={() => setSelectedTable(null)}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+                  <DialogHeader>
+                    <DialogTitle>Table: {selectedTable}</DialogTitle>
+                  </DialogHeader>
+                  <TableDataViewer tableName={selectedTable} />
+                </DialogContent>
+              </Dialog>
+            )}
           </TabsContent>
 
           {/* Carousel Tab */}
