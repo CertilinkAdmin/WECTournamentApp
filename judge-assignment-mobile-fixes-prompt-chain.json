@@ -1,0 +1,165 @@
+{
+  "name": "Judge Assignment Hang & Mobile Scoring Lock Issues",
+  "description": "Fix bracket generation hanging on judge assignment and investigate mobile/landscape scoring lock issues",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Fix Judge Assignment Hang",
+      "description": "Make judge assignment optional and non-blocking during bracket generation",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "bugfix",
+          "action": "Wrap judge assignment in try-catch",
+          "file": "server/bracketGenerator.ts",
+          "details": "Wrap lines 396-410 (judge assignments) in try-catch. If assignment fails, log warning but continue bracket generation. Don't block on judge assignment errors",
+          "test": "Bracket generation completes even if judge assignment fails"
+        },
+        {
+          "id": "1.2",
+          "type": "bugfix",
+          "action": "Make judge assignment optional",
+          "file": "server/bracketGenerator.ts",
+          "details": "If approvedJudges.length < 3, log warning and continue. Judges can be assigned later via assign-judges endpoint. Don't require judges for bracket generation",
+          "test": "Bracket generates with < 3 judges"
+        },
+        {
+          "id": "1.3",
+          "type": "bugfix",
+          "action": "Add logging for judge assignment status",
+          "file": "server/bracketGenerator.ts",
+          "details": "Log when judges are assigned successfully, when skipped (insufficient), and any errors. Track total judges assigned vs matches created",
+          "test": "Clear logging shows judge assignment status"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Investigate Mobile Scoring Lock Issues",
+      "description": "Diagnose and fix scoring lock problems on mobile/landscape view",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "analysis",
+          "action": "Check global lock status logic",
+          "file": "server/storage.ts",
+          "details": "Review getGlobalLockStatus function. Check if it correctly detects when all segments ended and all judges submitted. Verify it works for mobile users",
+          "test": "Understand lock status calculation"
+        },
+        {
+          "id": "2.2",
+          "type": "analysis",
+          "action": "Check mobile viewport and responsive design",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Check for viewport meta tags, responsive breakpoints, and mobile-specific CSS. Look for issues with checkbox inputs, buttons, or form elements on mobile",
+          "test": "Identify mobile-specific UI issues"
+        },
+        {
+          "id": "2.3",
+          "type": "analysis",
+          "action": "Check landscape orientation handling",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Look for CSS that might break in landscape mode. Check for fixed widths, overflow issues, or layout problems in landscape orientation",
+          "test": "Identify landscape-specific issues"
+        },
+        {
+          "id": "2.4",
+          "type": "analysis",
+          "action": "Check WebSocket connection on mobile",
+          "file": "client/src/hooks/useWebSocket.ts",
+          "details": "Verify WebSocket connects properly on mobile. Check for connection issues, reconnection logic, and event handling on mobile browsers",
+          "test": "WebSocket works on mobile"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Fix Mobile Scoring Lock Issues",
+      "description": "Fix specific issues preventing scoring lock from working on mobile",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "bugfix",
+          "action": "Fix viewport meta tag",
+          "file": "client/index.html or App.tsx",
+          "details": "Ensure viewport meta tag is present: <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes'>",
+          "test": "Viewport configured correctly"
+        },
+        {
+          "id": "3.2",
+          "type": "bugfix",
+          "action": "Fix mobile checkbox/input sizing",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Ensure checkboxes and inputs have proper touch targets (min 44x44px). Check for disabled states that might prevent interaction on mobile",
+          "test": "Inputs work on mobile"
+        },
+        {
+          "id": "3.3",
+          "type": "bugfix",
+          "action": "Fix landscape layout issues",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add responsive breakpoints for landscape. Ensure grid layouts adapt. Check for horizontal overflow. Fix any fixed widths that break in landscape",
+          "test": "Layout works in landscape"
+        },
+        {
+          "id": "3.4",
+          "type": "bugfix",
+          "action": "Fix global lock status display on mobile",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Ensure lock status alert is visible and readable on mobile. Check text sizing, padding, and layout for mobile screens",
+          "test": "Lock status visible on mobile"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Test Mobile & Landscape",
+      "description": "Test fixes on mobile devices and landscape orientation",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "test",
+          "action": "Test bracket generation with < 3 judges",
+          "details": "Generate bracket with 0-2 judges, verify it completes without hanging. Then assign judges separately",
+          "test": "Bracket generation doesn't hang"
+        },
+        {
+          "id": "4.2",
+          "type": "test",
+          "action": "Test scoring on mobile portrait",
+          "details": "Open judge scoring view on mobile portrait. Test checkbox interactions, submit buttons, and lock status display",
+          "test": "Scoring works on mobile portrait"
+        },
+        {
+          "id": "4.3",
+          "type": "test",
+          "action": "Test scoring on mobile landscape",
+          "details": "Rotate to landscape, test all interactions. Check for layout issues, overflow, or broken UI elements",
+          "test": "Scoring works on mobile landscape"
+        },
+        {
+          "id": "4.4",
+          "type": "test",
+          "action": "Test lock status on mobile",
+          "details": "Complete all segments and submit all scores. Verify lock status appears and scoring is disabled on mobile",
+          "test": "Lock status works on mobile"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "Fix hang first, then investigate mobile issues systematically",
+    "test_files": [],
+    "manual_testing": [
+      "Generate bracket with < 3 judges - should complete",
+      "Test judge scoring on mobile portrait",
+      "Test judge scoring on mobile landscape",
+      "Test lock status display and functionality on mobile",
+      "Check WebSocket connection on mobile"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Can revert judge assignment changes if needed"
+  }
+}
+

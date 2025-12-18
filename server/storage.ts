@@ -76,11 +76,13 @@ export interface IStorage {
   // Heat Scores
   submitScore(score: InsertHeatScore): Promise<HeatScore>;
   getMatchScores(matchId: number): Promise<HeatScore[]>;
+  getMatchScoresBatch(matchIds: number[]): Promise<HeatScore[]>;
 
   // Detailed Judge Scores
   submitDetailedScore(score: InsertJudgeDetailedScore): Promise<JudgeDetailedScore>;
   submitBatchDetailedScores(scores: InsertJudgeDetailedScore[]): Promise<JudgeDetailedScore[]>;
   getMatchDetailedScores(matchId: number): Promise<JudgeDetailedScore[]>;
+  getMatchDetailedScoresBatch(matchIds: number[]): Promise<JudgeDetailedScore[]>;
   getJudgeCompletionStatus(matchId: number, segmentType: 'CAPPUCCINO' | 'ESPRESSO'): Promise<{
     allComplete: boolean;
     judges: Array<{
@@ -361,7 +363,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(heatScores.matchId, matchId));
   }
 
+  // Batch method to get scores for multiple matches at once (optimizes N+1 queries)
+  async getMatchScoresBatch(matchIds: number[]): Promise<HeatScore[]> {
+    if (matchIds.length === 0) return [];
+    return await db.select()
+      .from(heatScores)
+      .where(inArray(heatScores.matchId, matchIds));
+  }
+
   // Detailed Judge Scores
+  async getMatchDetailedScores(matchId: number): Promise<JudgeDetailedScore[]> {
+    return await db.select()
+      .from(judgeDetailedScores)
+      .where(eq(judgeDetailedScores.matchId, matchId));
+  }
+
+  // Batch method to get detailed scores for multiple matches at once (optimizes N+1 queries)
+  async getMatchDetailedScoresBatch(matchIds: number[]): Promise<JudgeDetailedScore[]> {
+    if (matchIds.length === 0) return [];
+    return await db.select()
+      .from(judgeDetailedScores)
+      .where(inArray(judgeDetailedScores.matchId, matchIds));
+  }
   // Upsert logic: Check if score exists for this judge/match, and merge fields if it does
   // This allows visual latte art and sensory scores to be submitted independently
   async submitDetailedScore(score: InsertJudgeDetailedScore): Promise<JudgeDetailedScore> {
@@ -441,12 +464,6 @@ export class DatabaseStorage implements IStorage {
     if (scores.length === 0) return [];
     const result = await db.insert(judgeDetailedScores).values(scores).returning();
     return result;
-  }
-
-  async getMatchDetailedScores(matchId: number): Promise<JudgeDetailedScore[]> {
-    return await db.select()
-      .from(judgeDetailedScores)
-      .where(eq(judgeDetailedScores.matchId, matchId));
   }
 
   async getJudgeCompletionStatus(matchId: number, segmentType: 'CAPPUCCINO' | 'ESPRESSO'): Promise<{

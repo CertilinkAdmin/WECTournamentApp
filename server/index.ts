@@ -1,9 +1,14 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import compression from "compression";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Enable compression for all responses (gzip)
+app.use(compression({ level: 6, threshold: 1024 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

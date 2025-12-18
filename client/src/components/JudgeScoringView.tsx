@@ -309,7 +309,7 @@ export default function JudgeScoringView({
       return response.json();
     },
     enabled: !!effectiveJudgeId,
-    refetchInterval: 10000, // Fallback polling every 10 seconds (primary updates via WebSocket)
+    refetchInterval: 30000, // Fallback polling every 30 seconds (primary updates via WebSocket)
   });
 
   // Filter to only show judges that have assigned matches
@@ -322,7 +322,7 @@ export default function JudgeScoringView({
   const { data: segments = [] } = useQuery<HeatSegment[]>({
     queryKey: [`/api/matches/${selectedMatchId}/segments`],
     enabled: !!selectedMatchId,
-    refetchInterval: 5000, // Fallback polling every 5 seconds (primary updates via WebSocket)
+    refetchInterval: 15000, // Fallback polling every 15 seconds (primary updates via WebSocket)
   });
 
   // Fetch existing detailed scores for selected match
@@ -350,7 +350,7 @@ export default function JudgeScoringView({
       return response.json();
     },
     enabled: !!selectedMatchId,
-    refetchInterval: 5000, // Poll every 5 seconds to detect lock status changes
+    refetchInterval: 20000, // Poll every 20 seconds to detect lock status changes (WebSocket primary)
   });
 
   // Derive isGloballyLocked from globalLockStatus
@@ -434,7 +434,7 @@ export default function JudgeScoringView({
       return segmentsMap;
     },
     enabled: allMatchIds.length > 0,
-    refetchInterval: 5000, // Poll every 5 seconds for segment status
+    refetchInterval: 15000, // Poll every 15 seconds for segment status (WebSocket primary)
   });
 
   // Fetch scores for all assigned matches to determine if judged
@@ -464,7 +464,7 @@ export default function JudgeScoringView({
       return scoresMap;
     },
     enabled: allMatchIds.length > 0 && !!effectiveJudgeId && !!selectedJudge,
-    refetchInterval: 10000, // Poll every 10 seconds for score status
+    refetchInterval: 30000, // Poll every 30 seconds for score status (WebSocket primary)
   });
 
   // Calculate heat status for each match (ready to judge vs judged)
@@ -1246,14 +1246,14 @@ export default function JudgeScoringView({
           {/* Scoring Interface - Show when match is selected (judge role determines what to show) */}
           {selectedMatchId && competitor1 && competitor2 && effectiveJudgeRole && (
             <div className="space-y-4 sm:space-y-6">
-              {/* Global Lock Notice */}
+              {/* Global Lock Notice - Mobile optimized */}
               {isGloballyLocked && (
-                <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+                <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 sticky top-0 z-50 shadow-lg mb-4">
                   <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                   <AlertTitle className="text-amber-900 dark:text-amber-200 font-semibold text-xs sm:text-sm lg:text-base">
                     Scoring Locked
                   </AlertTitle>
-                  <AlertDescription className="text-amber-800 dark:text-amber-300 text-xs sm:text-sm lg:text-base">
+                  <AlertDescription className="text-amber-800 dark:text-amber-300 text-xs sm:text-sm lg:text-base break-words">
                     All segments have been completed and all judges have submitted their scores. Scoring is now locked for this heat.
                   </AlertDescription>
                 </Alert>
@@ -1344,28 +1344,30 @@ export default function JudgeScoringView({
                   )}
 
                   {/* Visual Latte Art Scoring */}
-                  <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[var(--espresso-dark)] dark:bg-[var(--espresso-dark)] min-h-[3rem] sm:min-h-[3.5rem]">
-                    <label className="flex items-center gap-2 justify-start text-[var(--brand-cinnamon-brown)] dark:text-[var(--brand-cinnamon-brown)] cursor-pointer">
+                  <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[var(--espresso-dark)] dark:bg-[var(--espresso-dark)] min-h-[3.5rem] sm:min-h-[3.5rem]">
+                    <label className="flex items-center gap-2 justify-start text-[var(--brand-cinnamon-brown)] dark:text-[var(--brand-cinnamon-brown)] cursor-pointer touch-manipulation">
                       <input
                         type="checkbox"
                         checked={latteArtVisual === 'left'}
                         onChange={(e) => setLatteArtVisual(e.target.checked ? 'left' : null)}
                         disabled={latteArtSubmitted || propIsReadOnly || isGloballyLocked}
-                        className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                        className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                        style={{ touchAction: 'manipulation' }}
                       />
-                      <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                      <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Left</span>
                     </label>
                     <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                       Visual Latte Art <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.visualLatteArt} pts)</span>
                     </div>
-                    <label className="flex items-center gap-2 justify-end cursor-pointer">
-                      <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                    <label className="flex items-center gap-2 justify-end cursor-pointer touch-manipulation">
+                      <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Right</span>
                       <input
                         type="checkbox"
                         checked={latteArtVisual === 'right'}
                         onChange={(e) => setLatteArtVisual(e.target.checked ? 'right' : null)}
                         disabled={latteArtSubmitted || propIsReadOnly || isGloballyLocked}
-                        className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                        className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                        style={{ touchAction: 'manipulation' }}
                       />
                     </label>
                   </div>
@@ -1424,81 +1426,87 @@ export default function JudgeScoringView({
                     <div className="space-y-3">
                       {/* Taste */}
                       <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
-                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer touch-manipulation">
                           <input
                             type="checkbox"
                             checked={cappuccinoTaste === 'left'}
                             onChange={(e) => setCappuccinoTaste(e.target.checked ? 'left' : null)}
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Taste
                         </div>
-                        <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer touch-manipulation">
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Right</span>
                           <input
                             type="checkbox"
                             checked={cappuccinoTaste === 'right'}
                             onChange={(e) => setCappuccinoTaste(e.target.checked ? 'right' : null)}
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
                         </label>
                       </div>
 
                       {/* Tactile */}
                       <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
-                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer touch-manipulation">
                           <input
                             type="checkbox"
                             checked={cappuccinoTactile === 'left'}
                             onChange={(e) => setCappuccinoTactile(e.target.checked ? 'left' : null)}
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Tactile <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.tactile} pt)</span>
                         </div>
-                        <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer touch-manipulation">
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Right</span>
                           <input
                             type="checkbox"
                             checked={cappuccinoTactile === 'right'}
                             onChange={(e) => setCappuccinoTactile(e.target.checked ? 'right' : null)}
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
                         </label>
                       </div>
 
                       {/* Flavour */}
                       <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
-                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer touch-manipulation">
                           <input
                             type="checkbox"
                             checked={cappuccinoFlavour === 'left'}
                             onChange={(e) => setCappuccinoFlavour(e.target.checked ? 'left' : null)}
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Flavour <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.flavour} pt)</span>
                         </div>
-                        <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer touch-manipulation">
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Right</span>
                           <input
                             type="checkbox"
                             checked={cappuccinoFlavour === 'right'}
                             onChange={(e) => setCappuccinoFlavour(e.target.checked ? 'right' : null)}
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
                         </label>
                       </div>
@@ -1513,7 +1521,7 @@ export default function JudgeScoringView({
                             readOnly
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-not-allowed"
                           />
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Left</span>
                         </label>
                         <div className="text-center">
                           <div className="font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
@@ -1591,7 +1599,7 @@ export default function JudgeScoringView({
                     <div className="space-y-3">
                       {/* Taste */}
                       <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
-                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer touch-manipulation">
                           <input
                             type="checkbox"
                             checked={espressoTaste === 'left'}
@@ -1603,15 +1611,16 @@ export default function JudgeScoringView({
                               }
                             }}
                             disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Taste <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.taste} pt)</span>
                         </div>
-                        <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer touch-manipulation">
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Right</span>
                           <input
                             type="checkbox"
                             checked={espressoTaste === 'right'}
@@ -1623,14 +1632,15 @@ export default function JudgeScoringView({
                               }
                             }}
                             disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
                         </label>
                       </div>
 
                       {/* Tactile */}
                       <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
-                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer touch-manipulation">
                           <input
                             type="checkbox"
                             checked={espressoTactile === 'left'}
@@ -1642,15 +1652,16 @@ export default function JudgeScoringView({
                               }
                             }}
                             disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Tactile
                         </div>
-                        <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer touch-manipulation">
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Right</span>
                           <input
                             type="checkbox"
                             checked={espressoTactile === 'right'}
@@ -1662,14 +1673,15 @@ export default function JudgeScoringView({
                               }
                             }}
                             disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
                         </label>
                       </div>
 
                       {/* Flavour */}
                       <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
-                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer touch-manipulation">
                           <input
                             type="checkbox"
                             checked={espressoFlavour === 'left'}
@@ -1681,15 +1693,16 @@ export default function JudgeScoringView({
                               }
                             }}
                             disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
                           Flavour <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.flavour} pt)</span>
                         </div>
-                        <label className="flex items-center gap-2 justify-end cursor-pointer">
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                        <label className="flex items-center gap-2 justify-end cursor-pointer touch-manipulation">
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Right</span>
                           <input
                             type="checkbox"
                             checked={espressoFlavour === 'right'}
@@ -1701,7 +1714,8 @@ export default function JudgeScoringView({
                               }
                             }}
                             disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            className="h-6 w-6 sm:h-6 sm:w-6 min-h-[44px] min-w-[44px] accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
                           />
                         </label>
                       </div>
@@ -1716,7 +1730,7 @@ export default function JudgeScoringView({
                             readOnly
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-not-allowed"
                           />
-                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium select-none">Left</span>
                         </label>
                         <div className="text-center">
                           <div className="font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">

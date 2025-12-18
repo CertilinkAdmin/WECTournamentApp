@@ -361,53 +361,71 @@ export class BracketGenerator {
         });
 
         // Assign 3 judges to this heat (2 ESPRESSO, 1 CAPPUCCINO)
-        // Get all approved judges
-        const allJudges = await storage.getAllUsers();
-        const approvedJudges = allJudges.filter(u => u.role === 'JUDGE' && u.approved === true);
+        // Judge assignment is optional - if insufficient judges or assignment fails, continue without blocking
+        // Judges can be assigned later via /api/tournaments/:id/assign-judges endpoint
+        try {
+          const allJudges = await storage.getAllUsers();
+          const approvedJudges = allJudges.filter(u => u.role === 'JUDGE' && u.approved === true);
 
-        if (approvedJudges.length >= 3) {
-          // Shuffle judges for randomization
-          const shuffledJudges = [...approvedJudges].sort(() => Math.random() - 0.5);
+          if (approvedJudges.length >= 3) {
+            // Shuffle judges for randomization
+            const shuffledJudges = [...approvedJudges].sort(() => Math.random() - 0.5);
 
-          // Select 3 unique judges per heat, with staggering across heats
-          // Use heatNumber to rotate starting position for proper distribution
-          const selectedJudges = [];
-          const usedJudgeIds = new Set<number>();
-          const startIndex = (heatNumber - 1) % shuffledJudges.length;
-          
-          for (let i = 0; i < 3; i++) {
-            let judgeIndex = (startIndex + i) % shuffledJudges.length;
-            let judge = shuffledJudges[judgeIndex];
+            // Select 3 unique judges per heat, with staggering across heats
+            // Use heatNumber to rotate starting position for proper distribution
+            const selectedJudges = [];
+            const usedJudgeIds = new Set<number>();
+            const startIndex = (heatNumber - 1) % shuffledJudges.length;
             
-            // Ensure unique judge (should be rare, but handle edge case)
-            while (usedJudgeIds.has(judge.id) && selectedJudges.length < shuffledJudges.length) {
-              judgeIndex = (judgeIndex + 1) % shuffledJudges.length;
-              judge = shuffledJudges[judgeIndex];
+            for (let i = 0; i < 3; i++) {
+              let judgeIndex = (startIndex + i) % shuffledJudges.length;
+              let judge = shuffledJudges[judgeIndex];
+              
+              // Ensure unique judge (should be rare, but handle edge case)
+              let attempts = 0;
+              while (usedJudgeIds.has(judge.id) && attempts < shuffledJudges.length) {
+                judgeIndex = (judgeIndex + 1) % shuffledJudges.length;
+                judge = shuffledJudges[judgeIndex];
+                attempts++;
+              }
+              
+              if (!usedJudgeIds.has(judge.id)) {
+                selectedJudges.push(judge);
+                usedJudgeIds.add(judge.id);
+              }
             }
-            
-            selectedJudges.push(judge);
-            usedJudgeIds.add(judge.id);
-          }
 
-          // Assign roles: 2 ESPRESSO judges, 1 CAPPUCCINO judge
-          // All 3 judges score latte art first
-          // Then 1 judge scores Cappuccino sensory (CAPPUCCINO)
-          // Then 2 judges score Espresso sensory (ESPRESSO)
-          await storage.assignJudge({
-            matchId: match.id,
-            judgeId: selectedJudges[0].id,
-            role: 'ESPRESSO' // First ESPRESSO judge
-          });
-          await storage.assignJudge({
-            matchId: match.id,
-            judgeId: selectedJudges[1].id,
-            role: 'ESPRESSO' // Second ESPRESSO judge
-          });
-          await storage.assignJudge({
-            matchId: match.id,
-            judgeId: selectedJudges[2].id,
-            role: 'CAPPUCCINO' // CAPPUCCINO judge
-          });
+            // Only assign if we have 3 unique judges
+            if (selectedJudges.length === 3) {
+              // Assign roles: 2 ESPRESSO judges, 1 CAPPUCCINO judge
+              // All 3 judges score latte art first
+              // Then 1 judge scores Cappuccino sensory (CAPPUCCINO)
+              // Then 2 judges score Espresso sensory (ESPRESSO)
+              await storage.assignJudge({
+                matchId: match.id,
+                judgeId: selectedJudges[0].id,
+                role: 'ESPRESSO' // First ESPRESSO judge
+              });
+              await storage.assignJudge({
+                matchId: match.id,
+                judgeId: selectedJudges[1].id,
+                role: 'ESPRESSO' // Second ESPRESSO judge
+              });
+              await storage.assignJudge({
+                matchId: match.id,
+                judgeId: selectedJudges[2].id,
+                role: 'CAPPUCCINO' // CAPPUCCINO judge
+              });
+            } else {
+              console.warn(`⚠️ Heat ${heatNumber}: Could not select 3 unique judges (got ${selectedJudges.length}). Judges can be assigned later.`);
+            }
+          } else {
+            console.warn(`⚠️ Heat ${heatNumber}: Insufficient approved judges (${approvedJudges.length}/3 required). Judges can be assigned later via assign-judges endpoint.`);
+          }
+        } catch (error: any) {
+          // Don't block bracket generation if judge assignment fails
+          console.error(`❌ Error assigning judges to Heat ${heatNumber}:`, error.message);
+          console.log(`   Judges can be assigned later via /api/tournaments/${tournamentId}/assign-judges endpoint`);
         }
 
         // Update station availability (total minutes per heat + 10 minute buffer)

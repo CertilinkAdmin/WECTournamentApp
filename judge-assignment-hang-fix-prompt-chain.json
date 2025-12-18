@@ -1,0 +1,128 @@
+{
+  "name": "Fix Judge Assignment Hang in Bracket Generation",
+  "description": "Fix bracket generation hanging on judge assignment - make it optional or handle insufficient judges gracefully",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Diagnose Judge Assignment Hang",
+      "description": "Identify why judge assignment is hanging during bracket generation",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "analysis",
+          "action": "Check judge assignment logic in bracketGenerator",
+          "file": "server/bracketGenerator.ts",
+          "details": "Review lines 363-411. The code checks if approvedJudges.length >= 3, but if false, it skips assignment. Check if there's an error being thrown or if assignment is blocking",
+          "test": "Identify root cause of hang"
+        },
+        {
+          "id": "1.2",
+          "type": "analysis",
+          "action": "Check storage.assignJudge implementation",
+          "file": "server/storage.ts",
+          "details": "Verify assignJudge doesn't have blocking operations or infinite loops. Check for database constraints or errors",
+          "test": "Verify assignJudge is working correctly"
+        },
+        {
+          "id": "1.3",
+          "type": "analysis",
+          "action": "Compare initiate vs generate bracket",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "Find where 'Initiate Tournament' and 'Generate Bracket' buttons are. Check if one skips judge assignment while the other requires it",
+          "test": "Understand difference between buttons"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Make Judge Assignment Optional",
+      "description": "Make judge assignment optional during bracket generation - don't hang if insufficient judges",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "bugfix",
+          "action": "Add error handling for insufficient judges",
+          "file": "server/bracketGenerator.ts",
+          "details": "If approvedJudges.length < 3, log a warning and continue without assigning judges. Don't block bracket generation. Judges can be assigned later via assign-judges endpoint",
+          "test": "Bracket generation completes even with < 3 judges"
+        },
+        {
+          "id": "2.2",
+          "type": "bugfix",
+          "action": "Add try-catch around judge assignment",
+          "file": "server/bracketGenerator.ts",
+          "details": "Wrap judge assignment in try-catch. If assignment fails, log error but continue bracket generation. Don't let judge assignment errors block bracket creation",
+          "test": "Judge assignment errors don't block bracket"
+        },
+        {
+          "id": "2.3",
+          "type": "bugfix",
+          "action": "Add logging for judge assignment",
+          "file": "server/bracketGenerator.ts",
+          "details": "Log when judges are assigned, when skipped (insufficient judges), and any errors. This helps diagnose issues",
+          "test": "Clear logging for judge assignment status"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Verify Judge Assignment Endpoint",
+      "description": "Ensure assign-judges endpoint works independently",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "verification",
+          "action": "Check assign-judges endpoint",
+          "file": "server/routes.ts",
+          "details": "Verify /api/tournaments/:id/assign-judges endpoint works correctly and can be called after bracket generation",
+          "test": "Assign-judges endpoint works independently"
+        },
+        {
+          "id": "3.2",
+          "type": "verification",
+          "action": "Check for duplicate assignment prevention",
+          "file": "server/routes.ts",
+          "details": "Verify assign-judges deletes existing judges before assigning new ones to prevent duplicates",
+          "test": "No duplicate judge assignments"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Update UI to Reflect Optional Judges",
+      "description": "Update UI to show that judges can be assigned after bracket generation",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "ui",
+          "action": "Update generate bracket success message",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "If judges weren't assigned during bracket generation, show message that judges can be assigned separately",
+          "test": "Clear messaging about judge assignment"
+        },
+        {
+          "id": "4.2",
+          "type": "ui",
+          "action": "Show judge assignment status",
+          "file": "client/src/pages/admin/AdminTournaments.tsx",
+          "details": "Display how many judges are assigned vs needed. Show button to assign judges if not all assigned",
+          "test": "Judge assignment status visible"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "Fix hang first, then verify optional assignment works",
+    "test_files": [],
+    "manual_testing": [
+      "Generate bracket with < 3 judges - should complete without hanging",
+      "Generate bracket with >= 3 judges - should assign judges",
+      "Generate bracket, then assign judges separately - should work",
+      "Check logs for judge assignment status"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Can revert to requiring judges, but should fix hang issue"
+  }
+}
+

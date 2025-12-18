@@ -1,0 +1,233 @@
+{
+  "name": "Performance Optimization - OPUX Workflow",
+  "description": "Systematic performance optimization using OPUX workflow: audit, identify bottlenecks, optimize, verify",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Lighthouse Audit - Identify Performance Issues",
+      "description": "Run mobile Lighthouse audit to identify specific performance bottlenecks",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "analysis",
+          "action": "Run Lighthouse mobile audit",
+          "details": "Use Lighthouse MCP to audit the published application. Focus on Performance, Accessibility, Best Practices, and SEO scores. Identify specific issues: slow API responses, large bundle sizes, render-blocking resources, etc.",
+          "test": "Get comprehensive performance report"
+        },
+        {
+          "id": "1.2",
+          "type": "analysis",
+          "action": "Analyze Core Web Vitals",
+          "details": "Review LCP (Largest Contentful Paint), FID (First Input Delay), CLS (Cumulative Layout Shift), TTI (Time to Interactive). Identify which metrics are failing.",
+          "test": "Identify failing Core Web Vitals"
+        },
+        {
+          "id": "1.3",
+          "type": "analysis",
+          "action": "Identify API performance issues",
+          "details": "Check server routes for N+1 queries, missing database indexes, inefficient queries, lack of caching. Review database query patterns in storage.ts and routes.ts",
+          "test": "List slow API endpoints"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Database Query Optimization",
+      "description": "Optimize database queries to reduce response times",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "optimization",
+          "action": "Add database indexes",
+          "file": "server/db/schema.ts",
+          "details": "Add indexes on frequently queried columns: tournamentId, matchId, userId, status, round. Check for missing indexes on foreign keys.",
+          "test": "Database queries execute faster"
+        },
+        {
+          "id": "2.2",
+          "type": "optimization",
+          "action": "Fix N+1 query problems",
+          "file": "server/storage.ts",
+          "details": "Review getTournamentMatches, getMatchJudges, getMatchScores. Use batch queries or joins instead of individual queries in loops.",
+          "test": "No N+1 queries in critical paths"
+        },
+        {
+          "id": "2.3",
+          "type": "optimization",
+          "action": "Add query result caching",
+          "file": "server/routes.ts",
+          "details": "Add caching for frequently accessed, rarely-changing data: tournament list, user list, station list. Use simple in-memory cache with TTL.",
+          "test": "Repeated queries return cached results"
+        },
+        {
+          "id": "2.4",
+          "type": "optimization",
+          "action": "Optimize bracket generation queries",
+          "file": "server/bracketGenerator.ts",
+          "details": "Batch database operations. Use transactions where appropriate. Reduce individual queries in loops.",
+          "test": "Bracket generation completes faster"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "React Component Optimization",
+      "description": "Optimize React rendering and reduce unnecessary re-renders",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "optimization",
+          "action": "Add React.memo to expensive components",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Wrap expensive components in React.memo. Add to components that receive props that don't change frequently.",
+          "test": "Components only re-render when props change"
+        },
+        {
+          "id": "3.2",
+          "type": "optimization",
+          "action": "Optimize useMemo and useCallback usage",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Review all useMemo and useCallback hooks. Ensure dependencies are correct. Add missing memoization for expensive calculations.",
+          "test": "Expensive calculations are memoized"
+        },
+        {
+          "id": "3.3",
+          "type": "optimization",
+          "action": "Reduce query refetch intervals",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Review refetchInterval values. Reduce polling frequency where WebSocket events handle updates. Only poll as fallback.",
+          "test": "Reduced unnecessary API calls"
+        },
+        {
+          "id": "3.4",
+          "type": "optimization",
+          "action": "Optimize TanStack Query cache",
+          "file": "client/src/components",
+          "details": "Set appropriate staleTime and cacheTime for queries. Cache static data longer. Reduce cache invalidation frequency.",
+          "test": "Better query caching strategy"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Bundle Size & Asset Optimization",
+      "description": "Reduce bundle size and optimize assets",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "optimization",
+          "action": "Analyze bundle size",
+          "file": "package.json",
+          "details": "Run bundle analyzer to identify large dependencies. Check for duplicate imports, unused code, large libraries.",
+          "test": "Identify bundle size issues"
+        },
+        {
+          "id": "4.2",
+          "type": "optimization",
+          "action": "Code splitting and lazy loading",
+          "file": "client/src/App.tsx",
+          "details": "Implement lazy loading for routes. Split admin pages, judge pages, and public pages into separate chunks.",
+          "test": "Initial bundle size reduced"
+        },
+        {
+          "id": "4.3",
+          "type": "optimization",
+          "action": "Optimize icon imports",
+          "file": "client/src/components",
+          "details": "Use tree-shakeable icon imports from lucide-react. Import only needed icons, not entire library.",
+          "test": "Reduced icon bundle size"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "API Response Optimization",
+      "description": "Optimize API endpoints for faster responses",
+      "tasks": [
+        {
+          "id": "5.1",
+          "type": "optimization",
+          "action": "Add response compression",
+          "file": "server/routes.ts",
+          "details": "Enable gzip compression for API responses. Use express compression middleware.",
+          "test": "API responses are compressed"
+        },
+        {
+          "id": "5.2",
+          "type": "optimization",
+          "action": "Optimize data serialization",
+          "file": "server/routes.ts",
+          "details": "Only return necessary fields in API responses. Remove unnecessary nested data. Use projection in queries.",
+          "test": "Smaller API response payloads"
+        },
+        {
+          "id": "5.3",
+          "type": "optimization",
+          "action": "Add pagination to list endpoints",
+          "file": "server/routes.ts",
+          "details": "Add pagination to endpoints that return lists: tournaments, matches, users. Limit default page size.",
+          "test": "List endpoints support pagination"
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "WebSocket Optimization",
+      "description": "Optimize WebSocket connections and event handling",
+      "tasks": [
+        {
+          "id": "6.1",
+          "type": "optimization",
+          "action": "Debounce WebSocket event handlers",
+          "file": "client/src/hooks/useWebSocket.ts",
+          "details": "Debounce query invalidations from WebSocket events. Batch multiple events together.",
+          "test": "Reduced query invalidation frequency"
+        },
+        {
+          "id": "6.2",
+          "type": "optimization",
+          "action": "Optimize WebSocket room management",
+          "file": "server/routes.ts",
+          "details": "Ensure clients only join necessary rooms. Clean up room subscriptions on disconnect.",
+          "test": "Efficient WebSocket room usage"
+        }
+      ]
+    },
+    {
+      "phase": 7,
+      "name": "Lighthouse Verification",
+      "description": "Re-run Lighthouse audit to verify improvements",
+      "tasks": [
+        {
+          "id": "7.1",
+          "type": "verification",
+          "action": "Re-run Lighthouse mobile audit",
+          "details": "Run Lighthouse audit again after optimizations. Compare scores: Performance, Accessibility, Best Practices, SEO.",
+          "test": "Performance score improved"
+        },
+        {
+          "id": "7.2",
+          "type": "verification",
+          "action": "Verify Core Web Vitals",
+          "details": "Check that LCP, FID, CLS, TTI are within acceptable ranges. LCP < 2.5s, FID < 100ms, CLS < 0.1, TTI < 3.8s.",
+          "test": "Core Web Vitals pass"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "Measure before, optimize, measure after",
+    "test_files": [],
+    "manual_testing": [
+      "Test API response times before and after",
+      "Test page load times",
+      "Test bracket generation speed",
+      "Test judge scoring interface responsiveness",
+      "Monitor WebSocket connection performance"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Can revert individual optimizations if they cause issues"
+  }
+}
+

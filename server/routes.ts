@@ -384,10 +384,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
-      // Get scores with judge names for all matches
-      const scoresPromises = matches.map(m => storage.getMatchScores(m.id));
-      const scoresArrays = await Promise.all(scoresPromises);
-      const allMatchScores = scoresArrays.flat();
+      // Get scores with judge names for all matches (batch query - optimized)
+      const matchIds = matches.map(m => m.id);
+      const allMatchScores = matchIds.length > 0 
+        ? await storage.getMatchScoresBatch(matchIds)
+        : [];
       const scoresWithJudgeNames = allMatchScores.map((s) => {
         const judge = allUsers.find(u => u.id === s.judgeId);
         return {
@@ -396,10 +397,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
-      // Get detailed scores for all matches
-      const detailedScoresPromises = matches.map(m => storage.getMatchDetailedScores(m.id));
-      const detailedScoresArrays = await Promise.all(detailedScoresPromises);
-      const detailedScoresForTournament = detailedScoresArrays.flat();
+      // Get detailed scores for all matches (batch query - optimized)
+      const detailedScoresForTournament = matchIds.length > 0
+        ? await storage.getMatchDetailedScoresBatch(matchIds)
+        : [];
 
       res.json({
         tournament,

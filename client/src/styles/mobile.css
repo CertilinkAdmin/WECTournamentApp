@@ -257,6 +257,24 @@
   .landscape-small-header {
     font-size: 1rem !important;
   }
+
+  /* Ensure checkboxes remain accessible in landscape */
+  input[type="checkbox"] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Compact scoring cards in landscape */
+  [class*="CardContent"] {
+    padding: 0.75rem !important;
+  }
+
+  /* Sticky lock notice in landscape */
+  [role="alert"] {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+  }
 }
 
 /* Safe area insets for notched devices */
