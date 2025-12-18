@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle2, Loader2, AlertTriangle, Coffee, Users, ArrowLeftRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { Match, TournamentParticipant, User } from '@shared/schema';
+import type { Match, TournamentParticipant, User, HeatSegment } from '@shared/schema';
 
 interface CupPosition {
   cupCode: string;
@@ -67,6 +67,17 @@ export default function AdminCupPositionAssignment({
     queryKey: ['/api/users'],
   });
 
+  // Fetch segments for this match to know which timed segments actually exist
+  const { data: segments = [] } = useQuery<HeatSegment[]>({
+    queryKey: [`/api/matches/${matchId}/segments`],
+    queryFn: async () => {
+      const response = await fetch(`/api/matches/${matchId}/segments`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!matchId,
+  });
+
   // Get competitor cup codes
   const competitor1 = match?.competitor1Id 
     ? participants.find(p => p.userId === match.competitor1Id)
@@ -112,8 +123,12 @@ export default function AdminCupPositionAssignment({
     },
   });
 
-  // Check if all judges have scored
-  const allJudgesScored = cappuccinoStatus?.allComplete && espressoStatus?.allComplete;
+  // Check if all judges have scored for the segments that actually exist in this heat
+  const hasCappuccinoSegment = segments.some((segment) => segment.segment === 'CAPPUCCINO');
+  const hasEspressoSegment = segments.some((segment) => segment.segment === 'ESPRESSO');
+  const cappuccinoComplete = !hasCappuccinoSegment || cappuccinoStatus?.allComplete;
+  const espressoComplete = !hasEspressoSegment || espressoStatus?.allComplete;
+  const allJudgesScored = cappuccinoComplete && espressoComplete;
   const canAssign = allJudgesScored && cupCode1 && cupCode2;
 
   // Assign cup positions mutation

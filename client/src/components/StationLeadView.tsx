@@ -1201,6 +1201,7 @@ export default function StationLeadView() {
                             durationMinutes={segment.plannedMinutes}
                             startTime={new Date(segment.startTime)}
                             isPaused={pausedSegmentId === segment.id}
+                            externalTimeRemaining={currentSegmentTimeRemaining}
                             onComplete={() => handleEndSegment(segment.id)}
                           />
                         </div>
