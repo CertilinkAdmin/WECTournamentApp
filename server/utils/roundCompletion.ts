@@ -68,9 +68,18 @@ export async function checkRoundCompletion(
   const stationStatus = await getStationCompletionStatus(tournamentId, round, roundMatches);
 
   // Check if round is complete
+  // Round is complete ONLY when:
+  // 1. ALL matches in the round are DONE
+  // 2. ALL matches have winners
+  // 3. ALL stations that have matches in this round have completed ALL their heats
   const allMatchesComplete = incompleteMatches.length === 0;
   const allMatchesHaveWinners = matchesWithoutWinners.length === 0;
-  const allStationsComplete = stationStatus.every(s => s.isComplete || s.totalMatches === 0);
+  
+  // A station is complete if it has no matches (nothing to do) OR all its matches are done with winners
+  // Round is complete only when ALL stations with matches are complete
+  const stationsWithMatches = stationStatus.filter(s => s.totalMatches > 0);
+  const allStationsComplete = stationsWithMatches.length === 0 || 
+                               stationsWithMatches.every(s => s.isComplete);
 
   const errors: string[] = [];
   if (!allMatchesComplete) {
@@ -80,8 +89,11 @@ export async function checkRoundCompletion(
     errors.push(`${matchesWithoutWinners.length} match(es) missing winners`);
   }
   if (!allStationsComplete) {
-    const incompleteStations = stationStatus.filter(s => !s.isComplete && s.totalMatches > 0);
-    errors.push(`${incompleteStations.length} station(s) have incomplete heats`);
+    const incompleteStations = stationStatus.filter(s => s.totalMatches > 0 && !s.isComplete);
+    const stationDetails = incompleteStations.map(s => 
+      `Station ${s.stationName}: ${s.incompleteMatches.length} incomplete heat(s), ${s.matchesWithoutWinners.length} without winner(s)`
+    ).join('; ');
+    errors.push(`${incompleteStations.length} station(s) have incomplete heats: ${stationDetails}`);
   }
 
   return {
@@ -125,12 +137,26 @@ async function getStationCompletionStatus(
   });
 
   // Build station status
+  // A station is complete for a round ONLY when:
+  // 1. It has matches assigned in this round
+  // 2. ALL its matches in this round are DONE
+  // 3. ALL its matches in this round have winners
   return tournamentStations.map(station => {
     const stationMatches = matchesByStation.get(station.id) || [];
     const completedMatches = stationMatches.filter(m => m.status === 'DONE');
     const incompleteMatches = stationMatches.filter(m => m.status !== 'DONE');
     const matchesWithWinners = stationMatches.filter(m => m.winnerId !== null);
     const matchesWithoutWinners = stationMatches.filter(m => m.winnerId === null);
+
+    // Station is complete ONLY if:
+    // - It has matches in this round (stationMatches.length > 0)
+    // - ALL matches are DONE (incompleteMatches.length === 0)
+    // - ALL matches have winners (matchesWithoutWinners.length === 0)
+    // If station has no matches in this round, it's considered complete (no work to do)
+    const isComplete = stationMatches.length === 0 || 
+                      (stationMatches.length > 0 && 
+                       incompleteMatches.length === 0 && 
+                       matchesWithoutWinners.length === 0);
 
     return {
       stationId: station.id,
@@ -140,9 +166,7 @@ async function getStationCompletionStatus(
       matchesWithWinners: matchesWithWinners.length,
       incompleteMatches,
       matchesWithoutWinners,
-      isComplete: stationMatches.length > 0 && 
-                  incompleteMatches.length === 0 && 
-                  matchesWithoutWinners.length === 0
+      isComplete
     };
   });
 }

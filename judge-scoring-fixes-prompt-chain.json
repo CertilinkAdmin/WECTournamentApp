@@ -1,0 +1,134 @@
+{
+  "name": "Judge Scoring View Fixes - effectiveJudgeId & Round Completion",
+  "description": "Fix effectiveJudgeId initialization error and correct round completion logic to require ALL station heats complete",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Fix effectiveJudgeId Initialization Error",
+      "description": "Move effectiveJudgeId declaration before useEffect that uses it",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "bugfix",
+          "action": "Move effectiveJudgeId declaration",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "effectiveJudgeId is used in useEffect (line 216-286) but declared later (line 289). Move the declaration BEFORE the useEffect that uses it. Place it right after the first useEffect (judge notifications) and before the tournament room useEffect.",
+          "test": "No 'Cannot access before initialization' error"
+        },
+        {
+          "id": "1.2",
+          "type": "bugfix",
+          "action": "Update useEffect dependencies",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Ensure effectiveJudgeId is in dependency array and all references use the correctly scoped variable",
+          "test": "useEffect works correctly with proper dependencies"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Fix Round Completion Logic",
+      "description": "Round completion should only trigger when ALL stations have completed ALL their heats in the round",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "bugfix",
+          "action": "Verify round completion logic",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "Current logic checks: allMatchesComplete && allMatchesHaveWinners && allStationsComplete. Verify that allStationsComplete correctly requires ALL heats in each station to be DONE with winners. The stationStatus.isComplete should be: stationMatches.length > 0 && incompleteMatches.length === 0 && matchesWithoutWinners.length === 0",
+          "test": "Round completion only true when all station heats complete"
+        },
+        {
+          "id": "2.2",
+          "type": "bugfix",
+          "action": "Check populate-next-round validation",
+          "file": "server/routes.ts",
+          "details": "Verify that populate-next-round endpoint uses checkRoundCompletion and only proceeds when isComplete is true. Ensure error messages clearly indicate which stations/heats are incomplete",
+          "test": "Cannot populate next round until all station heats complete"
+        },
+        {
+          "id": "2.3",
+          "type": "bugfix",
+          "action": "Add station-level completion check",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "Ensure getStationCompletionStatus correctly filters matches by station AND round. A station is only complete if ALL its matches in that round are DONE with winners",
+          "test": "Station completion accurate per round"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Verify Round → Station → Heat Hierarchy",
+      "description": "Ensure the hierarchy is correctly enforced: Round contains Stations, Stations contain Heats",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "verification",
+          "action": "Verify match filtering",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "In checkRoundCompletion, ensure roundMatches are filtered by round first. Then in getStationCompletionStatus, ensure we're only looking at matches for that specific station AND round combination",
+          "test": "Matches correctly grouped by round then station"
+        },
+        {
+          "id": "3.2",
+          "type": "verification",
+          "action": "Verify station completion calculation",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "For each station, check: 1) Has matches in this round, 2) All matches are DONE, 3) All matches have winners. Only then is station complete for the round",
+          "test": "Station completion correctly calculated"
+        },
+        {
+          "id": "3.3",
+          "type": "verification",
+          "action": "Verify round completion requires all stations",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "Round is complete only when: 1) All matches in round are DONE, 2) All matches have winners, 3) ALL stations with matches in this round are complete",
+          "test": "Round completion requires all stations complete"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Testing & Validation",
+      "description": "Test both fixes work correctly",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "test",
+          "action": "Test effectiveJudgeId fix",
+          "details": "Open judge scoring view, select a judge, verify no initialization error. Check that WebSocket listeners work correctly",
+          "test": "No runtime errors, WebSocket works"
+        },
+        {
+          "id": "4.2",
+          "type": "test",
+          "action": "Test round completion logic",
+          "details": "Complete first heat in Round 1 Station A - verify round NOT complete. Complete all heats in Station A - verify round still NOT complete. Complete all heats in all stations - verify round IS complete",
+          "test": "Round completion only when all stations complete"
+        },
+        {
+          "id": "4.3",
+          "type": "test",
+          "action": "Test populate-next-round",
+          "details": "Try to populate next round after only one heat complete - should fail. Try after all station heats complete - should succeed",
+          "test": "Next round population blocked until all complete"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "Fix bugs first, then verify logic",
+    "test_files": [],
+    "manual_testing": [
+      "Open judge scoring view - no errors",
+      "Complete one heat - round not complete",
+      "Complete all heats in one station - round not complete",
+      "Complete all heats in all stations - round complete",
+      "Try populate next round - should only work when all complete"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Can revert effectiveJudgeId move if causes other issues"
+  }
+}
+

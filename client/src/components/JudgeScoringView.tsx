@@ -212,6 +212,10 @@ export default function JudgeScoringView({
     };
   }, [socket, currentUser, toast]);
 
+  // Determine which judge ID to use (selected or current user)
+  // Must be declared before useEffect that uses it
+  const effectiveJudgeId = selectedJudgeId || (isJudge ? currentUser?.id : null);
+
   // Join tournament room and listen for real-time match/heat updates
   useEffect(() => {
     if (!socket || !tournamentIdNum) return;
@@ -224,7 +228,9 @@ export default function JudgeScoringView({
     const handleHeatCompleted = () => {
       console.log('JudgeScoringView: Heat completed event received');
       // Invalidate assigned matches to refresh match status
-      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      if (effectiveJudgeId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      }
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentIdNum}/matches`] });
       // Invalidate batch queries for all matches
       queryClient.invalidateQueries({ queryKey: ['/api/matches/segments'] });
@@ -239,13 +245,17 @@ export default function JudgeScoringView({
 
     const handleHeatStarted = () => {
       console.log('JudgeScoringView: Heat started event received');
-      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      if (effectiveJudgeId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      }
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentIdNum}/matches`] });
     };
 
     const handleHeatAdvanced = () => {
       console.log('JudgeScoringView: Heat advanced event received');
-      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      if (effectiveJudgeId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      }
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentIdNum}/matches`] });
     };
 
@@ -256,7 +266,9 @@ export default function JudgeScoringView({
       }
       // Invalidate batch queries for all matches
       queryClient.invalidateQueries({ queryKey: ['/api/matches/segments'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      if (effectiveJudgeId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      }
     };
 
     const handleSegmentEnded = () => {
@@ -267,7 +279,9 @@ export default function JudgeScoringView({
       }
       // Invalidate batch queries for all matches
       queryClient.invalidateQueries({ queryKey: ['/api/matches/segments'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      if (effectiveJudgeId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      }
     };
 
     socket.on('heat:completed', handleHeatCompleted);
@@ -284,9 +298,6 @@ export default function JudgeScoringView({
       socket.off('segment:ended', handleSegmentEnded);
     };
   }, [socket, tournamentIdNum, queryClient, effectiveJudgeId, selectedMatchId]);
-
-  // Determine which judge ID to use (selected or current user)
-  const effectiveJudgeId = selectedJudgeId || (isJudge ? currentUser?.id : null);
 
   // Fetch assigned matches for selected judge (or current user if judge)
   const { data: assignedMatches = [] } = useQuery<(Match & { judgeRole: 'ESPRESSO' | 'CAPPUCCINO' })[]>({
