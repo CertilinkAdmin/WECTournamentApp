@@ -11,7 +11,8 @@ import {
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
   insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
-  tournamentParticipants, heatJudges, matches, stations
+  tournamentParticipants, heatJudges, matches, stations,
+  type Tournament
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -251,7 +252,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const usedJudgeIds = new Set<number>();
 
         // Select 3 unique judges, starting from rotation index and wrapping around
-        while (assignedJudges.length < 3) {
+        // Add safety limit to prevent infinite loop
+        let maxAttempts = shuffledJudges.length * 3; // Try at most 3x the number of judges
+        let attempts = 0;
+        
+        while (assignedJudges.length < 3 && attempts < maxAttempts) {
+          attempts++;
           const judgeIndex = (judgeRotationIndex + assignedJudges.length) % shuffledJudges.length;
           const judge = shuffledJudges[judgeIndex];
           
@@ -260,15 +266,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
             assignedJudges.push(judge);
             usedJudgeIds.add(judge.id);
           } else {
-            // If judge already in this heat, skip to next judge
-            // This should rarely happen, but handle edge case
-            const nextIndex = (judgeIndex + 1) % shuffledJudges.length;
-            const nextJudge = shuffledJudges[nextIndex];
-            if (!usedJudgeIds.has(nextJudge.id)) {
-              assignedJudges.push(nextJudge);
-              usedJudgeIds.add(nextJudge.id);
+            // If judge already in this heat, try to find next available judge
+            let found = false;
+            for (let offset = 1; offset < shuffledJudges.length && !found; offset++) {
+              const nextIndex = (judgeIndex + offset) % shuffledJudges.length;
+              const nextJudge = shuffledJudges[nextIndex];
+              if (!usedJudgeIds.has(nextJudge.id)) {
+                assignedJudges.push(nextJudge);
+                usedJudgeIds.add(nextJudge.id);
+                found = true;
+              }
+            }
+            // If we couldn't find a unique judge, break to avoid infinite loop
+            if (!found) {
+              console.warn(`⚠️ Could not find 3 unique judges for match ${match.id}. Found ${assignedJudges.length} judges.`);
+              break;
             }
           }
+        }
+
+        // Safety check: if we don't have 3 judges, skip this match
+        if (assignedJudges.length < 3) {
+          console.error(`❌ Cannot assign judges to match ${match.id}: Only ${assignedJudges.length} unique judges available (need 3). Skipping this match.`);
+          continue; // Skip this match and continue with next
         }
 
         // Rotate starting position for next heat to stagger judges
@@ -1728,11 +1748,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tournamentId = parseInt(req.params.id);
 
-      // Get current tournament
-      const tournament = await storage.getTournament(tournamentId);
-      if (!tournament) {
-        return res.status(404).json({ error: "Tournament not found" });
+      if (!tournamentId || isNaN(tournamentId)) {
+        return res.status(400).json({ error: "Invalid tournament ID" });
       }
+
+      // Get current tournament (works for both regular and test tournaments)
+      // Tournament type is defined in @shared/schema - same type for all tournaments
+      const tournament: Tournament | undefined = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ 
+          error: `Tournament ${tournamentId} not found. Tournament may not exist or may have been deleted.` 
+        });
+      }
+      
+      // Tournament is now guaranteed to be defined (TypeScript type narrowing)
 
       // Get all matches for the current round
       const currentMatches = await storage.getTournamentMatches(tournamentId);
@@ -1801,6 +1830,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: `Invalid winners found: ${invalidWinners.length} winner(s) are not tournament participants`,
           invalidWinners
         });
+      }
+
+      // Ensure all winners have cup codes - generate if missing
+      const allUsers = await storage.getAllUsers();
+      for (const winnerId of winners) {
+        const participant = participants.find(p => p.userId === winnerId);
+        if (participant && !participant.cupCode) {
+          // Get user info to generate cup code
+          const user = allUsers.find(u => u.id === winnerId);
+          if (user) {
+            const cupCode = BracketGenerator.generateCupCode(user.name, participant.seed || 999, participant.seed ? participant.seed - 1 : undefined);
+            await storage.updateParticipantCupCode(participant.id, cupCode);
+            console.log(`✅ Generated cup code ${cupCode} for winner ${user.name} (participant ${participant.id})`);
+          }
+        }
       }
 
       // Check for duplicate winners (should not happen but safety check)

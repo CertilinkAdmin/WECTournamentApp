@@ -1,0 +1,161 @@
+{
+  "name": "Fix Cup Code Carryover and Tournament Undefined Error",
+  "description": "Fix cup codes persisting between heats and tournament undefined error on round advancement",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Investigate Cup Code Carryover",
+      "description": "Identify why cup codes from heat 1 are showing in heat 3 of same station",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "analysis",
+          "action": "Check cup code storage and retrieval",
+          "file": "server/storage.ts",
+          "details": "Review how cup codes are stored and retrieved. Check if cup codes are being cleared between heats or if they're being shared across matches",
+          "test": "Understand cup code data flow"
+        },
+        {
+          "id": "1.2",
+          "type": "analysis",
+          "action": "Check match cup positions API",
+          "file": "server/routes.ts",
+          "details": "Review /api/matches/:id/cup-positions endpoint. Check if cup positions are being filtered by matchId correctly",
+          "test": "Verify cup positions are match-specific"
+        },
+        {
+          "id": "1.3",
+          "type": "analysis",
+          "action": "Check judge scoring view cup code display",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Review how cup codes are fetched and displayed. Check if the query is properly invalidated between heats",
+          "test": "Verify cup codes refresh between heats"
+        },
+        {
+          "id": "1.4",
+          "type": "analysis",
+          "action": "Check heat segments cup code storage",
+          "file": "server/storage.ts",
+          "details": "Review heat segment creation and cup code assignment. Check if cup codes are being cleared when new heat starts",
+          "test": "Verify cup codes are heat-specific"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Fix Cup Code Isolation",
+      "description": "Ensure cup codes are isolated per heat/match",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "bugfix",
+          "action": "Verify cup positions are match-specific",
+          "file": "server/routes.ts",
+          "details": "Ensure cup positions query filters by matchId. Add validation to prevent cross-match cup code access",
+          "test": "Cup codes are isolated per match"
+        },
+        {
+          "id": "2.2",
+          "type": "bugfix",
+          "action": "Clear cup codes when heat starts",
+          "file": "server/routes.ts",
+          "details": "When a new heat starts, ensure previous cup codes are cleared or not accessible. Check heat segment creation",
+          "test": "New heats start with clean cup codes"
+        },
+        {
+          "id": "2.3",
+          "type": "bugfix",
+          "action": "Invalidate cup code queries on heat change",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Ensure cup code queries are invalidated when match changes. Add proper query key dependencies",
+          "test": "Cup codes refresh when switching heats"
+        },
+        {
+          "id": "2.4",
+          "type": "bugfix",
+          "action": "Add cup code cleanup on heat advance",
+          "file": "server/routes.ts",
+          "details": "When advancing to next heat, ensure old cup codes are cleared or marked as inactive",
+          "test": "Cup codes don't persist between heats"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Fix Tournament Undefined Error",
+      "description": "Fix 'tournament not defined' error when advancing rounds",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "analysis",
+          "action": "Check populate next round endpoint",
+          "file": "server/routes.ts",
+          "details": "Review /api/tournaments/:id/populate-next-round endpoint. Check if tournament is properly fetched and validated",
+          "test": "Identify where tournament becomes undefined"
+        },
+        {
+          "id": "3.2",
+          "type": "analysis",
+          "action": "Check round completion logic",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "Review checkRoundCompletion function. Check if tournament parameter is properly passed",
+          "test": "Verify tournament is available in round completion"
+        },
+        {
+          "id": "3.3",
+          "type": "analysis",
+          "action": "Check client-side round advancement",
+          "file": "client/src/components",
+          "details": "Review how round advancement is triggered. Check if tournament ID is properly passed",
+          "test": "Verify tournament ID is available"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Fix Tournament Undefined",
+      "description": "Ensure tournament is properly defined throughout round advancement",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "bugfix",
+          "action": "Add tournament validation",
+          "file": "server/routes.ts",
+          "details": "Add explicit tournament existence check in populate-next-round. Return clear error if tournament not found",
+          "test": "Tournament is validated before round advancement"
+        },
+        {
+          "id": "4.2",
+          "type": "bugfix",
+          "action": "Fix tournament parameter passing",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "Ensure tournament is properly passed to all functions. Add null checks",
+          "test": "Tournament is available in all functions"
+        },
+        {
+          "id": "4.3",
+          "type": "bugfix",
+          "action": "Add error handling for missing tournament",
+          "file": "server/routes.ts",
+          "details": "Add try-catch and proper error messages when tournament is undefined",
+          "test": "Clear error messages for missing tournament"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "Test cup code isolation first, then tournament advancement",
+    "test_files": [],
+    "manual_testing": [
+      "Start heat 1 on station A, assign cup codes",
+      "Complete heat 1, advance to heat 3 on station A",
+      "Verify heat 3 starts with no cup codes",
+      "Complete round, verify round advancement works",
+      "Check for tournament undefined errors"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Can revert cup code changes if needed"
+  }
+}
+

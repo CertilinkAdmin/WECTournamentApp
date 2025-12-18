@@ -617,10 +617,13 @@ export class BracketGenerator {
     }));
 
     // Get tournament to access enabledStations
-    const tournament = await storage.getTournament(tournamentId);
+    // Tournament type is defined in @shared/schema - same type for regular and test tournaments
+    const tournament: Tournament | undefined = await storage.getTournament(tournamentId);
     if (!tournament) {
-      throw new Error(`Tournament ${tournamentId} not found`);
+      throw new Error(`Tournament ${tournamentId} not found. Tournament may not exist or may have been deleted.`);
     }
+    
+    // Tournament is now guaranteed to be defined (TypeScript type narrowing)
 
     // Get enabled stations for this tournament
     const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];

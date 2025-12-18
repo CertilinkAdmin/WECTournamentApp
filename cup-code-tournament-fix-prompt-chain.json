@@ -1,0 +1,124 @@
+{
+  "workflow": "OPUX - Cup Code Assignment & Tournament Validation Fix",
+  "description": "Fix cup code assignment for every heat and resolve tournament not defined errors",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Fix Cup Code Assignment for Every Heat",
+      "description": "Ensure cup codes are assigned for every heat, not just the first one",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "analysis",
+          "action": "Review cup code assignment in startMatchMutation",
+          "file": "client/src/components/StationLeadView.tsx",
+          "details": "Check how cup codes are retrieved from participants. Verify that participants have cup codes set for all heats, not just the first one.",
+          "test": "Verify cup codes are available for all participants in all heats"
+        },
+        {
+          "id": "1.2",
+          "type": "fix",
+          "action": "Ensure cup codes are assigned when starting each heat",
+          "file": "client/src/components/StationLeadView.tsx",
+          "details": "Modify startMatchMutation to ensure cup codes are always assigned when starting a heat. If participants don't have cup codes, generate them or prompt for assignment.",
+          "test": "Start multiple heats in same station - verify cup codes are assigned for each"
+        },
+        {
+          "id": "1.3",
+          "type": "fix",
+          "action": "Add cup code validation before starting heat",
+          "file": "client/src/components/StationLeadView.tsx",
+          "details": "Add validation to check if both competitors have cup codes before allowing heat to start. Show error if cup codes are missing.",
+          "test": "Try starting heat without cup codes - should show error"
+        },
+        {
+          "id": "1.4",
+          "type": "fix",
+          "action": "Ensure cup codes are generated for participants in next rounds",
+          "file": "server/routes.ts",
+          "details": "When populating next round, ensure winners have cup codes. If they don't, generate them based on their participant data.",
+          "test": "Populate next round - verify all participants have cup codes"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Fix Tournament Not Defined Error",
+      "description": "Add proper tournament validation in all endpoints that use tournament data",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "analysis",
+          "action": "Find all places where tournament might be undefined",
+          "file": "server",
+          "details": "Search for all places where getTournament is called and tournament might be used without null check. Check bracketGenerator, routes.ts, roundCompletion.ts",
+          "test": "Identify all potential undefined tournament errors"
+        },
+        {
+          "id": "2.2",
+          "type": "fix",
+          "action": "Add tournament validation in bracketGenerator.generateNextRound",
+          "file": "server/bracketGenerator.ts",
+          "details": "Add explicit tournament type annotation and validation. Ensure tournament is checked before accessing properties.",
+          "test": "Call generateNextRound with invalid tournament ID - should return proper error"
+        },
+        {
+          "id": "2.3",
+          "type": "fix",
+          "action": "Add tournament validation in populate-next-round endpoint",
+          "file": "server/routes.ts",
+          "details": "Ensure tournament is validated before calling any functions that might use it. Add explicit type annotations.",
+          "test": "Call populate-next-round with invalid tournament - should return 404"
+        },
+        {
+          "id": "2.4",
+          "type": "fix",
+          "action": "Add tournament validation in roundCompletion utility",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "Ensure all functions that use tournament have proper validation and type annotations.",
+          "test": "Call checkRoundCompletion with invalid tournament - should throw proper error"
+        },
+        {
+          "id": "2.5",
+          "type": "fix",
+          "action": "Add error handling in client for tournament errors",
+          "file": "client/src/components/StationLeadView.tsx",
+          "details": "Add proper error handling in populateNextRoundMutation to catch and display tournament not found errors.",
+          "test": "Try populating next round with invalid tournament - should show user-friendly error"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Integration Testing",
+      "description": "Test the complete flow with multiple heats and round advancement",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "test",
+          "action": "Test cup code assignment for multiple heats",
+          "file": "test",
+          "details": "Start heat 1, complete it, start heat 2 in same station. Verify cup codes are assigned for both heats.",
+          "test": "Manual test: Start 2 heats in same station, verify cup codes are assigned"
+        },
+        {
+          "id": "3.2",
+          "type": "test",
+          "action": "Test round advancement with tournament validation",
+          "file": "test",
+          "details": "Complete a round and populate next round. Verify no 'tournament not defined' errors occur.",
+          "test": "Manual test: Complete round, populate next round, verify no errors"
+        },
+        {
+          "id": "3.3",
+          "type": "test",
+          "action": "Test cup code assignment in next round",
+          "file": "test",
+          "details": "After populating next round, start first heat. Verify cup codes are assigned.",
+          "test": "Manual test: Populate next round, start first heat, verify cup codes"
+        }
+      ]
+    }
+  ]
+}
+

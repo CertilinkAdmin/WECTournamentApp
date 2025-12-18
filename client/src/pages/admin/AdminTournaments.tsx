@@ -660,14 +660,37 @@ export default function AdminTournaments() {
       const bracketData = await bracketResponse.json();
       
       // Step 3: Assign judges to all heats (if not already assigned by bracket generator)
-      const judgesResponse = await fetch(`/api/tournaments/${selectedTournamentId}/assign-judges`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-      if (!judgesResponse.ok) {
-        // Don't fail if judges are already assigned, just log
-        console.warn('Judge assignment warning:', await judgesResponse.json().catch(() => ({})));
+      // This is optional - bracket generator may have already assigned judges
+      try {
+        const judgesResponse = await fetch(`/api/tournaments/${selectedTournamentId}/assign-judges`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        if (!judgesResponse.ok) {
+          // Don't fail if judges are already assigned or insufficient judges, just log
+          const error = await judgesResponse.json().catch(() => ({ error: 'Failed to assign judges' }));
+          console.warn('Judge assignment warning:', error.error || 'Failed to assign judges');
+          toast({
+            title: "Step 3 Skipped",
+            description: error.error || "Judges may already be assigned or insufficient judges available",
+            variant: "default",
+          });
+        } else {
+          const judgesData = await judgesResponse.json();
+          toast({
+            title: "Step 3 Complete",
+            description: judgesData.message || "Judges assigned successfully",
+          });
+        }
+      } catch (error: any) {
+        // Don't fail the entire workflow if judge assignment fails
+        console.error('Judge assignment error (non-blocking):', error);
+        toast({
+          title: "Step 3 Warning",
+          description: "Judge assignment encountered an issue, but tournament preparation completed. You can assign judges manually later.",
+          variant: "default",
+        });
       }
 
       // Step 4: Assign station leads to stations (A, B, C)

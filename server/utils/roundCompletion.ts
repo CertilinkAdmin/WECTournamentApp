@@ -4,7 +4,7 @@
  */
 
 import { storage } from '../storage';
-import type { Match } from '@shared/schema';
+import type { Match, Tournament } from '@shared/schema';
 
 export interface RoundCompletionStatus {
   isComplete: boolean;
@@ -119,8 +119,16 @@ async function getStationCompletionStatus(
 ): Promise<StationCompletionStatus[]> {
   // Get all stations for this tournament
   const allStations = await storage.getAllStations();
-  const tournament = await storage.getTournament(tournamentId);
-  const enabledStations = tournament?.enabledStations || ['A', 'B', 'C'];
+  // Tournament type is defined in @shared/schema - same type for regular and test tournaments
+  const tournament: Tournament | undefined = await storage.getTournament(tournamentId);
+  
+  // Validate tournament exists (works for both regular and test tournaments)
+  if (!tournament) {
+    throw new Error(`Tournament ${tournamentId} not found. Tournament may not exist or may have been deleted.`);
+  }
+  
+  // Tournament is now guaranteed to be defined (TypeScript type narrowing)
+  const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
   const tournamentStations = allStations.filter(s => 
     s.tournamentId === tournamentId && enabledStations.includes(s.name)
   );

@@ -257,6 +257,12 @@ export default function JudgeScoringView({
         queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
       }
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentIdNum}/matches`] });
+      // Invalidate cup positions when heat advances to prevent carryover
+      if (selectedMatchId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/cup-positions`] });
+      }
+      // Invalidate all cup position queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/matches'] });
     };
 
     const handleSegmentStarted = () => {
@@ -284,11 +290,24 @@ export default function JudgeScoringView({
       }
     };
 
+    const handleCupPositionsAssigned = (data: { matchId: number }) => {
+      console.log('JudgeScoringView: Cup positions assigned event received', data);
+      // Invalidate cup positions query for the specific match
+      if (data.matchId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/matches/${data.matchId}/cup-positions`] });
+      }
+      // Also invalidate if it's the currently selected match
+      if (selectedMatchId === data.matchId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/cup-positions`] });
+      }
+    };
+
     socket.on('heat:completed', handleHeatCompleted);
     socket.on('heat:started', handleHeatStarted);
     socket.on('heat:advanced', handleHeatAdvanced);
     socket.on('segment:started', handleSegmentStarted);
     socket.on('segment:ended', handleSegmentEnded);
+    socket.on('cup-positions:assigned', handleCupPositionsAssigned);
 
     return () => {
       socket.off('heat:completed', handleHeatCompleted);
@@ -296,6 +315,7 @@ export default function JudgeScoringView({
       socket.off('heat:advanced', handleHeatAdvanced);
       socket.off('segment:started', handleSegmentStarted);
       socket.off('segment:ended', handleSegmentEnded);
+      socket.off('cup-positions:assigned', handleCupPositionsAssigned);
     };
   }, [socket, tournamentIdNum, queryClient, effectiveJudgeId, selectedMatchId]);
 
@@ -367,6 +387,8 @@ export default function JudgeScoringView({
       return positions.map((p: any) => ({ cupCode: p.cupCode, position: p.position }));
     },
     enabled: !!selectedMatchId,
+    // Invalidate when match changes to prevent cup code carryover
+    staleTime: 0,
   });
 
   // Get cup codes from segments (dial-in segment has leftCupCode/rightCupCode)
@@ -1316,8 +1338,10 @@ export default function JudgeScoringView({
                         <div className="text-xs text-muted-foreground font-medium">Left Cup</div>
                         <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[var(--espresso-dark)] dark:bg-[var(--espresso-dark)] text-[var(--espresso-cream)]">
                           {(() => {
+                            // Only use cup positions from matchCupPositions table (match-specific)
+                            // Do NOT use dialInSegment cup codes as they may carry over from previous heats
                             const leftPosition = cupPositions?.find(p => p.position === 'left');
-                            return leftPosition?.cupCode || dialInSegment?.leftCupCode || '—';
+                            return leftPosition?.cupCode || '—';
                           })()}
                         </div>
                       </div>
@@ -1325,8 +1349,10 @@ export default function JudgeScoringView({
                         <div className="text-xs text-muted-foreground font-medium">Right Cup</div>
                         <div className="text-lg font-bold text-primary px-2 py-1 rounded mt-1 bg-[var(--espresso-dark)] dark:bg-[var(--espresso-dark)] text-[var(--espresso-cream)]">
                           {(() => {
+                            // Only use cup positions from matchCupPositions table (match-specific)
+                            // Do NOT use dialInSegment cup codes as they may carry over from previous heats
                             const rightPosition = cupPositions?.find(p => p.position === 'right');
-                            return rightPosition?.cupCode || dialInSegment?.rightCupCode || '—';
+                            return rightPosition?.cupCode || '—';
                           })()}
                         </div>
                       </div>

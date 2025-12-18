@@ -337,8 +337,35 @@ export default function StationLeadView() {
           ? participants.find(p => p.userId === currentMatch.competitor2Id)
           : null;
 
-        const cupCode1 = comp1Participant?.cupCode || null;
-        const cupCode2 = comp2Participant?.cupCode || null;
+        // Ensure both participants have cup codes - if not, fetch from server or generate
+        let cupCode1 = comp1Participant?.cupCode || null;
+        let cupCode2 = comp2Participant?.cupCode || null;
+
+        // If cup codes are missing, try to get them from the server
+        if (!cupCode1 && comp1Participant) {
+          // Fetch updated participant data
+          const participantResponse = await fetch(`/api/tournaments/${currentTournamentId}/participants`);
+          if (participantResponse.ok) {
+            const allParticipants = await participantResponse.json();
+            const updatedParticipant = allParticipants.find((p: any) => p.userId === currentMatch.competitor1Id);
+            cupCode1 = updatedParticipant?.cupCode || null;
+          }
+        }
+
+        if (!cupCode2 && comp2Participant) {
+          // Fetch updated participant data
+          const participantResponse = await fetch(`/api/tournaments/${currentTournamentId}/participants`);
+          if (participantResponse.ok) {
+            const allParticipants = await participantResponse.json();
+            const updatedParticipant = allParticipants.find((p: any) => p.userId === currentMatch.competitor2Id);
+            cupCode2 = updatedParticipant?.cupCode || null;
+          }
+        }
+
+        // If still missing, throw error - cup codes must be assigned before starting heat
+        if (!cupCode1 || !cupCode2) {
+          throw new Error(`Cannot start heat: Cup codes are missing. Competitor 1: ${cupCode1 || 'MISSING'}, Competitor 2: ${cupCode2 || 'MISSING'}. Please assign cup codes to participants before starting the heat.`);
+        }
 
         // Randomly assign cup codes to left/right positions
         const shouldSwap = Math.random() < 0.5;
@@ -501,15 +528,27 @@ export default function StationLeadView() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      if (!response.ok) throw new Error('Failed to populate next round');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to populate next round' }));
+        throw new Error(errorData.error || 'Failed to populate next round');
+      }
       return await response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
       queryClient.invalidateQueries({ queryKey: ['/api/stations'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/participants`] });
       toast({
         title: "Next Round Populated",
         description: `Next round of competitors has been assigned to all stations.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Populate Next Round",
+        description: error.message || "An error occurred while populating the next round. Please check that the current round is complete and all matches have winners.",
+        variant: "destructive",
+        duration: 8000,
       });
     }
   });
@@ -898,7 +937,7 @@ export default function StationLeadView() {
               <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide text-center">
                 {currentSegmentName}
               </div>
-              <div className="bg-black rounded-lg p-1.5 sm:p-2 border-2 border-primary/50 shadow-lg shadow-primary/20 w-full sm:w-auto max-w-[200px] sm:max-w-none">
+              <div className="rounded-lg p-1.5 sm:p-2 border-2 border-primary/50 shadow-lg shadow-primary/20 w-full sm:w-auto max-w-[200px] sm:max-w-none bg-[#f6f4ee]">
                 <SevenSegmentTimer 
                   timeRemaining={currentSegmentTimeRemaining} 
                   isPaused={pausedSegmentId === runningSegment?.id}
