@@ -11,6 +11,7 @@ import { Gavel, CheckCircle2, Loader2, Trophy, ArrowLeft, Coffee, Bell, X, Users
 import { useToast } from '@/hooks/use-toast';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 import type { User, Tournament, TournamentParticipant, Match, HeatSegment, JudgeDetailedScore } from '@shared/schema';
 import type { InsertJudgeDetailedScore } from '@shared/schema';
 
@@ -211,6 +212,79 @@ export default function JudgeScoringView({
     };
   }, [socket, currentUser, toast]);
 
+  // Join tournament room and listen for real-time match/heat updates
+  useEffect(() => {
+    if (!socket || !tournamentIdNum) return;
+
+    // Join tournament room for real-time updates
+    socket.emit('join:tournament', tournamentIdNum);
+    console.log(`JudgeScoringView: Joined tournament room: ${tournamentIdNum}`);
+
+    // Listen for real-time heat/match status updates
+    const handleHeatCompleted = () => {
+      console.log('JudgeScoringView: Heat completed event received');
+      // Invalidate assigned matches to refresh match status
+      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentIdNum}/matches`] });
+      // Invalidate batch queries for all matches
+      queryClient.invalidateQueries({ queryKey: ['/api/matches/segments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/matches/scores'] });
+      // Also invalidate segments and scores for current match
+      if (selectedMatchId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/segments`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/detailed-scores`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/global-lock-status`] });
+      }
+    };
+
+    const handleHeatStarted = () => {
+      console.log('JudgeScoringView: Heat started event received');
+      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentIdNum}/matches`] });
+    };
+
+    const handleHeatAdvanced = () => {
+      console.log('JudgeScoringView: Heat advanced event received');
+      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentIdNum}/matches`] });
+    };
+
+    const handleSegmentStarted = () => {
+      console.log('JudgeScoringView: Segment started event received');
+      if (selectedMatchId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/segments`] });
+      }
+      // Invalidate batch queries for all matches
+      queryClient.invalidateQueries({ queryKey: ['/api/matches/segments'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+    };
+
+    const handleSegmentEnded = () => {
+      console.log('JudgeScoringView: Segment ended event received');
+      if (selectedMatchId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/segments`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/global-lock-status`] });
+      }
+      // Invalidate batch queries for all matches
+      queryClient.invalidateQueries({ queryKey: ['/api/matches/segments'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
+    };
+
+    socket.on('heat:completed', handleHeatCompleted);
+    socket.on('heat:started', handleHeatStarted);
+    socket.on('heat:advanced', handleHeatAdvanced);
+    socket.on('segment:started', handleSegmentStarted);
+    socket.on('segment:ended', handleSegmentEnded);
+
+    return () => {
+      socket.off('heat:completed', handleHeatCompleted);
+      socket.off('heat:started', handleHeatStarted);
+      socket.off('heat:advanced', handleHeatAdvanced);
+      socket.off('segment:started', handleSegmentStarted);
+      socket.off('segment:ended', handleSegmentEnded);
+    };
+  }, [socket, tournamentIdNum, queryClient, effectiveJudgeId, selectedMatchId]);
+
   // Determine which judge ID to use (selected or current user)
   const effectiveJudgeId = selectedJudgeId || (isJudge ? currentUser?.id : null);
 
@@ -224,6 +298,7 @@ export default function JudgeScoringView({
       return response.json();
     },
     enabled: !!effectiveJudgeId,
+    refetchInterval: 10000, // Fallback polling every 10 seconds (primary updates via WebSocket)
   });
 
   // Filter to only show judges that have assigned matches
@@ -236,6 +311,7 @@ export default function JudgeScoringView({
   const { data: segments = [] } = useQuery<HeatSegment[]>({
     queryKey: [`/api/matches/${selectedMatchId}/segments`],
     enabled: !!selectedMatchId,
+    refetchInterval: 5000, // Fallback polling every 5 seconds (primary updates via WebSocket)
   });
 
   // Fetch existing detailed scores for selected match
@@ -320,6 +396,170 @@ export default function JudgeScoringView({
     if (!tournamentIdNum) return assignedMatches;
     return assignedMatches.filter(m => (m as any).tournamentId === tournamentIdNum);
   }, [assignedMatches, tournamentIdNum]);
+
+  // Fetch segments for all assigned matches to determine readiness
+  const allMatchIds = useMemo(() => tournamentMatches.map(m => m.id), [tournamentMatches]);
+  
+  // Fetch segments for all matches (batch fetch)
+  const { data: allSegmentsData = {} } = useQuery<Record<number, HeatSegment[]>>({
+    queryKey: ['/api/matches/segments', ...allMatchIds],
+    queryFn: async () => {
+      if (allMatchIds.length === 0) return {};
+      const segmentsPromises = allMatchIds.map(async (matchId) => {
+        try {
+          const response = await fetch(`/api/matches/${matchId}/segments`);
+          if (!response.ok) return { matchId, segments: [] };
+          const segments = await response.json();
+          return { matchId, segments };
+        } catch {
+          return { matchId, segments: [] };
+        }
+      });
+      const results = await Promise.all(segmentsPromises);
+      const segmentsMap: Record<number, HeatSegment[]> = {};
+      results.forEach(({ matchId, segments }) => {
+        segmentsMap[matchId] = segments;
+      });
+      return segmentsMap;
+    },
+    enabled: allMatchIds.length > 0,
+    refetchInterval: 5000, // Poll every 5 seconds for segment status
+  });
+
+  // Fetch scores for all assigned matches to determine if judged
+  const { data: allScoresData = {} } = useQuery<Record<number, JudgeDetailedScore[]>>({
+    queryKey: ['/api/matches/scores', ...allMatchIds, effectiveJudgeId],
+    queryFn: async () => {
+      if (allMatchIds.length === 0 || !effectiveJudgeId || !selectedJudge) return {};
+      const scoresPromises = allMatchIds.map(async (matchId) => {
+        try {
+          const response = await fetch(`/api/matches/${matchId}/detailed-scores`);
+          if (!response.ok) return { matchId, scores: [] };
+          const scores = await response.json();
+          // Filter to only this judge's scores
+          const judgeScores = scores.filter((s: JudgeDetailedScore) => 
+            s.judgeName === selectedJudge.user.name
+          );
+          return { matchId, scores: judgeScores };
+        } catch {
+          return { matchId, scores: [] };
+        }
+      });
+      const results = await Promise.all(scoresPromises);
+      const scoresMap: Record<number, JudgeDetailedScore[]> = {};
+      results.forEach(({ matchId, scores }) => {
+        scoresMap[matchId] = scores;
+      });
+      return scoresMap;
+    },
+    enabled: allMatchIds.length > 0 && !!effectiveJudgeId && !!selectedJudge,
+    refetchInterval: 10000, // Poll every 10 seconds for score status
+  });
+
+  // Calculate heat status for each match (ready to judge vs judged)
+  const heatStatuses = useMemo(() => {
+    const statuses: Record<number, { isReady: boolean; isJudged: boolean; reason: string }> = {};
+    
+    tournamentMatches.forEach(match => {
+      const matchSegments = allSegmentsData[match.id] || [];
+      const matchScores = allScoresData[match.id] || [];
+      const judgeRole = match.judgeRole;
+
+      // Check if judged: All required scores submitted
+      // Required: Latte Art (visualLatteArt) + Role-specific sensory (CAPPUCCINO or ESPRESSO)
+      const hasLatteArtScore = matchScores.some(s => 
+        (s.visualLatteArt === 'left' || s.visualLatteArt === 'right')
+      );
+      
+      const hasSensoryScore = judgeRole === 'CAPPUCCINO' 
+        ? matchScores.some(s => 
+            s.sensoryBeverage === 'Cappuccino' &&
+            (s.taste === 'left' || s.taste === 'right') &&
+            (s.tactile === 'left' || s.tactile === 'right') &&
+            (s.flavour === 'left' || s.flavour === 'right') &&
+            (s.overall === 'left' || s.overall === 'right')
+          )
+        : matchScores.some(s => 
+            s.sensoryBeverage === 'Espresso' &&
+            (s.taste === 'left' || s.taste === 'right') &&
+            (s.tactile === 'left' || s.tactile === 'right') &&
+            (s.flavour === 'left' || s.flavour === 'right') &&
+            (s.overall === 'left' || s.overall === 'right')
+          );
+
+      const isJudged = hasLatteArtScore && hasSensoryScore;
+
+      // Check if ready to judge
+      // Ready when: Match is RUNNING/READY, required segments are ENDED, and not yet judged
+      const dialInSegment = matchSegments.find(s => s.segment === 'DIAL_IN');
+      const cappuccinoSegment = matchSegments.find(s => s.segment === 'CAPPUCCINO');
+      const espressoSegment = matchSegments.find(s => s.segment === 'ESPRESSO');
+
+      let isReady = false;
+      let reason = '';
+
+      if (isJudged) {
+        reason = 'All scores submitted';
+      } else if (match.status === 'DONE') {
+        reason = 'Heat completed';
+      } else if (match.status === 'PENDING') {
+        reason = 'Heat not started';
+      } else if (judgeRole === 'CAPPUCCINO') {
+        // Cappuccino judge needs: DIAL_IN ended AND CAPPUCCINO segment ended
+        if (dialInSegment?.status === 'ENDED' && cappuccinoSegment?.status === 'ENDED') {
+          isReady = true;
+          reason = 'Cappuccino segment ready for judging';
+        } else if (dialInSegment?.status !== 'ENDED') {
+          reason = 'Waiting for dial-in to complete';
+        } else {
+          reason = 'Waiting for cappuccino segment to complete';
+        }
+      } else if (judgeRole === 'ESPRESSO') {
+        // Espresso judge needs: DIAL_IN ended AND CAPPUCCINO ended AND ESPRESSO segment ended
+        if (dialInSegment?.status === 'ENDED' && 
+            cappuccinoSegment?.status === 'ENDED' && 
+            espressoSegment?.status === 'ENDED') {
+          isReady = true;
+          reason = 'Espresso segment ready for judging';
+        } else if (dialInSegment?.status !== 'ENDED') {
+          reason = 'Waiting for dial-in to complete';
+        } else if (cappuccinoSegment?.status !== 'ENDED') {
+          reason = 'Waiting for cappuccino segment to complete';
+        } else {
+          reason = 'Waiting for espresso segment to complete';
+        }
+      }
+
+      statuses[match.id] = { isReady, isJudged, reason };
+    });
+
+    return statuses;
+  }, [tournamentMatches, allSegmentsData, allScoresData, selectedJudge]);
+
+  // Sort matches: Ready first, then pending, then judged
+  const sortedTournamentMatches = useMemo(() => {
+    return [...tournamentMatches].sort((a, b) => {
+      const statusA = heatStatuses[a.id];
+      const statusB = heatStatuses[b.id];
+      
+      // Ready heats first
+      if (statusA?.isReady && !statusB?.isReady) return -1;
+      if (!statusA?.isReady && statusB?.isReady) return 1;
+      
+      // Judged heats last
+      if (statusA?.isJudged && !statusB?.isJudged) return 1;
+      if (!statusA?.isJudged && statusB?.isJudged) return -1;
+      
+      // Then by round and heat number
+      if (a.round !== b.round) return a.round - b.round;
+      return a.heatNumber - b.heatNumber;
+    });
+  }, [tournamentMatches, heatStatuses]);
+
+  // Count ready heats
+  const readyHeatsCount = useMemo(() => {
+    return Object.values(heatStatuses).filter(s => s.isReady).length;
+  }, [heatStatuses]);
 
 
   // Get participants for competitors
@@ -437,15 +677,8 @@ export default function JudgeScoringView({
           setCappuccinoTaste(existingCappuccinoScore.taste as 'left' | 'right' | null);
           setCappuccinoTactile(existingCappuccinoScore.tactile as 'left' | 'right' | null);
           setCappuccinoFlavour(existingCappuccinoScore.flavour as 'left' | 'right' | null);
-          const cappVotes = [
-            existingCappuccinoScore.taste,
-            existingCappuccinoScore.tactile,
-            existingCappuccinoScore.flavour,
-          ];
-          const leftWins = cappVotes.filter((v) => v === 'left').length;
-          const rightWins = cappVotes.filter((v) => v === 'right').length;
-          const derived = leftWins > rightWins ? 'left' : rightWins > leftWins ? 'right' : null;
-          setCappuccinoOverall(derived);
+          // Overall is loaded from existing score, but will be recalculated by useEffect
+          setCappuccinoOverall(existingCappuccinoScore.overall as 'left' | 'right' | null);
         } else {
           setCappuccinoTaste(null);
           setCappuccinoTactile(null);
@@ -458,15 +691,8 @@ export default function JudgeScoringView({
           setEspressoTaste(existingEspressoScore.taste as 'left' | 'right' | null);
           setEspressoTactile(existingEspressoScore.tactile as 'left' | 'right' | null);
           setEspressoFlavour(existingEspressoScore.flavour as 'left' | 'right' | null);
-          const espVotes = [
-            existingEspressoScore.taste,
-            existingEspressoScore.tactile,
-            existingEspressoScore.flavour,
-          ];
-          const leftWins = espVotes.filter((v) => v === 'left').length;
-          const rightWins = espVotes.filter((v) => v === 'right').length;
-          const derived = leftWins > rightWins ? 'left' : rightWins > leftWins ? 'right' : null;
-          setEspressoOverall(derived);
+          // Overall is loaded from existing score, but will be recalculated by useEffect
+          setEspressoOverall(existingEspressoScore.overall as 'left' | 'right' | null);
         } else {
           setEspressoTaste(null);
           setEspressoTactile(null);
@@ -474,6 +700,38 @@ export default function JudgeScoringView({
           setEspressoOverall(null);
         }
   }, [existingLatteArtScore, existingCappuccinoScore, existingEspressoScore]);
+
+  // Auto-calculate Cappuccino overall when taste, tactile, or flavour changes
+  useEffect(() => {
+    if (cappuccinoTaste && cappuccinoTactile && cappuccinoFlavour) {
+      // Calculate winner: 2 of 3 categories
+      const votes = [cappuccinoTaste, cappuccinoTactile, cappuccinoFlavour];
+      const leftWins = votes.filter(v => v === 'left').length;
+      const rightWins = votes.filter(v => v === 'right').length;
+      // Overall goes to the side that wins 2 of 3
+      const derivedOverall: 'left' | 'right' = leftWins >= 2 ? 'left' : 'right';
+      setCappuccinoOverall(derivedOverall);
+    } else {
+      // If any category is missing, clear overall
+      setCappuccinoOverall(null);
+    }
+  }, [cappuccinoTaste, cappuccinoTactile, cappuccinoFlavour]);
+
+  // Auto-calculate Espresso overall when taste, tactile, or flavour changes
+  useEffect(() => {
+    if (espressoTaste && espressoTactile && espressoFlavour) {
+      // Calculate winner: 2 of 3 categories
+      const votes = [espressoTaste, espressoTactile, espressoFlavour];
+      const leftWins = votes.filter(v => v === 'left').length;
+      const rightWins = votes.filter(v => v === 'right').length;
+      // Overall goes to the side that wins 2 of 3
+      const derivedOverall: 'left' | 'right' = leftWins >= 2 ? 'left' : 'right';
+      setEspressoOverall(derivedOverall);
+    } else {
+      // If any category is missing, clear overall
+      setEspressoOverall(null);
+    }
+  }, [espressoTaste, espressoTactile, espressoFlavour]);
 
   // Reset scoring state when match changes (only if no existing scores)
   useEffect(() => {
@@ -509,6 +767,10 @@ export default function JudgeScoringView({
     onSuccess: (data) => {
       console.log('Score submitted successfully:', data);
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/detailed-scores`] });
+      // Invalidate batch scores query for all matches to update heat status
+      queryClient.invalidateQueries({ queryKey: ['/api/matches/scores'] });
+      // Invalidate assigned matches to update heat status indicators
+      queryClient.invalidateQueries({ queryKey: [`/api/judges/${effectiveJudgeId}/matches`] });
       // Also invalidate judge completion queries to update completion status
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/segments/ESPRESSO/judges-completion`] });
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/segments/CAPPUCCINO/judges-completion`] });
@@ -599,24 +861,32 @@ export default function JudgeScoringView({
       return;
     }
 
-    // Derive overall winner from majority of the three sensory categories
-    const cappuccinoVotes = [cappuccinoTaste, cappuccinoTactile, cappuccinoFlavour];
-    const leftWins = cappuccinoVotes.filter(v => v === 'left').length;
-    const rightWins = cappuccinoVotes.filter(v => v === 'right').length;
-    const derivedOverall: 'left' | 'right' = leftWins > rightWins ? 'left' : 'right';
-    setCappuccinoOverall(derivedOverall);
+    // Overall is already auto-calculated by useEffect when taste/tactile/flavour change
+    // Just ensure it's set (should already be set by useEffect)
+    if (!cappuccinoOverall) {
+      const cappuccinoVotes = [cappuccinoTaste, cappuccinoTactile, cappuccinoFlavour];
+      const leftWins = cappuccinoVotes.filter(v => v === 'left').length;
+      const derivedOverall: 'left' | 'right' = leftWins >= 2 ? 'left' : 'right';
+      setCappuccinoOverall(derivedOverall);
+    }
 
     // Only submit Cappuccino sensory - don't include visualLatteArt to preserve existing value
-    const scoreData: InsertJudgeDetailedScore = {
-      matchId: selectedMatchId,
-      judgeName: selectedJudge.user.name,
-      sensoryBeverage: 'Cappuccino',
-      taste: cappuccinoTaste,
-      tactile: cappuccinoTactile,
-      flavour: cappuccinoFlavour,
-      overall: derivedOverall,
-      // Don't include visualLatteArt - it should remain independent
-    };
+    // Overall is auto-calculated by useEffect, use current value
+      const scoreData: InsertJudgeDetailedScore = {
+        matchId: selectedMatchId,
+        judgeName: selectedJudge.user.name,
+        sensoryBeverage: 'Cappuccino',
+        taste: cappuccinoTaste,
+        tactile: cappuccinoTactile,
+        flavour: cappuccinoFlavour,
+        overall: cappuccinoOverall || (() => {
+          // Fallback calculation if somehow overall is null
+          const votes = [cappuccinoTaste, cappuccinoTactile, cappuccinoFlavour];
+          const leftWins = votes.filter(v => v === 'left').length;
+          return leftWins >= 2 ? 'left' : 'right';
+        })(),
+        // Don't include visualLatteArt - it should remain independent
+      };
 
     console.log('Submitting cappuccino sensory score:', scoreData);
     try {
@@ -673,24 +943,33 @@ export default function JudgeScoringView({
       return;
     }
 
-    // Derive overall winner from majority of the three sensory categories
-    const espressoVotes = [espressoTaste, espressoTactile, espressoFlavour];
-    const leftWins = espressoVotes.filter(v => v === 'left').length;
-    const rightWins = espressoVotes.filter(v => v === 'right').length;
-    const derivedOverall: 'left' | 'right' = leftWins > rightWins ? 'left' : 'right';
-    setEspressoOverall(derivedOverall);
+    // Overall is already auto-calculated by useEffect, just use the current value
+    // Ensure overall is set (should already be set by useEffect)
+    if (!espressoOverall) {
+      const espressoVotes = [espressoTaste, espressoTactile, espressoFlavour];
+      const leftWins = espressoVotes.filter(v => v === 'left').length;
+      const rightWins = espressoVotes.filter(v => v === 'right').length;
+      const derivedOverall: 'left' | 'right' = leftWins >= 2 ? 'left' : 'right';
+      setEspressoOverall(derivedOverall);
+    }
 
-    // Only submit Espresso sensory - don't include visualLatteArt to preserve existing value
-    const scoreData: InsertJudgeDetailedScore = {
-      matchId: selectedMatchId,
-      judgeName: selectedJudge.user.name,
-      sensoryBeverage: 'Espresso',
-      taste: espressoTaste,
-      tactile: espressoTactile,
-      flavour: espressoFlavour,
-      overall: derivedOverall,
-      // Don't include visualLatteArt - it should remain independent
-    };
+      // Only submit Espresso sensory - don't include visualLatteArt to preserve existing value
+      // Overall is auto-calculated by useEffect, use current value
+      const scoreData: InsertJudgeDetailedScore = {
+        matchId: selectedMatchId,
+        judgeName: selectedJudge.user.name,
+        sensoryBeverage: 'Espresso',
+        taste: espressoTaste,
+        tactile: espressoTactile,
+        flavour: espressoFlavour,
+        overall: espressoOverall || (() => {
+          // Fallback calculation if somehow overall is null
+          const votes = [espressoTaste, espressoTactile, espressoFlavour];
+          const leftWins = votes.filter(v => v === 'left').length;
+          return leftWins >= 2 ? 'left' : 'right';
+        })(),
+        // Don't include visualLatteArt - it should remain independent
+      };
 
     console.log('Submitting espresso sensory score:', scoreData);
     try {
@@ -843,9 +1122,16 @@ export default function JudgeScoringView({
           {!propMatchId && effectiveJudgeId && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5" />
-                  Select Heat
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5" />
+                    Select Heat
+                  </div>
+                  {readyHeatsCount > 0 && (
+                    <Badge variant="default" className="bg-green-600 hover:bg-green-700 animate-pulse">
+                      {readyHeatsCount} {readyHeatsCount === 1 ? 'heat' : 'heats'} ready
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -859,22 +1145,72 @@ export default function JudgeScoringView({
                     <SelectValue placeholder="Choose a heat..." />
                   </SelectTrigger>
                 <SelectContent>
-                  {tournamentMatches.length === 0 ? (
+                  {sortedTournamentMatches.length === 0 ? (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">
                       {effectiveJudgeId ? 'No assigned heats for this judge' : 'Select a judge first'}
                     </div>
                   ) : (
-                    tournamentMatches.map((match) => {
+                    sortedTournamentMatches.map((match) => {
                       const roleLabel = match.judgeRole === 'CAPPUCCINO' ? 'Cappuccino Judge' : 'Espresso Judge';
+                      const heatStatus = heatStatuses[match.id];
+                      const isReady = heatStatus?.isReady || false;
+                      const isJudged = heatStatus?.isJudged || false;
+                      const reason = heatStatus?.reason || '';
+
+                      // Calculate progress: how many scores submitted out of required (2: Latte Art + Sensory)
+                      const matchScores = allScoresData[match.id] || [];
+                      const hasLatteArt = matchScores.some(s => 
+                        (s.visualLatteArt === 'left' || s.visualLatteArt === 'right')
+                      );
+                      const hasSensory = match.judgeRole === 'CAPPUCCINO'
+                        ? matchScores.some(s => s.sensoryBeverage === 'Cappuccino' && 
+                            (s.taste === 'left' || s.taste === 'right'))
+                        : matchScores.some(s => s.sensoryBeverage === 'Espresso' && 
+                            (s.taste === 'left' || s.taste === 'right'));
+                      const scoresCount = (hasLatteArt ? 1 : 0) + (hasSensory ? 1 : 0);
+
                       return (
-                        <SelectItem key={match.id} value={match.id.toString()}>
-                          Round {match.round}, Heat {match.heatNumber} - {roleLabel} - {match.status}
+                        <SelectItem 
+                          key={match.id} 
+                          value={match.id.toString()}
+                          disabled={isJudged}
+                          className={cn(
+                            isReady && 'bg-primary/10 border-l-4 border-l-primary font-semibold ring-2 ring-primary/20',
+                            isJudged && 'opacity-60'
+                          )}
+                        >
+                          <div className="flex items-center justify-between w-full gap-2 pr-1">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className={cn("font-medium truncate", isJudged && "line-through")}>
+                                Round {match.round}, Heat {match.heatNumber} - {roleLabel}
+                              </span>
+                              {isReady && (
+                                <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-xs animate-pulse flex-shrink-0">
+                                  Ready
+                                </Badge>
+                              )}
+                              {isJudged && (
+                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs flex-shrink-0">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Judged
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+                              <span>{scoresCount}/2</span>
+                            </div>
+                          </div>
                         </SelectItem>
                       );
                     })
                   )}
                 </SelectContent>
                 </Select>
+                {readyHeatsCount > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    💡 {readyHeatsCount} {readyHeatsCount === 1 ? 'heat is' : 'heats are'} ready to judge. Highlighted heats appear first.
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}
@@ -911,12 +1247,48 @@ export default function JudgeScoringView({
                   </AlertDescription>
                 </Alert>
               )}
+              {/* Scoring System Summary */}
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                      <Trophy className="h-4 w-4" />
+                      Scoring System
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Latte Art:</span>
+                        <span className="font-semibold">{CATEGORY_POINTS.visualLatteArt} points</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Taste/Tactile/Flavour:</span>
+                        <span className="font-semibold">{CATEGORY_POINTS.taste} point each</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Overall:</span>
+                        <span className="font-semibold">{CATEGORY_POINTS.overall} points</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Max per Judge:</span>
+                        <span className="font-semibold">11 points</span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground pt-2 border-t">
+                      Total possible per heat (3 judges): <span className="font-semibold">33 points</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Latte Art Scorecard - All Judges */}
               <Card className="border-l-4 border-l-blue-500 bg-card">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-[var(--brand-cinnamon-brown)] dark:text-[var(--brand-cinnamon-brown)]">
                     <Users className="h-5 w-5" />
                     <span className="font-bold">Visual Latte Art</span>
+                    <Badge variant="outline" className="text-xs">
+                      {CATEGORY_POINTS.visualLatteArt} points
+                    </Badge>
                     {latteArtSubmitted && (
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 ml-auto">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -973,7 +1345,7 @@ export default function JudgeScoringView({
                       <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                     </label>
                     <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
-                      Visual Latte Art
+                      Visual Latte Art <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.visualLatteArt} pts)</span>
                     </div>
                     <label className="flex items-center gap-2 justify-end cursor-pointer">
                       <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
@@ -1079,7 +1451,7 @@ export default function JudgeScoringView({
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
-                          Tactile
+                          Tactile <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.tactile} pt)</span>
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
@@ -1106,7 +1478,7 @@ export default function JudgeScoringView({
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
-                          Flavour
+                          Flavour <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.flavour} pt)</span>
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
@@ -1116,6 +1488,38 @@ export default function JudgeScoringView({
                             onChange={(e) => setCappuccinoFlavour(e.target.checked ? 'right' : null)}
                             disabled={cappuccinoSensorySubmitted || propIsReadOnly || isGloballyLocked}
                             className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Overall - Auto-calculated from 2 of 3 categories */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem] opacity-75">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-not-allowed">
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoOverall === 'left'}
+                            disabled={true}
+                            readOnly
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-not-allowed"
+                          />
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
+                        </label>
+                        <div className="text-center">
+                          <div className="font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
+                            Overall <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.overall} pts)</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            (Auto: 2 of 3)
+                          </div>
+                        </div>
+                        <label className="flex items-center gap-2 justify-end cursor-not-allowed">
+                          <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
+                          <input
+                            type="checkbox"
+                            checked={cappuccinoOverall === 'right'}
+                            disabled={true}
+                            readOnly
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-not-allowed"
                           />
                         </label>
                       </div>
@@ -1193,7 +1597,7 @@ export default function JudgeScoringView({
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
-                          Taste
+                          Taste <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.taste} pt)</span>
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
@@ -1271,7 +1675,7 @@ export default function JudgeScoringView({
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
                         <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
-                          Flavour
+                          Flavour <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.flavour} pt)</span>
                         </div>
                         <label className="flex items-center gap-2 justify-end cursor-pointer">
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
@@ -1291,41 +1695,34 @@ export default function JudgeScoringView({
                         </label>
                       </div>
 
-                      {/* Overall */}
-                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem]">
-                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-pointer">
+                      {/* Overall - Auto-calculated from 2 of 3 categories */}
+                      <div className="grid grid-cols-3 items-center p-3 sm:p-4 rounded-lg text-sm border border-primary/30 transition-all bg-[#2d1b12] min-h-[3rem] sm:min-h-[3.5rem] opacity-75">
+                        <label className="flex items-center gap-2 justify-start text-[#93401f] cursor-not-allowed">
                           <input
                             type="checkbox"
                             checked={espressoOverall === 'left'}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setEspressoOverall('left');
-                              } else {
-                                setEspressoOverall(null);
-                              }
-                            }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            disabled={true}
+                            readOnly
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-not-allowed"
                           />
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Left</span>
                         </label>
-                        <div className="text-center font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
-                          Overall
+                        <div className="text-center">
+                          <div className="font-semibold text-[var(--espresso-cream)] dark:text-primary text-sm sm:text-base">
+                            Overall <span className="text-xs text-muted-foreground">({CATEGORY_POINTS.overall} pts)</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            (Auto: 2 of 3)
+                          </div>
                         </div>
-                        <label className="flex items-center gap-2 justify-end cursor-pointer">
+                        <label className="flex items-center gap-2 justify-end cursor-not-allowed">
                           <span className="text-xs sm:text-sm text-[var(--espresso-cream)] dark:text-muted-foreground font-medium">Right</span>
                           <input
                             type="checkbox"
                             checked={espressoOverall === 'right'}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setEspressoOverall('right');
-                              } else {
-                                setEspressoOverall(null);
-                              }
-                            }}
-                            disabled={espressoSensorySubmitted || propIsReadOnly || isGloballyLocked}
-                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-pointer disabled:cursor-not-allowed"
+                            disabled={true}
+                            readOnly
+                            className="h-5 w-5 sm:h-6 sm:w-6 accent-[var(--brand-cinnamon-brown)] cursor-not-allowed"
                           />
                         </label>
                       </div>
@@ -1344,7 +1741,7 @@ export default function JudgeScoringView({
                     {/* Espresso Sensory Submit Button */}
                     {!isEspressoSensoryComplete && (
                       <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded">
-                        Please complete all categories: Taste, Tactile, Flavour, and Overall
+                        Please complete all categories: Taste, Tactile, and Flavour (Overall is auto-calculated)
                       </div>
                     )}
                     <Button

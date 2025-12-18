@@ -1,0 +1,165 @@
+{
+  "name": "Judge Heat Selection Real-Time Updates",
+  "description": "Fix real-time updates for judge heat selection progress - add WebSocket listeners and reduce polling for match status updates",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Diagnosis - Current State Analysis",
+      "description": "Analyze current polling vs WebSocket implementation for judge heat selection",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "analysis",
+          "action": "Identify all queries in JudgeScoringView that need real-time updates",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Find: assignedMatches query (line 218), segments query, existingScores query, globalLockStatus query. Check which have refetchInterval and which don't",
+          "test": "Document current polling intervals and WebSocket usage"
+        },
+        {
+          "id": "1.2",
+          "type": "analysis",
+          "action": "Check WebSocket event emissions for heat completion",
+          "file": "server/routes.ts",
+          "details": "Find where 'heat:completed' event is emitted (line 2063, 1990). Verify it's emitted when match status changes to DONE",
+          "test": "Confirm WebSocket events are being sent"
+        },
+        {
+          "id": "1.3",
+          "type": "analysis",
+          "action": "Check if JudgeScoringView has WebSocket listeners",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Search for socket.on listeners. Currently only has 'judge:scoring-required' listener. Missing 'heat:completed' listener",
+          "test": "Document missing WebSocket listeners"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Add WebSocket Listeners",
+      "description": "Add WebSocket listeners to JudgeScoringView for real-time match status updates",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "feature",
+          "action": "Add WebSocket listener for heat:completed event",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "In useEffect with socket, add listener for 'heat:completed' that invalidates assignedMatches query. Also listen for 'heat:started' and 'heat:advanced'",
+          "test": "WebSocket listener invalidates queries when heat status changes"
+        },
+        {
+          "id": "2.2",
+          "type": "feature",
+          "action": "Add WebSocket listener for segment events",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add listeners for 'segment:started' and 'segment:ended' to invalidate segments query for real-time segment status",
+          "test": "Segment status updates in real-time"
+        },
+        {
+          "id": "2.3",
+          "type": "feature",
+          "action": "Join tournament room for WebSocket updates",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add socket.emit('join:tournament', tournamentId) when tournamentId is available, similar to LiveOverview",
+          "test": "Component joins tournament room and receives updates"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Optimize Polling",
+      "description": "Reduce polling intervals where WebSocket updates are available",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "optimization",
+          "action": "Add refetchInterval to assignedMatches query",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add refetchInterval: 10000 (10 seconds) as fallback polling, but primary updates via WebSocket",
+          "test": "Query has fallback polling but relies on WebSocket"
+        },
+        {
+          "id": "3.2",
+          "type": "optimization",
+          "action": "Add refetchInterval to segments query",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add refetchInterval: 5000 for segments query as fallback, but WebSocket should be primary",
+          "test": "Segments query has fallback polling"
+        },
+        {
+          "id": "3.3",
+          "type": "optimization",
+          "action": "Reduce globalLockStatus polling interval",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Keep refetchInterval: 5000 but ensure WebSocket updates invalidate this query too",
+          "test": "Lock status updates via WebSocket primarily"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Verify Server-Side Events",
+      "description": "Ensure server emits WebSocket events when match status changes",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "verification",
+          "action": "Verify heat:completed emission on match status change",
+          "file": "server/routes.ts",
+          "details": "Check advance-heat endpoint (line 2063) and complete-heat endpoint (line 1990) emit 'heat:completed' event",
+          "test": "Server emits events when match status changes to DONE"
+        },
+        {
+          "id": "4.2",
+          "type": "verification",
+          "action": "Check if match update endpoints emit events",
+          "file": "server/routes.ts",
+          "details": "Search for other places where match status is updated (updateMatch calls) and ensure they emit WebSocket events",
+          "test": "All match status updates emit WebSocket events"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Testing & Verification",
+      "description": "Test real-time updates work without page refresh",
+      "tasks": [
+        {
+          "id": "5.1",
+          "type": "test",
+          "action": "Test heat completion updates judge view",
+          "details": "Complete Round 1 Heat 1, verify judge heat selection shows it as DONE without refresh",
+          "test": "Judge view updates immediately when heat completes"
+        },
+        {
+          "id": "5.2",
+          "type": "test",
+          "action": "Test segment status updates",
+          "details": "Start/end segments, verify judge view updates segment availability in real-time",
+          "test": "Segment status updates in real-time"
+        },
+        {
+          "id": "5.3",
+          "type": "test",
+          "action": "Test WebSocket connection",
+          "details": "Verify WebSocket connects, joins tournament room, and receives events",
+          "test": "WebSocket connection and event reception works"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "TDD - Test real-time updates after implementation",
+    "test_files": [],
+    "manual_testing": [
+      "Open judge scoring view",
+      "Complete a heat from station lead view",
+      "Verify judge view updates without refresh",
+      "Check browser console for WebSocket events",
+      "Verify queries are invalidated on WebSocket events"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Can revert WebSocket listeners, polling will still work as fallback"
+  }
+}
+

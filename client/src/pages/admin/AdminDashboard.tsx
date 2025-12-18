@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,10 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ToastAction } from '@/components/ui/toast';
 import { 
   Activity, Users, Database, Pause, Play, Trash2, Plus, 
   Image, Settings, AlertTriangle, CheckCircle2, XCircle,
-  Server, Cpu, HardDrive, Wifi, Clock, Loader2, Eye, UserPlus, Shield
+  Server, Cpu, HardDrive, Wifi, Clock, Loader2, Eye, UserPlus, Shield, Trophy
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import './AdminDashboard.css';
@@ -110,6 +112,7 @@ const TableDataViewer: React.FC<{ tableName: string }> = ({ tableName }) => {
 // Test Tournament Form Component
 const TestTournamentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [tournamentName, setTournamentName] = useState('Test Tournament');
   const [numBaristas, setNumBaristas] = useState(16);
   const [numJudges, setNumJudges] = useState(9);
@@ -150,8 +153,18 @@ const TestTournamentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) 
         const data = await response.json();
         onSuccess();
         toast({
-          title: 'Test Tournament Created',
-          description: data.message || 'Test tournament created successfully.',
+          title: 'Tournament Landscape Initiated',
+          description: 'Tournament landscape has been initiated. Proceed to the tournaments page to continue setup.',
+          action: (
+            <ToastAction 
+              altText="Go to tournaments" 
+              onClick={() => navigate('/admin/tournaments')}
+              className="flex items-center gap-2"
+            >
+              <Trophy className="h-4 w-4" />
+              Go to Tournies
+            </ToastAction>
+          ),
         });
         // Reset form
         setTournamentName('Test Tournament');

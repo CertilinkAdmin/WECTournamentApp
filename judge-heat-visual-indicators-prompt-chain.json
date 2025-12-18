@@ -1,0 +1,204 @@
+{
+  "name": "Judge Heat Visual Indicators - Ready & Judged States",
+  "description": "Add visual and functional indicators for heats ready to judge vs already judged - highlight ready heats, deactivate judged heats",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Define Heat States",
+      "description": "Determine criteria for 'ready to judge' and 'judged' states",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "analysis",
+          "action": "Define 'ready to judge' criteria",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Heat is ready when: 1) Match status is RUNNING or READY, 2) Required segments are ENDED (DIAL_IN for Latte Art, CAPPUCCINO for Cappuccino judge, ESPRESSO for Espresso judge), 3) Judge hasn't submitted all required scores yet",
+          "test": "Criteria clearly defined"
+        },
+        {
+          "id": "1.2",
+          "type": "analysis",
+          "action": "Define 'judged' criteria",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Heat is judged when: 1) Judge has submitted all required scores (Latte Art + role-specific sensory), 2) OR match status is DONE and all scores are locked",
+          "test": "Judged state clearly defined"
+        },
+        {
+          "id": "1.3",
+          "type": "analysis",
+          "action": "Check existing score submission logic",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Review existingLatteArtScore, existingCappuccinoScore, existingEspressoScore logic to understand how to check if heat is judged",
+          "test": "Understand current scoring state tracking"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Add Heat Status Calculation",
+      "description": "Create functions to calculate heat readiness and judged status",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "feature",
+          "action": "Create useMemo to calculate heat readiness",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "For each match in tournamentMatches, check: match status, segment availability, and whether judge has submitted required scores. Return map of matchId -> { isReady: boolean, isJudged: boolean, reason: string }",
+          "test": "Heat readiness calculated correctly"
+        },
+        {
+          "id": "2.2",
+          "type": "feature",
+          "action": "Fetch segments for all assigned matches",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Create query or useMemo to fetch/check segments for all matches in tournamentMatches to determine readiness",
+          "test": "Segment data available for all matches"
+        },
+        {
+          "id": "2.3",
+          "type": "feature",
+          "action": "Check scores for all assigned matches",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Query or check existing scores for all matches to determine if judged. May need to batch fetch or use existing score queries",
+          "test": "Score status available for all matches"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Visual Indicators - Ready State",
+      "description": "Add visual highlighting for heats ready to judge",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "ui",
+          "action": "Add highlight styling to ready heats in SelectItem",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add className with border-primary, bg-primary/10, ring-2 ring-primary to SelectItem when heat is ready. Add pulse animation or glow effect",
+          "test": "Ready heats visually stand out"
+        },
+        {
+          "id": "3.2",
+          "type": "ui",
+          "action": "Add 'Ready to Judge' badge",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add Badge component next to ready heats showing 'Ready' or 'Ready to Judge' with appropriate color (e.g., green or primary)",
+          "test": "Badge appears on ready heats"
+        },
+        {
+          "id": "3.3",
+          "type": "ui",
+          "action": "Add priority sorting for ready heats",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Sort tournamentMatches so ready heats appear first in the dropdown, then pending, then judged",
+          "test": "Ready heats appear at top of list"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Visual Indicators - Judged State",
+      "description": "Add visual deactivation for judged heats",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "ui",
+          "action": "Disable SelectItem for judged heats",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add disabled prop to SelectItem when heat is judged. Add className with opacity-50, cursor-not-allowed, line-through or muted colors",
+          "test": "Judged heats are disabled and visually distinct"
+        },
+        {
+          "id": "4.2",
+          "type": "ui",
+          "action": "Add 'Judged' badge",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add Badge showing 'Judged' or 'Completed' with CheckCircle2 icon and muted colors (gray/green)",
+          "test": "Badge appears on judged heats"
+        },
+        {
+          "id": "4.3",
+          "type": "ui",
+          "action": "Add visual separator or grouping",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Optionally group heats by status in SelectContent: Ready, Pending, Judged sections with headers",
+          "test": "Heats grouped by status (optional enhancement)"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Functional Indicators",
+      "description": "Add functional clues beyond visual",
+      "tasks": [
+        {
+          "id": "5.1",
+          "type": "feature",
+          "action": "Add tooltip or description text",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Add tooltip or helper text explaining why heat is ready (e.g., 'Cappuccino segment ended, ready for judging') or why it's disabled (e.g., 'All scores submitted')",
+          "test": "Tooltips provide context"
+        },
+        {
+          "id": "5.2",
+          "type": "feature",
+          "action": "Add progress indicator",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Show progress: '0/2 scored' for ready heats, '2/2 scored' for judged heats. Use progress bar or text indicator",
+          "test": "Progress shown clearly"
+        },
+        {
+          "id": "5.3",
+          "type": "feature",
+          "action": "Add notification count",
+          "file": "client/src/components/JudgeScoringView.tsx",
+          "details": "Show count of ready heats in card header or as badge (e.g., '3 heats ready to judge')",
+          "test": "Count of ready heats displayed"
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Testing & Refinement",
+      "description": "Test visual indicators and refine based on feedback",
+      "tasks": [
+        {
+          "id": "6.1",
+          "type": "test",
+          "action": "Test ready state highlighting",
+          "details": "Complete a segment, verify heat becomes highlighted as ready. Check visual prominence and clarity",
+          "test": "Ready state clearly visible"
+        },
+        {
+          "id": "6.2",
+          "type": "test",
+          "action": "Test judged state deactivation",
+          "details": "Submit all scores for a heat, verify it becomes disabled and shows judged badge",
+          "test": "Judged state clearly indicated"
+        },
+        {
+          "id": "6.3",
+          "type": "test",
+          "action": "Test real-time updates",
+          "details": "Verify indicators update in real-time when segments end or scores are submitted (via WebSocket)",
+          "test": "Indicators update without refresh"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "TDD - Test visual indicators after implementation",
+    "test_files": [],
+    "manual_testing": [
+      "Complete a segment, check if heat becomes highlighted",
+      "Submit scores, check if heat becomes disabled",
+      "Verify badges and visual indicators are clear",
+      "Test sorting (ready heats first)",
+      "Check real-time updates via WebSocket"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Can revert visual changes, functionality will remain"
+  }
+}
+

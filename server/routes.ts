@@ -1758,70 +1758,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Verify ALL stations have completed ALL their heats in current round
-      const stationCompletionStatus = tournamentStations.map(station => {
-        const stationMatches = matchesByStation.get(station.id) || [];
-        const completedMatches = stationMatches.filter(m => m.status === 'DONE');
-        const incompleteMatches = stationMatches.filter(m => m.status !== 'DONE');
-        
-        return {
-          stationName: station.name,
-          stationId: station.id,
-          totalHeats: stationMatches.length,
-          completedHeats: completedMatches.length,
-          incompleteHeats: incompleteMatches.length,
-          isComplete: stationMatches.length > 0 && incompleteMatches.length === 0,
-          incompleteHeatNumbers: incompleteMatches.map(m => m.heatNumber)
-        };
-      });
+      // Use centralized round completion checker
+      const { checkRoundCompletion } = await import('./utils/roundCompletion');
+      const completionStatus = await checkRoundCompletion(tournamentId, currentRound);
 
-      const incompleteStations = stationCompletionStatus.filter(s => !s.isComplete && s.totalHeats > 0);
-      
-      if (incompleteStations.length > 0) {
-        const stationDetails = incompleteStations.map(s => 
-          `Station ${s.stationName}: ${s.incompleteHeats} heats remaining (Heats: ${s.incompleteHeatNumbers.join(', ')})`
-        ).join('; ');
-        
-        return res.status(400).json({ 
-          error: `ALL stations must complete their heats in Round ${currentRound} before advancing. Incomplete stations: ${stationDetails}`,
-          stationCompletionStatus,
-          incompleteStations: incompleteStations.map(s => s.stationName)
+      if (!completionStatus.isComplete) {
+        const errorDetails = completionStatus.errors.join('; ');
+        const incompleteDetails = completionStatus.stationStatus
+          .filter(s => !s.isComplete && s.totalMatches > 0)
+          .map(s => `Station ${s.stationName}: ${s.incompleteMatches.length} incomplete, ${s.matchesWithoutWinners.length} without winners`)
+          .join('; ');
+
+        return res.status(400).json({
+          error: `Round ${currentRound} is not complete. ${errorDetails}`,
+          completionStatus,
+          incompleteDetails
         });
       }
 
-      // Check if all completed matches have winners
-      const allCurrentRoundComplete = currentRoundMatches.every(m => m.status === 'DONE');
-      const allHaveWinners = currentRoundMatches.every(m => m.winnerId !== null);
-      const matchesWithoutWinners = currentRoundMatches.filter(m => m.winnerId === null);
-
-      if (!allCurrentRoundComplete) {
-        return res.status(400).json({ 
-          error: `Internal error: Round completion check failed despite station verification.`,
-          stationCompletionStatus
-        });
-      }
-
-      if (!allHaveWinners) {
-        return res.status(400).json({ 
-          error: `All heats in Round ${currentRound} must have winners declared before advancing to next round.`,
-          matchesWithoutWinners: matchesWithoutWinners.map(m => `Heat ${m.heatNumber}`)
-        });
-      }
-
-      // Get winners from current round
-      const winners = currentRoundMatches
-        .filter(m => m.winnerId)
-        .map(m => m.winnerId!);
+      // Get winners from current round (use completion status winners)
+      const winners = completionStatus.matchesWithWinners > 0
+        ? currentRoundMatches
+            .filter(m => m.winnerId)
+            .map(m => m.winnerId!)
+        : [];
 
       if (winners.length === 0) {
-        return res.status(400).json({ error: "No winners found in current round" });
+        return res.status(400).json({ 
+          error: "No winners found in current round",
+          completionStatus
+        });
+      }
+
+      // Validate all winners are valid tournament participants
+      const participants = await storage.getTournamentParticipants(tournamentId);
+      const participantUserIds = new Set(participants.map(p => p.userId));
+      const invalidWinners = winners.filter(w => !participantUserIds.has(w));
+      
+      if (invalidWinners.length > 0) {
+        return res.status(400).json({
+          error: `Invalid winners found: ${invalidWinners.length} winner(s) are not tournament participants`,
+          invalidWinners
+        });
       }
 
       // Check for duplicate winners (should not happen but safety check)
       const uniqueWinners = [...new Set(winners)];
       if (uniqueWinners.length !== winners.length) {
-        console.warn('Duplicate winners found in current round, removing duplicates');
-        winners.splice(0, winners.length, ...uniqueWinners);
+        console.warn(`⚠️ Duplicate winners found in Round ${currentRound}, removing duplicates`);
+        const duplicates = winners.filter((w, i) => winners.indexOf(w) !== i);
+        console.warn(`Duplicate winner IDs: ${duplicates.join(', ')}`);
+      }
+
+      // Use unique winners
+      const finalWinners = uniqueWinners;
+
+      // Check if tournament is complete (only 1 winner remaining)
+      if (finalWinners.length === 1) {
+        console.log(`🏆 Tournament ${tournamentId} complete! Final winner: ${finalWinners[0]}`);
+        
+        // Update tournament status if needed
+        await storage.updateTournament(tournamentId, {
+          currentRound: currentRound + 1
+        });
+
+        io.to(`tournament:${tournamentId}`).emit("tournament:complete", {
+          tournamentId,
+          winnerId: finalWinners[0],
+          finalRound: currentRound,
+          message: `Tournament complete! Winner determined in Round ${currentRound}`
+        });
+
+        return res.json({
+          success: true,
+          tournamentComplete: true,
+          winnerId: finalWinners[0],
+          finalRound: currentRound,
+          message: `Tournament complete! Final winner determined.`
+        });
+      }
+
+      if (finalWinners.length < 2) {
+        return res.status(400).json({
+          error: `Insufficient winners (${finalWinners.length}) to create next round. Need at least 2 winners.`
+        });
       }
 
       // Get stations for this tournament
@@ -1836,12 +1856,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Sort stations by name (A, B, C)
       const sortedStations = availableStations.sort((a, b) => a.name.localeCompare(b.name));
 
-      // Split winners into 3 groups for stations A, B, C
-      const groupSize = Math.ceil(winners.length / 3);
+      // Sort winners by original seeding to maintain bracket order
+      const sortedWinners = winners.map(winnerId => {
+        const participant = participants.find(p => p.userId === winnerId);
+        return { winnerId, seed: participant?.seed || 999 };
+      }).sort((a, b) => a.seed - b.seed).map(w => w.winnerId);
+
+      // Split sorted winners into 3 groups for stations A, B, C
+      const groupSize = Math.ceil(sortedWinners.length / 3);
       const groups = [
-        winners.slice(0, groupSize),
-        winners.slice(groupSize, groupSize * 2),
-        winners.slice(groupSize * 2)
+        sortedWinners.slice(0, groupSize),
+        sortedWinners.slice(groupSize, groupSize * 2),
+        sortedWinners.slice(groupSize * 2)
       ].filter(group => group.length > 0);
 
       // Create matches for next round
@@ -1950,21 +1976,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentRound: nextRound 
       });
 
-      // Emit WebSocket update
+      // Emit WebSocket events
+      io.to(`tournament:${tournamentId}`).emit("round:complete", {
+        tournamentId,
+        round: currentRound,
+        winners: finalWinners,
+        winnersCount: finalWinners.length,
+        message: `Round ${currentRound} completed with ${finalWinners.length} winners`
+      });
+
       io.to(`tournament:${tournamentId}`).emit("next-round-populated", {
+        tournamentId,
         round: nextRound,
         previousRound: currentRound,
         totalMatches: heatNumber - 1,
-        message: `Round ${nextRound} has been set up with advancing competitors`
+        advancingCompetitors: finalWinners.length,
+        message: `Round ${nextRound} has been set up with ${finalWinners.length} advancing competitors`
       });
+
+      console.log(`✅ Round ${nextRound} populated: ${heatNumber - 1} matches created with ${finalWinners.length} advancing competitors`);
 
       res.json({
         success: true,
         previousRound: currentRound,
         nextRound,
         matchesCreated: heatNumber - 1,
-        advancingCompetitors: winners.length,
-        message: `Round ${nextRound} successfully created with ${winners.length} advancing competitors`
+        advancingCompetitors: finalWinners.length,
+        winners: finalWinners,
+        message: `Round ${nextRound} successfully created with ${finalWinners.length} advancing competitors`
       });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -2053,14 +2092,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // All judges have completed and cup positions assigned - safe to complete the match
+        // All judges have completed and cup positions assigned - calculate winner and complete the match
+        const { calculateMatchWinner } = await import('./utils/winnerCalculation');
+        const winnerResult = await calculateMatchWinner(runningMatch.id);
+
+        if (winnerResult.error) {
+          return res.status(400).json({
+            error: `Cannot advance heat. ${winnerResult.error}`,
+            details: winnerResult
+          });
+        }
+
+        if (!winnerResult.winnerId) {
+          return res.status(400).json({
+            error: `Cannot advance heat. Winner could not be determined. ${winnerResult.tieBreakerReason || 'Tied scores require manual resolution.'}`,
+            details: winnerResult
+          });
+        }
+
+        // Update match with calculated winner
         completedMatch = await storage.updateMatch(runningMatch.id, {
           status: 'DONE',
+          winnerId: winnerResult.winnerId,
           endTime: new Date()
         });
 
         if (completedMatch) {
+          // Log winner calculation for audit
+          console.log(`✅ Heat ${runningMatch.heatNumber} completed - Winner: ${winnerResult.winnerId} (Scores: ${winnerResult.competitor1Score} vs ${winnerResult.competitor2Score}${winnerResult.tie ? ` - ${winnerResult.tieBreakerReason}` : ''})`);
+          
           io.to(`tournament:${completedMatch.tournamentId}`).emit("heat:completed", completedMatch);
+          io.to(`tournament:${completedMatch.tournamentId}`).emit("match:winner-calculated", {
+            matchId: completedMatch.id,
+            winnerId: winnerResult.winnerId,
+            competitor1Score: winnerResult.competitor1Score,
+            competitor2Score: winnerResult.competitor2Score,
+            tie: winnerResult.tie,
+            tieBreakerReason: winnerResult.tieBreakerReason
+          });
         }
       }
 

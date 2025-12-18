@@ -39,6 +39,7 @@ import AdminCupPositionAssignmentPage from './pages/admin/AdminCupPositionAssign
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import BottomNav from './components/BottomNav';
+import { Toaster } from './components/ui/toaster';
 import './App.css';
 
 const App: React.FC = () => {
@@ -47,6 +48,7 @@ const App: React.FC = () => {
       <ThemeProvider>
         <Router>
         <div className="App">
+          <Toaster />
           <BottomNav />
           <Routes>
           {/* Auth Routes */}

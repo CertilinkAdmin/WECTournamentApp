@@ -6,12 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Users, MapPin, Clock, Eye, Settings } from 'lucide-react';
 import TournamentBracket from '@/components/TournamentBracket';
 import WEC25BracketDisplay from '@/components/WEC25BracketDisplay';
+import TournamentBracketWEC25 from '@/components/TournamentBracketWEC25';
 import StationsManagement from '@/components/StationsManagement';
 import PublicDisplay from '@/components/PublicDisplay';
 import type { Tournament } from '@shared/schema';
 
 export default function LiveTournament() {
-  const [activeView, setActiveView] = useState<'bracket' | 'stations' | 'public' | 'wec25'>('bracket');
+  const [activeView, setActiveView] = useState<'bracket' | 'stations' | 'public' | 'wec25' | 'wec25-bracket'>('bracket');
 
   // Fetch current tournament
   const { data: tournaments = [] } = useQuery<Tournament[]>({
@@ -53,7 +54,7 @@ export default function LiveTournament() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
         <Tabs value={activeView} onValueChange={(value) => setActiveView(value as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="bracket" className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
               <span className="hidden sm:inline">Live Bracket</span>
@@ -73,6 +74,11 @@ export default function LiveTournament() {
               <Trophy className="h-4 w-4" />
               <span className="hidden sm:inline">WEC25 Display</span>
               <span className="sm:hidden">WEC25</span>
+            </TabsTrigger>
+            <TabsTrigger value="wec25-bracket" className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              <span className="hidden sm:inline">New Bracket</span>
+              <span className="sm:hidden">New</span>
             </TabsTrigger>
           </TabsList>
 
@@ -115,6 +121,10 @@ export default function LiveTournament() {
 
           <TabsContent value="wec25" className="mt-6">
             <WEC25BracketDisplay />
+          </TabsContent>
+
+          <TabsContent value="wec25-bracket" className="mt-6">
+            <TournamentBracketWEC25 tournamentId={currentTournament?.id} />
           </TabsContent>
         </Tabs>
       </div>

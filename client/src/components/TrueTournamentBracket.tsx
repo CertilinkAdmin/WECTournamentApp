@@ -260,14 +260,33 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
       const newScale = Math.max(0.5, Math.min(3, scale * scaleChange));
       
       // Calculate position adjustment based on center movement
+      // When zooming, adjust position to keep the pinch center point fixed
       const deltaX = center.x - lastTouchCenter.x;
       const deltaY = center.y - lastTouchCenter.y;
       
-      setScale(newScale);
-      setPosition(prev => ({
-        x: prev.x + deltaX / newScale,
-        y: prev.y + deltaY / newScale,
-      }));
+      // Get viewport container bounds
+      const viewport = bracketRef.current?.parentElement;
+      if (viewport) {
+        const viewportRect = viewport.getBoundingClientRect();
+        const viewportCenterX = viewportRect.width / 2;
+        const viewportCenterY = viewportRect.height / 2;
+        
+        // Calculate new position relative to viewport center
+        const relativeX = center.x - viewportRect.left - viewportCenterX;
+        const relativeY = center.y - viewportRect.top - viewportCenterY;
+        
+        setScale(newScale);
+        setPosition(prev => ({
+          x: prev.x - (relativeX / newScale - relativeX / scale),
+          y: prev.y - (relativeY / newScale - relativeY / scale),
+        }));
+      } else {
+        setScale(newScale);
+        setPosition(prev => ({
+          x: prev.x + deltaX / newScale,
+          y: prev.y + deltaY / newScale,
+        }));
+      }
       
       setLastTouchDistance(distance);
       setLastTouchCenter(center);
@@ -277,10 +296,19 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
       if (lastTouchCenter) {
         const deltaX = touch.clientX - lastTouchCenter.x;
         const deltaY = touch.clientY - lastTouchCenter.y;
-        setPosition(prev => ({
-          x: prev.x + deltaX / scale,
-          y: prev.y + deltaY / scale,
-        }));
+        
+        // Constrain panning to keep bracket visible
+        setPosition(prev => {
+          const newX = prev.x + deltaX / scale;
+          const newY = prev.y + deltaY / scale;
+          
+          // Basic constraints (can be refined based on bracket size)
+          const maxPan = 200;
+          return {
+            x: Math.max(-maxPan, Math.min(maxPan, newX)),
+            y: Math.max(-maxPan, Math.min(maxPan, newY)),
+          };
+        });
         setLastTouchCenter({ x: touch.clientX, y: touch.clientY });
       } else {
         setLastTouchCenter({ x: touch.clientX, y: touch.clientY });
@@ -329,55 +357,73 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
           <p className="text-xs sm:text-sm mt-2 px-2 text-[#c66e38]">Tap any heat to view details</p>
         </div>
         
+        {/* Viewport Container - handles zoom and pan */}
         <div 
-          ref={bracketRef}
-          className="tournament-bracket-compact bracket-zoom-container pb-4"
+          className="relative overflow-hidden"
           style={{
-            transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
-            transformOrigin: 'center center',
+            width: '100%',
+            minHeight: '600px',
+            touchAction: 'none',
+            position: 'relative',
           }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onDoubleClick={handleDoubleClick}
         >
-          {rounds.map((round) => (
-            <div key={round.title} className="bracket-round-compact min-w-[140px] sm:min-w-[160px]">
-              <h3 className="bracket-round-title-compact flex items-center justify-center gap-1 sm:gap-1.5 px-2">
-                {getSpecialIcon(round.title)}
-                <span className="text-xs sm:text-sm whitespace-nowrap">{round.title}</span>
-              </h3>
-              <div className="bracket-matches-compact">
-                {round.matches.map((match) => (
-                  <div 
-                    key={`${round.title}-${match.heatNumber}`} 
-                    className={`bracket-match-compact ${animatedMatches.has(match.heatNumber) ? 'animate-fade-in' : 'opacity-0'} ${round.title === 'Finals' ? 'championship-compact' : ''}`}
-                    onClick={() => setSelectedHeat(match)}
-                    data-testid={`heat-${match.heatNumber}`}
-                  >
-                    <div className="match-header-compact">
-                      <span className="heat-number-compact">H{match.heatNumber}</span>
-                      <Badge variant="outline" className="station-badge-compact text-[10px] h-4 px-1">{match.station}</Badge>
-                      <Maximize2 className="h-3 w-3 text-accent opacity-50" />
-                    </div>
-                    <div className="match-competitors-compact">
-                      <div className={`competitor-compact ${match.winner === match.competitor1 ? 'winner-compact' : ''}`}>
-                        <span className="initials-compact">{getInitials(match.competitor1)}</span>
-                        <span className="score-compact">{match.score1}</span>
-                        {getMedalIcon(round.title, match.winner === match.competitor1)}
+          {/* Transformed viewport wrapper - bracket content stays in natural flow */}
+          <div
+            style={{
+              transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+              transformOrigin: 'center center',
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              ref={bracketRef}
+              className="tournament-bracket-compact pb-4"
+            >
+            {rounds.map((round) => (
+              <div key={round.title} className="bracket-round-compact min-w-[140px] sm:min-w-[160px]">
+                <h3 className="bracket-round-title-compact flex items-center justify-center gap-1 sm:gap-1.5 px-2">
+                  {getSpecialIcon(round.title)}
+                  <span className="text-xs sm:text-sm whitespace-nowrap">{round.title}</span>
+                </h3>
+                <div className="bracket-matches-compact">
+                  {round.matches.map((match) => (
+                    <div 
+                      key={`${round.title}-${match.heatNumber}`} 
+                      className={`bracket-match-compact ${animatedMatches.has(match.heatNumber) ? 'animate-fade-in' : 'opacity-0'} ${round.title === 'Finals' ? 'championship-compact' : ''}`}
+                      onClick={() => setSelectedHeat(match)}
+                      data-testid={`heat-${match.heatNumber}`}
+                    >
+                      <div className="match-header-compact">
+                        <span className="heat-number-compact">H{match.heatNumber}</span>
+                        <Badge variant="outline" className="station-badge-compact text-[10px] h-4 px-1">{match.station}</Badge>
+                        <Maximize2 className="h-3 w-3 text-accent opacity-50" />
                       </div>
-                      <div className="vs-compact">vs</div>
-                      <div className={`competitor-compact ${match.winner === match.competitor2 ? 'winner-compact' : ''}`}>
-                        <span className="initials-compact">{getInitials(match.competitor2)}</span>
-                        <span className="score-compact">{match.score2}</span>
-                        {getMedalIcon(round.title, match.winner === match.competitor2)}
+                      <div className="match-competitors-compact">
+                        <div className={`competitor-compact ${match.winner === match.competitor1 ? 'winner-compact' : ''}`}>
+                          <span className="initials-compact">{getInitials(match.competitor1)}</span>
+                          <span className="score-compact">{match.score1}</span>
+                          {getMedalIcon(round.title, match.winner === match.competitor1)}
+                        </div>
+                        <div className="vs-compact">vs</div>
+                        <div className={`competitor-compact ${match.winner === match.competitor2 ? 'winner-compact' : ''}`}>
+                          <span className="initials-compact">{getInitials(match.competitor2)}</span>
+                          <span className="score-compact">{match.score2}</span>
+                          {getMedalIcon(round.title, match.winner === match.competitor2)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
+            ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
       {/* Expanded Heat Dialog - Mobile Optimized */}

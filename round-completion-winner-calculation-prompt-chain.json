@@ -1,0 +1,212 @@
+{
+  "name": "Round Completion & Winner Calculation Logic",
+  "description": "Enforce automatic winner calculation based on points and smooth round completion with next round bracket population",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Create Winner Calculation Service",
+      "description": "Create a service to automatically calculate winners based on detailed scores and cup positions",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "feature",
+          "action": "Create winner calculation utility",
+          "file": "server/utils/winnerCalculation.ts",
+          "details": "Create function calculateMatchWinner(matchId) that: 1) Gets all detailed scores for match, 2) Gets cup positions, 3) Gets competitor cup codes, 4) Calculates scores for both competitors using calculateCompetitorScore, 5) Returns winnerId (competitor with higher score, handles ties)",
+          "test": "Function correctly calculates winner based on points"
+        },
+        {
+          "id": "1.2",
+          "type": "feature",
+          "action": "Handle tie-breaking logic",
+          "file": "server/utils/winnerCalculation.ts",
+          "details": "If scores are tied, use tie-breaker: 1) Most overall wins (5pt category), 2) Most latte art wins (3pt), 3) Most sensory category wins (1pt each), 4) If still tied, return null (manual resolution needed)",
+          "test": "Tie-breaking works correctly"
+        },
+        {
+          "id": "1.3",
+          "type": "feature",
+          "action": "Validate all required data exists",
+          "file": "server/utils/winnerCalculation.ts",
+          "details": "Check that: 1) Match has both competitors, 2) Cup positions are assigned, 3) All judges have submitted scores, 4) Return error if data incomplete",
+          "test": "Validation catches missing data"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Integrate Winner Calculation into Heat Completion",
+      "description": "Automatically calculate and set winner when heat is advanced",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "feature",
+          "action": "Update advance-heat endpoint",
+          "file": "server/routes.ts",
+          "details": "After validating global lock status and cup positions, call calculateMatchWinner to automatically determine winner. Set winnerId when updating match to DONE status",
+          "test": "Winner automatically calculated on heat advance"
+        },
+        {
+          "id": "2.2",
+          "type": "feature",
+          "action": "Handle calculation errors gracefully",
+          "file": "server/routes.ts",
+          "details": "If winner calculation fails (tie, missing data), return error with details. Don't mark match as DONE if winner can't be determined",
+          "test": "Errors handled gracefully"
+        },
+        {
+          "id": "2.3",
+          "type": "feature",
+          "action": "Log winner calculation results",
+          "file": "server/routes.ts",
+          "details": "Log calculated scores and winner for audit trail. Include competitor IDs, cup codes, and final scores",
+          "test": "Logging provides clear audit trail"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Enhance Round Completion Detection",
+      "description": "Improve round completion logic to ensure all matches have winners",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "feature",
+          "action": "Create round completion checker",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "Create function isRoundComplete(tournamentId, round) that: 1) Gets all matches for round, 2) Checks all matches are DONE, 3) Checks all matches have winnerId, 4) Returns completion status with details",
+          "test": "Round completion detection works correctly"
+        },
+        {
+          "id": "3.2",
+          "type": "feature",
+          "action": "Add station-level completion check",
+          "file": "server/utils/roundCompletion.ts",
+          "details": "Check that all stations have completed their heats in the round. Return station-by-station status",
+          "test": "Station completion status accurate"
+        },
+        {
+          "id": "3.3",
+          "type": "feature",
+          "action": "Update populate-next-round validation",
+          "file": "server/routes.ts",
+          "details": "Use isRoundComplete function instead of manual checks. Provide detailed error messages for incomplete rounds",
+          "test": "Validation uses centralized logic"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Improve Next Round Population",
+      "description": "Ensure next round bracket is correctly populated with winners",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "feature",
+          "action": "Validate winners before population",
+          "file": "server/routes.ts",
+          "details": "Before creating next round matches, verify: 1) All winners are valid tournament participants, 2) No duplicate winners, 3) Winners match completed matches",
+          "test": "Winner validation prevents errors"
+        },
+        {
+          "id": "4.2",
+          "type": "feature",
+          "action": "Handle odd number of winners",
+          "file": "server/routes.ts",
+          "details": "If odd number of winners, create bye match for last winner. Ensure bye matches are properly marked",
+          "test": "Odd winners handled correctly"
+        },
+        {
+          "id": "4.3",
+          "type": "feature",
+          "action": "Maintain seeding order",
+          "file": "server/routes.ts",
+          "details": "When pairing winners, maintain original seeding order from previous round. Pair winners in order: [0,1], [2,3], etc.",
+          "test": "Seeding order preserved"
+        },
+        {
+          "id": "4.4",
+          "type": "feature",
+          "action": "Create comprehensive next round matches",
+          "file": "server/routes.ts",
+          "details": "Ensure all next round matches have: 1) Correct round number, 2) Sequential heat numbers, 3) Proper station assignments, 4) All required segments created",
+          "test": "Next round matches complete"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Add WebSocket Events & Real-time Updates",
+      "description": "Emit events when winners are calculated and rounds complete",
+      "tasks": [
+        {
+          "id": "5.1",
+          "type": "feature",
+          "action": "Emit winner calculated event",
+          "file": "server/routes.ts",
+          "details": "When winner is calculated, emit 'match:winner-calculated' event with match details and scores",
+          "test": "Events emitted correctly"
+        },
+        {
+          "id": "5.2",
+          "type": "feature",
+          "action": "Emit round completion event",
+          "file": "server/routes.ts",
+          "details": "When round is detected as complete, emit 'round:complete' event with round details and winners",
+          "test": "Round completion events work"
+        },
+        {
+          "id": "5.3",
+          "type": "feature",
+          "action": "Update client listeners",
+          "file": "client/src/pages/live/LiveOverview.tsx",
+          "details": "Add listeners for 'match:winner-calculated' and 'round:complete' events. Invalidate queries to refresh UI",
+          "test": "Client receives and handles events"
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Testing & Edge Cases",
+      "description": "Test all edge cases and error scenarios",
+      "tasks": [
+        {
+          "id": "6.1",
+          "type": "test",
+          "action": "Test winner calculation with all scenarios",
+          "details": "Test: 1) Clear winner (higher score), 2) Tied scores (tie-breaker), 3) Missing scores, 4) Missing cup positions, 5) Incomplete judge submissions",
+          "test": "All scenarios handled correctly"
+        },
+        {
+          "id": "6.2",
+          "type": "test",
+          "action": "Test round completion detection",
+          "details": "Test: 1) All matches complete with winners, 2) Some matches incomplete, 3) Matches complete but no winners, 4) Mixed station completion",
+          "test": "Round completion detection accurate"
+        },
+        {
+          "id": "6.3",
+          "type": "test",
+          "action": "Test next round population",
+          "details": "Test: 1) Even number of winners, 2) Odd number of winners (bye), 3) Single winner (final), 4) Multiple rounds progression",
+          "test": "Next round population works for all cases"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "TDD - Test each phase as implemented",
+    "test_files": [],
+    "manual_testing": [
+      "Complete a heat, verify winner calculated automatically",
+      "Complete all heats in round, verify round completion detected",
+      "Populate next round, verify winners correctly placed",
+      "Test tie-breaking scenarios",
+      "Test edge cases (byes, no-shows, incomplete data)"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Can revert to manual winner assignment if automatic calculation has issues"
+  }
+}
+

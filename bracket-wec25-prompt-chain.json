@@ -1,0 +1,161 @@
+{
+  "name": "Bracket WEC25 Style & Zoom Fix",
+  "description": "Add WEC25 style bracket tab for new tournaments with seeded data, and fix pinch zoom to use viewport instead of transforming bracket",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Create TournamentBracketWEC25 Component",
+      "description": "Create new component that displays bracket in WEC25 overlapping card style, populated from tournament data",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "component",
+          "action": "Create TournamentBracketWEC25.tsx component",
+          "file": "client/src/components/TournamentBracketWEC25.tsx",
+          "details": "Create component that: 1) Fetches tournament data (matches, participants, users), 2) Processes matches into rounds (Round 1, Round 2, Round 3, Semifinals, Final), 3) Displays overlapping card style like WEC25BracketDisplay, 4) Populates names from seeded tournament participants, 5) Shows heat numbers, stations, competitors, winners, scores",
+          "test": "Component renders with tournament data, shows rounds with overlapping cards, names populate correctly"
+        },
+        {
+          "id": "1.2",
+          "type": "styling",
+          "action": "Style the component with overlapping card design",
+          "file": "client/src/components/TournamentBracketWEC25.tsx",
+          "details": "Use similar styling to WEC25BracketDisplay: overlapping cards that get progressively smaller, rounded rectangles with beige/orange-brown colors, proper z-index layering, responsive design",
+          "test": "Visual design matches WEC25 style with overlapping cards"
+        },
+        {
+          "id": "1.3",
+          "type": "data",
+          "action": "Process tournament matches into bracket rounds",
+          "file": "client/src/components/TournamentBracketWEC25.tsx",
+          "details": "Group matches by round number, sort by heatNumber, map competitor IDs to names using users data, handle BYE matches, calculate round titles (Round 1, Round 2, etc.)",
+          "test": "Rounds are correctly grouped and displayed with proper names"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Add Tab to LiveTournament",
+      "description": "Add new tab for WEC25 style bracket view",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "ui",
+          "action": "Add new tab trigger to TabsList",
+          "file": "client/src/pages/LiveTournament.tsx",
+          "details": "Add 5th tab trigger for 'wec25-bracket' with Trophy icon and label 'WEC25 Bracket' or 'New Bracket'",
+          "test": "New tab appears in tab list"
+        },
+        {
+          "id": "2.2",
+          "type": "ui",
+          "action": "Add TabsContent for new bracket view",
+          "file": "client/src/pages/LiveTournament.tsx",
+          "details": "Add TabsContent with value 'wec25-bracket' that renders TournamentBracketWEC25 component, pass current tournament ID",
+          "test": "Clicking tab shows TournamentBracketWEC25 component"
+        },
+        {
+          "id": "2.3",
+          "type": "state",
+          "action": "Update activeView state type",
+          "file": "client/src/pages/LiveTournament.tsx",
+          "details": "Update activeView type to include 'wec25-bracket' option",
+          "test": "TypeScript compiles without errors"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Fix Pinch Zoom in TrueTournamentBracket",
+      "description": "Fix zoom to use viewport container instead of transforming bracket directly",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "refactor",
+          "action": "Create viewport container wrapper",
+          "file": "client/src/components/TrueTournamentBracket.tsx",
+          "details": "Wrap bracket content in a viewport container div that handles overflow, apply transform to this container instead of bracket content itself",
+          "test": "Bracket stays in place, viewport moves when zooming"
+        },
+        {
+          "id": "3.2",
+          "type": "refactor",
+          "action": "Update transform application",
+          "file": "client/src/components/TrueTournamentBracket.tsx",
+          "details": "Move transform style from bracket-compact div to viewport container, bracket content should not be transformed directly",
+          "test": "Zoom and pan affect viewport, not bracket position"
+        },
+        {
+          "id": "3.3",
+          "type": "refactor",
+          "action": "Update touch handlers for viewport",
+          "file": "client/src/components/TrueTournamentBracket.tsx",
+          "details": "Update handleTouchMove to calculate pan relative to viewport container bounds, ensure bracket doesn't move independently",
+          "test": "Pinch zoom and pan work correctly, bracket stays fixed relative to viewport"
+        },
+        {
+          "id": "3.4",
+          "type": "styling",
+          "action": "Style viewport container",
+          "file": "client/src/components/TrueTournamentBracket.tsx",
+          "details": "Add overflow: hidden, position: relative, proper dimensions to viewport container, ensure bracket content is properly contained",
+          "test": "Viewport contains bracket properly, no overflow issues"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Testing & Verification",
+      "description": "Test all changes with seeded tournament data",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "test",
+          "action": "Test TournamentBracketWEC25 with seeded tournament",
+          "details": "Create/use tournament with seeded participants, verify names populate correctly in bracket, verify rounds display properly",
+          "test": "Bracket shows correct names from seeded tournament data"
+        },
+        {
+          "id": "4.2",
+          "type": "test",
+          "action": "Test tab navigation",
+          "details": "Navigate between tabs, verify WEC25 bracket tab works, verify no errors when switching",
+          "test": "Tab navigation works smoothly"
+        },
+        {
+          "id": "4.3",
+          "type": "test",
+          "action": "Test pinch zoom fix",
+          "details": "On mobile/touch device, test pinch zoom - verify viewport moves, bracket stays in correct position, zoom in/out works smoothly",
+          "test": "Zoom and pan work correctly, bracket doesn't move independently"
+        },
+        {
+          "id": "4.4",
+          "type": "test",
+          "action": "Test responsive design",
+          "details": "Test on different screen sizes, verify overlapping cards display correctly, verify zoom works on mobile",
+          "test": "Responsive design works on all screen sizes"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "TDD - Test each component after implementation",
+    "test_files": [
+      "client/src/components/__tests__/TournamentBracketWEC25.test.tsx",
+      "client/src/pages/__tests__/LiveTournament.test.tsx"
+    ],
+    "manual_testing": [
+      "Create tournament with seeded participants",
+      "Navigate to Live Tournament page",
+      "Click WEC25 Bracket tab",
+      "Verify names populate from seeded data",
+      "Test pinch zoom on mobile device",
+      "Verify viewport moves, bracket stays fixed"
+    ]
+  },
+  "rollback_plan": {
+    "if_issues": "Can revert tab addition, component can be disabled, zoom fix can be reverted to previous implementation"
+  }
+}
+
