@@ -1227,15 +1227,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Match not found' });
       }
 
-      // Validate all judges have scored both CAPPUCCINO and ESPRESSO
-      const cappuccinoStatus = await storage.getJudgeCompletionStatus(matchId, 'CAPPUCCINO');
-      const espressoStatus = await storage.getJudgeCompletionStatus(matchId, 'ESPRESSO');
-
-      if (!cappuccinoStatus.allComplete || !espressoStatus.allComplete) {
+      // Check global lock status to ensure all segments are ended and all judges have submitted
+      // This ensures cup positions can only be assigned after the heat is fully complete
+      const globalLockStatus = await storage.getGlobalLockStatus(matchId);
+      
+      if (!globalLockStatus.allSegmentsEnded) {
         return res.status(400).json({ 
-          error: 'All judges must complete scoring before assigning cup positions',
-          cappuccinoStatus,
-          espressoStatus
+          error: 'All segments (DIAL_IN, CAPPUCCINO, ESPRESSO) must be completed before assigning cup positions',
+          globalLockStatus
+        });
+      }
+
+      if (!globalLockStatus.allJudgesSubmitted) {
+        const missingDetails = globalLockStatus.missingSubmissions
+          .map(m => `${m.judgeName} (${m.role}): ${m.missing.join(', ')}`)
+          .join('; ');
+        return res.status(400).json({ 
+          error: `All judges must complete scoring before assigning cup positions. Missing: ${missingDetails}`,
+          globalLockStatus
         });
       }
 

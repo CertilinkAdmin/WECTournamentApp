@@ -118,10 +118,17 @@ export default function StationLeadView() {
       if (stationMatches.length > 0 && !stationMatches.every(m => m.status === 'DONE')) {
         return false;
       }
+
+      // If station has matches assigned but not all have winners, round is not complete
+      if (stationMatches.length > 0 && !stationMatches.every(m => m.winnerId !== null)) {
+        return false;
+      }
     }
 
-    // All stations must have at least one match and all matches must be DONE
-    return currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.status === 'DONE');
+    // All stations must have at least one match, all matches must be DONE, and all must have winners
+    return currentRoundMatches.length > 0 && 
+           currentRoundMatches.every(m => m.status === 'DONE') &&
+           currentRoundMatches.every(m => m.winnerId !== null);
   }, [allMatches, mainStations]);
 
   const stationMatches = allMatches.filter(m => m.stationId === selectedStation);

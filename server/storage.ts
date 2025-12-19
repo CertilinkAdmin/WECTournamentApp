@@ -496,23 +496,37 @@ export class DatabaseStorage implements IStorage {
     const allUsers = await this.getAllUsers();
     
     // Check completion status for each judge
+    // IMPORTANT: All judges must submit latte art, AND sensory scores must be complete
     const judgesStatus = relevantJudges.map(judge => {
       const judgeUser = allUsers.find(u => u.id === judge.judgeId);
       const judgeName = judgeUser?.name || `Judge ${judge.judgeId}`;
+      const judgeScores = allScores.filter(score => score.judgeName === judgeName);
       
-      // Check if this judge has submitted a score for this segment
-      // For CAPPUCCINO: check if sensoryBeverage is 'Cappuccino'
-      // For ESPRESSO: check if sensoryBeverage is 'Espresso'
-      const expectedBeverage = segmentType === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso';
-      const judgeScore = allScores.find(
-        score => score.judgeName === judgeName && score.sensoryBeverage === expectedBeverage
+      // All judges must submit latte art
+      const hasLatteArt = judgeScores.some(score => 
+        score.visualLatteArt === 'left' || score.visualLatteArt === 'right'
       );
+      
+      // Check sensory submission based on segment type
+      // For CAPPUCCINO: check if sensoryBeverage is 'Cappuccino' with all categories filled
+      // For ESPRESSO: check if sensoryBeverage is 'Espresso' with all categories filled
+      const expectedBeverage = segmentType === 'CAPPUCCINO' ? 'Cappuccino' : 'Espresso';
+      const sensoryScore = judgeScores.find(score => 
+        score.sensoryBeverage === expectedBeverage &&
+        (score.taste === 'left' || score.taste === 'right') &&
+        (score.tactile === 'left' || score.tactile === 'right') &&
+        (score.flavour === 'left' || score.flavour === 'right') &&
+        (score.overall === 'left' || score.overall === 'right')
+      );
+      
+      // Judge is complete only if they have submitted BOTH latte art AND complete sensory score
+      const completed = hasLatteArt && !!sensoryScore;
       
       return {
         judgeId: judge.judgeId,
         judgeName,
         role: judge.role,
-        completed: !!judgeScore,
+        completed,
       };
     });
 
