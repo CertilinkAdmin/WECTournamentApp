@@ -556,18 +556,23 @@ export default function StationLeadView() {
         const completeResponse = await fetch(`/api/matches/${currentMatch.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             status: 'DONE',
             endTime: new Date().toISOString()
           })
         });
-        if (!completeResponse.ok) throw new Error('Failed to complete current heat');
+        if (!completeResponse.ok) {
+          const error = await completeResponse.json().catch(() => ({ error: 'Failed to complete current heat' }));
+          throw new Error(error.error || 'Failed to complete current heat');
+        }
       }
       
       // Then finalize the station's round (calculate winners/losers and advance to next round pool)
       const response = await fetch(`/api/tournaments/${currentTournamentId}/finalize-station-round`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ stationId, round })
       });
       if (!response.ok) {
@@ -1468,7 +1473,7 @@ export default function StationLeadView() {
                 if (allMatches.length === 0) return null;
 
                 // Get current round from tournament or highest round with station-assigned matches
-                const tournamentCurrentRound = tournaments[0]?.currentRound || 1;
+                const tournamentCurrentRound = currentTournament?.currentRound || 1;
                 
                 // Get all matches that are assigned to stations (have stationId)
                 const matchesWithStations = allMatches.filter(m => m.stationId !== null && m.stationId !== undefined);

@@ -11,7 +11,7 @@ import {
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
   insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
-  tournamentParticipants, heatJudges, matches, stations,
+  tournamentParticipants, heatJudges, matches, stations, tournaments,
   type Tournament
 } from "@shared/schema";
 import { db } from "./db";
@@ -1814,12 +1814,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get tournament to check current round
-      const tournament = await db.select()
-        .from(tournaments)
-        .where(eq(tournaments.id, tournamentId))
-        .limit(1);
+      const tournament = await storage.getTournament(tournamentId);
 
-      if (tournament.length === 0) {
+      if (!tournament) {
         return res.status(404).json({ error: 'Tournament not found' });
       }
 
