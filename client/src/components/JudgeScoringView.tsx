@@ -832,7 +832,10 @@ export default function JudgeScoringView({
 
   // Submit Latte Art score (all judges)
   const handleSubmitLatteArt = () => {
-    if (!selectedJudge || !selectedMatchId) {
+    const activeMatchId = selectedMatchId ?? propMatchId ?? null;
+    const activeJudgeId = effectiveJudgeId ?? propJudgeId ?? null;
+
+    if (!activeJudgeId || !activeMatchId) {
       toast({
         title: 'Validation Error',
         description: 'Please select a judge and match',
@@ -850,10 +853,16 @@ export default function JudgeScoringView({
       return;
     }
 
+    // Resolve judge name from selected judge or all users
+    const judgeName =
+      selectedJudge?.user.name ||
+      allUsers.find((user) => user.id === activeJudgeId)?.name ||
+      `Judge ${activeJudgeId}`;
+
     // Only submit visual latte art - don't include sensory fields to preserve existing values
     const scoreData: InsertJudgeDetailedScore = {
-      matchId: selectedMatchId,
-      judgeName: selectedJudge.user.name,
+      matchId: activeMatchId,
+      judgeName,
       sensoryBeverage: 'Cappuccino', // Use Cappuccino as default for Latte Art
       visualLatteArt: latteArtVisual,
       // Don't include sensory fields - they should remain independent
@@ -876,7 +885,10 @@ export default function JudgeScoringView({
       submitScoreMutation: { isPending: submitScoreMutation.isPending }
     });
 
-    if (!selectedJudge || !selectedMatchId) {
+    const activeMatchId = selectedMatchId ?? propMatchId ?? null;
+    const activeJudgeId = effectiveJudgeId ?? propJudgeId ?? null;
+
+    if (!activeJudgeId || !activeMatchId) {
       toast({
         title: 'Validation Error',
         description: 'Please select a judge and match',
@@ -894,6 +906,12 @@ export default function JudgeScoringView({
       return;
     }
 
+    // Resolve judge name from selected judge or all users
+    const judgeName =
+      selectedJudge?.user.name ||
+      allUsers.find((user) => user.id === activeJudgeId)?.name ||
+      `Judge ${activeJudgeId}`;
+
     // Overall is already auto-calculated by useEffect when taste/tactile/flavour change
     // Just ensure it's set (should already be set by useEffect)
     if (!cappuccinoOverall) {
@@ -906,8 +924,8 @@ export default function JudgeScoringView({
     // Only submit Cappuccino sensory - don't include visualLatteArt to preserve existing value
     // Overall is auto-calculated by useEffect, use current value
       const scoreData: InsertJudgeDetailedScore = {
-        matchId: selectedMatchId,
-        judgeName: selectedJudge.user.name,
+        matchId: activeMatchId,
+        judgeName,
         sensoryBeverage: 'Cappuccino',
         taste: cappuccinoTaste,
         tactile: cappuccinoTactile,
@@ -952,7 +970,10 @@ export default function JudgeScoringView({
       submitScoreMutation: { isPending: submitScoreMutation.isPending }
     });
 
-    if (!selectedJudge || !selectedMatchId) {
+    const activeMatchId = selectedMatchId ?? propMatchId ?? null;
+    const activeJudgeId = effectiveJudgeId ?? propJudgeId ?? null;
+
+    if (!activeJudgeId || !activeMatchId) {
       console.error('Validation failed: missing judge or match', { selectedJudge, selectedMatchId });
       toast({
         title: 'Validation Error',
@@ -976,6 +997,12 @@ export default function JudgeScoringView({
       return;
     }
 
+    // Resolve judge name from selected judge or all users
+    const judgeName =
+      selectedJudge?.user.name ||
+      allUsers.find((user) => user.id === activeJudgeId)?.name ||
+      `Judge ${activeJudgeId}`;
+
     // Overall is already auto-calculated by useEffect, just use the current value
     // Ensure overall is set (should already be set by useEffect)
     if (!espressoOverall) {
@@ -989,8 +1016,8 @@ export default function JudgeScoringView({
       // Only submit Espresso sensory - don't include visualLatteArt to preserve existing value
       // Overall is auto-calculated by useEffect, use current value
       const scoreData: InsertJudgeDetailedScore = {
-        matchId: selectedMatchId,
-        judgeName: selectedJudge.user.name,
+        matchId: activeMatchId,
+        judgeName,
         sensoryBeverage: 'Espresso',
         taste: espressoTaste,
         tactile: espressoTactile,

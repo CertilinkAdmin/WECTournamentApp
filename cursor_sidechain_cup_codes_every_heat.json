@@ -1,0 +1,175 @@
+{
+  "workflow": "OPUX - Cup Codes on Every Heat & Station",
+  "description": "Ensure cup codes can be assigned for every heat on every station (A, B, C), for all rounds and heats (1, 2, 3, ...), immediately after all three judges submit scores and all segments are complete.",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "TDD – Reproduce and Guard Against Missing Cup Codes per Heat",
+      "description": "Write tests and diagnostics to prove which heats/stations currently fail cup code assignment, then lock in expected behavior.",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "analysis",
+          "action": "Trace cup code availability for every heat on every station",
+          "file": "server/routes.ts",
+          "details": "Instrument or log the `/api/matches/:matchId/cup-positions` POST and GET endpoints plus `/api/stations/:stationId/advance-heat` to confirm that for every match (heat) we have: competitor1Id, competitor2Id, and non-empty cup codes on their `tournamentParticipants` rows.",
+          "test": "For a sample tournament, log all matches grouped by station and round and verify there are no heats where competitors lack cup codes."
+        },
+        {
+          "id": "1.2",
+          "type": "test",
+          "action": "Add server-side test harness for cup code presence per heat",
+          "file": "tests/cup-codes-per-heat.test.ts",
+          "details": "Create a test that seeds a mini tournament with multiple stations (A, B, C) and multiple heats per station, then asserts that after bracket generation and `populate-next-round`, every non-BYE match has participants with non-empty `cupCode`.",
+          "test": "Run `tests/cup-codes-per-heat.test.ts` and ensure it fails on the current bug scenario (e.g., Station B/C heat 2/3)."
+        },
+        {
+          "id": "1.3",
+          "type": "test",
+          "action": "Add client-side assertions for cup code assignment visibility",
+          "file": "tests/station-lead-cup-assignment.ui.test.tsx",
+          "details": "Using a UI test harness, simulate Station Lead on stations A, B, and C: run a heat through all three segments, submit judge scores, and assert that the `AdminCupPositionAssignment` panel appears and can assign cup codes for every heat in the station's queue.",
+          "test": "1) Station A heats 1/2/3 all show cup assignment after scoring. 2) Station B heats 1/2/3 all show cup assignment after scoring. 3) Station C heats 1/2/3 all show cup assignment after scoring."
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Server Logic – Guarantee Cup Codes for All Advancing Heats",
+      "description": "Ensure backend always provides valid cup codes for every competitor in every non-BYE match, in all rounds.",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "fix",
+          "action": "Harden cup code generation for winners in populate-next-round",
+          "file": "server/routes.ts",
+          "details": "Review and, if necessary, extend the `/api/tournaments/:id/populate-next-round` logic so that for every winner added to the next round, there is a corresponding `tournamentParticipants` row with a non-empty `cupCode`. Handle edge cases: test tournaments, manual inserts, and carry-over winners from BYE heats.",
+          "test": "Complete a round, call `populate-next-round`, and use the server-side tests to verify that all next-round matches have competitors with cup codes."
+        },
+        {
+          "id": "2.2",
+          "type": "fix",
+          "action": "Introduce a defensive backend helper to ensure cup codes for any match on demand",
+          "file": "server/storage.ts",
+          "details": "Add a helper like `ensureMatchCupCodes(matchId: number)` that: 1) loads both competitors for the match, 2) ensures each has a participant row with a `cupCode`, generating one if missing, 3) can be called safely from StationLead flow before starting a heat.",
+          "test": "Call `ensureMatchCupCodes` on multiple matches (first round, later rounds, Station B/C) and assert that both competitors always end with a cup code."
+        },
+        {
+          "id": "2.3",
+          "type": "fix",
+          "action": "Wire ensureMatchCupCodes into heat start / station lead flow",
+          "file": "server/routes.ts",
+          "details": "In the endpoint that transitions a match from PENDING/READY to RUNNING (start heat), call `ensureMatchCupCodes` before updating status. If cup code generation fails, return a clear 400 with guidance.",
+          "test": "Try to start any heat on any station where a competitor is missing a cup code; verify the endpoint either generates the code or returns a clear error instead of silently failing later."
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Client Logic – Always Show Cup Assignment for Every Heat",
+      "description": "Fix StationLead and AdminCupPositionAssignment so they surface the cup assignment UI for every completed heat on every station once judges have submitted scores.",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "analysis",
+          "action": "Review StationLeadView cup assignment gating for non-A stations and later heats",
+          "file": "client/src/components/StationLeadView.tsx",
+          "details": "Trace how `currentMatch` is computed for Station B/C, how `allJudgesCompleted` and `cupPositionsAssigned` are derived, and confirm that `AdminCupPositionAssignment` is rendered for any RUNNING heat (not just Station A or heat 1).",
+          "test": "Log `selectedStation`, `currentMatch.heatNumber`, `currentMatch.status`, `allJudgesCompleted`, and `cupPositionsAssigned` while running heats on stations B and C."
+        },
+        {
+          "id": "3.2",
+          "type": "fix",
+          "action": "Decouple cup assignment UI from Station A round controls",
+          "file": "client/src/components/StationLeadView.tsx",
+          "details": "Ensure the `AdminCupPositionAssignment` block is driven purely by the per-heat conditions (segments ended, all judges done, competitors have cup codes) and not by `isCurrentRoundComplete` or Station A–specific round controls.",
+          "test": "On Station B/C, after finishing all segments and scores for heat 2 and 3, confirm that the cup assignment UI appears even when the round is not yet globally complete."
+        },
+        {
+          "id": "3.3",
+          "type": "fix",
+          "action": "Relax overly-strict canAssign checks that hide the UI when cup codes are temporarily missing",
+          "file": "client/src/components/AdminCupPositionAssignment.tsx",
+          "details": "If `cupCode1` or `cupCode2` is missing, show an explicit error state with guidance instead of hiding the entire assignment panel. Optionally, call a backend helper to auto-generate missing codes.",
+          "test": "Simulate a heat where one competitor initially lacks a cup code; verify the UI shows a clear message and, after backend correction, allows cup selection for both codes."
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Heat-Level Guardrails – Every Heat Must Have Cup Codes Before Advancement",
+      "description": "Strengthen the invariant that advancing a heat is impossible without cup positions set, across all stations and all heats.",
+      "tasks": [
+        {
+          "id": "4.1",
+          "type": "test",
+          "action": "Add integration tests for `advance-heat` invariants",
+          "file": "tests/advance-heat-cup-codes.test.ts",
+          "details": "Write tests around `/api/stations/:stationId/advance-heat` that: (1) fail when cup positions are missing, (2) succeed when positions are present, and (3) exercise multiple heats per station (including Station B/C).",
+          "test": "Run `advance-heat-cup-codes` tests and confirm that every attempt to advance a heat without cup positions fails with a clear error."
+        },
+        {
+          "id": "4.2",
+          "type": "fix",
+          "action": "Audit and refine `advance-heat` preconditions",
+          "file": "server/routes.ts",
+          "details": "Double-check the `advance-heat` route uses `getGlobalLockStatus` plus `getMatchCupPositions` to enforce: segments ended, all judges submitted, and left/right positions present for the *current* RUNNING heat on any station.",
+          "test": "Manual: On Station B/C, attempt to advance heat 2 or 3 without assigning cup codes; verify the API returns an error and the UI surfaces it."
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "End-to-End OPUX Verification",
+      "description": "Verify the full operator workflow, with a focus on UX clarity at each station and each heat.",
+      "tasks": [
+        {
+          "id": "5.1",
+          "type": "test",
+          "action": "End-to-end run across all stations and heats",
+          "file": "test/manual",
+          "details": "Run a small tournament (e.g., 8 baristas) across stations A, B, C. For each heat (1, 2, 3...) on each station: run all three segments, have all three judges submit scores, assign cup codes, and advance. Document any point where cup assignment is missing or confusing.",
+          "test": "Operator can perform: Start Heat → Run Segments → Judges Submit → Assign Cup Codes → Advance Heat, for every heat on every station, without workarounds."
+        },
+        {
+          "id": "5.2",
+          "type": "ux",
+          "action": "OPUX pass on Station Lead UI for cup codes",
+          "file": "client/src/components/StationLeadView.tsx",
+          "details": "Review the Station Lead cup code section for clarity on mobile and tablet: clear headings, explicit state (e.g., 'Waiting for judge scores', 'Assign cup codes now', 'Cup codes assigned'), and no ambiguous states where the user is told to assign codes but sees no controls.",
+          "test": "Lighthouse/UX review on live Station Lead page shows no layout issues and clear call-to-action for cup assignment on every heat."
+        }
+      ]
+    }
+  ],
+  "execution_order": [
+    "1.1",
+    "1.2",
+    "1.3",
+    "2.1",
+    "2.2",
+    "2.3",
+    "3.1",
+    "3.2",
+    "3.3",
+    "4.1",
+    "4.2",
+    "5.1",
+    "5.2"
+  ],
+  "dependencies": {
+    "1.2": ["1.1"],
+    "1.3": ["1.1"],
+    "2.1": ["1.1"],
+    "2.2": ["1.1"],
+    "2.3": ["2.2"],
+    "3.2": ["3.1"],
+    "3.3": ["2.1", "3.1"],
+    "4.1": ["2.3"],
+    "4.2": ["4.1"],
+    "5.1": ["1.2", "2.3", "3.2", "4.2"],
+    "5.2": ["5.1"]
+  }
+}
+
+

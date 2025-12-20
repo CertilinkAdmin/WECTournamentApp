@@ -216,6 +216,8 @@ const JudgeScorecardsResults: React.FC = () => {
           station,
           leftCupCode,
           rightCupCode,
+          score1: (match as any).competitor1Score,
+          score2: (match as any).competitor2Score,
           judges,
         } as Heat;
       })

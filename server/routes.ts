@@ -422,10 +422,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? await storage.getMatchDetailedScoresBatch(matchIds)
         : [];
 
+      // Calculate and add scores for completed matches
+      const { calculateMatchWinner } = await import('./utils/winnerCalculation');
+      const matchesWithScores = await Promise.all(
+        matchesWithNames.map(async (match) => {
+          // Only calculate scores for DONE matches with both competitors
+          if (match.status === 'DONE' && match.competitor1Id && match.competitor2Id) {
+            try {
+              const winnerResult = await calculateMatchWinner(match.id);
+              if (!winnerResult.error) {
+                return {
+                  ...match,
+                  competitor1Score: winnerResult.competitor1Score,
+                  competitor2Score: winnerResult.competitor2Score,
+                };
+              }
+            } catch (error) {
+              console.error(`Error calculating scores for match ${match.id}:`, error);
+            }
+          }
+          return match;
+        })
+      );
+
       res.json({
         tournament,
         participants: participantsWithInfo,
-        matches: matchesWithNames,
+        matches: matchesWithScores,
         scores: scoresWithJudgeNames,
         detailedScores: detailedScoresForTournament
       });

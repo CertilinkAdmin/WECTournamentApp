@@ -99,7 +99,9 @@ export default function StationLeadView() {
     // Get all matches in current round across ALL stations
     const currentRoundMatches = allMatches.filter(m => m.round === currentRound);
 
-    // Group matches by station to ensure each station has completed their heats
+    if (currentRoundMatches.length === 0) return false;
+
+    // Group matches by station
     const matchesByStation = new Map<number, any[]>();
     currentRoundMatches.forEach(match => {
       if (match.stationId) {
@@ -110,25 +112,36 @@ export default function StationLeadView() {
       }
     });
 
-    // Check if ALL main stations (A, B, C) have completed ALL their heats in current round
-    for (const station of mainStations) {
-      const stationMatches = matchesByStation.get(station.id) || [];
+    // Check completion: Only stations WITH matches need to be complete
+    // If a station has no matches in this round, it's considered complete (no work to do)
+    // This matches the backend logic in checkRoundCompletion
+    const stationsWithMatches = mainStations.filter(s => {
+      const stationMatches = matchesByStation.get(s.id) || [];
+      return stationMatches.length > 0;
+    });
 
-      // If station has matches assigned but not all are DONE, round is not complete
-      if (stationMatches.length > 0 && !stationMatches.every(m => m.status === 'DONE')) {
+    // All matches in the round must be DONE and have winners
+    const allMatchesDone = currentRoundMatches.every(m => m.status === 'DONE');
+    const allMatchesHaveWinners = currentRoundMatches.every(m => m.winnerId !== null);
+
+    if (!allMatchesDone || !allMatchesHaveWinners) return false;
+
+    // All stations WITH matches must have completed ALL their heats
+    for (const station of stationsWithMatches) {
+      const stationMatches = matchesByStation.get(station.id) || [];
+      
+      // If station has matches, all must be DONE
+      if (!stationMatches.every(m => m.status === 'DONE')) {
         return false;
       }
 
-      // If station has matches assigned but not all have winners, round is not complete
-      if (stationMatches.length > 0 && !stationMatches.every(m => m.winnerId !== null)) {
+      // If station has matches, all must have winners
+      if (!stationMatches.every(m => m.winnerId !== null)) {
         return false;
       }
     }
 
-    // All stations must have at least one match, all matches must be DONE, and all must have winners
-    return currentRoundMatches.length > 0 && 
-           currentRoundMatches.every(m => m.status === 'DONE') &&
-           currentRoundMatches.every(m => m.winnerId !== null);
+    return true;
   }, [allMatches, mainStations]);
 
   const stationMatches = allMatches.filter(m => m.stationId === selectedStation);
@@ -151,6 +164,7 @@ export default function StationLeadView() {
   const espressoSegment = React.useMemo(() => {
     return segments.find(s => s.segment === 'ESPRESSO');
   }, [segments]);
+  const isEspressoEnded = espressoSegment?.status === 'ENDED';
   const isEspressoStarted = espressoSegment?.status === 'RUNNING' || espressoSegment?.status === 'ENDED';
 
   // Determine if ESPRESSO segment can be started (no judge completion check - segments proceed without blocking)
@@ -163,6 +177,7 @@ export default function StationLeadView() {
 
   // Fetch judge completion status for heat completion (CAPPUCCINO and ESPRESSO)
   // This is checked before advancing to next heat, not before starting segments
+  // Enable query for RUNNING matches OR when segments are ENDED (to catch completion after status changes)
   const { data: cappuccinoJudgeCompletion } = useQuery<{
     allComplete: boolean;
     judges: Array<{
@@ -179,8 +194,8 @@ export default function StationLeadView() {
       if (!response.ok) return { allComplete: false, judges: [] };
       return response.json();
     },
-    enabled: !!currentMatch?.id && currentMatch?.status === 'RUNNING',
-    refetchInterval: 3000, // Poll every 3 seconds when heat is running
+    enabled: !!currentMatch?.id && (currentMatch?.status === 'RUNNING' || isCappuccinoEnded),
+    refetchInterval: 3000, // Poll every 3 seconds when heat is running or cappuccino ended
   });
 
   const { data: espressoJudgeCompletion } = useQuery<{
@@ -199,16 +214,22 @@ export default function StationLeadView() {
       if (!response.ok) return { allComplete: false, judges: [] };
       return response.json();
     },
-    enabled: !!currentMatch?.id && currentMatch?.status === 'RUNNING',
-    refetchInterval: 3000, // Poll every 3 seconds when heat is running
+    enabled: !!currentMatch?.id && (currentMatch?.status === 'RUNNING' || isEspressoEnded),
+    refetchInterval: 3000, // Poll every 3 seconds when heat is running or espresso ended
   });
 
   // Check if all judges have completed scoring (for heat advancement)
+  // Only require completion for segments that actually exist
   const allJudgesCompleted = React.useMemo(() => {
-    return (cappuccinoJudgeCompletion?.allComplete ?? false) && (espressoJudgeCompletion?.allComplete ?? false);
-  }, [cappuccinoJudgeCompletion, espressoJudgeCompletion]);
+    const hasCappuccino = segments.some(s => s.segment === 'CAPPUCCINO');
+    const hasEspresso = segments.some(s => s.segment === 'ESPRESSO');
+    const cappuccinoComplete = !hasCappuccino || (cappuccinoJudgeCompletion?.allComplete ?? false);
+    const espressoComplete = !hasEspresso || (espressoJudgeCompletion?.allComplete ?? false);
+    return cappuccinoComplete && espressoComplete;
+  }, [cappuccinoJudgeCompletion, espressoJudgeCompletion, segments]);
 
   // Fetch cup positions to check if they're assigned
+  // Enable query when judges are complete OR when match is RUNNING (to catch completion)
   const { data: cupPositions = [] } = useQuery<Array<{ cupCode: string; position: 'left' | 'right' }>>({
     queryKey: [`/api/matches/${currentMatch?.id}/cup-positions`],
     queryFn: async () => {
@@ -218,8 +239,8 @@ export default function StationLeadView() {
       const positions = await response.json();
       return positions.map((p: any) => ({ cupCode: p.cupCode, position: p.position }));
     },
-    enabled: !!currentMatch?.id && currentMatch?.status === 'RUNNING' && allJudgesCompleted,
-    refetchInterval: 3000, // Poll every 3 seconds when judges are complete
+    enabled: !!currentMatch?.id && (currentMatch?.status === 'RUNNING' || allJudgesCompleted),
+    refetchInterval: 3000, // Poll every 3 seconds when judges are complete or match is running
   });
 
   // Check if cup positions are assigned
@@ -1361,7 +1382,8 @@ export default function StationLeadView() {
                     // Not last heat - show complete and advance button
                     <>
                       {/* Judge Completion Status and Cup Code Assignment - Required before advancing heat */}
-                      {currentMatch && currentMatch.status === 'RUNNING' && (
+                      {/* Show this section for RUNNING matches OR when segments are ended (to catch completion) */}
+                      {currentMatch && (currentMatch.status === 'RUNNING' || isCappuccinoEnded || isEspressoEnded) && (
                         <div className="mb-4 space-y-4">
                           {(!allJudgesCompleted) && (
                             <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
@@ -1409,7 +1431,8 @@ export default function StationLeadView() {
                             </Alert>
                           )}
                           
-                          {/* Cup Code Assignment - Show after judges complete scoring */}
+                          {/* Cup Code Assignment - Show after judges complete scoring for EVERY heat on EVERY station */}
+                          {/* This must appear for every heat (1, 2, 3) on every station (A, B, C) once judges finish scoring */}
                           {allJudgesCompleted && currentMatch && currentTournamentId && (
                             <div className="border rounded-lg p-4 bg-card">
                               <AdminCupPositionAssignment

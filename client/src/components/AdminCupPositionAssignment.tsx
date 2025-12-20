@@ -113,15 +113,22 @@ export default function AdminCupPositionAssignment({
       return positions.map((p: any) => ({ cupCode: p.cupCode, position: p.position }));
     },
     enabled: !!matchId,
-    onSuccess: (data) => {
-      if (data.length === 2) {
-        const left = data.find(p => p.position === 'left');
-        const right = data.find(p => p.position === 'right');
-        if (left) setLeftCupCode(left.cupCode);
-        if (right) setRightCupCode(right.cupCode);
-      }
-    },
   });
+
+  // Update state when existing positions change (using useEffect to avoid infinite loops)
+  React.useEffect(() => {
+    if (existingPositions.length === 2) {
+      const left = existingPositions.find(p => p.position === 'left');
+      const right = existingPositions.find(p => p.position === 'right');
+      // Only update if values actually changed to prevent unnecessary re-renders
+      if (left && left.cupCode !== leftCupCode) {
+        setLeftCupCode(left.cupCode);
+      }
+      if (right && right.cupCode !== rightCupCode) {
+        setRightCupCode(right.cupCode);
+      }
+    }
+  }, [existingPositions, leftCupCode, rightCupCode]);
 
   // Check if all judges have scored for the segments that actually exist in this heat
   const hasCappuccinoSegment = segments.some((segment) => segment.segment === 'CAPPUCCINO');
@@ -129,7 +136,10 @@ export default function AdminCupPositionAssignment({
   const cappuccinoComplete = !hasCappuccinoSegment || cappuccinoStatus?.allComplete;
   const espressoComplete = !hasEspressoSegment || espressoStatus?.allComplete;
   const allJudgesScored = cappuccinoComplete && espressoComplete;
-  const canAssign = allJudgesScored && cupCode1 && cupCode2;
+  // Cup assignment is a per-heat requirement: as soon as judges are done for this heat,
+  // the assignment UI must appear for every station/heat, even if a competitor is missing a cup code.
+  // Missing competitor cup codes are surfaced as an explicit error state instead of hiding the UI.
+  const hasBothCompetitorCupCodes = !!cupCode1 && !!cupCode2;
 
   // Assign cup positions mutation
   const assignMutation = useMutation({
@@ -146,8 +156,9 @@ export default function AdminCupPositionAssignment({
       }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/cup-positions`] });
+    onSuccess: async () => {
+      // Invalidate and wait for refetch to complete before showing toast
+      await queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/cup-positions`] });
       toast({
         title: 'Cup Positions Assigned',
         description: 'Cup codes have been assigned to left/right positions successfully.',
@@ -262,21 +273,41 @@ export default function AdminCupPositionAssignment({
         )}
 
         {/* Cup Code Assignment */}
-        {canAssign && (
+        {allJudgesScored && (
           <div className="space-y-4 sm:space-y-6">
             <div className="p-4 sm:p-5 bg-muted rounded-lg">
               <Label className="text-sm font-semibold mb-3 block">Available Cup Codes</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <div className="text-sm font-mono font-bold">{cupCode1}</div>
-                  <div className="text-xs text-muted-foreground">{competitor1User?.name}</div>
+                  <div className="text-sm font-mono font-bold">
+                    {cupCode1 || 'MISSING'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {competitor1User?.name || 'Competitor 1'}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-sm font-mono font-bold">{cupCode2}</div>
-                  <div className="text-xs text-muted-foreground">{competitor2User?.name}</div>
+                  <div className="text-sm font-mono font-bold">
+                    {cupCode2 || 'MISSING'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {competitor2User?.name || 'Competitor 2'}
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* If competitor cup codes are missing, surface a clear error instead of hiding the UI */}
+            {allJudgesScored && !hasBothCompetitorCupCodes && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Competitor Cup Codes Required</AlertTitle>
+                <AlertDescription>
+                  One or both competitors are missing cup codes. Cup codes must be assigned to competitors in the
+                  tournament setup before you can assign left/right cup positions for this heat.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
@@ -284,6 +315,7 @@ export default function AdminCupPositionAssignment({
                 <Select
                   value={leftCupCode}
                   onValueChange={setLeftCupCode}
+                  disabled={!hasBothCompetitorCupCodes}
                 >
                   <SelectTrigger id="left-cup-code" className="w-full min-h-[44px]">
                     <SelectValue placeholder="Select cup code" />
@@ -307,6 +339,7 @@ export default function AdminCupPositionAssignment({
                 <Select
                   value={rightCupCode}
                   onValueChange={setRightCupCode}
+                  disabled={!hasBothCompetitorCupCodes}
                 >
                   <SelectTrigger id="right-cup-code" className="w-full min-h-[44px]">
                     <SelectValue placeholder="Select cup code" />
@@ -338,7 +371,7 @@ export default function AdminCupPositionAssignment({
 
             <Button
               onClick={handleAssign}
-              disabled={!leftCupCode || !rightCupCode || assignMutation.isPending}
+              disabled={!hasBothCompetitorCupCodes || !leftCupCode || !rightCupCode || assignMutation.isPending}
               className="w-full min-h-[44px] text-base"
               size="lg"
             >
