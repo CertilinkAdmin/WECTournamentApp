@@ -27,7 +27,7 @@ export default function HeatCountdownTimer({ totalSeconds, isActive }: HeatCount
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isActive, displaySeconds]);
+  }, [isActive]); // Removed displaySeconds from deps - using functional update form doesn't need it
 
   const minutes = Math.floor(displaySeconds / 60);
   const seconds = displaySeconds % 60;

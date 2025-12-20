@@ -979,7 +979,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/matches/:id", async (req, res) => {
     try {
+      const matchId = parseInt(req.params.id);
       const updateData = { ...req.body };
+
+      // CRITICAL: Prevent setting status to DONE without proper validation
+      // Matches should only be marked DONE through /api/stations/:stationId/advance-heat
+      // which validates segments, judges, and cup positions
+      if (updateData.status === 'DONE') {
+        const existingMatch = await storage.getMatch(matchId);
+        if (!existingMatch) {
+          return res.status(404).json({ error: "Match not found" });
+        }
+        
+        // If match is not already DONE, require proper validation
+        if (existingMatch.status !== 'DONE') {
+          const globalLockStatus = await storage.getGlobalLockStatus(matchId);
+          
+          if (!globalLockStatus.allSegmentsEnded) {
+            return res.status(400).json({
+              error: `Cannot mark match as DONE. All segments must be completed. Use /api/stations/:stationId/advance-heat instead.`,
+              globalLockStatus
+            });
+          }
+          
+          if (!globalLockStatus.allJudgesSubmitted) {
+            const missingDetails = globalLockStatus.missingSubmissions
+              .map(m => `${m.judgeName} (${m.role}): ${m.missing.join(', ')}`)
+              .join('; ');
+            return res.status(400).json({
+              error: `Cannot mark match as DONE. All judges must complete scoring. Missing: ${missingDetails}. Use /api/stations/:stationId/advance-heat instead.`,
+              globalLockStatus
+            });
+          }
+          
+          const cupPositions = await storage.getMatchCupPositions(matchId);
+          const hasLeftPosition = cupPositions.some(p => p.position === 'left');
+          const hasRightPosition = cupPositions.some(p => p.position === 'right');
+          if (!hasLeftPosition || !hasRightPosition) {
+            return res.status(400).json({
+              error: `Cannot mark match as DONE. Cup codes must be assigned to left/right positions. Use /api/stations/:stationId/advance-heat instead.`,
+              cupPositions
+            });
+          }
+        }
+      }
 
       // Convert ISO string dates to Date objects for timestamp fields
       if (updateData.startTime && typeof updateData.startTime === 'string') {
@@ -989,7 +1032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.endTime = new Date(updateData.endTime);
       }
 
-      const match = await storage.updateMatch(parseInt(req.params.id), updateData);
+      const match = await storage.updateMatch(matchId, updateData);
       if (!match) {
         return res.status(404).json({ error: "Match not found" });
       }
@@ -1724,11 +1767,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: `No matches found for Station ${station.name} in Round ${round}` });
       }
 
-      // Check if all matches are complete
-      const incompleteMatches = stationRoundMatches.filter(m => m.status !== 'DONE');
+      // GLOBAL RULE: Check if all matches are complete with proper validation
+      // Each match must be DONE AND have segments ended, judges scored, cup positions assigned
+      const incompleteMatches: typeof stationRoundMatches = [];
+      for (const match of stationRoundMatches) {
+        if (match.status !== 'DONE') {
+          incompleteMatches.push(match);
+          continue;
+        }
+        
+        // BYE matches don't need validation
+        if (!match.competitor2Id) {
+          continue;
+        }
+        
+        // Validate segments, judges, and cup positions for regular matches
+        const globalLockStatus = await storage.getGlobalLockStatus(match.id);
+        if (!globalLockStatus.allSegmentsEnded || !globalLockStatus.allJudgesSubmitted) {
+          incompleteMatches.push(match);
+          continue;
+        }
+        
+        const cupPositions = await storage.getMatchCupPositions(match.id);
+        const hasLeftPosition = cupPositions.some(p => p.position === 'left');
+        const hasRightPosition = cupPositions.some(p => p.position === 'right');
+        if (!hasLeftPosition || !hasRightPosition) {
+          incompleteMatches.push(match);
+          continue;
+        }
+      }
+      
       if (incompleteMatches.length > 0) {
         return res.status(400).json({ 
-          error: `Not all heats are complete. ${incompleteMatches.length} heat(s) still in progress.`,
+          error: `Not all heats are complete. ${incompleteMatches.length} heat(s) still need segments completed, judges scored, or cup codes assigned.`,
           incompleteHeats: incompleteMatches.map(m => m.heatNumber)
         });
       }
@@ -1772,6 +1843,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error finalizing station round:', error);
       res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  });
+
+  // Check round completion status
+  app.get("/api/tournaments/:id/round-completion", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const round = parseInt(req.query.round as string) || undefined;
+
+      if (!tournamentId || isNaN(tournamentId)) {
+        return res.status(400).json({ error: "Invalid tournament ID" });
+      }
+
+      // Get current round if not specified
+      let targetRound = round;
+      if (!targetRound) {
+        const allMatches = await storage.getTournamentMatches(tournamentId);
+        if (allMatches.length === 0) {
+          return res.status(400).json({ error: "No matches found for this tournament" });
+        }
+        targetRound = Math.max(...allMatches.map(m => m.round));
+      }
+
+      const { checkRoundCompletion } = await import('./utils/roundCompletion');
+      const completionStatus = await checkRoundCompletion(tournamentId, targetRound);
+      
+      res.json(completionStatus);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
     }
   });
 
@@ -2088,20 +2188,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete a heat
+  // DEPRECATED: Use /api/stations/:stationId/advance-heat instead
+  // This endpoint is kept for backward compatibility but enforces the same validation
   app.post("/api/heats/:id/complete", async (req, res) => {
     try {
       const matchId = parseInt(req.params.id);
       const { winnerId } = req.body;
 
-      const match = await storage.updateMatch(matchId, {
-        status: 'DONE',
-        winnerId,
-        endTime: new Date()
-      });
-
-      if (!match) {
+      const existingMatch = await storage.getMatch(matchId);
+      if (!existingMatch) {
         return res.status(404).json({ error: "Heat not found" });
       }
+
+      // BYE matches don't need validation
+      if (!existingMatch.competitor2Id) {
+        const match = await storage.updateMatch(matchId, {
+          status: 'DONE',
+          winnerId: winnerId || existingMatch.competitor1Id,
+          endTime: new Date()
+        });
+        io.to(`tournament:${match.tournamentId}`).emit("heat:completed", match);
+        return res.json(match);
+      }
+
+      // GLOBAL RULE: For all regular heats, validate before marking DONE
+      const globalLockStatus = await storage.getGlobalLockStatus(matchId);
+      
+      if (!globalLockStatus.allSegmentsEnded) {
+        return res.status(400).json({
+          error: `Cannot complete heat. All segments must be completed. Use /api/stations/:stationId/advance-heat instead.`,
+          globalLockStatus
+        });
+      }
+      
+      if (!globalLockStatus.allJudgesSubmitted) {
+        const missingDetails = globalLockStatus.missingSubmissions
+          .map(m => `${m.judgeName} (${m.role}): ${m.missing.join(', ')}`)
+          .join('; ');
+        return res.status(400).json({
+          error: `Cannot complete heat. All judges must complete scoring. Missing: ${missingDetails}. Use /api/stations/:stationId/advance-heat instead.`,
+          globalLockStatus
+        });
+      }
+      
+      const cupPositions = await storage.getMatchCupPositions(matchId);
+      const hasLeftPosition = cupPositions.some(p => p.position === 'left');
+      const hasRightPosition = cupPositions.some(p => p.position === 'right');
+      if (!hasLeftPosition || !hasRightPosition) {
+        return res.status(400).json({
+          error: `Cannot complete heat. Cup codes must be assigned to left/right positions. Use /api/stations/:stationId/advance-heat instead.`,
+          cupPositions
+        });
+      }
+
+      // Calculate winner if not provided
+      let finalWinnerId = winnerId;
+      if (!finalWinnerId) {
+        const { calculateMatchWinner } = await import('./utils/winnerCalculation');
+        const winnerResult = await calculateMatchWinner(matchId);
+        if (winnerResult.error || !winnerResult.winnerId) {
+          return res.status(400).json({
+            error: `Cannot complete heat. ${winnerResult.error || 'Winner could not be determined.'}`,
+            details: winnerResult
+          });
+        }
+        finalWinnerId = winnerResult.winnerId;
+      }
+
+      const match = await storage.updateMatch(matchId, {
+        status: 'DONE',
+        winnerId: finalWinnerId,
+        endTime: new Date()
+      });
 
       io.to(`tournament:${match.tournamentId}`).emit("heat:completed", match);
       res.json(match);

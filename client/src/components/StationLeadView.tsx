@@ -89,60 +89,46 @@ export default function StationLeadView() {
     enabled: !!currentTournamentId,
   });
 
-  // Check if current round is complete across ALL stations
-  const isCurrentRoundComplete = React.useMemo(() => {
-    if (allMatches.length === 0 || mainStations.length === 0) return false;
+  // Get current round number
+  const currentRound = React.useMemo(() => {
+    if (allMatches.length === 0) return null;
+    return Math.max(...allMatches.map(m => m.round));
+  }, [allMatches]);
 
-    // Get current round number
-    const currentRound = Math.max(...allMatches.map(m => m.round));
+  // Check if current round is complete using backend API
+  // Backend validates: segments ended, judges scored, cup positions assigned
+  const { data: roundCompletionStatus } = useQuery<{
+    isComplete: boolean;
+    round: number;
+    totalMatches: number;
+    completedMatches: number;
+    matchesWithWinners: number;
+    incompleteMatches: any[];
+    matchesWithoutWinners: any[];
+    stationStatus: Array<{
+      stationId: number;
+      stationName: string;
+      totalMatches: number;
+      completedMatches: number;
+      matchesWithWinners: number;
+      incompleteMatches: any[];
+      matchesWithoutWinners: any[];
+      isComplete: boolean;
+    }>;
+    errors: string[];
+  }>({
+    queryKey: [`/api/tournaments/${currentTournamentId}/round-completion`, currentRound],
+    queryFn: async () => {
+      if (!currentTournamentId || !currentRound) return null;
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/round-completion?round=${currentRound}`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!currentTournamentId && currentRound !== null,
+    refetchInterval: 3000, // Poll every 3 seconds to catch completion
+  });
 
-    // Get all matches in current round across ALL stations
-    const currentRoundMatches = allMatches.filter(m => m.round === currentRound);
-
-    if (currentRoundMatches.length === 0) return false;
-
-    // Group matches by station
-    const matchesByStation = new Map<number, any[]>();
-    currentRoundMatches.forEach(match => {
-      if (match.stationId) {
-        if (!matchesByStation.has(match.stationId)) {
-          matchesByStation.set(match.stationId, []);
-        }
-        matchesByStation.get(match.stationId)!.push(match);
-      }
-    });
-
-    // Check completion: Only stations WITH matches need to be complete
-    // If a station has no matches in this round, it's considered complete (no work to do)
-    // This matches the backend logic in checkRoundCompletion
-    const stationsWithMatches = mainStations.filter(s => {
-      const stationMatches = matchesByStation.get(s.id) || [];
-      return stationMatches.length > 0;
-    });
-
-    // All matches in the round must be DONE and have winners
-    const allMatchesDone = currentRoundMatches.every(m => m.status === 'DONE');
-    const allMatchesHaveWinners = currentRoundMatches.every(m => m.winnerId !== null);
-
-    if (!allMatchesDone || !allMatchesHaveWinners) return false;
-
-    // All stations WITH matches must have completed ALL their heats
-    for (const station of stationsWithMatches) {
-      const stationMatches = matchesByStation.get(station.id) || [];
-      
-      // If station has matches, all must be DONE
-      if (!stationMatches.every(m => m.status === 'DONE')) {
-        return false;
-      }
-
-      // If station has matches, all must have winners
-      if (!stationMatches.every(m => m.winnerId !== null)) {
-        return false;
-      }
-    }
-
-    return true;
-  }, [allMatches, mainStations]);
+  const isCurrentRoundComplete = roundCompletionStatus?.isComplete ?? false;
 
   const stationMatches = allMatches.filter(m => m.stationId === selectedStation);
   const currentMatch = stationMatches.find(m => m.status === 'RUNNING') || 
@@ -444,27 +430,9 @@ export default function StationLeadView() {
     }
   });
 
-  const completeMatchMutation = useMutation({
-    mutationFn: async (matchId: number) => {
-      const response = await fetch(`/api/matches/${matchId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'DONE',
-          endTime: new Date().toISOString()
-        })
-      });
-      if (!response.ok) throw new Error('Failed to complete match');
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
-      toast({
-        title: "Heat Completed",
-        description: `Round ${data.round}, Heat ${data.heatNumber} is complete.`,
-      });
-    }
-  });
+  // REMOVED: completeMatchMutation - All heats must go through advance-heat endpoint
+  // which validates: segments ended, judges scored, cup positions assigned
+  // This ensures the global rule: Judges score → Enter cup codes → Advance heat
 
   const advanceHeatMutation = useMutation({
     mutationFn: async (stationId: number) => {
@@ -1360,16 +1328,107 @@ export default function StationLeadView() {
               )}
 
               {/* Complete and Advance / Finalize Station Round */}
+              {/* Button appears when segments are ended, but is disabled until heat is fully complete */}
               {currentMatch.status === 'RUNNING' && allSegmentsEnded && (
                 <div className="space-y-2">
+                  {/* Judge Completion Status and Cup Code Assignment - Required for EVERY heat (including last heat) */}
+                  {/* Show this section for RUNNING matches OR when segments are ended (to catch completion) */}
+                  {currentMatch && (currentMatch.status === 'RUNNING' || isCappuccinoEnded || isEspressoEnded) && (
+                    <div className="mb-4 space-y-4">
+                      {(!allJudgesCompleted) && (
+                        <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+                          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                            Waiting for Judges Scores
+                          </AlertTitle>
+                          <AlertDescription className="text-xs text-amber-800 dark:text-amber-300 mt-1">
+                            <p className="mb-2">All judges must complete scoring before advancing to the next heat.</p>
+                            {cappuccinoJudgeCompletion && !cappuccinoJudgeCompletion.allComplete && (
+                              <div className="mb-2">
+                                <p className="font-medium">CAPPUCCINO Segment:</p>
+                                <ul className="list-disc list-inside ml-2 space-y-0.5">
+                                  {cappuccinoJudgeCompletion.judges
+                                    .filter(j => !j.completed)
+                                    .map(j => (
+                                      <li key={j.judgeId}>
+                                        {j.judgeName} ({j.role})
+                                      </li>
+                                    ))}
+                                </ul>
+                                <p className="text-xs mt-1">
+                                  {cappuccinoJudgeCompletion.judges.filter(j => j.completed).length} of {cappuccinoJudgeCompletion.judges.length} judges completed
+                                </p>
+                              </div>
+                            )}
+                            {espressoJudgeCompletion && !espressoJudgeCompletion.allComplete && (
+                              <div>
+                                <p className="font-medium">ESPRESSO Segment:</p>
+                                <ul className="list-disc list-inside ml-2 space-y-0.5">
+                                  {espressoJudgeCompletion.judges
+                                    .filter(j => !j.completed)
+                                    .map(j => (
+                                      <li key={j.judgeId}>
+                                        {j.judgeName} ({j.role})
+                                      </li>
+                                    ))}
+                                </ul>
+                                <p className="text-xs mt-1">
+                                  {espressoJudgeCompletion.judges.filter(j => j.completed).length} of {espressoJudgeCompletion.judges.length} judges completed
+                                </p>
+                              </div>
+                            )}
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      
+                      {/* Cup Code Assignment - Show after judges complete scoring for EVERY heat on EVERY station */}
+                      {/* This must appear for every heat (1, 2, 3) on every station (A, B, C) once judges finish scoring */}
+                      {allJudgesCompleted && currentMatch && currentTournamentId && (
+                        <div className="border rounded-lg p-4 bg-card">
+                          <AdminCupPositionAssignment
+                            matchId={currentMatch.id}
+                            tournamentId={currentTournamentId}
+                            onSuccess={() => {
+                              queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch.id}/cup-positions`] });
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {allJudgesCompleted && cupPositionsAssigned && (
+                        <Alert className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
+                          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <AlertTitle className="text-sm font-semibold text-green-900 dark:text-green-200">
+                            Ready to {isLastHeatInRound ? 'Finalize' : 'Advance'}
+                          </AlertTitle>
+                          <AlertDescription className="text-xs text-green-800 dark:text-green-300">
+                            All scorecards are complete and cup codes have been assigned. {isLastHeatInRound ? 'You can now finalize this station\'s round.' : 'You can now advance to the next heat.'}
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      {allJudgesCompleted && !cupPositionsAssigned && (
+                        <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+                          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                            Cup Code Assignment Required
+                          </AlertTitle>
+                          <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+                            Please assign cup codes to left/right positions above before {isLastHeatInRound ? 'finalizing this station\'s round' : 'advancing to the next heat'}.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                  )}
+
                   {isLastHeatInRound ? (
-                    // Last heat in round - show finalize button
-                    (<Button
+                    // Last heat in round - show finalize button (appears when segments done, disabled until judges + cup codes done)
+                    <Button
                       variant="default"
                       size="lg"
-                      className="w-full bg-green-600 hover:bg-green-700"
+                      className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={handleFinalizeStationRound}
-                      disabled={finalizeStationRoundMutation.isPending}
+                      disabled={finalizeStationRoundMutation.isPending || !allJudgesCompleted || !cupPositionsAssigned}
                       data-testid="button-finalize-station-round"
                     >
                       <CheckCircle2 className="h-5 w-5 mr-2" />
@@ -1377,114 +1436,23 @@ export default function StationLeadView() {
                         ? "Finalizing..." 
                         : `Finalize Station ${mainStations.find(s => s.id === selectedStation)?.name || ''} heats for Round ${currentMatch.round}`
                       }
-                    </Button>)
+                    </Button>
                   ) : (
                     // Not last heat - show complete and advance button
-                    <>
-                      {/* Judge Completion Status and Cup Code Assignment - Required before advancing heat */}
-                      {/* Show this section for RUNNING matches OR when segments are ended (to catch completion) */}
-                      {currentMatch && (currentMatch.status === 'RUNNING' || isCappuccinoEnded || isEspressoEnded) && (
-                        <div className="mb-4 space-y-4">
-                          {(!allJudgesCompleted) && (
-                            <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
-                              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                              <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                                Judge Scores Required
-                              </AlertTitle>
-                              <AlertDescription className="text-xs text-amber-800 dark:text-amber-300 mt-1">
-                                <p className="mb-2">All judges must complete scoring before advancing to the next heat.</p>
-                                {cappuccinoJudgeCompletion && !cappuccinoJudgeCompletion.allComplete && (
-                                  <div className="mb-2">
-                                    <p className="font-medium">CAPPUCCINO Segment:</p>
-                                    <ul className="list-disc list-inside ml-2 space-y-0.5">
-                                      {cappuccinoJudgeCompletion.judges
-                                        .filter(j => !j.completed)
-                                        .map(j => (
-                                          <li key={j.judgeId}>
-                                            {j.judgeName} ({j.role})
-                                          </li>
-                                        ))}
-                                    </ul>
-                                    <p className="text-xs mt-1">
-                                      {cappuccinoJudgeCompletion.judges.filter(j => j.completed).length} of {cappuccinoJudgeCompletion.judges.length} judges completed
-                                    </p>
-                                  </div>
-                                )}
-                                {espressoJudgeCompletion && !espressoJudgeCompletion.allComplete && (
-                                  <div>
-                                    <p className="font-medium">ESPRESSO Segment:</p>
-                                    <ul className="list-disc list-inside ml-2 space-y-0.5">
-                                      {espressoJudgeCompletion.judges
-                                        .filter(j => !j.completed)
-                                        .map(j => (
-                                          <li key={j.judgeId}>
-                                            {j.judgeName} ({j.role})
-                                          </li>
-                                        ))}
-                                    </ul>
-                                    <p className="text-xs mt-1">
-                                      {espressoJudgeCompletion.judges.filter(j => j.completed).length} of {espressoJudgeCompletion.judges.length} judges completed
-                                    </p>
-                                  </div>
-                                )}
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                          
-                          {/* Cup Code Assignment - Show after judges complete scoring for EVERY heat on EVERY station */}
-                          {/* This must appear for every heat (1, 2, 3) on every station (A, B, C) once judges finish scoring */}
-                          {allJudgesCompleted && currentMatch && currentTournamentId && (
-                            <div className="border rounded-lg p-4 bg-card">
-                              <AdminCupPositionAssignment
-                                matchId={currentMatch.id}
-                                tournamentId={currentTournamentId}
-                                onSuccess={() => {
-                                  queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch.id}/cup-positions`] });
-                                }}
-                              />
-                            </div>
-                          )}
-
-                          {allJudgesCompleted && cupPositionsAssigned && (
-                            <Alert className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
-                              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                              <AlertTitle className="text-sm font-semibold text-green-900 dark:text-green-200">
-                                Ready to Advance
-                              </AlertTitle>
-                              <AlertDescription className="text-xs text-green-800 dark:text-green-300">
-                                All scorecards are complete and cup codes have been assigned. You can now advance to the next heat.
-                              </AlertDescription>
-                            </Alert>
-                          )}
-
-                          {allJudgesCompleted && !cupPositionsAssigned && (
-                            <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
-                              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                              <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                                Cup Code Assignment Required
-                              </AlertTitle>
-                              <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
-                                Please assign cup codes to left/right positions above before advancing to the next heat.
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                        </div>
-                      )}
-                      <Button
-                        variant="default"
-                        size="lg"
-                        className="w-full bg-primary hover:bg-primary/90"
-                        onClick={handleAdvanceHeat}
-                        disabled={advanceHeatMutation.isPending || (currentMatch?.status === 'RUNNING' && !canAdvanceHeat)}
-                        data-testid="button-complete-and-advance"
-                      >
-                        <ArrowRight className="h-4 w-4 mr-2" />
-                        {advanceHeatMutation.isPending 
-                          ? "Completing and Advancing..." 
-                          : "Complete and Advance to Next Heat"
-                        }
-                      </Button>
-                    </>
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="w-full bg-primary hover:bg-primary/90"
+                      onClick={handleAdvanceHeat}
+                      disabled={advanceHeatMutation.isPending || (currentMatch?.status === 'RUNNING' && !canAdvanceHeat)}
+                      data-testid="button-complete-and-advance"
+                    >
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      {advanceHeatMutation.isPending 
+                        ? "Completing and Advancing..." 
+                        : "Complete and Advance to Next Heat"
+                      }
+                    </Button>
                   )}
                   <p className="text-xs text-center text-foreground/70 dark:text-white/70">
                     {isLastHeatInRound 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import SevenSegmentTimer from "./SevenSegmentTimer";
 
@@ -25,6 +25,12 @@ export default function SegmentTimer({
   const [timeRemaining, setTimeRemaining] = useState(durationMinutes * 60);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
   const [warningsShown, setWarningsShown] = useState({ oneMinute: false, thirtySeconds: false });
+  const timeRemainingRef = useRef(timeRemaining);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    timeRemainingRef.current = timeRemaining;
+  }, [timeRemaining]);
 
   // When an external time source is provided (e.g. StationLeadView header timer),
   // mirror it into local state so both displays stay perfectly in sync.
@@ -37,17 +43,22 @@ export default function SegmentTimer({
   useEffect(() => {
     if (externalTimeRemaining === undefined) return;
 
-    if (externalTimeRemaining === 60 && !warningsShown.oneMinute) {
-      setWarningsShown((previousWarnings) => ({ ...previousWarnings, oneMinute: true }));
-    }
-    if (externalTimeRemaining === 30 && !warningsShown.thirtySeconds) {
-      setWarningsShown((previousWarnings) => ({ ...previousWarnings, thirtySeconds: true }));
-    }
+    // Use functional updates to avoid dependency on warningsShown
+    setWarningsShown((previousWarnings) => {
+      const updates: Partial<typeof previousWarnings> = {};
+      if (externalTimeRemaining === 60 && !previousWarnings.oneMinute) {
+        updates.oneMinute = true;
+      }
+      if (externalTimeRemaining === 30 && !previousWarnings.thirtySeconds) {
+        updates.thirtySeconds = true;
+      }
+      return Object.keys(updates).length > 0 ? { ...previousWarnings, ...updates } : previousWarnings;
+    });
 
     if (externalTimeRemaining === 0 && onComplete) {
       onComplete();
     }
-  }, [externalTimeRemaining, warningsShown.oneMinute, warningsShown.thirtySeconds, onComplete]);
+  }, [externalTimeRemaining, onComplete]); // Removed warningsShown from deps - using functional updates
 
   // Default internal countdown behaviour when no external time source is provided
   useEffect(() => {
@@ -57,9 +68,13 @@ export default function SegmentTimer({
 
     if (isPaused) {
       // When pausing, store the current time remaining
-      if (pausedAt === null) {
-        setPausedAt(timeRemaining);
-      }
+      setPausedAt(prev => {
+        if (prev === null) {
+          // Use ref to get current timeRemaining without adding it to dependencies
+          return timeRemainingRef.current;
+        }
+        return prev;
+      });
       return;
     }
 
@@ -80,15 +95,17 @@ export default function SegmentTimer({
       const remaining = Math.max(0, durationMinutes * 60 - elapsed);
       setTimeRemaining(remaining);
 
-      // Show warnings at 1 minute and 30 seconds
-      if (remaining === 60 && !warningsShown.oneMinute) {
-        setWarningsShown((previousWarnings) => ({ ...previousWarnings, oneMinute: true }));
-        // You could add a toast notification here
-      }
-      if (remaining === 30 && !warningsShown.thirtySeconds) {
-        setWarningsShown((previousWarnings) => ({ ...previousWarnings, thirtySeconds: true }));
-        // You could add a toast notification here
-      }
+      // Show warnings at 1 minute and 30 seconds - use functional updates
+      setWarningsShown((previousWarnings) => {
+        const updates: Partial<typeof previousWarnings> = {};
+        if (remaining === 60 && !previousWarnings.oneMinute) {
+          updates.oneMinute = true;
+        }
+        if (remaining === 30 && !previousWarnings.thirtySeconds) {
+          updates.thirtySeconds = true;
+        }
+        return Object.keys(updates).length > 0 ? { ...previousWarnings, ...updates } : previousWarnings;
+      });
 
       if (remaining === 0 && onComplete) {
         onComplete();
@@ -103,10 +120,8 @@ export default function SegmentTimer({
     isPaused,
     pausedAt,
     onComplete,
-    timeRemaining,
-    warningsShown.oneMinute,
-    warningsShown.thirtySeconds,
     externalTimeRemaining,
+    // Removed timeRemaining and warningsShown from deps - using functional updates
   ]);
 
   return (

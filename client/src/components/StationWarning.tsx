@@ -31,15 +31,20 @@ export default function StationWarning({ currentStationName, referenceStationNam
       setTimeRemaining(remaining);
       
       // Show warnings at 5 minutes, 2 minutes, and 1 minute
-      if (remaining === 300 && !warningsShown.fiveMinutes) {
-        setWarningsShown(prev => ({ ...prev, fiveMinutes: true }));
-      }
-      if (remaining === 120 && !warningsShown.twoMinutes) {
-        setWarningsShown(prev => ({ ...prev, twoMinutes: true }));
-      }
-      if (remaining === 60 && !warningsShown.oneMinute) {
-        setWarningsShown(prev => ({ ...prev, oneMinute: true }));
-      }
+      // Use functional updates to avoid dependency on warningsShown
+      setWarningsShown(prev => {
+        const updates: Partial<typeof prev> = {};
+        if (remaining === 300 && !prev.fiveMinutes) {
+          updates.fiveMinutes = true;
+        }
+        if (remaining === 120 && !prev.twoMinutes) {
+          updates.twoMinutes = true;
+        }
+        if (remaining === 60 && !prev.oneMinute) {
+          updates.oneMinute = true;
+        }
+        return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
+      });
       
       if (remaining === 0) {
         clearInterval(interval);
@@ -47,7 +52,7 @@ export default function StationWarning({ currentStationName, referenceStationNam
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [warningsShown]);
+  }, []); // Empty deps - interval reads from ref and uses functional updates
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

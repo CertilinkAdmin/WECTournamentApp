@@ -35,6 +35,7 @@ export interface StationCompletionStatus {
  * 1. All matches in the round have status 'DONE'
  * 2. All matches have a winnerId assigned
  * 3. All stations have completed their heats
+ * 4. For each DONE match: all segments ended, all judges submitted, cup positions assigned
  */
 export async function checkRoundCompletion(
   tournamentId: number,
@@ -64,6 +65,53 @@ export async function checkRoundCompletion(
   const matchesWithWinners = roundMatches.filter(m => m.winnerId !== null);
   const matchesWithoutWinners = roundMatches.filter(m => m.winnerId === null);
 
+  // CRITICAL: For each DONE match, verify it went through proper validation
+  // GLOBAL RULE: Every heat (except BYE matches) must have:
+  // 1. All segments ENDED
+  // 2. All judges submitted scores
+  // 3. Cup positions assigned
+  // BYE matches (no competitor2) are exceptions - they advance automatically
+  const improperlyCompletedMatches: Match[] = [];
+  for (const match of completedMatches) {
+    // BYE matches don't need validation - they have no competitor2
+    if (!match.competitor2Id) {
+      continue; // Skip validation for BYE matches
+    }
+    
+    const globalLockStatus = await storage.getGlobalLockStatus(match.id);
+    
+    // Check segments
+    if (!globalLockStatus.allSegmentsEnded) {
+      improperlyCompletedMatches.push(match);
+      continue;
+    }
+    
+    // Check judges
+    if (!globalLockStatus.allJudgesSubmitted) {
+      improperlyCompletedMatches.push(match);
+      continue;
+    }
+    
+    // Check cup positions
+    const cupPositions = await storage.getMatchCupPositions(match.id);
+    const hasLeftPosition = cupPositions.some(p => p.position === 'left');
+    const hasRightPosition = cupPositions.some(p => p.position === 'right');
+    if (!hasLeftPosition || !hasRightPosition) {
+      improperlyCompletedMatches.push(match);
+      continue;
+    }
+  }
+
+  // If any DONE matches are improperly completed, treat them as incomplete
+  if (improperlyCompletedMatches.length > 0) {
+    // Add these back to incomplete matches
+    incompleteMatches.push(...improperlyCompletedMatches);
+    // Remove from completed matches
+    completedMatches.splice(0, completedMatches.length, 
+      ...completedMatches.filter(m => !improperlyCompletedMatches.includes(m))
+    );
+  }
+
   // Get station status
   const stationStatus = await getStationCompletionStatus(tournamentId, round, roundMatches);
 
@@ -72,6 +120,7 @@ export async function checkRoundCompletion(
   // 1. ALL matches in the round are DONE
   // 2. ALL matches have winners
   // 3. ALL stations that have matches in this round have completed ALL their heats
+  // 4. ALL DONE matches have proper validation (segments, judges, cup positions)
   const allMatchesComplete = incompleteMatches.length === 0;
   const allMatchesHaveWinners = matchesWithoutWinners.length === 0;
   
@@ -84,6 +133,9 @@ export async function checkRoundCompletion(
   const errors: string[] = [];
   if (!allMatchesComplete) {
     errors.push(`${incompleteMatches.length} match(es) not yet completed`);
+    if (improperlyCompletedMatches.length > 0) {
+      errors.push(`${improperlyCompletedMatches.length} match(es) marked DONE but missing segments, judge scores, or cup positions`);
+    }
   }
   if (!allMatchesHaveWinners) {
     errors.push(`${matchesWithoutWinners.length} match(es) missing winners`);
