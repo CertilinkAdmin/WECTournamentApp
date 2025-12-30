@@ -111,6 +111,14 @@ export interface IStorage {
 
   // Clear tournament data
   clearTournamentData(tournamentId: number): Promise<void>;
+  
+  // Tournament progression methods
+  updateParticipantTotalScore(participantId: number, totalScore: number): Promise<TournamentParticipant | undefined>;
+  updateParticipantElimination(participantId: number, round: number): Promise<TournamentParticipant | undefined>;
+  updateParticipantFinalRank(participantId: number, rank: number): Promise<TournamentParticipant | undefined>;
+  setTournamentWinner(tournamentId: number, winnerId: number): Promise<Tournament | undefined>;
+  updateTournamentCurrentRound(tournamentId: number, round: number): Promise<Tournament | undefined>;
+  getTournamentStations(tournamentId: number): Promise<Station[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -706,6 +714,51 @@ export class DatabaseStorage implements IStorage {
     // Delete tournament-specific data
     await db.delete(tournamentRoundTimes).where(eq(tournamentRoundTimes.tournamentId, tournamentId));
     await db.delete(tournamentParticipants).where(eq(tournamentParticipants.tournamentId, tournamentId));
+  }
+
+  // Tournament progression methods
+  async updateParticipantTotalScore(participantId: number, totalScore: number): Promise<TournamentParticipant | undefined> {
+    const result = await db.update(tournamentParticipants)
+      .set({ totalScore })
+      .where(eq(tournamentParticipants.id, participantId))
+      .returning();
+    return result[0];
+  }
+
+  async updateParticipantElimination(participantId: number, round: number): Promise<TournamentParticipant | undefined> {
+    const result = await db.update(tournamentParticipants)
+      .set({ eliminatedRound: round })
+      .where(eq(tournamentParticipants.id, participantId))
+      .returning();
+    return result[0];
+  }
+
+  async updateParticipantFinalRank(participantId: number, rank: number): Promise<TournamentParticipant | undefined> {
+    const result = await db.update(tournamentParticipants)
+      .set({ finalRank: rank })
+      .where(eq(tournamentParticipants.id, participantId))
+      .returning();
+    return result[0];
+  }
+
+  async setTournamentWinner(tournamentId: number, winnerId: number): Promise<Tournament | undefined> {
+    const result = await db.update(tournaments)
+      .set({ 
+        winnerId, 
+        finalRoundCompletedAt: new Date(),
+        status: 'COMPLETED'
+      })
+      .where(eq(tournaments.id, tournamentId))
+      .returning();
+    return result[0];
+  }
+
+  async updateTournamentCurrentRound(tournamentId: number, round: number): Promise<Tournament | undefined> {
+    const result = await db.update(tournaments)
+      .set({ currentRound: round })
+      .where(eq(tournaments.id, tournamentId))
+      .returning();
+    return result[0];
   }
 }
 

@@ -1958,6 +1958,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Complete a round - calculate scores, update leaderboard, and advance tournament
+  app.post("/api/tournaments/:id/rounds/:round/complete", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const round = parseInt(req.params.round);
+
+      if (!tournamentId || isNaN(tournamentId)) {
+        return res.status(400).json({ error: "Invalid tournament ID" });
+      }
+      if (!round || isNaN(round)) {
+        return res.status(400).json({ error: "Invalid round number" });
+      }
+
+      const { completeRound, getRoundDisplayName } = await import('./utils/roundProgression');
+      const result = await completeRound(tournamentId, round);
+
+      const roundDisplayName = getRoundDisplayName(round, result.totalRounds);
+
+      // Emit WebSocket update for real-time leaderboard
+      const io = app.get("io");
+      if (io) {
+        io.to(`tournament:${tournamentId}`).emit("round:completed", {
+          round,
+          roundType: result.roundType,
+          totalRounds: result.totalRounds,
+          roundDisplayName,
+          scores: result.scores,
+          winnerId: result.winnerId,
+          winnerName: result.winnerName,
+        });
+      }
+
+      res.json({
+        success: true,
+        round,
+        roundType: result.roundType,
+        totalRounds: result.totalRounds,
+        roundDisplayName,
+        scores: result.scores,
+        winnerId: result.winnerId,
+        winnerName: result.winnerName,
+        message: result.roundType === 'FINAL' 
+          ? `🏆 Tournament complete! ${result.winnerName} is the champion!`
+          : `Round ${round} (${roundDisplayName}) completed. Scores updated.`,
+      });
+    } catch (error: any) {
+      console.error('Error completing round:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get tournament leaderboard
+  app.get("/api/tournaments/:id/leaderboard", async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+
+      if (!tournamentId || isNaN(tournamentId)) {
+        return res.status(400).json({ error: "Invalid tournament ID" });
+      }
+
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      const { getLeaderboard, determineRoundType } = await import('./utils/roundProgression');
+      const leaderboard = await getLeaderboard(tournamentId);
+
+      // Get winner info if tournament is completed
+      let winner = null;
+      if (tournament.winnerId) {
+        const users = await storage.getAllUsers();
+        const winnerUser = users.find(u => u.id === tournament.winnerId);
+        winner = {
+          id: tournament.winnerId,
+          name: winnerUser?.name || 'Unknown',
+          completedAt: tournament.finalRoundCompletedAt,
+        };
+      }
+
+      res.json({
+        tournamentId,
+        tournamentName: tournament.name,
+        status: tournament.status,
+        currentRound: tournament.currentRound,
+        totalRounds: tournament.totalRounds,
+        currentRoundType: determineRoundType(tournament.currentRound, tournament.totalRounds),
+        leaderboard,
+        winner,
+      });
+    } catch (error: any) {
+      console.error('Error getting leaderboard:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Populate next round of competitors across all stations
   app.post("/api/tournaments/:id/populate-next-round", async (req, res) => {
     try {
