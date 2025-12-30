@@ -28,6 +28,8 @@ Core tables include `users`, `tournaments`, `tournament_participants`, `tourname
 - **Barista**: View match schedules, upcoming heats, results, and rankings.
 - **Live vs. Results Bracket**: Displays real-time active tournament data or historical results.
 - **Individual Station Pages**: Dedicated pages for each station with paginated match displays.
+- **Round Progression System**: API endpoints for completing rounds and tracking cumulative scores across the tournament. Round types: QUALIFYING (rounds 1 to n-2), SEMIFINAL (totalRounds-1), FINAL (totalRounds). Winner declared on final round completion.
+- **Leaderboard**: Ranked participant standings with cumulative scores, matches won, and tiebreaker logic (score > wins > seed).
 
 ## External Dependencies
 
