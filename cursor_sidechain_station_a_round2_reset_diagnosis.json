@@ -1,0 +1,108 @@
+{
+  "name": "Station A Round 2 Reset Diagnosis",
+  "description": "Diagnose why Station A did not reset/switch to Round 2 while Station B did",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Examine populate-next-round segment creation logic",
+      "description": "Check how segments are created for new round matches - verify all stations get segments with IDLE status",
+      "actions": [
+        "Read server/routes.ts populate-next-round endpoint",
+        "Check segment creation loop - ensure it runs for ALL matches regardless of station",
+        "Verify segments are created with status: 'IDLE' (not 'ENDED' or other status)",
+        "Check if there's any station-specific logic that might skip Station A"
+      ],
+      "expectedFindings": [
+        "Segments should be created for all matches in the new round",
+        "All segments should have status: 'IDLE'",
+        "No station filtering should prevent Station A from getting segments"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Verify station assignment in Round 2",
+      "description": "Check how matches are assigned to stations - ensure Station A gets matches",
+      "actions": [
+        "Check the groups/sortedStations logic in populate-next-round",
+        "Verify Station A is included in sortedStations array",
+        "Check if Station A matches are actually created in database",
+        "Query database to see Round 2 matches and their station assignments"
+      ],
+      "expectedFindings": [
+        "Station A should be in sortedStations array",
+        "Station A should have matches created for Round 2",
+        "Matches should have correct stationId assigned"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Check Station A's current state",
+      "description": "Query database to see Station A's Round 2 matches and their segments",
+      "actions": [
+        "Query matches table for Round 2, station A",
+        "Query heat_segments for Station A Round 2 matches",
+        "Check segment statuses - are they IDLE or something else?",
+        "Compare with Station B's Round 2 matches and segments"
+      ],
+      "expectedFindings": [
+        "Station A should have Round 2 matches",
+        "Those matches should have 3 segments each (DIAL_IN, CAPPUCCINO, ESPRESSO)",
+        "All segments should have status: 'IDLE'",
+        "If segments are missing or have wrong status, that's the bug"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Check frontend Station Lead View logic",
+      "description": "Verify Station A's UI is correctly detecting Round 2 matches",
+      "actions": [
+        "Check StationLeadView.tsx - how does it determine current round?",
+        "Check if Station A's matches query is filtering correctly",
+        "Verify round detection logic doesn't exclude Station A",
+        "Check if there's any caching that might show old Round 1 data"
+      ],
+      "expectedFindings": [
+        "Station A should see Round 2 matches when they exist",
+        "Query should not be filtered by round incorrectly",
+        "No stale data should be displayed"
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Fix identified issues",
+      "description": "Apply fixes based on findings - ensure all stations get segments reset properly",
+      "actions": [
+        "If segments missing: Fix segment creation loop to ensure all matches get segments",
+        "If wrong status: Ensure all segments created with status: 'IDLE'",
+        "If station assignment issue: Fix station assignment logic",
+        "If frontend issue: Fix query/display logic",
+        "Add logging to trace segment creation for each station"
+      ],
+      "expectedFindings": [
+        "All stations with Round 2 matches should have segments with IDLE status",
+        "Frontend should correctly display Round 2 for all stations"
+      ]
+    },
+    {
+      "step": 6,
+      "title": "Test and verify (OPUX)",
+      "description": "Run actual test - populate Round 2 and verify Station A resets",
+      "actions": [
+        "Start fresh tournament or use existing one",
+        "Complete Round 1",
+        "Click 'Set Up Next Round'",
+        "Check Station A - should show Round 2 matches with IDLE segments",
+        "Check Station B - should show Round 2 matches with IDLE segments",
+        "Verify both stations can start Round 2 heats",
+        "Check server logs for segment creation confirmation"
+      ],
+      "expectedFindings": [
+        "Station A shows Round 2 matches",
+        "Station A segments are IDLE (not ENDED or missing)",
+        "Station A can start Round 2 heats",
+        "Both stations behave identically"
+      ]
+    }
+  ]
+}
+

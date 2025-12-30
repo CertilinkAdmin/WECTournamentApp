@@ -1,0 +1,108 @@
+{
+  "name": "Round 3 Population and Duplicate Heats Diagnosis",
+  "description": "Diagnose why Round 3 doesn't create 1 final match and why Round 2 has duplicate heats",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Examine Round 3 bracket logic",
+      "description": "Check how winners are collected and matches are created for Round 3 - should be 1 final match with 2 competitors",
+      "actions": [
+        "Read populate-next-round endpoint logic for winner collection",
+        "Check how groups are split when there are only 2 winners (should be 1 match, not multiple)",
+        "Verify the bracket generation logic for final round",
+        "Check if there's special handling needed for the final round"
+      ],
+      "expectedFindings": [
+        "Round 3 should have exactly 2 winners from Round 2",
+        "These 2 winners should create exactly 1 match",
+        "The match should be assigned to a single station (not split across stations)"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Investigate duplicate Round 2 heats",
+      "description": "Check why heats 101 and 102 are being created as duplicates in Round 2",
+      "actions": [
+        "Check if populate-next-round is being called multiple times",
+        "Verify deletion logic for existing matches before creating new ones",
+        "Check if there are leftover matches from previous populate attempts",
+        "Examine heat number assignment logic for duplicates",
+        "Check database for actual duplicate matches"
+      ],
+      "expectedFindings": [
+        "Each heat number should appear only once per round",
+        "Existing matches should be deleted before creating new ones",
+        "No duplicate matches should exist in the database"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Check winner collection logic",
+      "description": "Verify how winners are collected from Round 2 - should be exactly 2 for the final",
+      "actions": [
+        "Check winner collection query - filter by round, status DONE, winnerId not null",
+        "Verify winners are correctly identified from Round 2 matches",
+        "Check if BYE matches are being included incorrectly",
+        "Verify winner count matches expected bracket progression"
+      ],
+      "expectedFindings": [
+        "Round 2 should produce exactly 2 winners",
+        "Winners should be from DONE matches with winnerId",
+        "No BYE matches should be counted as winners"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Fix Round 3 population logic",
+      "description": "Ensure Round 3 creates exactly 1 final match with 2 competitors",
+      "actions": [
+        "When there are 2 winners, create 1 match (not split into groups)",
+        "Assign the final match to a single station (preferably Station A)",
+        "Ensure proper segment creation for the final match",
+        "Add logging to verify final match creation"
+      ],
+      "expectedFindings": [
+        "Round 3 creates exactly 1 match",
+        "Match has 2 competitors (the 2 winners from Round 2)",
+        "Match is assigned to a station and has segments"
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Fix duplicate match prevention",
+      "description": "Ensure matches are not created as duplicates",
+      "actions": [
+        "Verify deletion logic runs before match creation",
+        "Add check to prevent creating matches with same heat number in same round",
+        "Add database constraint or check for duplicate heat numbers",
+        "Add logging to detect duplicate creation attempts"
+      ],
+      "expectedFindings": [
+        "No duplicate matches created",
+        "Deletion logic properly removes existing matches",
+        "Heat numbers are unique within each round"
+      ]
+    },
+    {
+      "step": 6,
+      "title": "Test and verify (OPUX)",
+      "description": "Run actual test - complete Round 2, populate Round 3, verify final match",
+      "actions": [
+        "Complete Round 2 (should have 2 matches producing 2 winners)",
+        "Click 'Set Up Next Round' to populate Round 3",
+        "Verify Round 3 has exactly 1 match",
+        "Verify the match has 2 competitors (winners from Round 2)",
+        "Verify segments are created with IDLE status",
+        "Check for any duplicate matches in Round 2 or Round 3",
+        "Verify heat numbers are unique and sequential"
+      ],
+      "expectedFindings": [
+        "Round 3 has exactly 1 final match",
+        "Final match has 2 competitors",
+        "No duplicate matches in any round",
+        "All segments are IDLE and ready to start"
+      ]
+    }
+  ]
+}
+

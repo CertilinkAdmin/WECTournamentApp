@@ -1,0 +1,131 @@
+{
+  "name": "Mobile Optimization OPUX Workflow",
+  "description": "Systematic mobile optimization using OPUX: Lighthouse audit → Responsive fixes → Tailwind optimization → Verification",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Lighthouse Mobile Audit - Find Problems",
+      "description": "Run mobile Lighthouse audit to identify layout, performance, accessibility, and responsive design issues",
+      "actions": [
+        "Start the development server",
+        "Run Lighthouse MCP audit on mobile viewport",
+        "Generate structured report with specific issues:",
+        "  - Layout issues (overflow, CLS, bad viewport)",
+        "  - Performance issues",
+        "  - Accessibility issues",
+        "  - Responsive design problems",
+        "Document URLs, selectors, and problem descriptions"
+      ],
+      "expectedFindings": [
+        "Mobile viewport configuration",
+        "Horizontal overflow issues",
+        "Cumulative Layout Shift (CLS) problems",
+        "Touch target sizes",
+        "Font sizes and spacing",
+        "Performance bottlenecks"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Responsive Refactor - Fix Layout Issues",
+      "description": "Convert fixed layouts to responsive designs using mobile-first approach",
+      "actions": [
+        "Identify components with fixed widths or overflow issues",
+        "Convert to responsive grid/flex layouts",
+        "Add breakpoints (sm, md, lg) with mobile-first behavior",
+        "Adjust font sizes for mobile readability",
+        "Fix spacing and tap targets (min 44x44px)",
+        "Fix overflow issues (no horizontal scroll)",
+        "Improve CLS (Cumulative Layout Shift)",
+        "Fix viewport meta tag if missing",
+        "Test on mobile viewport (375px, 414px widths)"
+      ],
+      "expectedFindings": [
+        "All layouts are responsive",
+        "No horizontal overflow on mobile",
+        "Proper viewport configuration",
+        "CLS < 0.1",
+        "Touch targets are adequate size"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Tailwind Optimizer - Clean Up & Enforce Patterns",
+      "description": "Normalize and optimize Tailwind CSS usage across components",
+      "actions": [
+        "Normalize class naming & composition",
+        "Reduce duplicated utilities",
+        "Enforce Tailwind design system:",
+        "  - Spacing scale consistency",
+        "  - Color system alignment",
+        "  - Typography scale",
+        "Replace ad-hoc styles with consistent utilities",
+        "Ensure mobile-first responsive classes are used",
+        "Verify breakpoint usage is consistent"
+      ],
+      "expectedFindings": [
+        "Consistent spacing scale",
+        "Unified color system",
+        "Consistent typography",
+        "No duplicate utilities",
+        "Mobile-first breakpoints"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Lighthouse Re-Audit - Verify Improvements",
+      "description": "Re-run mobile Lighthouse audit to confirm all issues are resolved",
+      "actions": [
+        "Run Lighthouse mobile audit again",
+        "Compare scores with initial audit",
+        "Verify all identified issues are fixed",
+        "Check target metrics:",
+        "  - Performance: 90+",
+        "  - Accessibility: 95+",
+        "  - Best Practices: 95+",
+        "  - SEO: 90+",
+        "  - CLS: < 0.1",
+        "  - No horizontal overflow"
+      ],
+      "expectedFindings": [
+        "All scores meet targets",
+        "No layout issues",
+        "No overflow problems",
+        "Proper viewport configuration"
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Functional Testing - Verify All Features Work",
+      "description": "Test all tournament functionality on mobile viewport",
+      "actions": [
+        "Test Station Lead View on mobile",
+        "Test Tournament Bracket display",
+        "Test segment timer functionality",
+        "Test judge scoring interface",
+        "Test heat advancement",
+        "Test round population",
+        "Test WebSocket real-time updates",
+        "Verify all buttons are tappable",
+        "Verify all forms are usable",
+        "Test navigation and routing"
+      ],
+      "expectedFindings": [
+        "All features work on mobile",
+        "All buttons are accessible",
+        "All forms are usable",
+        "Real-time updates work",
+        "Navigation is smooth"
+      ]
+    }
+  ],
+  "targetMetrics": {
+    "performance": 90,
+    "accessibility": 95,
+    "bestPractices": 95,
+    "seo": 90,
+    "cls": 0.1,
+    "overflow": "none"
+  }
+}
+

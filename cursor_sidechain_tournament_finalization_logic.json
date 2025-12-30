@@ -1,0 +1,95 @@
+{
+  "name": "Tournament Finalization Logic",
+  "description": "Implement logic to identify semi-finals, finals, and finalize tournament after final round",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Identify round types (Semi-Final, Final)",
+      "description": "Add logic to determine if a round is semi-final (4 competitors) or final (2 competitors)",
+      "actions": [
+        "Check number of winners/competitors in a round",
+        "Round with 4 competitors = Semi-Final",
+        "Round with 2 competitors = Final",
+        "Add helper functions to identify round type",
+        "Add logging to show round type when populating"
+      ],
+      "expectedFindings": [
+        "Can identify semi-final rounds (4 competitors)",
+        "Can identify final rounds (2 competitors)",
+        "Round type is logged when populating next round"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Prevent populating after final",
+      "description": "Stop populate-next-round from creating Round 4 after final (Round 3) completes",
+      "actions": [
+        "Check if current round is final (2 winners)",
+        "If final round is complete, return tournament complete response",
+        "Prevent creating next round after final",
+        "Update tournament status to COMPLETE or FINALIZED",
+        "Return appropriate success message"
+      ],
+      "expectedFindings": [
+        "Final round completion is detected",
+        "No Round 4 is created after final",
+        "Tournament status is updated to complete"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Add tournament finalization",
+      "description": "Create functionality to finalize tournament results after final round",
+      "actions": [
+        "Create endpoint or logic to finalize tournament",
+        "Calculate final rankings (winner, runner-up, etc.)",
+        "Update tournament status to FINALIZED or COMPLETE",
+        "Store final results",
+        "Emit WebSocket event for tournament completion"
+      ],
+      "expectedFindings": [
+        "Tournament can be finalized after final round",
+        "Final rankings are calculated and stored",
+        "Tournament status reflects completion"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Update populate-next-round logic",
+      "description": "Modify populate-next-round to check for final round and handle completion",
+      "actions": [
+        "Before creating next round, check if current round is final",
+        "If final round is complete, finalize tournament instead of creating next round",
+        "Return tournament complete response with winner information",
+        "Update UI to show tournament complete instead of 'Set Up Next Round' button"
+      ],
+      "expectedFindings": [
+        "populate-next-round detects final round completion",
+        "Tournament is finalized automatically",
+        "UI shows tournament complete status"
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Test tournament progression",
+      "description": "Test complete tournament flow from Round 1 to Final",
+      "actions": [
+        "Start tournament with 8 competitors",
+        "Complete Round 1 (4 matches → 4 winners)",
+        "Populate Round 2 (should be semi-final with 4 competitors → 2 matches)",
+        "Complete Round 2 (2 matches → 2 winners)",
+        "Populate Round 3 (should be final with 2 competitors → 1 match)",
+        "Complete Round 3 (1 match → 1 winner)",
+        "Verify tournament is finalized, no Round 4 created"
+      ],
+      "expectedFindings": [
+        "Round 1 → Round 2 (semi-final) works",
+        "Round 2 → Round 3 (final) works",
+        "Round 3 completion finalizes tournament",
+        "No Round 4 is created",
+        "Tournament status is COMPLETE"
+      ]
+    }
+  ]
+}
+

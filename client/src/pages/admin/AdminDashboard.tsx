@@ -209,7 +209,24 @@ const TestTournamentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) 
             min="2"
             max="64"
             value={numBaristas}
-            onChange={(e) => setNumBaristas(parseInt(e.target.value) || 16)}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === '') {
+                // Allow empty input temporarily (don't reset to 16)
+                return;
+              }
+              const num = parseInt(val);
+              if (!isNaN(num) && num >= 2 && num <= 64) {
+                setNumBaristas(num);
+              }
+            }}
+            onBlur={(e) => {
+              // Only reset to default if field is empty on blur
+              const val = e.target.value;
+              if (val === '' || isNaN(parseInt(val))) {
+                setNumBaristas(16);
+              }
+            }}
           />
         </div>
         
@@ -224,7 +241,24 @@ const TestTournamentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) 
             min="1"
             max="20"
             value={numJudges}
-            onChange={(e) => setNumJudges(parseInt(e.target.value) || 9)}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === '') {
+                // Allow empty input temporarily (don't reset to 9)
+                return;
+              }
+              const num = parseInt(val);
+              if (!isNaN(num) && num >= 1 && num <= 20) {
+                setNumJudges(num);
+              }
+            }}
+            onBlur={(e) => {
+              // Only reset to default if field is empty on blur
+              const val = e.target.value;
+              if (val === '' || isNaN(parseInt(val))) {
+                setNumJudges(9);
+              }
+            }}
           />
         </div>
       </div>

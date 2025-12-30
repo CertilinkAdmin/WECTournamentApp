@@ -651,6 +651,21 @@ html, body, #root, .App {
 /* Ensure all child elements respect viewport width */
 * {
   max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal overflow from images and media */
+img, video, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure buttons meet touch target requirements on mobile */
+@media (max-width: 768px) {
+  button:not(.no-touch-target), [role="button"]:not(.no-touch-target), .btn:not(.no-touch-target), [type="button"]:not(.no-touch-target), [type="submit"]:not(.no-touch-target) {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 /* Mobile bottom navigation spacing */

@@ -115,6 +115,7 @@ export default function JudgeScoringView({
   });
 
   const tournament = useMemo(() => {
+    if (!tournaments || tournaments.length === 0) return undefined;
     return tournaments.find(t => t.id === tournamentIdNum) || tournaments[0];
   }, [tournaments, tournamentIdNum]);
 
@@ -1124,8 +1125,17 @@ export default function JudgeScoringView({
       {!tournament ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <Loader2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-spin" />
-            <p className="text-muted-foreground">Loading tournament...</p>
+            {tournaments.length === 0 ? (
+              <>
+                <p className="text-muted-foreground mb-4">No tournaments found.</p>
+                <p className="text-sm text-muted-foreground">Please create a tournament first.</p>
+              </>
+            ) : (
+              <>
+                <Loader2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-spin" />
+                <p className="text-muted-foreground">Loading tournament...</p>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (

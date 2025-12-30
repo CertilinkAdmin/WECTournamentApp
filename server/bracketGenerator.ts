@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import type { Station, TournamentParticipant, TournamentRoundTime } from "@shared/schema";
+import type { Station, Tournament, TournamentParticipant, TournamentRoundTime } from "@shared/schema";
 
 interface BracketPair {
   seed1: number;
@@ -132,14 +132,20 @@ export class BracketGenerator {
       throw new Error(`Invalid seed sequence. Expected consecutive seeds 1-${totalParticipants}, but got: ${actualSeeds.join(', ')}`);
     }
 
-    // Calculate total rounds needed (including byes)
-    const totalRounds = Math.ceil(Math.log2(totalParticipants));
-
-    // Get tournament to access enabledStations (always fetch fresh data)
+    // Get tournament to access enabledStations and totalRounds (always fetch fresh data)
     const tournament = await storage.getTournament(tournamentId);
     if (!tournament) {
       throw new Error(`Tournament ${tournamentId} not found`);
     }
+
+    // Use tournament's totalRounds if set, otherwise calculate from participants
+    // This ensures the bracket respects the tournament configuration
+    const calculatedRounds = Math.ceil(Math.log2(totalParticipants));
+    const totalRounds = tournament.totalRounds && tournament.totalRounds > 0 
+      ? tournament.totalRounds 
+      : calculatedRounds;
+    
+    console.log(`📊 Round calculation: ${totalParticipants} participants → ${calculatedRounds} calculated rounds, using ${totalRounds} rounds (tournament setting: ${tournament.totalRounds || 'not set'})`);
 
     // Get enabled stations for this tournament
     const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
@@ -435,29 +441,16 @@ export class BracketGenerator {
         heatNumber++;
     }
 
-    // Create placeholder matches for subsequent rounds
-    let previousRoundMatches = Math.ceil(totalParticipants / 2);
-    let totalMatchesCreated = round1MatchesCreated;
-    for (let round = 2; round <= totalRounds; round++) {
-      const matchesInRound = Math.ceil(previousRoundMatches / 2);
+    // NOTE: We do NOT create placeholder matches for future rounds here.
+    // Future rounds are created dynamically by the populate-next-round endpoint
+    // when the previous round completes. This prevents creating unnecessary
+    // placeholder matches and ensures the correct number of rounds based on
+    // actual tournament progression.
 
-      for (let i = 0; i < matchesInRound; i++) {
-        await storage.createMatch({
-          tournamentId,
-          round,
-          heatNumber: heatNumber++,
-          status: 'PENDING'
-        });
-        totalMatchesCreated++;
-      }
-
-      previousRoundMatches = matchesInRound;
-    }
-
-    console.log(`✅ Bracket generated: ${round1MatchesCreated} Round 1 matches, ${totalMatchesCreated} total matches`);
+    console.log(`✅ Bracket generated: ${round1MatchesCreated} Round 1 matches`);
     return {
       round1Matches: round1MatchesCreated,
-      totalMatches: totalMatchesCreated
+      totalMatches: round1MatchesCreated // Only Round 1 matches are created initially
     };
   }
 
@@ -561,41 +554,29 @@ export class BracketGenerator {
    * Generate subsequent rounds from winners (called after previous round completes)
    */
   static async generateNextRound(tournamentId: number, completedRound: number) {
-    // Get all matches from the completed round
-    const completedMatches = await storage.db.query.matches.findMany({
-      where: (matches, { eq, and }) => and(
-        eq(matches.tournamentId, tournamentId),
-        eq(matches.round, completedRound),
-        eq(matches.status, 'DONE')
-      )
-    });
+    // Get all matches from the tournament
+    const allTournamentMatches = await storage.getTournamentMatches(tournamentId);
+    
+    // Filter for completed round matches
+    const roundMatches = allTournamentMatches.filter(m => m.round === completedRound);
+    const completedMatches = roundMatches.filter(m => m.status === 'DONE');
 
     if (completedMatches.length === 0) {
       throw new Error(`No completed matches found for round ${completedRound}`);
     }
 
-    // Check if all matches in the round are complete
-    const allMatches = await storage.db.query.matches.findMany({
-      where: (matches, { eq, and }) => and(
-        eq(matches.tournamentId, tournamentId),
-        eq(matches.round, completedRound)
-      )
-    });
-
-    if (completedMatches.length !== allMatches.length) {
-      throw new Error(`Round ${completedRound} is not complete. ${completedMatches.length}/${allMatches.length} matches finished`);
+    if (completedMatches.length !== roundMatches.length) {
+      throw new Error(`Round ${completedRound} is not complete. ${completedMatches.length}/${roundMatches.length} matches finished`);
     }
+
+    // Get all participants for winner lookup
+    const allParticipants = await storage.getTournamentParticipants(tournamentId);
 
     // Get winners for next round
     const winners: TournamentParticipant[] = [];
     for (const match of completedMatches) {
       if (match.winnerId) {
-        const winner = await storage.db.query.tournamentParticipants.findFirst({
-          where: (participants, { eq, and }) => and(
-            eq(participants.tournamentId, tournamentId),
-            eq(participants.userId, match.winnerId!)
-          )
-        });
+        const winner = allParticipants.find(p => p.userId === match.winnerId);
         if (winner) winners.push(winner);
       }
     }
@@ -665,8 +646,25 @@ export class BracketGenerator {
           status: 'PENDING' as const
         });
 
-        // Create heat segments
-        await storage.createHeatSegments(match.id);
+        // Create heat segments for the match
+        await storage.createHeatSegment({
+          matchId: match.id,
+          segment: 'DIAL_IN',
+          status: 'IDLE',
+          plannedMinutes: 10
+        });
+        await storage.createHeatSegment({
+          matchId: match.id,
+          segment: 'CAPPUCCINO',
+          status: 'IDLE',
+          plannedMinutes: 3
+        });
+        await storage.createHeatSegment({
+          matchId: match.id,
+          segment: 'ESPRESSO',
+          status: 'IDLE',
+          plannedMinutes: 2
+        });
       }
     }
 

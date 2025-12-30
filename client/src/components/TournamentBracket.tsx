@@ -35,6 +35,8 @@ interface BracketHeat {
   competitor1Name?: string;
   competitor2Name?: string;
   winnerName?: string;
+  score1?: number;
+  score2?: number;
 }
 
 interface SortableHeatProps {
@@ -160,6 +162,8 @@ export default function TournamentBracket({ tournamentId }: TournamentBracketPro
           competitor1Name: getCompetitorName(match.competitor1Id),
           competitor2Name: getCompetitorName(match.competitor2Id),
           winnerName: getCompetitorName(match.winnerId),
+          score1: (match as any).competitor1Score,
+          score2: (match as any).competitor2Score,
           matchId: match.id,
           status: match.status,
           nextHeat: match.heatNumber + 16 // Approximate next heat calculation
@@ -179,6 +183,8 @@ export default function TournamentBracket({ tournamentId }: TournamentBracketPro
           competitor1Name: getCompetitorName(match.competitor1Id),
           competitor2Name: getCompetitorName(match.competitor2Id),
           winnerName: getCompetitorName(match.winnerId),
+          score1: (match as any).competitor1Score,
+          score2: (match as any).competitor2Score,
           matchId: match.id,
           status: match.status,
           nextHeat: match.heatNumber + 8
@@ -198,6 +204,8 @@ export default function TournamentBracket({ tournamentId }: TournamentBracketPro
           competitor1Name: getCompetitorName(match.competitor1Id),
           competitor2Name: getCompetitorName(match.competitor2Id),
           winnerName: getCompetitorName(match.winnerId),
+          score1: (match as any).competitor1Score,
+          score2: (match as any).competitor2Score,
           matchId: match.id,
           status: match.status,
           nextHeat: match.heatNumber + 4
@@ -217,6 +225,8 @@ export default function TournamentBracket({ tournamentId }: TournamentBracketPro
           competitor1Name: getCompetitorName(match.competitor1Id),
           competitor2Name: getCompetitorName(match.competitor2Id),
           winnerName: getCompetitorName(match.winnerId),
+          score1: (match as any).competitor1Score,
+          score2: (match as any).competitor2Score,
           matchId: match.id,
           status: match.status,
           nextHeat: match.heatNumber + 2
@@ -295,8 +305,15 @@ export default function TournamentBracket({ tournamentId }: TournamentBracketPro
           <div className={`p-2 rounded-md border ${
             heat.competitor1Name === 'BYE' || heat.competitor1 === 'BYE' ? 'bg-muted text-muted-foreground' : 'bg-secondary dark:bg-card'
           } ${heat.winner === heat.competitor1 ? 'ring-2 ring-chart-3' : ''}`}>
-            <div className="font-medium text-sm text-foreground">
-              {heat.competitor1Name || heat.competitor1 || "—"}
+            <div className="flex justify-between items-center">
+              <div className="font-medium text-sm text-foreground">
+                {heat.competitor1Name || heat.competitor1 || "—"}
+              </div>
+              {heat.score1 !== undefined && heat.score1 !== null && (
+                <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
+                  {heat.score1}
+                </div>
+              )}
             </div>
           </div>
           
@@ -305,8 +322,15 @@ export default function TournamentBracket({ tournamentId }: TournamentBracketPro
           <div className={`p-2 rounded-md border ${
             heat.competitor2Name === 'BYE' || heat.competitor2 === 'BYE' ? 'bg-muted text-muted-foreground' : 'bg-secondary dark:bg-card'
           } ${heat.winner === heat.competitor2 ? 'ring-2 ring-chart-3' : ''}`}>
-            <div className="font-medium text-sm">
-              {heat.competitor2Name || heat.competitor2 || "—"}
+            <div className="flex justify-between items-center">
+              <div className="font-medium text-sm">
+                {heat.competitor2Name || heat.competitor2 || "—"}
+              </div>
+              {heat.score2 !== undefined && heat.score2 !== null && (
+                <div className="text-lg font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
+                  {heat.score2}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -334,10 +358,10 @@ export default function TournamentBracket({ tournamentId }: TournamentBracketPro
   }
 
   return (
-    <div className="p-6 bg-primary/5 rounded-lg overflow-x-auto" data-testid="tournament-bracket">
-      <div className="min-w-max">
+    <div className="p-3 sm:p-6 bg-primary/5 rounded-lg overflow-x-hidden sm:overflow-x-auto" data-testid="tournament-bracket">
+      <div className="min-w-max max-w-full">
         {/* Rounds Header */}
-        <div className="grid grid-cols-5 gap-8 mb-6">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 sm:gap-8 mb-4 sm:mb-6">
           {["ROUND 1", "ROUND 2", "ROUND 3", "ROUND 4", "FINAL"].map((round, idx) => (
             <div key={round} className="text-center">
               <h3 className="text-xl font-heading font-bold text-primary">{round}</h3>
@@ -346,7 +370,7 @@ export default function TournamentBracket({ tournamentId }: TournamentBracketPro
         </div>
 
         {/* Bracket Grid */}
-        <div className="grid grid-cols-5 gap-8 items-center">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 sm:gap-8 items-center">
           {/* Round 1 - Draggable */}
           <DndContext
             sensors={sensors}

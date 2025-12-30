@@ -1,0 +1,70 @@
+{
+  "name": "cursor_sidechain_round_completion_and_winner_verification",
+  "description": "Sidechain to verify that heat advancement tallies scores via winnerCalculation and that round completion correctly migrates winners into the next round, aligned with OPUX Always Works testing.",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Verify advance-heat winner tally",
+      "steps": [
+        {
+          "id": "1.1",
+          "type": "read",
+          "target": "server/routes.ts",
+          "details": "Confirm /api/stations/:stationId/advance-heat validates segments, judges, and cup positions, then calls calculateMatchWinner and updates the match with status DONE and winnerId."
+        },
+        {
+          "id": "1.2",
+          "type": "read",
+          "target": "server/utils/winnerCalculation.ts",
+          "details": "Verify calculateMatchWinner uses detailed scores and cup positions to compute competitor scores and tie-breakers, returning a winnerId or an error that blocks advancement."
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Verify round completion and next round population",
+      "steps": [
+        {
+          "id": "2.1",
+          "type": "read",
+          "target": "server/utils/roundCompletion.ts",
+          "details": "Check that checkRoundCompletion enforces: all matches DONE, all matches have winnerId, all stations complete, and all DONE matches have segments ended, judges submitted, and cup positions assigned."
+        },
+        {
+          "id": "2.2",
+          "type": "read",
+          "target": "server/routes.ts",
+          "details": "Confirm /api/tournaments/:id/populate-next-round imports checkRoundCompletion, rejects if isComplete is false, then collects winners and builds the next round bracket."
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "TDD & Always Works checks",
+      "steps": [
+        {
+          "id": "3.1",
+          "type": "test-plan",
+          "target": "tests",
+          "details": "Plan Bun tests to cover: (a) advance-heat refuses to advance when judges/segments/cup positions incomplete, (b) advance-heat writes winnerId when complete, (c) populate-next-round fails if any match missing winner, (d) populate-next-round creates correct number of next-round matches."
+        },
+        {
+          "id": "3.2",
+          "type": "manual-ui-plan",
+          "target": "client StationLeadView",
+          "details": "Outline UI flow checks: start a heat, complete segments, submit scores, assign cup positions, click Advance Heat, then use round completion and populate-next-round controls to visually confirm winners move into next round."
+        }
+      ]
+    }
+  ],
+  "opux_alignment": {
+    "focus": "Correctness and robustness of tournament progression logic as part of Always Works implementation; UI flows to be covered in existing OPUX Lighthouse/Responsive checks.",
+    "checks": [
+      "Feature is exercised through real Station Lead flows, not just unit tests.",
+      "Errors are surfaced clearly to the UI when prerequisites are missing.",
+      "No hidden paths allow marking matches DONE or rounds complete without winners."
+    ]
+  }
+}
+
+

@@ -1,0 +1,102 @@
+{
+  "name": "Populate Next Round Round 3 Diagnosis",
+  "description": "Diagnose why populate-next-round endpoint is using Round 3 instead of Round 1",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Inspect Database State",
+      "description": "Check what matches exist in the database and their states",
+      "tasks": [
+        {
+          "id": "1.1",
+          "type": "diagnostic",
+          "action": "Check all matches in tournament",
+          "file": "server/routes.ts",
+          "details": "Add detailed logging in populate-next-round to show: 1) All matches with their round, status, stationId, winnerId, 2) Which matches have stationId != null, 3) Which matches are DONE with winners, 4) What rounds are found",
+          "test": "Console logs show complete match state"
+        },
+        {
+          "id": "1.2",
+          "type": "diagnostic",
+          "action": "Check tournament.currentRound value",
+          "file": "server/routes.ts",
+          "details": "Log tournament.currentRound value to see if it's incorrectly set to 3",
+          "test": "Console shows tournament.currentRound value"
+        },
+        {
+          "id": "1.3",
+          "type": "diagnostic",
+          "action": "Check round completion status",
+          "file": "server/routes.ts",
+          "details": "Before calling checkRoundCompletion, log what round we're about to check and why",
+          "test": "Console shows which round is being checked"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Trace Round Calculation Logic",
+      "description": "Step through the exact logic that determines currentRound",
+      "tasks": [
+        {
+          "id": "2.1",
+          "type": "diagnostic",
+          "action": "Add detailed logging for round calculation",
+          "file": "server/routes.ts",
+          "details": "Add console.log at each step: 1) matchesWithStations count and rounds, 2) completedMatchesWithWinners count and rounds, 3) roundsWithCompleted array, 4) Final currentRound decision and reasoning",
+          "test": "Console shows step-by-step round calculation"
+        },
+        {
+          "id": "2.2",
+          "type": "diagnostic",
+          "action": "Check if Round 3 matches have stationId",
+          "file": "server/routes.ts",
+          "details": "Specifically log Round 3 matches to see if they have stationId assigned (which would make them count)",
+          "test": "Console shows Round 3 match details"
+        },
+        {
+          "id": "2.3",
+          "type": "diagnostic",
+          "action": "Check if Round 3 matches are marked DONE with winners",
+          "file": "server/routes.ts",
+          "details": "Check if Round 3 matches have status='DONE' and winnerId set, which would make them appear in completedMatchesWithWinners",
+          "test": "Console shows Round 3 match status and winnerId"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Fix Root Cause",
+      "description": "Based on diagnosis, fix the actual issue",
+      "tasks": [
+        {
+          "id": "3.1",
+          "type": "fix",
+          "action": "Fix round calculation based on findings",
+          "file": "server/routes.ts",
+          "details": "Apply fix based on what we discover - either: 1) Filter out Round 3 matches if they're placeholders, 2) Fix tournament.currentRound if it's wrong, 3) Add stronger validation to only use rounds that make sense",
+          "test": "Populate-next-round correctly uses Round 1"
+        },
+        {
+          "id": "3.2",
+          "type": "fix",
+          "action": "Add validation to prevent using future rounds",
+          "file": "server/routes.ts",
+          "details": "Add check: if calculated round > lowest round + 1, it's likely wrong. Use lowest completed round instead.",
+          "test": "System rejects invalid round calculations"
+        }
+      ]
+    }
+  ],
+  "testing_strategy": {
+    "approach": "Add comprehensive logging, test in browser, review console output to identify root cause",
+    "manual_testing": [
+      "Click 'Set Up Next Round' button",
+      "Check browser console for detailed logs",
+      "Check server console for backend logs",
+      "Identify which round is being calculated and why",
+      "Fix based on findings"
+    ]
+  }
+}
+

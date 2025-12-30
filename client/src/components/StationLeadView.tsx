@@ -89,10 +89,12 @@ export default function StationLeadView() {
     enabled: !!currentTournamentId,
   });
 
-  // Get current round number
+  // Get current round number - only consider matches assigned to stations
+  // (ignore placeholder matches with stationId = null, same as backend logic)
   const currentRound = React.useMemo(() => {
-    if (allMatches.length === 0) return null;
-    return Math.max(...allMatches.map(m => m.round));
+    const matchesWithStations = allMatches.filter(m => m.stationId !== null);
+    if (matchesWithStations.length === 0) return null;
+    return Math.max(...matchesWithStations.map(m => m.round));
   }, [allMatches]);
 
   // Check if current round is complete using backend API
@@ -130,8 +132,35 @@ export default function StationLeadView() {
 
   const isCurrentRoundComplete = roundCompletionStatus?.isComplete ?? false;
 
+  // Filter matches for this station, prioritizing current round matches
   const stationMatches = allMatches.filter(m => m.stationId === selectedStation);
-  const currentMatch = stationMatches.find(m => m.status === 'RUNNING') || 
+  
+  // Diagnostic logging
+  React.useEffect(() => {
+    if (selectedStation && allMatches.length > 0) {
+      const stationMatchesAllRounds = allMatches.filter(m => m.stationId === selectedStation);
+      const stationRound1 = stationMatchesAllRounds.filter(m => m.round === 1);
+      const stationRound2 = stationMatchesAllRounds.filter(m => m.round === 2);
+      const selectedStationData = stations.find(s => s.id === selectedStation);
+      console.log(`🔍 Station ${selectedStationData?.name || selectedStation} (ID: ${selectedStation}):`, {
+        totalMatches: stationMatchesAllRounds.length,
+        round1Matches: stationRound1.length,
+        round2Matches: stationRound2.length,
+        round1: stationRound1.map(m => ({ id: m.id, heatNumber: m.heatNumber, status: m.status, round: m.round })),
+        round2: stationRound2.map(m => ({ id: m.id, heatNumber: m.heatNumber, status: m.status, round: m.round }))
+      });
+    }
+  }, [selectedStation, allMatches, stations]);
+
+  // Prioritize matches from the current round (or highest round if currentRound is null)
+  const targetRound = currentRound || (stationMatches.length > 0 ? Math.max(...stationMatches.map(m => m.round)) : null);
+  const currentRoundMatches = targetRound ? stationMatches.filter(m => m.round === targetRound) : stationMatches;
+  
+  const currentMatch = currentRoundMatches.find(m => m.status === 'RUNNING') || 
+                       currentRoundMatches.find(m => m.status === 'READY') ||
+                       currentRoundMatches[0] ||
+                       // Fallback to any match if no current round matches found
+                       stationMatches.find(m => m.status === 'RUNNING') ||
                        stationMatches.find(m => m.status === 'READY') ||
                        stationMatches[0];
 
@@ -526,49 +555,70 @@ export default function StationLeadView() {
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to populate next round' }));
-        throw new Error(errorData.error || 'Failed to populate next round');
+        const error = new Error(errorData.error || 'Failed to populate next round');
+        (error as any).errorData = errorData; // Attach full error data for diagnostic display
+        throw error;
       }
       return await response.json();
     },
     onSuccess: (data) => {
+      // Invalidate all tournament-related queries to refresh UI
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}`] }); // Refresh tournament to get updated currentRound
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/round-completion`] }); // Refresh round completion status
       queryClient.invalidateQueries({ queryKey: ['/api/stations'] });
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/participants`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] }); // Refresh tournament list
       toast({
         title: "Next Round Populated",
-        description: `Next round of competitors has been assigned to all stations.`,
+        description: `Round ${data.nextRound} has been created with ${data.advancingCompetitors || data.matchesCreated} matches. Ready to start heats!`,
       });
     },
     onError: (error: any) => {
+      // Log full error details to console for debugging
+      console.error('Populate Next Round Error:', error);
+      if (error.errorData?.diagnostic) {
+        console.error('Diagnostic Info:', error.errorData.diagnostic);
+      }
+      
+      let errorMessage = error.message || "An error occurred while populating the next round. Please check that the current round is complete and all matches have winners.";
+      
+      // Include diagnostic info in error message if available
+      if (error.errorData?.diagnostic) {
+        const diag = error.errorData.diagnostic;
+        errorMessage += `\n\nDiagnostic: Calculated Round ${diag.calculatedRound}, Tournament Round ${diag.tournamentCurrentRound}, Rounds with matches: [${diag.allRoundsWithMatches?.join(', ')}], Rounds completed: [${diag.roundsWithCompleted?.join(', ')}]`;
+        if (diag.round3MatchesWithStations > 0) {
+          errorMessage += `\n⚠️ Found ${diag.round3MatchesWithStations} Round 3 matches with stations assigned (this may be the issue).`;
+        }
+      }
+      
       toast({
         title: "Failed to Populate Next Round",
-        description: error.message || "An error occurred while populating the next round. Please check that the current round is complete and all matches have winners.",
+        description: errorMessage,
         variant: "destructive",
-        duration: 8000,
+        duration: 12000,
       });
     }
   });
 
   const finalizeStationRoundMutation = useMutation({
     mutationFn: async ({ stationId, round }: { stationId: number; round: number }) => {
-      // First complete the current heat if it's running
-      if (currentMatch && currentMatch.status === 'RUNNING') {
-        const completeResponse = await fetch(`/api/matches/${currentMatch.id}`, {
-          method: 'PATCH',
+      // First, ensure the current heat is completed through advance-heat if it's still RUNNING
+      // The backend finalize-station-round endpoint will handle calculating winners for any
+      // DONE matches that are missing winnerId
+      if (currentMatch && currentMatch.status === 'RUNNING' && currentMatch.stationId === stationId && currentMatch.round === round) {
+        const advanceResponse = await fetch(`/api/stations/${stationId}/advance-heat`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({
-            status: 'DONE',
-            endTime: new Date().toISOString()
-          })
         });
-        if (!completeResponse.ok) {
-          const error = await completeResponse.json().catch(() => ({ error: 'Failed to complete current heat' }));
-          throw new Error(error.error || 'Failed to complete current heat');
+        if (!advanceResponse.ok) {
+          const error = await advanceResponse.json().catch(() => ({ error: 'Failed to complete current heat before finalizing station round' }));
+          throw new Error(error.error || 'Failed to complete current heat before finalizing station round');
         }
       }
       
-      // Then finalize the station's round (calculate winners/losers and advance to next round pool)
+      // Then finalize the station's round (backend will calculate winners for any matches missing winnerId)
       const response = await fetch(`/api/tournaments/${currentTournamentId}/finalize-station-round`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -880,12 +930,36 @@ export default function StationLeadView() {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
     };
 
+    const handleNextRoundPopulated = (data: any) => {
+      console.log('StationLeadView: next-round-populated event received', data);
+      // Force comprehensive refresh of all tournament data
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/round-completion`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      // Force immediate refetch
+      queryClient.refetchQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      toast({
+        title: "Next Round Ready",
+        description: `Round ${data.round} has been set up. ${data.advancingCompetitors || 0} competitors advancing.`,
+      });
+    };
+
+    const handleRoundComplete = (data: any) => {
+      console.log('StationLeadView: round:complete event received', data);
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/round-completion`] });
+    };
+
     socket.on("segment:started", handleSegmentStarted);
     socket.on("segment:ended", handleSegmentEnded);
     socket.on("station-timing:dial-in-started", handleStationTimingStart);
     socket.on("heat:started", handleHeatStarted);
     socket.on("heat:completed", handleHeatCompleted);
     socket.on("heat:advanced", handleHeatAdvanced);
+    socket.on("next-round-populated", handleNextRoundPopulated);
+    socket.on("round:complete", handleRoundComplete);
 
     return () => {
       socket.off("segment:started", handleSegmentStarted);
@@ -894,6 +968,8 @@ export default function StationLeadView() {
       socket.off("heat:started", handleHeatStarted);
       socket.off("heat:completed", handleHeatCompleted);
       socket.off("heat:advanced", handleHeatAdvanced);
+      socket.off("next-round-populated", handleNextRoundPopulated);
+      socket.off("round:complete", handleRoundComplete);
     };
   }, [socket, currentMatch?.id, selectedStationData?.name, currentTournamentId]);
 
@@ -958,7 +1034,7 @@ export default function StationLeadView() {
                   variant={selectedStation === station.id ? "default" : "outline"}
                   onClick={() => setSelectedStation(station.id)}
                   data-testid={`button-station-${station.normalizedName}`}
-                  className="gap-2 whitespace-nowrap rounded-md font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover-elevate active-elevate-2 text-primary-foreground border border-primary-border min-h-9 px-4 flex flex-col items-start justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm min-w-0 bg-[#9a4828]"
+                  className="gap-2 whitespace-nowrap rounded-md font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover-elevate active-elevate-2 text-primary-foreground border border-primary-border min-h-[44px] sm:min-h-9 px-4 flex flex-col items-start justify-center h-auto py-2 sm:py-2 text-xs sm:text-sm min-w-0 bg-[#9a4828] touch-target"
                 >
                   <span className="truncate w-full text-center sm:text-left">{displayName}</span>
                   {stationLead && (
@@ -969,13 +1045,13 @@ export default function StationLeadView() {
             })}
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button asChild variant="secondary" className="w-full md:w-auto bg-[var(--brand-light-sand)]/70 dark:bg-secondary hover:bg-[var(--brand-light-sand)]/90 dark:hover:bg-secondary/90">
+            <Button asChild variant="secondary" className="w-full md:w-auto min-h-[44px] touch-target bg-[var(--brand-light-sand)]/70 dark:bg-secondary hover:bg-[var(--brand-light-sand)]/90 dark:hover:bg-secondary/90">
               <Link to={`/live/${currentTournamentId}/stations`}>
                 Back to Station Management
               </Link>
             </Button>
             {selectedStation && (
-              <Button asChild variant="outline" className="w-full md:w-auto bg-[var(--brand-light-sand)]/50 dark:bg-background hover:bg-[var(--brand-light-sand)]/70 dark:hover:bg-accent/50" data-testid="button-view-station-page">
+              <Button asChild variant="outline" className="w-full md:w-auto min-h-[44px] touch-target bg-[var(--brand-light-sand)]/50 dark:bg-background hover:bg-[var(--brand-light-sand)]/70 dark:hover:bg-accent/50" data-testid="button-view-station-page">
                 <Link to={`/station/${selectedStation}`}>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   View Full Station Page
@@ -1472,19 +1548,12 @@ export default function StationLeadView() {
               {(() => {
                 if (allMatches.length === 0) return null;
 
-                // Get current round from tournament or highest round with station-assigned matches
-                const tournamentCurrentRound = currentTournament?.currentRound || 1;
+                // Use tournament's currentRound for status display - this is the authoritative source
+                // after populate-next-round updates it
+                const currentRound = currentTournament?.currentRound || 1;
                 
                 // Get all matches that are assigned to stations (have stationId)
                 const matchesWithStations = allMatches.filter(m => m.stationId !== null && m.stationId !== undefined);
-                
-                // Determine the active round: use tournament currentRound, or highest round with station-assigned matches
-                let currentRound = tournamentCurrentRound;
-                if (matchesWithStations.length > 0) {
-                  const highestRoundWithStations = Math.max(...matchesWithStations.map(m => m.round));
-                  // Use the higher of tournament currentRound or highest round with matches
-                  currentRound = Math.max(tournamentCurrentRound, highestRoundWithStations);
-                }
                 
                 // Get all matches in current round that are assigned to stations
                 const currentRoundMatches = matchesWithStations.filter(m => m.round === currentRound);
@@ -1564,7 +1633,7 @@ export default function StationLeadView() {
               <div className="bg-[var(--brand-light-sand)]/40 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span className="font-medium">Round {Math.max(...allMatches.map(m => m.round))} Complete</span>
+                  <span className="font-medium">Round {currentRound} Complete</span>
                 </div>
                 <p className="text-sm text-green-600 dark:text-green-300">
                   All heats in this round are complete across all stations

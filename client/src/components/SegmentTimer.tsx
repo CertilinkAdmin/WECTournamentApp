@@ -26,11 +26,17 @@ export default function SegmentTimer({
   const [pausedAt, setPausedAt] = useState<number | null>(null);
   const [warningsShown, setWarningsShown] = useState({ oneMinute: false, thirtySeconds: false });
   const timeRemainingRef = useRef(timeRemaining);
+  const onCompleteRef = useRef(onComplete);
+  const lastExternalTimeRef = useRef<number | undefined>(externalTimeRemaining);
   
-  // Keep ref in sync with state
+  // Keep refs in sync with props/state
   useEffect(() => {
     timeRemainingRef.current = timeRemaining;
   }, [timeRemaining]);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   // When an external time source is provided (e.g. StationLeadView header timer),
   // mirror it into local state so both displays stay perfectly in sync.
@@ -42,6 +48,10 @@ export default function SegmentTimer({
   // Handle warnings and completion when using an external time source
   useEffect(() => {
     if (externalTimeRemaining === undefined) return;
+    
+    // Only process if the time actually changed to avoid infinite loops
+    if (lastExternalTimeRef.current === externalTimeRemaining) return;
+    lastExternalTimeRef.current = externalTimeRemaining;
 
     // Use functional updates to avoid dependency on warningsShown
     setWarningsShown((previousWarnings) => {
@@ -55,10 +65,10 @@ export default function SegmentTimer({
       return Object.keys(updates).length > 0 ? { ...previousWarnings, ...updates } : previousWarnings;
     });
 
-    if (externalTimeRemaining === 0 && onComplete) {
-      onComplete();
+    if (externalTimeRemaining === 0 && onCompleteRef.current) {
+      onCompleteRef.current();
     }
-  }, [externalTimeRemaining, onComplete]); // Removed warningsShown from deps - using functional updates
+  }, [externalTimeRemaining]); // Removed onComplete from deps - using ref instead
 
   // Default internal countdown behaviour when no external time source is provided
   useEffect(() => {

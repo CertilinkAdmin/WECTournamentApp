@@ -1,0 +1,90 @@
+{
+  "name": "Round Progression Logic Verification",
+  "description": "Verify populate-next-round logic correctly identifies the highest completed round",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Review current round determination logic",
+      "description": "Check how currentRound is calculated in populate-next-round",
+      "actions": [
+        "Read the populate-next-round endpoint logic",
+        "Trace through the round selection algorithm",
+        "Verify it uses highest completed round, not lowest",
+        "Check for any edge cases or fallback logic that might cause issues"
+      ],
+      "expectedFindings": [
+        "Logic should use Math.max() on roundsWithCompleted",
+        "Should verify the selected round is fully complete",
+        "Should not fall back to lower rounds if higher rounds are complete"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Verify round completion check",
+      "description": "Ensure we're checking that ALL matches in the selected round are complete",
+      "actions": [
+        "Check if we validate all matches in currentRound are DONE",
+        "Verify we check all matches have winnerId",
+        "Ensure we don't proceed if any matches are incomplete",
+        "Check the round completion validation logic"
+      ],
+      "expectedFindings": [
+        "All matches in selected round must be DONE",
+        "All matches must have winnerId",
+        "Should return error if round is incomplete"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Check winner collection logic",
+      "description": "Verify winners are collected from the correct round",
+      "actions": [
+        "Check how winners are collected from currentRound",
+        "Verify winners are filtered correctly (DONE status, winnerId not null)",
+        "Check if winners are from the right round",
+        "Verify no winners from other rounds are included"
+      ],
+      "expectedFindings": [
+        "Winners should only come from currentRound",
+        "Only DONE matches with winnerId should be included",
+        "No winners from incomplete rounds"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Verify next round calculation",
+      "description": "Ensure nextRound is calculated correctly from currentRound",
+      "actions": [
+        "Check nextRound = currentRound + 1",
+        "Verify nextRound is used consistently",
+        "Check if there's any logic that might override nextRound",
+        "Verify deletion logic uses nextRound correctly"
+      ],
+      "expectedFindings": [
+        "nextRound should be currentRound + 1",
+        "Should be used consistently throughout",
+        "Deletion should target nextRound, not currentRound"
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Test logic with example scenarios",
+      "description": "Trace through example scenarios to verify correctness",
+      "actions": [
+        "Scenario 1: Round 1 complete, Round 2 not started",
+        "  - Should use Round 1, create Round 2",
+        "Scenario 2: Round 1 and Round 2 both complete",
+        "  - Should use Round 2, create Round 3",
+        "Scenario 3: Round 2 complete, Round 1 also complete",
+        "  - Should use Round 2 (highest), create Round 3",
+        "Verify each scenario produces correct result"
+      ],
+      "expectedFindings": [
+        "Scenario 1: Uses Round 1, creates Round 2",
+        "Scenario 2: Uses Round 2, creates Round 3",
+        "Scenario 3: Uses Round 2, creates Round 3 (not Round 1)"
+      ]
+    }
+  ]
+}
+

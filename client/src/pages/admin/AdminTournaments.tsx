@@ -42,6 +42,7 @@ export default function AdminTournaments() {
   const [enabledStations, setEnabledStations] = useState<string[]>(['A', 'B', 'C']);
   const [showStationMigrationDialog, setShowStationMigrationDialog] = useState(false);
   const [pendingStationChange, setPendingStationChange] = useState<string[] | null>(null);
+  const [addingJudgeIds, setAddingJudgeIds] = useState<Set<number>>(new Set());
 
   // Configure drag and drop sensors
   const sensors = useSensors(
@@ -443,8 +444,12 @@ export default function AdminTournaments() {
     mutationFn: async () => {
       if (!selectedTournamentId) throw new Error("No tournament selected");
       
-      // First, update enabledStations if they've changed
-      const currentTournamentStations = selectedTournament?.enabledStations || ['A', 'B', 'C'];
+      // Fetch current tournament data to avoid closure issues with tournaments array
+      const tournamentsResponse = await fetch('/api/tournaments');
+      if (!tournamentsResponse.ok) throw new Error('Failed to fetch tournaments');
+      const tournamentsList = await tournamentsResponse.json();
+      const currentTournament = tournamentsList.find((t: Tournament) => t.id === selectedTournamentId);
+      const currentTournamentStations = currentTournament?.enabledStations || ['A', 'B', 'C'];
       const stationsChanged = JSON.stringify([...currentTournamentStations].sort()) !== JSON.stringify([...enabledStations].sort());
       
       if (stationsChanged) {
@@ -792,13 +797,24 @@ export default function AdminTournaments() {
       console.log('Tournament initiated:', data);
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments', selectedTournamentId] });
-      toast({
-        title: "Tournament Initiated",
-        description: `${selectedTournament?.name} is now active and ready to begin!`,
-      });
+      // Fetch tournament name directly to avoid closure issues
+      const tournamentsResponse = await fetch('/api/tournaments');
+      if (tournamentsResponse.ok) {
+        const tournamentsList = await tournamentsResponse.json();
+        const tournament = tournamentsList.find((t: Tournament) => t.id === selectedTournamentId);
+        toast({
+          title: "Tournament Initiated",
+          description: `${tournament?.name || 'Tournament'} is now active and ready to begin!`,
+        });
+      } else {
+        toast({
+          title: "Tournament Initiated",
+          description: 'Tournament is now active and ready to begin!',
+        });
+      }
     },
     onError: (error: any) => {
       console.error('Error initiating tournament:', error);
@@ -1274,7 +1290,14 @@ export default function AdminTournaments() {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                disabled={addingJudgeIds.has(judge.id)}
                                 onClick={async () => {
+                                  // Prevent duplicate clicks
+                                  if (addingJudgeIds.has(judge.id)) {
+                                    return;
+                                  }
+                                  
+                                  setAddingJudgeIds(prev => new Set(prev).add(judge.id));
                                   try {
                                     const response = await fetch(`/api/tournaments/${selectedTournamentId}/participants`, {
                                       method: 'POST',
@@ -1297,11 +1320,26 @@ export default function AdminTournaments() {
                                       description: error.message || 'Failed to add judge',
                                       variant: 'destructive'
                                     });
+                                  } finally {
+                                    setAddingJudgeIds(prev => {
+                                      const next = new Set(prev);
+                                      next.delete(judge.id);
+                                      return next;
+                                    });
                                   }
                                 }}
                               >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Add
+                                {addingJudgeIds.has(judge.id) ? (
+                                  <>
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    Adding...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Add
+                                  </>
+                                )}
                               </Button>
                             </div>
                           ))}

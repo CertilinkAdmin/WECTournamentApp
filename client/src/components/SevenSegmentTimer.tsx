@@ -75,7 +75,7 @@ export default function SevenSegmentTimer({ timeRemaining, isPaused = false }: S
           justify-content: center;
           align-items: center;
           padding: 0.5rem;
-          background: #000;
+          background: #f6f4ee;
           border-radius: 0.5rem;
           min-height: 70px;
         }

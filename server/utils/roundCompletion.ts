@@ -43,7 +43,9 @@ export async function checkRoundCompletion(
 ): Promise<RoundCompletionStatus> {
   // Get all matches for this round
   const allMatches = await storage.getTournamentMatches(tournamentId);
-  const roundMatches = allMatches.filter(m => m.round === round);
+  // Ignore placeholder matches that are not assigned to a station yet.
+  // Only station-assigned heats should participate in round-completion checks.
+  const roundMatches = allMatches.filter(m => m.round === round && m.stationId !== null);
 
   if (roundMatches.length === 0) {
     return {
@@ -55,7 +57,7 @@ export async function checkRoundCompletion(
       incompleteMatches: [],
       matchesWithoutWinners: [],
       stationStatus: [],
-      errors: [`No matches found for Round ${round}`]
+      errors: [`No station-assigned matches found for Round ${round}`]
     };
   }
 

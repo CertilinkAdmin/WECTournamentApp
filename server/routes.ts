@@ -11,7 +11,7 @@ import {
   insertTournamentSchema, insertTournamentParticipantSchema,
   insertStationSchema, insertMatchSchema, insertHeatScoreSchema,
   insertUserSchema, insertHeatSegmentSchema, insertHeatJudgeSchema,
-  tournamentParticipants, heatJudges, matches, stations, tournaments,
+  tournamentParticipants, heatJudges, matches, stations, tournaments, heatSegments, matchCupPositions,
   type Tournament
 } from "@shared/schema";
 import { db } from "./db";
@@ -966,7 +966,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tournaments/:id/matches", async (req, res) => {
     const matches = await storage.getTournamentMatches(parseInt(req.params.id));
-    res.json(matches);
+    
+    // For DONE matches with both competitors, calculate and include scores
+    const matchesWithScores = await Promise.all(matches.map(async (match) => {
+      // Only calculate scores for DONE matches with both competitors (skip BYE matches)
+      if (match.status === 'DONE' && match.winnerId && match.competitor1Id && match.competitor2Id) {
+        try {
+          const { calculateMatchWinner } = await import('./utils/winnerCalculation');
+          const winnerResult = await calculateMatchWinner(match.id);
+          if (!winnerResult.error) {
+            return {
+              ...match,
+              competitor1Score: winnerResult.competitor1Score,
+              competitor2Score: winnerResult.competitor2Score
+            };
+          } else {
+            // Log error but don't fail - return match without scores
+            console.warn(`⚠️ Could not calculate scores for match ${match.id} (Heat ${match.heatNumber}): ${winnerResult.error}`);
+          }
+        } catch (error: any) {
+          console.error(`❌ Error calculating scores for match ${match.id}:`, error);
+        }
+      }
+      return match;
+    }));
+    
+    // Log score calculation summary
+    const doneMatches = matches.filter(m => m.status === 'DONE' && m.competitor1Id && m.competitor2Id);
+    const matchesWithScoresCount = matchesWithScores.filter(m => (m as any).competitor1Score !== undefined).length;
+    console.log(`📊 Score calculation summary: ${matchesWithScoresCount}/${doneMatches.length} DONE matches have scores calculated`);
+    
+    res.json(matchesWithScores);
   });
 
   app.get("/api/matches/:id", async (req, res) => {
@@ -1467,10 +1497,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
         if (stationLeads.length > 0) {
-          // Get tournament to access enabledStations
-          const tournament = await storage.getTournament(tournamentId);
-          if (tournament) {
-            const enabledStations = tournament.enabledStations || ['A', 'B', 'C'];
+          // Use the tournament variable already declared above (from updateTournament)
+          // Refresh tournament data to get latest enabledStations
+          const refreshedTournament = await storage.getTournament(tournamentId);
+          if (refreshedTournament) {
+            const enabledStations = refreshedTournament.enabledStations || ['A', 'B', 'C'];
             
             // Get tournament-specific stations
             const tournamentStations = await storage.getTournamentStations(tournamentId);
@@ -1479,17 +1510,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
               .sort((a, b) => a.name.localeCompare(b.name));
 
             if (stationsForAssignment.length > 0) {
-              // Shuffle station leads for randomization
-              const shuffledLeads = [...stationLeads].sort(() => Math.random() - 0.5);
+              // Only assign to enabled stations (filter out disabled stations)
+              // If we have fewer station leads than enabled stations, only assign to that many stations
+              const stationsToAssign = stationsForAssignment.slice(0, stationLeads.length);
+              
+              if (stationsToAssign.length === 0) {
+                console.warn(`⚠️  Cannot assign station leads: ${stationLeads.length} station leads but ${stationsForAssignment.length} enabled stations. Need at least ${stationsForAssignment.length} station leads.`);
+              } else {
+                // Shuffle station leads for randomization
+                const shuffledLeads = [...stationLeads].sort(() => Math.random() - 0.5);
 
-              // Assign station leads to stations (distribute evenly, wrap around if needed)
-              for (let i = 0; i < stationsForAssignment.length; i++) {
-                const station = stationsForAssignment[i];
-                const stationLead = shuffledLeads[i % shuffledLeads.length];
+                // Assign station leads to enabled stations (one-to-one, no wrapping)
+                for (let i = 0; i < stationsToAssign.length; i++) {
+                  const station = stationsToAssign[i];
+                  const stationLead = shuffledLeads[i];
 
-                await storage.updateStation(station.id, { stationLeadId: stationLead.id });
+                  await storage.updateStation(station.id, { stationLeadId: stationLead.id });
+                }
+                console.log(`✅ Assigned ${stationsToAssign.length} station lead(s) to ${stationsToAssign.map(s => s.name).join(', ')} (${stationLeads.length} total approved, ${stationsForAssignment.length} enabled stations)`);
               }
-              console.log(`Assigned ${Math.min(stationsForAssignment.length, stationLeads.length)} station leads to stations`);
             }
           }
         }
@@ -1497,8 +1536,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('Failed to assign station leads:', error);
       }
 
-      io.to(`tournament:${tournamentId}`).emit("tournament:activated", tournament);
-      res.json({ success: true, tournament });
+      // Refresh tournament data to ensure we have the latest state before emitting
+      const finalTournament = await storage.getTournament(tournamentId);
+      if (!finalTournament) {
+        return res.status(404).json({ error: "Tournament not found after activation" });
+      }
+
+      io.to(`tournament:${tournamentId}`).emit("tournament:activated", finalTournament);
+      res.json({ success: true, tournament: finalTournament });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
@@ -1770,14 +1815,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // GLOBAL RULE: Check if all matches are complete with proper validation
       // Each match must be DONE AND have segments ended, judges scored, cup positions assigned
       const incompleteMatches: typeof stationRoundMatches = [];
+      const matchesNeedingWinnerCalculation: typeof stationRoundMatches = [];
+      
       for (const match of stationRoundMatches) {
-        if (match.status !== 'DONE') {
-          incompleteMatches.push(match);
+        // BYE matches don't need validation - they already have winners
+        if (!match.competitor2Id) {
           continue;
         }
         
-        // BYE matches don't need validation
-        if (!match.competitor2Id) {
+        if (match.status !== 'DONE') {
+          incompleteMatches.push(match);
           continue;
         }
         
@@ -1795,6 +1842,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           incompleteMatches.push(match);
           continue;
         }
+        
+        // If match is DONE with all validations passed but missing winnerId, calculate it now
+        if (!match.winnerId) {
+          matchesNeedingWinnerCalculation.push(match);
+        }
       }
       
       if (incompleteMatches.length > 0) {
@@ -1804,8 +1856,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Calculate winners for any matches that are DONE but missing winnerId
+      const { calculateMatchWinner } = await import('./utils/winnerCalculation');
+      for (const match of matchesNeedingWinnerCalculation) {
+        const winnerResult = await calculateMatchWinner(match.id);
+        if (winnerResult.error || !winnerResult.winnerId) {
+          return res.status(400).json({
+            error: `Cannot finalize station round. Heat ${match.heatNumber} could not determine a winner: ${winnerResult.error || winnerResult.tieBreakerReason || 'Unknown error'}`,
+            details: winnerResult
+          });
+        }
+        
+        // Update match with calculated winner
+        await storage.updateMatch(match.id, {
+          winnerId: winnerResult.winnerId
+        });
+        
+        console.log(`✅ Calculated winner for Heat ${match.heatNumber}: ${winnerResult.winnerId} (Scores: ${winnerResult.competitor1Score} vs ${winnerResult.competitor2Score})`);
+      }
+
+      // Refresh matches to get updated winnerIds
+      const updatedMatches = await db.select()
+        .from(matches)
+        .where(
+          and(
+            eq(matches.tournamentId, tournamentId),
+            eq(matches.stationId, stationId),
+            eq(matches.round, round)
+          )
+        );
+
       // Get winners from this station's round
-      const winners = stationRoundMatches
+      const winners = updatedMatches
         .filter(m => m.winnerId)
         .map(m => m.winnerId!);
 
@@ -1853,14 +1935,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid tournament ID" });
       }
 
-      // Get current round if not specified
+      // Get current round if not specified. When deriving the round, ignore
+      // placeholder matches that have no station assigned yet (stationId null),
+      // since only station-assigned heats participate in round progression.
       let targetRound = round;
       if (!targetRound) {
         const allMatches = await storage.getTournamentMatches(tournamentId);
         if (allMatches.length === 0) {
           return res.status(400).json({ error: "No matches found for this tournament" });
         }
-        targetRound = Math.max(...allMatches.map(m => m.round));
+        const matchesWithStations = allMatches.filter(m => m.stationId !== null);
+        const roundSource = matchesWithStations.length > 0 ? matchesWithStations : allMatches;
+        targetRound = Math.max(...roundSource.map(m => m.round));
       }
 
       const { checkRoundCompletion } = await import('./utils/roundCompletion');
@@ -1892,14 +1978,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Tournament is now guaranteed to be defined (TypeScript type narrowing)
 
-      // Get all matches for the current round
-      const currentMatches = await storage.getTournamentMatches(tournamentId);
-      if (currentMatches.length === 0) {
+      // Get all matches for the tournament
+      const allMatches = await storage.getTournamentMatches(tournamentId);
+      console.log(`🔍 DIAGNOSIS: Total matches in tournament: ${allMatches.length}`);
+      console.log(`🔍 DIAGNOSIS: Match breakdown by round:`, 
+        allMatches.reduce((acc, m) => {
+          acc[m.round] = (acc[m.round] || 0) + 1;
+          return acc;
+        }, {} as Record<number, number>)
+      );
+      console.log(`🔍 DIAGNOSIS: Match breakdown by round and status:`, 
+        allMatches.reduce((acc, m) => {
+          const key = `Round ${m.round} - ${m.status}`;
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      );
+      console.log(`🔍 DIAGNOSIS: Match breakdown by round and stationId:`, 
+        allMatches.reduce((acc, m) => {
+          const key = `Round ${m.round} - stationId: ${m.stationId || 'null'}`;
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      );
+      
+      if (allMatches.length === 0) {
         return res.status(400).json({ error: "No matches found for this tournament" });
       }
 
-      const currentRound = Math.max(...currentMatches.map(m => m.round));
-      const currentRoundMatches = currentMatches.filter(m => m.round === currentRound);
+      // Only consider matches assigned to stations (ignore placeholder matches with stationId = null)
+      // This matches the logic in round-completion endpoint
+      const matchesWithStations = allMatches.filter(m => m.stationId !== null);
+      console.log(`🔍 DIAGNOSIS: Matches with stations: ${matchesWithStations.length}`);
+      console.log(`🔍 DIAGNOSIS: Rounds with station-assigned matches:`, 
+        [...new Set(matchesWithStations.map(m => m.round))].sort((a, b) => a - b)
+      );
+      
+      // Log Round 3 matches specifically
+      const round3Matches = allMatches.filter(m => m.round === 3);
+      console.log(`🔍 DIAGNOSIS: Round 3 matches (${round3Matches.length} total):`, 
+        round3Matches.map(m => ({
+          id: m.id,
+          heatNumber: m.heatNumber,
+          stationId: m.stationId,
+          status: m.status,
+          winnerId: m.winnerId,
+          competitor1Id: m.competitor1Id,
+          competitor2Id: m.competitor2Id
+        }))
+      );
+      
+      if (matchesWithStations.length === 0) {
+        return res.status(400).json({ error: "No station-assigned matches found for this tournament" });
+      }
+
+      // Find the highest round that has COMPLETED matches with winners
+      // Ignore tournament.currentRound - it may be incorrect. Use actual match data.
+      const completedMatchesWithWinners = matchesWithStations.filter(m => 
+        m.status === 'DONE' && m.winnerId !== null
+      );
+      
+      console.log(`🔍 DIAGNOSIS: Completed matches with winners: ${completedMatchesWithWinners.length}`);
+      console.log(`🔍 DIAGNOSIS: Completed matches breakdown by round:`, 
+        completedMatchesWithWinners.reduce((acc, m) => {
+          acc[m.round] = (acc[m.round] || 0) + 1;
+          return acc;
+        }, {} as Record<number, number>)
+      );
+      console.log(`🔍 DIAGNOSIS: Round 3 completed matches with winners:`, 
+        completedMatchesWithWinners.filter(m => m.round === 3).map(m => ({
+          id: m.id,
+          heatNumber: m.heatNumber,
+          stationId: m.stationId,
+          winnerId: m.winnerId
+        }))
+      );
+      
+      if (completedMatchesWithWinners.length === 0) {
+        return res.status(400).json({ 
+          error: "No completed matches with winners found. Cannot populate next round.",
+          matchesWithStations: matchesWithStations.length,
+          completedMatches: matchesWithStations.filter(m => m.status === 'DONE').length,
+          debug: {
+            allMatches: allMatches.length,
+            matchesWithStations: matchesWithStations.length,
+            roundsWithStations: [...new Set(matchesWithStations.map(m => m.round))].sort((a, b) => a - b),
+            roundsWithCompleted: [...new Set(completedMatchesWithWinners.map(m => m.round))].sort((a, b) => a - b)
+          }
+        });
+      }
+
+      // Get all rounds that have matches (to understand tournament progression)
+      const allRoundsWithMatches = [...new Set(matchesWithStations.map(m => m.round))].sort((a, b) => a - b);
+      const roundsWithCompleted = [...new Set(completedMatchesWithWinners.map(m => m.round))].sort((a, b) => a - b);
+      
+      console.log(`🔍 DIAGNOSIS: allRoundsWithMatches: [${allRoundsWithMatches.join(', ')}]`);
+      console.log(`🔍 DIAGNOSIS: roundsWithCompleted: [${roundsWithCompleted.join(', ')}]`);
+      
+      let currentRound: number;
+      
+      // STRATEGY: Use the HIGHEST completed round (most recent round that's been completed)
+      // This ensures we advance from Round 2 to Round 3, not reset Round 1
+      // Example: If Round 1 and Round 2 both have completed matches, use Round 2
+      if (roundsWithCompleted.length > 0) {
+        // Use the highest (most recent) completed round
+        currentRound = Math.max(...roundsWithCompleted);
+        const roundMatches = completedMatchesWithWinners.filter(m => m.round === currentRound);
+        console.log(`✅ Using highest completed round ${currentRound} (has ${roundMatches.length} completed matches with winners)`);
+      } else {
+        // No completed matches at all - this shouldn't happen but handle it
+        return res.status(400).json({
+          error: "No completed matches with winners found. Cannot populate next round.",
+          diagnostic: {
+            allRoundsWithMatches,
+            roundsWithCompleted,
+            completedMatchesCount: completedMatchesWithWinners.length
+          }
+        });
+      }
+      
+      // Safety check: Verify the round we're using actually has all matches completed
+      // We should only populate next round if the current round is fully complete
+      const currentRoundAllMatches = matchesWithStations.filter(m => m.round === currentRound);
+      const currentRoundCompleted = currentRoundAllMatches.filter(m => m.status === 'DONE' && m.winnerId !== null);
+      const currentRoundIncomplete = currentRoundAllMatches.filter(m => m.status !== 'DONE' || m.winnerId === null);
+      
+      console.log(`🔍 DIAGNOSIS: Round ${currentRound} status:`);
+      console.log(`   - Total matches: ${currentRoundAllMatches.length}`);
+      console.log(`   - Completed with winners: ${currentRoundCompleted.length}`);
+      console.log(`   - Incomplete: ${currentRoundIncomplete.length}`);
+      
+      if (currentRoundIncomplete.length > 0) {
+        return res.status(400).json({
+          error: `Round ${currentRound} is not fully complete. ${currentRoundIncomplete.length} matches still need to be completed.`,
+          diagnostic: {
+            currentRound,
+            totalMatches: currentRoundAllMatches.length,
+            completedMatches: currentRoundCompleted.length,
+            incompleteMatches: currentRoundIncomplete.map(m => ({
+              id: m.id,
+              heatNumber: m.heatNumber,
+              status: m.status,
+              hasWinner: m.winnerId !== null
+            }))
+          }
+        });
+      }
+      
+      const currentRoundMatches = matchesWithStations.filter(m => m.round === currentRound);
+      
+      console.log(`📊 Populate next round: Using Round ${currentRound}`);
+      console.log(`   - Tournament currentRound: ${tournament.currentRound}`);
+      console.log(`   - All rounds with matches: [${allRoundsWithMatches.join(', ')}]`);
+      console.log(`   - Rounds with completed matches: [${roundsWithCompleted.join(', ')}]`);
+      console.log(`   - Round ${currentRound} matches: ${currentRoundMatches.length} (${currentRoundMatches.filter(m => m.status === 'DONE' && m.winnerId).length} completed with winners)`);
 
       // Get ALL stations for this tournament to verify round completion
       const allStations = await storage.getAllStations();
@@ -1919,7 +2151,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Use centralized round completion checker
       const { checkRoundCompletion } = await import('./utils/roundCompletion');
+      console.log(`🔍 DIAGNOSIS: About to check round completion for Round ${currentRound}`);
       const completionStatus = await checkRoundCompletion(tournamentId, currentRound);
+      console.log(`🔍 DIAGNOSIS: Round ${currentRound} completion status:`, {
+        isComplete: completionStatus.isComplete,
+        totalMatches: completionStatus.totalMatches,
+        completedMatches: completionStatus.completedMatches,
+        matchesWithWinners: completionStatus.matchesWithWinners,
+        errors: completionStatus.errors
+      });
 
       if (!completionStatus.isComplete) {
         const errorDetails = completionStatus.errors.join('; ');
@@ -1928,24 +2168,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .map(s => `Station ${s.stationName}: ${s.incompleteMatches.length} incomplete, ${s.matchesWithoutWinners.length} without winners`)
           .join('; ');
 
+        // Include diagnostic info in error response
+        const diagnosticInfo = {
+          calculatedRound: currentRound,
+          tournamentCurrentRound: tournament.currentRound,
+          allRoundsWithMatches,
+          roundsWithCompleted,
+          round3MatchesCount: allMatches.filter(m => m.round === 3).length,
+          round3MatchesWithStations: allMatches.filter(m => m.round === 3 && m.stationId !== null).length,
+          round3CompletedWithWinners: completedMatchesWithWinners.filter(m => m.round === 3).length
+        };
+
         return res.status(400).json({
           error: `Round ${currentRound} is not complete. ${errorDetails}`,
           completionStatus,
-          incompleteDetails
+          incompleteDetails,
+          diagnostic: diagnosticInfo
         });
       }
 
-      // Get winners from current round (use completion status winners)
-      const winners = completionStatus.matchesWithWinners > 0
-        ? currentRoundMatches
-            .filter(m => m.winnerId)
-            .map(m => m.winnerId!)
-        : [];
+      // CRITICAL: Calculate and verify scores for all matches in the completed round
+      // This ensures scores are available for display in the bracket
+      console.log(`📊 Calculating scores for all matches in Round ${currentRound}...`);
+      const { calculateMatchWinner } = await import('./utils/winnerCalculation');
+      let scoresCalculated = 0;
+      let scoresErrors = 0;
+      
+      for (const match of currentRoundMatches) {
+        // Only calculate scores for DONE matches with both competitors (skip BYE matches)
+        if (match.status === 'DONE' && match.competitor1Id && match.competitor2Id) {
+          try {
+            const winnerResult = await calculateMatchWinner(match.id);
+            if (!winnerResult.error) {
+              scoresCalculated++;
+              console.log(`   ✅ Match ${match.id} (Heat ${match.heatNumber}): ${winnerResult.competitor1Score} vs ${winnerResult.competitor2Score}`);
+            } else {
+              scoresErrors++;
+              console.warn(`   ⚠️ Match ${match.id} (Heat ${match.heatNumber}): Could not calculate scores - ${winnerResult.error}`);
+            }
+          } catch (error: any) {
+            scoresErrors++;
+            console.error(`   ❌ Error calculating scores for match ${match.id}:`, error);
+          }
+        }
+      }
+      
+      console.log(`📊 Score calculation complete: ${scoresCalculated} matches scored, ${scoresErrors} errors`);
+
+      // Get winners from current round ONLY
+      // CRITICAL: currentRoundMatches is already filtered to currentRound, but double-check
+      const winners = currentRoundMatches
+        .filter(m => m.round === currentRound && m.status === 'DONE' && m.winnerId !== null)
+        .map(m => m.winnerId!);
+
+      console.log(`🔍 DIAGNOSIS: Collecting winners from Round ${currentRound}:`);
+      console.log(`   - Total matches in Round ${currentRound}: ${currentRoundMatches.length}`);
+      console.log(`   - Winners found: ${winners.length}`);
+      console.log(`   - Winner IDs: [${winners.join(', ')}]`);
 
       if (winners.length === 0) {
         return res.status(400).json({ 
-          error: "No winners found in current round",
-          completionStatus
+          error: `No winners found in Round ${currentRound}`,
+          diagnostic: {
+            currentRound,
+            currentRoundMatchesCount: currentRoundMatches.length,
+            matchesWithWinners: currentRoundMatches.filter(m => m.winnerId !== null).length,
+            completionStatus
+          }
         });
       }
 
@@ -1987,35 +2276,219 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use unique winners
       const finalWinners = uniqueWinners;
 
-      // Check if tournament is complete (only 1 winner remaining)
-      if (finalWinners.length === 1) {
-        console.log(`🏆 Tournament ${tournamentId} complete! Final winner: ${finalWinners[0]}`);
-        
-        // Update tournament status if needed
-        await storage.updateTournament(tournamentId, {
-          currentRound: currentRound + 1
-        });
+      // Determine round type based on number of matches and competitors
+      // Final round: 1 match with 2 competitors
+      // Semi-final: 2 matches with 4 competitors total
+      // Early rounds: More matches
+      const isFinalRound = currentRoundMatches.length === 1 && 
+                          currentRoundMatches[0].competitor1Id && 
+                          currentRoundMatches[0].competitor2Id;
+      const isSemiFinal = currentRoundMatches.length === 2 && finalWinners.length === 4;
+      const roundType = isFinalRound ? 'FINAL' : 
+                       isSemiFinal ? 'SEMI_FINAL' :
+                       finalWinners.length > 4 ? 'EARLY_ROUND' : 'UNKNOWN';
+      
+      console.log(`🔍 DIAGNOSIS: Round ${currentRound} type: ${roundType}`);
+      console.log(`   - Matches in round: ${currentRoundMatches.length}`);
+      console.log(`   - Winners from round: ${finalWinners.length}`);
+      console.log(`   - Is final round: ${isFinalRound}`);
 
-        io.to(`tournament:${tournamentId}`).emit("tournament:complete", {
-          tournamentId,
-          winnerId: finalWinners[0],
-          finalRound: currentRound,
-          message: `Tournament complete! Winner determined in Round ${currentRound}`
-        });
+      // Check if tournament is complete
+      // Final round: 1 match with 2 competitors → after completion, 1 winner → tournament complete
+      // If final round just completed, we should have 1 winner
+      const isTournamentComplete = finalWinners.length === 1;
 
-        return res.json({
-          success: true,
-          tournamentComplete: true,
-          winnerId: finalWinners[0],
-          finalRound: currentRound,
-          message: `Tournament complete! Final winner determined.`
-        });
+      if (isTournamentComplete) {
+        // If final round just completed, we need to wait for the final match to complete
+        // But if we already have 1 winner, tournament is complete
+        if (finalWinners.length === 1) {
+          console.log(`🏆 Tournament ${tournamentId} complete! Final winner: ${finalWinners[0]}`);
+          
+          // Update tournament status to COMPLETED
+          await storage.updateTournament(tournamentId, {
+            status: 'COMPLETED',
+            currentRound: currentRound,
+            endDate: new Date()
+          });
+
+          // Calculate final rankings
+          const allTournamentMatches = await storage.getTournamentMatches(tournamentId);
+          const allParticipants = await storage.getTournamentParticipants(tournamentId);
+          
+          // Get winner participant and update final rank
+          const winnerParticipant = allParticipants.find(p => p.userId === finalWinners[0]);
+          if (winnerParticipant) {
+            await db.update(tournamentParticipants)
+              .set({ finalRank: 1, eliminatedRound: null })
+              .where(eq(tournamentParticipants.id, winnerParticipant.id));
+            console.log(`✅ Updated winner finalRank: Participant ${winnerParticipant.id} (User ${finalWinners[0]}) → Rank 1`);
+          }
+
+          // Find runner-up (the other finalist who lost)
+          const finalMatch = currentRoundMatches.find(m => m.status === 'DONE' && m.winnerId);
+          if (finalMatch && finalMatch.competitor1Id && finalMatch.competitor2Id) {
+            const runnerUpId = finalMatch.winnerId === finalMatch.competitor1Id 
+              ? finalMatch.competitor2Id 
+              : finalMatch.competitor1Id;
+            const runnerUpParticipant = allParticipants.find(p => p.userId === runnerUpId);
+            if (runnerUpParticipant) {
+              await db.update(tournamentParticipants)
+                .set({ finalRank: 2, eliminatedRound: currentRound })
+                .where(eq(tournamentParticipants.id, runnerUpParticipant.id));
+              console.log(`✅ Updated runner-up finalRank: Participant ${runnerUpParticipant.id} (User ${runnerUpId}) → Rank 2`);
+            }
+          }
+
+          io.to(`tournament:${tournamentId}`).emit("tournament:complete", {
+            tournamentId,
+            winnerId: finalWinners[0],
+            finalRound: currentRound,
+            message: `Tournament complete! Winner determined in Round ${currentRound}`
+          });
+
+          return res.json({
+            success: true,
+            tournamentComplete: true,
+            winnerId: finalWinners[0],
+            finalRound: currentRound,
+            roundType: 'FINAL',
+            message: `Tournament complete! Final winner determined in Round ${currentRound}.`
+          });
+        } else if (isFinalRound && finalWinners.length === 2) {
+          // Final round is complete but we still have 2 winners
+          // This means the final match hasn't been completed yet - it's still in progress
+          return res.status(400).json({
+            error: `Final round (Round ${currentRound}) match is still in progress. Please complete the final match first.`,
+            diagnostic: {
+              currentRound,
+              roundType: 'FINAL',
+              winners: finalWinners.length,
+              matches: currentRoundMatches.length,
+              matchStatus: currentRoundMatches[0]?.status
+            }
+          });
+        }
+      }
+
+      // CRITICAL: Check if current round is the final round
+      // Final round = 1 match with 2 competitors
+      // After final round completes, tournament is complete (1 winner)
+      if (isFinalRound) {
+        if (completionStatus.isComplete) {
+          // Final round is complete - should have 1 winner
+          if (finalWinners.length === 1) {
+            // Tournament is complete - finalize it
+            console.log(`🏆 Final round (Round ${currentRound}) complete! Tournament winner: ${finalWinners[0]}`);
+            
+            // Update tournament status to COMPLETED
+            await storage.updateTournament(tournamentId, {
+              status: 'COMPLETED',
+              currentRound: currentRound,
+              endDate: new Date()
+            });
+
+            // Calculate final rankings
+            const allTournamentMatches = await storage.getTournamentMatches(tournamentId);
+            const allParticipants = await storage.getTournamentParticipants(tournamentId);
+            
+            // Get winner participant and update final rank
+            const winnerParticipant = allParticipants.find(p => p.userId === finalWinners[0]);
+            if (winnerParticipant) {
+              await db.update(tournamentParticipants)
+                .set({ finalRank: 1, eliminatedRound: null })
+                .where(eq(tournamentParticipants.id, winnerParticipant.id));
+              console.log(`✅ Updated winner finalRank: Participant ${winnerParticipant.id} (User ${finalWinners[0]}) → Rank 1`);
+            }
+
+            // Find runner-up (the other finalist who lost)
+            const finalMatch = currentRoundMatches.find(m => m.status === 'DONE' && m.winnerId);
+            if (finalMatch && finalMatch.competitor1Id && finalMatch.competitor2Id) {
+              const runnerUpId = finalMatch.winnerId === finalMatch.competitor1Id 
+                ? finalMatch.competitor2Id 
+                : finalMatch.competitor1Id;
+              const runnerUpParticipant = allParticipants.find(p => p.userId === runnerUpId);
+              if (runnerUpParticipant) {
+                await db.update(tournamentParticipants)
+                  .set({ finalRank: 2, eliminatedRound: currentRound })
+                  .where(eq(tournamentParticipants.id, runnerUpParticipant.id));
+                console.log(`✅ Updated runner-up finalRank: Participant ${runnerUpParticipant.id} (User ${runnerUpId}) → Rank 2`);
+              }
+            }
+
+            io.to(`tournament:${tournamentId}`).emit("tournament:complete", {
+              tournamentId,
+              winnerId: finalWinners[0],
+              finalRound: currentRound,
+              message: `Tournament complete! Winner determined in Final Round ${currentRound}`
+            });
+
+            return res.json({
+              success: true,
+              tournamentComplete: true,
+              winnerId: finalWinners[0],
+              finalRound: currentRound,
+              roundType: 'FINAL',
+              message: `Tournament complete! Final winner determined in Round ${currentRound}.`
+            });
+          } else {
+            // Final round complete but still has 2 winners - final match not played
+            return res.status(400).json({
+              error: `Final round (Round ${currentRound}) is complete but final match has not been played. Please complete the final match to determine the winner.`,
+              diagnostic: {
+                currentRound,
+                roundType: 'FINAL',
+                winners: finalWinners.length,
+                matchStatus: currentRoundMatches[0]?.status,
+                matchWinner: currentRoundMatches[0]?.winnerId
+              }
+            });
+          }
+        } else {
+          // Final round exists but not complete yet
+          return res.status(400).json({
+            error: `Final round (Round ${currentRound}) is not yet complete. Please complete the final match first.`,
+            diagnostic: {
+              currentRound,
+              roundType: 'FINAL',
+              completionStatus: completionStatus.isComplete,
+              incompleteMatches: completionStatus.incompleteMatches.length
+            }
+          });
+        }
       }
 
       if (finalWinners.length < 2) {
         return res.status(400).json({
-          error: `Insufficient winners (${finalWinners.length}) to create next round. Need at least 2 winners.`
+          error: `Insufficient winners (${finalWinners.length}) to create next round. Need at least 2 winners.`,
+          diagnostic: {
+            currentRound,
+            roundType,
+            winners: finalWinners.length
+          }
         });
+      }
+
+      // Calculate next round
+      const nextRound = currentRound + 1;
+      
+      // Additional safety check: If Round 3 exists and has 1 match, it's the final
+      // Don't create Round 4 after Round 3 final
+      if (nextRound === 4) {
+        const round3Matches = allMatches.filter(m => m.round === 3 && m.stationId !== null);
+        if (round3Matches.length === 1) {
+          // Round 3 is the final (1 match) - tournament should be complete
+          return res.status(400).json({
+            error: `Round 3 is the final round (1 match). Tournament should be finalized after Round 3 completes, not creating Round 4.`,
+            diagnostic: {
+              currentRound,
+              nextRound,
+              round3Matches: round3Matches.length,
+              round3Status: round3Matches[0]?.status,
+              round3Winner: round3Matches[0]?.winnerId,
+              tournamentShouldBeComplete: true
+            }
+          });
+        }
       }
 
       // Get stations for this tournament
@@ -2029,6 +2502,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Sort stations by name (A, B, C)
       const sortedStations = availableStations.sort((a, b) => a.name.localeCompare(b.name));
+      
+      console.log(`🔍 DIAGNOSIS: Round progression:`);
+      console.log(`   - Current completed round: ${currentRound}`);
+      console.log(`   - Next round to create: ${nextRound}`);
+      console.log(`   - Winners from Round ${currentRound}: ${winners.length}`);
 
       // Sort winners by original seeding to maintain bracket order
       const sortedWinners = winners.map(winnerId => {
@@ -2036,27 +2514,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return { winnerId, seed: participant?.seed || 999 };
       }).sort((a, b) => a.seed - b.seed).map(w => w.winnerId);
 
-      // Split sorted winners into 3 groups for stations A, B, C
-      const groupSize = Math.ceil(sortedWinners.length / 3);
-      const groups = [
-        sortedWinners.slice(0, groupSize),
-        sortedWinners.slice(groupSize, groupSize * 2),
-        sortedWinners.slice(groupSize * 2)
-      ].filter(group => group.length > 0);
-
-      // Create matches for next round
-      const nextRound = currentRound + 1;
-      let heatNumber = 1;
+      // For elimination brackets, pair winners sequentially: [0,1], [2,3], [4,5], etc.
+      // Then assign pairs to stations in round-robin fashion
+      const matchPairs: { competitor1: number; competitor2: number | null }[] = [];
+      
+      // SPECIAL CASE: Final round (2 winners, Round 3+) - create 1 match on Station A
+      if (sortedWinners.length === 2 && nextRound > 2) {
+        // Final round: 1 match with both winners
+        console.log(`🏆 Final round detected! Creating 1 match with 2 finalists`);
+        matchPairs.push({
+          competitor1: sortedWinners[0],
+          competitor2: sortedWinners[1]
+        });
+      } else {
+        // Pair winners sequentially for elimination bracket
+        for (let i = 0; i < sortedWinners.length; i += 2) {
+          matchPairs.push({
+            competitor1: sortedWinners[i],
+            competitor2: sortedWinners[i + 1] || null // null if odd number (bye)
+          });
+        }
+      }
+      
+      console.log(`📊 Created ${matchPairs.length} match pairs from ${sortedWinners.length} winners`);
+      
+      // CRITICAL: Delete ALL existing matches for the next round (including any duplicates)
+      // Refresh matches list to get the latest state
+      const refreshedMatches = await storage.getTournamentMatches(tournamentId);
+      const existingNextRoundMatches = refreshedMatches.filter(m => m.round === nextRound);
+      
+      if (existingNextRoundMatches.length > 0) {
+        console.log(`🗑️ Deleting ${existingNextRoundMatches.length} existing matches for Round ${nextRound} (including duplicates)`);
+        const deletedIds: number[] = [];
+        for (const existingMatch of existingNextRoundMatches) {
+          try {
+            // Delete segments first (foreign key constraint)
+            const segments = await storage.getMatchSegments(existingMatch.id);
+            for (const segment of segments) {
+              await db.delete(heatSegments).where(eq(heatSegments.id, segment.id));
+            }
+            // Delete judges
+            const judges = await storage.getMatchJudges(existingMatch.id);
+            for (const judge of judges) {
+              await db.delete(heatJudges).where(eq(heatJudges.id, judge.id));
+            }
+            // Delete cup positions
+            const cupPositions = await storage.getMatchCupPositions(existingMatch.id);
+            for (const position of cupPositions) {
+              await db.delete(matchCupPositions).where(eq(matchCupPositions.id, position.id));
+            }
+            // Delete the match
+            await db.delete(matches).where(eq(matches.id, existingMatch.id));
+            deletedIds.push(existingMatch.id);
+          } catch (error) {
+            console.error(`Error deleting match ${existingMatch.id}:`, error);
+          }
+        }
+        console.log(`✅ Deleted ${deletedIds.length} matches for Round ${nextRound}: [${deletedIds.join(', ')}]`);
+      }
+      
+      // Calculate starting heat number for this round
+      // Use formula: (round - 1) * 100 + sequential number
+      // This ensures unique heat numbers across rounds (Round 1: 1-99, Round 2: 100-199, etc.)
+      // OR use the highest heat number from previous rounds + 1
+      const allRoundsMatches = allMatches.filter(m => m.round < nextRound);
+      const highestHeatNumber = allRoundsMatches.length > 0 
+        ? Math.max(...allRoundsMatches.map(m => m.heatNumber))
+        : 0;
+      
+      // Start heat numbers from highest + 1, or use round-based offset
+      // Using round-based offset for consistency with bracket generator
+      const heatNumberBase = (nextRound - 1) * 100;
+      let heatNumber = heatNumberBase + 1;
+      
+      // Track used heat numbers to prevent duplicates
+      const usedHeatNumbers = new Set<number>();
+      
+      // Track actual number of matches created (for reporting)
+      let matchesCreatedCount = 0;
+      
+      console.log(`📊 Heat number calculation for Round ${nextRound}: base=${heatNumberBase}, starting at ${heatNumber}`);
+      console.log(`📊 Match pairs: ${matchPairs.length}, Stations: ${sortedStations.map(s => s.name).join(', ')}`);
       const assignedInNextRound = new Set<number>();
 
-      for (let i = 0; i < groups.length; i++) {
-        const group = groups[i];
-        const station = sortedStations[i];
-
-        // Create matches for this group
-        for (let j = 0; j < group.length; j += 2) {
-          const competitor1 = group[j];
-          const competitor2 = group[j + 1];
+      // Assign match pairs to stations in round-robin fashion
+      for (let i = 0; i < matchPairs.length; i++) {
+        const pair = matchPairs[i];
+        const competitor1 = pair.competitor1;
+        const competitor2 = pair.competitor2;
+        
+        // For final round with 2 winners, always use Station A (index 0)
+        // For other rounds, assign to stations in round-robin: A, B, C, A, B, C, ...
+        const stationIndex = (sortedWinners.length === 2 && nextRound > 2) ? 0 : (i % sortedStations.length);
+        const station = sortedStations[stationIndex];
+        
+        console.log(`🔍 Processing match pair ${i + 1}/${matchPairs.length} → Station ${station.name} (ID: ${station.id})`);
 
           // Validate no duplicate assignments
           if (assignedInNextRound.has(competitor1)) {
@@ -2077,6 +2629,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (competitor2) {
+            // Ensure unique heat number (skip if already used)
+            while (usedHeatNumbers.has(heatNumber)) {
+              heatNumber++;
+            }
+            usedHeatNumbers.add(heatNumber);
+            
             // Regular match with two competitors
             const match = await storage.createMatch({
               tournamentId,
@@ -2088,6 +2646,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: 'PENDING',
               startTime: station.nextAvailableAt
             });
+            
+            console.log(`✅ Created match ${match.id} for Round ${nextRound} Heat ${match.heatNumber} on Station ${station.name} (ID: ${station.id})`);
 
             // Get segment times for this round
             let roundTimes = await storage.getRoundTimes(tournamentId, nextRound);
@@ -2102,33 +2662,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
 
-            // Create heat segments
-            await storage.createHeatSegment({
-              matchId: match.id,
-              segment: 'DIAL_IN',
-              status: 'IDLE',
-              plannedMinutes: roundTimes.dialInMinutes
-            });
+            // Create heat segments with IDLE status (fresh/reset)
+            // CRITICAL: All segments must be created - if any fail, log error but continue
+            let dialInSegment, cappuccinoSegment, espressoSegment;
+            try {
+              dialInSegment = await storage.createHeatSegment({
+                matchId: match.id,
+                segment: 'DIAL_IN',
+                status: 'IDLE',
+                plannedMinutes: roundTimes.dialInMinutes
+              });
+            } catch (error: any) {
+              console.error(`❌ Failed to create DIAL_IN segment for Match ${match.id} on Station ${station.name}:`, error);
+              throw new Error(`Failed to create DIAL_IN segment for Match ${match.id}: ${error.message}`);
+            }
 
-            await storage.createHeatSegment({
-              matchId: match.id,
-              segment: 'CAPPUCCINO',
-              status: 'IDLE',
-              plannedMinutes: roundTimes.cappuccinoMinutes
-            });
+            try {
+              cappuccinoSegment = await storage.createHeatSegment({
+                matchId: match.id,
+                segment: 'CAPPUCCINO',
+                status: 'IDLE',
+                plannedMinutes: roundTimes.cappuccinoMinutes
+              });
+            } catch (error: any) {
+              console.error(`❌ Failed to create CAPPUCCINO segment for Match ${match.id} on Station ${station.name}:`, error);
+              throw new Error(`Failed to create CAPPUCCINO segment for Match ${match.id}: ${error.message}`);
+            }
 
-            await storage.createHeatSegment({
-              matchId: match.id,
-              segment: 'ESPRESSO',
-              status: 'IDLE',
-              plannedMinutes: roundTimes.espressoMinutes
-            });
+            try {
+              espressoSegment = await storage.createHeatSegment({
+                matchId: match.id,
+                segment: 'ESPRESSO',
+                status: 'IDLE',
+                plannedMinutes: roundTimes.espressoMinutes
+              });
+            } catch (error: any) {
+              console.error(`❌ Failed to create ESPRESSO segment for Match ${match.id} on Station ${station.name}:`, error);
+              throw new Error(`Failed to create ESPRESSO segment for Match ${match.id}: ${error.message}`);
+            }
+
+            console.log(`✅ Created segments for Round ${nextRound} Heat ${match.heatNumber} on Station ${station.name}: DIAL_IN (${dialInSegment.id}, IDLE), CAPPUCCINO (${cappuccinoSegment.id}, IDLE), ESPRESSO (${espressoSegment.id}, IDLE)`);
+            
+            matchesCreatedCount++;
+
+            // Assign 3 judges to this match (same logic as bracket generation)
+            try {
+              const allJudges = await storage.getAllUsers();
+              const tournamentParticipants = await storage.getTournamentParticipants(tournamentId);
+              const approvedJudges = allJudges.filter(u => {
+                const participant = tournamentParticipants.find(p => p.userId === u.id);
+                return u.role === 'JUDGE' && u.approved === true && participant && participant.seed && participant.seed > 0;
+              });
+
+              if (approvedJudges.length >= 3) {
+                // Shuffle judges for randomization
+                const shuffledJudges = [...approvedJudges].sort(() => Math.random() - 0.5);
+                
+                // Select 3 unique judges, using heatNumber to rotate starting position
+                const selectedJudges = [];
+                const usedJudgeIds = new Set<number>();
+                const startIndex = (match.heatNumber - 1) % shuffledJudges.length;
+                
+                for (let i = 0; i < 3; i++) {
+                  let judgeIndex = (startIndex + i) % shuffledJudges.length;
+                  let judge = shuffledJudges[judgeIndex];
+                  
+                  // Ensure unique judge
+                  let attempts = 0;
+                  while (usedJudgeIds.has(judge.id) && attempts < shuffledJudges.length) {
+                    judgeIndex = (judgeIndex + 1) % shuffledJudges.length;
+                    judge = shuffledJudges[judgeIndex];
+                    attempts++;
+                  }
+                  
+                  if (!usedJudgeIds.has(judge.id)) {
+                    selectedJudges.push(judge);
+                    usedJudgeIds.add(judge.id);
+                  }
+                }
+
+                // Only assign if we have 3 unique judges
+                if (selectedJudges.length === 3) {
+                  // Assign roles: 2 ESPRESSO judges, 1 CAPPUCCINO judge
+                  // All 3 judges score latte art
+                  // Then 1 judge scores Cappuccino sensory (CAPPUCCINO)
+                  // Then 2 judges score Espresso sensory (ESPRESSO)
+                  await storage.assignJudge({
+                    matchId: match.id,
+                    judgeId: selectedJudges[0].id,
+                    role: 'ESPRESSO' // First ESPRESSO judge
+                  });
+                  await storage.assignJudge({
+                    matchId: match.id,
+                    judgeId: selectedJudges[1].id,
+                    role: 'ESPRESSO' // Second ESPRESSO judge
+                  });
+                  await storage.assignJudge({
+                    matchId: match.id,
+                    judgeId: selectedJudges[2].id,
+                    role: 'CAPPUCCINO' // CAPPUCCINO judge
+                  });
+                  console.log(`✅ Assigned 3 judges to Round ${nextRound} Heat ${match.heatNumber}`);
+                } else {
+                  console.warn(`⚠️ Could not assign 3 unique judges to Round ${nextRound} Heat ${match.heatNumber}. Only found ${selectedJudges.length}. Judges can be assigned later.`);
+                }
+              } else {
+                console.warn(`⚠️ Insufficient judges (${approvedJudges.length}) for Round ${nextRound} Heat ${match.heatNumber}. Need at least 3. Judges can be assigned later via /api/tournaments/:id/assign-judges`);
+              }
+            } catch (judgeError: any) {
+              console.error(`Error assigning judges to match ${match.id}:`, judgeError);
+              // Don't fail the entire operation if judge assignment fails
+            }
 
             // Update station availability
             const nextAvailable = new Date(station.nextAvailableAt.getTime() + (roundTimes.totalMinutes + 10) * 60 * 1000);
             await storage.updateStation(station.id, { nextAvailableAt: nextAvailable });
           } else {
             // Bye - competitor advances automatically
+            // Ensure unique heat number (skip if already used)
+            while (usedHeatNumbers.has(heatNumber)) {
+              heatNumber++;
+            }
+            usedHeatNumbers.add(heatNumber);
+            
             await storage.createMatch({
               tournamentId,
               round: nextRound,
@@ -2141,14 +2797,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
               startTime: new Date(),
               endTime: new Date()
             });
+            // Note: BYE matches don't count toward matchesCreatedCount as they're automatic advances
           }
-        }
       }
 
       // Update tournament current round
       await storage.updateTournament(tournamentId, { 
         currentRound: nextRound 
       });
+
+      // DIAGNOSTIC: Verify all created matches have segments
+      const createdMatches = await storage.getTournamentMatches(tournamentId);
+      const round2Matches = createdMatches.filter(m => m.round === nextRound && m.stationId !== null);
+      console.log(`\n📊 DIAGNOSTIC: Round ${nextRound} matches created:`);
+      for (const match of round2Matches) {
+        const segments = await storage.getMatchSegments(match.id);
+        const station = sortedStations.find(s => s.id === match.stationId);
+        console.log(`  Station ${station?.name || 'UNKNOWN'} (ID: ${match.stationId}): Match ${match.id} (Heat ${match.heatNumber}) - ${segments.length} segments`);
+        if (segments.length !== 3) {
+          console.error(`  ⚠️ WARNING: Match ${match.id} on Station ${station?.name} has ${segments.length} segments (expected 3)!`);
+        } else {
+          const statuses = segments.map(s => `${s.segment}:${s.status}`).join(', ');
+          console.log(`    Segments: ${statuses}`);
+        }
+      }
 
       // Emit WebSocket events
       io.to(`tournament:${tournamentId}`).emit("round:complete", {
@@ -2163,18 +2835,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tournamentId,
         round: nextRound,
         previousRound: currentRound,
-        totalMatches: heatNumber - 1,
+        totalMatches: matchesCreatedCount,
         advancingCompetitors: finalWinners.length,
         message: `Round ${nextRound} has been set up with ${finalWinners.length} advancing competitors`
       });
 
-      console.log(`✅ Round ${nextRound} populated: ${heatNumber - 1} matches created with ${finalWinners.length} advancing competitors`);
+      console.log(`✅ Round ${nextRound} populated: ${matchesCreatedCount} matches created with ${finalWinners.length} advancing competitors`);
 
       res.json({
         success: true,
         previousRound: currentRound,
         nextRound,
-        matchesCreated: heatNumber - 1,
+        matchesCreated: matchesCreatedCount,
         advancingCompetitors: finalWinners.length,
         winners: finalWinners,
         message: `Round ${nextRound} successfully created with ${finalWinners.length} advancing competitors`
