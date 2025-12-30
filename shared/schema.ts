@@ -38,6 +38,8 @@ export const tournaments = pgTable("tournaments", {
   totalRounds: integer("total_rounds").notNull().default(5),
   currentRound: integer("current_round").notNull().default(1),
   enabledStations: text("enabled_stations").array().notNull().default(sql`ARRAY['A', 'B', 'C']::text[]`),
+  winnerId: integer("winner_id").references(() => users.id),
+  finalRoundCompletedAt: timestamp("final_round_completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -57,6 +59,7 @@ export const tournamentParticipants = pgTable("tournament_participants", {
   cupCode: text("cup_code"),
   eliminatedRound: integer("eliminated_round"),
   finalRank: integer("final_rank"),
+  totalScore: integer("total_score").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
