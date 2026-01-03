@@ -18,6 +18,8 @@
 export const wecPhotoAlbum: string[] = [
   // Local WEC images from client/public/images/
   '/images/wec.png',
+  '/images/wec3.png',
+  '/images/wec4.png',
   '/images/MJ106371 copy.jpg',
   '/images/MJ106438 copy.jpg',
   '/images/MJ106534 copy.jpg',
