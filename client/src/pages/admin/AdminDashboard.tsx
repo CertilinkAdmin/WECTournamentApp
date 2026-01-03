@@ -14,7 +14,7 @@ import { ToastAction } from '@/components/ui/toast';
 import { 
   Activity, Users, Database, Pause, Play, Trash2, Plus, 
   Image, Settings, AlertTriangle, CheckCircle2, XCircle,
-  Server, Cpu, HardDrive, Wifi, Clock, Loader2, Eye, UserPlus, Shield, Trophy
+  Server, Cpu, HardDrive, Wifi, Clock, Loader2, Eye, UserPlus, Shield, Trophy, Shuffle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import './AdminDashboard.css';
@@ -530,6 +530,31 @@ const AdminDashboard: React.FC = () => {
       toast({
         title: 'Image removed',
         description: 'Image has been removed from the carousel.',
+      });
+    },
+  });
+
+  const shuffleCarouselImagesMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/carousel/shuffle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to shuffle images');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/carousel'] });
+      toast({
+        title: 'Images shuffled',
+        description: 'Carousel image order has been randomized.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to shuffle images',
+        variant: 'destructive',
       });
     },
   });
@@ -1368,7 +1393,20 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label>Current Carousel Images ({carouselImages.length})</Label>
+                  <div className="flex items-center justify-between mb-4">
+                    <Label>Current Carousel Images ({carouselImages.length})</Label>
+                    {carouselImages.length > 1 && (
+                      <Button
+                        onClick={() => shuffleCarouselImagesMutation.mutate()}
+                        disabled={shuffleCarouselImagesMutation.isPending}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Shuffle className="h-4 w-4 mr-2" />
+                        {shuffleCarouselImagesMutation.isPending ? 'Shuffling...' : 'Shuffle Order'}
+                      </Button>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                     {carouselImages.map((imageUrl, index) => (
                       <div key={index} className="relative group">

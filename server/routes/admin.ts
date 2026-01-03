@@ -30,20 +30,40 @@ const tournamentPauseStates = new Map<number, boolean>();
 router.get('/carousel', async (req, res) => {
   try {
     // Initialize with default images from config if not already set
+    // Use local image paths only (no hardcoded external URLs)
     if (carouselImages.length === 0) {
-      // Try to load from config file (client-side config)
-      // Since we're on the server, we'll use a fallback approach
-      // The client will handle loading from the config file
       carouselImages = [
-        'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=1920&q=80',
-        'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1920&q=80',
-        'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1920&q=80',
-        'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&q=80',
-        'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80',
-        'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1920&q=80',
+        '/images/wec.png',
+        '/images/wec3.png',
+        '/images/wec4.png',
+        '/images/MJ106371 copy.jpg',
+        '/images/MJ106438 copy.jpg',
+        '/images/MJ106534 copy.jpg',
+        '/images/MJ106643 copy.jpg',
       ];
     }
     res.json(carouselImages);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Shuffle carousel images - MUST be before /carousel POST route
+router.post('/carousel/shuffle', async (req, res) => {
+  try {
+    if (carouselImages.length <= 1) {
+      return res.status(400).json({ error: 'Need at least 2 images to shuffle' });
+    }
+
+    // Fisher-Yates shuffle algorithm
+    const shuffled = [...carouselImages];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    carouselImages = shuffled;
+    res.json({ success: true, images: carouselImages });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

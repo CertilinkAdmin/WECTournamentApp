@@ -541,7 +541,24 @@ export default function AdminTournamentSetup() {
                   id="total-competitors"
                   type="number"
                   value={totalCompetitors}
-                  onChange={(e) => setTotalCompetitors(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      // Allow empty input temporarily
+                      return;
+                    }
+                    const num = parseInt(val);
+                    if (!isNaN(num) && num >= 2 && num <= 64) {
+                      setTotalCompetitors(num);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Only reset to default if field is empty on blur
+                    const val = e.target.value;
+                    if (val === '' || isNaN(parseInt(val))) {
+                      setTotalCompetitors(32);
+                    }
+                  }}
                   data-testid="input-total-competitors"
                   className="mt-1"
                   placeholder="Enter number of baristas"
@@ -948,7 +965,24 @@ export default function AdminTournamentSetup() {
                 id="total-competitors"
                 type="number"
                 value={totalCompetitors}
-                onChange={(e) => setTotalCompetitors(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    // Allow empty input temporarily
+                    return;
+                  }
+                  const num = parseInt(val);
+                  if (!isNaN(num) && num >= 2 && num <= 64) {
+                    setTotalCompetitors(num);
+                  }
+                }}
+                onBlur={(e) => {
+                  // Only reset to default if field is empty on blur
+                  const val = e.target.value;
+                  if (val === '' || isNaN(parseInt(val))) {
+                    setTotalCompetitors(32);
+                  }
+                }}
                 data-testid="input-total-competitors"
                 className="mt-1"
                 placeholder="Enter number of baristas"

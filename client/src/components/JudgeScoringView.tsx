@@ -1435,12 +1435,12 @@ export default function JudgeScoringView({
                     </label>
                   </div>
 
-                  {/* Latte Art Completion Status */}
-                  {isLatteArtComplete && !latteArtSubmitted && (
+                  {/* Latte Art Completion Status - Only show after submission */}
+                  {latteArtSubmitted && (
                     <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
                       <div className="flex items-center gap-2 text-green-700 dark:text-green-300 text-sm">
                         <CheckCircle2 className="h-4 w-4" />
-                        <span className="font-medium">Latte Art scoring complete</span>
+                        <span className="font-medium">Latte Art score completed</span>
                       </div>
                     </div>
                   )}
@@ -1607,12 +1607,12 @@ export default function JudgeScoringView({
                       </div>
                     </div>
 
-                    {/* Cappuccino Sensory Completion Status */}
-                    {isCappuccinoSensoryComplete && !cappuccinoSensorySubmitted && (
+                    {/* Cappuccino Sensory Completion Status - Only show after submission */}
+                    {cappuccinoSensorySubmitted && (
                       <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
                         <div className="flex items-center gap-2 text-green-700 dark:text-green-300 text-sm">
                           <CheckCircle2 className="h-4 w-4" />
-                          <span className="font-medium">Cappuccino sensory scoring complete</span>
+                          <span className="font-medium">Cappuccino sensory score completed</span>
                         </div>
                       </div>
                     )}
@@ -1816,12 +1816,12 @@ export default function JudgeScoringView({
                       </div>
                     </div>
 
-                    {/* Espresso Sensory Completion Status */}
-                    {isEspressoSensoryComplete && !espressoSensorySubmitted && (
+                    {/* Espresso Sensory Completion Status - Only show after submission */}
+                    {espressoSensorySubmitted && (
                       <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
                         <div className="flex items-center gap-2 text-green-700 dark:text-green-300 text-sm">
                           <CheckCircle2 className="h-4 w-4" />
-                          <span className="font-medium">Espresso sensory scoring complete</span>
+                          <span className="font-medium">Espresso sensory score completed</span>
                         </div>
                       </div>
                     )}
