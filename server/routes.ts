@@ -1265,6 +1265,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const match = await storage.getMatch(score.matchId);
       if (match) {
         io.to(`tournament:${match.tournamentId}`).emit("detailed-score:submitted", score);
+        
+        // Try to calculate and store heat scores if cup positions are assigned
+        // This allows leaderboard to show scores even before match is advanced
+        try {
+          const { calculateAndStoreHeatScores } = await import('./utils/scoreCalculation');
+          await calculateAndStoreHeatScores(match.id);
+        } catch (calcError) {
+          // Don't fail the request if score calculation fails
+          console.warn('Failed to calculate heat scores after detailed score submission:', calcError);
+        }
       }
 
       res.json(score);
@@ -1370,7 +1380,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set cup positions
       const result = await storage.setMatchCupPositions(matchId, positions, assignedById);
-
+      
+      // Calculate and store heat scores now that cup positions are assigned
+      try {
+        const { calculateAndStoreHeatScores } = await import('./utils/scoreCalculation');
+        await calculateAndStoreHeatScores(matchId);
+      } catch (calcError) {
+        console.warn('Failed to calculate heat scores after cup position assignment:', calcError);
+      }
+      
       // Emit to tournament room
       const updatedMatch = await storage.getMatch(matchId);
       if (updatedMatch) {
@@ -2567,6 +2585,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate next round
       const nextRound = currentRound + 1;
       
+      // Calculate and store heat scores for all matches in the completed round before generating next round
+      // This ensures scores are available for leaderboard and future calculations
+      try {
+        const { calculateAndStoreHeatScores } = await import('./utils/scoreCalculation');
+        console.log(`📊 Calculating heat scores for Round ${currentRound} before generating Round ${nextRound}...`);
+        for (const match of currentRoundMatches) {
+          try {
+            await calculateAndStoreHeatScores(match.id);
+          } catch (error) {
+            console.warn(`⚠️  Failed to calculate scores for match ${match.id}:`, error);
+          }
+        }
+        console.log(`✅ Heat scores calculated for Round ${currentRound}`);
+      } catch (error) {
+        console.warn(`⚠️  Failed to calculate heat scores for Round ${currentRound}:`, error);
+        // Don't fail next round generation if score calculation fails
+      }
+      
       // Additional safety check: If Round 3 exists and has 1 match, it's the final
       // Don't create Round 4 after Round 3 final
       if (nextRound === 4) {
@@ -3093,6 +3129,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // All judges have completed and cup positions assigned - calculate winner and complete the match
+        // First, ensure heat scores are calculated and stored for leaderboard
+        try {
+          const { calculateAndStoreHeatScores } = await import('./utils/scoreCalculation');
+          await calculateAndStoreHeatScores(runningMatch.id);
+        } catch (calcError) {
+          console.warn('Failed to calculate heat scores before winner calculation:', calcError);
+        }
+        
         const { calculateMatchWinner } = await import('./utils/winnerCalculation');
         const winnerResult = await calculateMatchWinner(runningMatch.id);
 

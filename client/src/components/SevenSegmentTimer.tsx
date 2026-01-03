@@ -75,15 +75,54 @@ export default function SevenSegmentTimer({ timeRemaining, isPaused = false }: S
           justify-content: center;
           align-items: center;
           padding: 0.5rem;
-          background: #f6f4ee;
+          background: #000000;
+          border: 4px solid #f2e6d3;
           border-radius: 0.5rem;
           min-height: 70px;
+          box-shadow: 
+            inset 0 0 20px rgba(0, 0, 0, 0.8),
+            0 0 10px rgba(246, 244, 238, 0.3),
+            0 4px 8px rgba(0, 0, 0, 0.5);
+          position: relative;
+        }
+
+        .seven-segment-timer::before {
+          content: '';
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: linear-gradient(135deg, #f2e6d3 0%, #f2e6d3 100%);
+          border-radius: 0.5rem;
+          z-index: -1;
+          opacity: 0.6;
         }
 
         @media (min-width: 640px) {
           .seven-segment-timer {
             padding: 0.75rem;
             min-height: 100px;
+            border-width: 5px;
+          }
+        }
+
+        /* Landscape mobile optimizations */
+        @media (max-height: 500px) and (orientation: landscape) {
+          .seven-segment-timer {
+            min-height: 60px;
+            padding: 0.5rem;
+            border-width: 3px;
+          }
+
+          .seven-segment-timer .clock {
+            height: 60px;
+          }
+
+          .seven-segment-timer .digit {
+            width: 30px;
+            height: 45px;
+            margin: 0 1px;
           }
         }
 
@@ -120,14 +159,20 @@ export default function SevenSegmentTimer({ timeRemaining, isPaused = false }: S
           background: #ff0000;
           border-radius: 2px;
           position: absolute;
-          opacity: 0.15;
+          opacity: 0.1;
           transition: opacity 0.2s;
+          filter: blur(0.5px);
         }
 
         .seven-segment-timer .digit .segment.on {
           opacity: 1;
-          box-shadow: 0 0 20px rgba(255, 0, 0, 0.8), 0 0 40px rgba(255, 0, 0, 0.4);
+          box-shadow: 
+            0 0 15px rgba(255, 0, 0, 0.9),
+            0 0 30px rgba(255, 0, 0, 0.6),
+            0 0 45px rgba(255, 0, 0, 0.3),
+            inset 0 0 10px rgba(255, 100, 100, 0.5);
           transition: opacity 0s;
+          filter: blur(0px);
         }
 
         .seven-segment-timer .separator {
@@ -139,7 +184,10 @@ export default function SevenSegmentTimer({ timeRemaining, isPaused = false }: S
           position: relative;
           margin: 0 4px;
           opacity: 1;
-          box-shadow: 0 0 12px rgba(255, 0, 0, 0.8);
+          box-shadow: 
+            0 0 10px rgba(255, 0, 0, 0.9),
+            0 0 20px rgba(255, 0, 0, 0.6),
+            inset 0 0 5px rgba(255, 100, 100, 0.5);
           animation: blink 1s infinite;
         }
 

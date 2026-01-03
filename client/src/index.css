@@ -1,6 +1,7 @@
 /* Mobile Optimizations */
 @import './styles/mobile.css';
 @import './styles/results-mobile.css';
+@import './styles/landscape-mobile.css';
 
 @tailwind base;
 @tailwind components;
@@ -19,7 +20,7 @@
   --elevate-2: rgba(0,0,0, .08);
 
   /* Core Colors - WEC Light Theme - Inverted Layer System */
-  --background: 40 30% 95%;  /* Light sand/cream background (Layer 1) */
+  --background: 40 30% 89%;  /* Light sand/cream background (Layer 1) - #f2e6d3 */
 
   --foreground: 17 59% 25%;  /* Dark cinnamon text for readability */
 
@@ -31,7 +32,7 @@
 
   --card-border: 40 50% 72%;  /* Sand beige borders */
 
-  --sidebar: 40 18% 94%;
+  --sidebar: 40 30% 89%;  /* #f2e6d3 */
 
   --sidebar-foreground: 25 30% 12%;
 
@@ -47,7 +48,7 @@
 
   --sidebar-ring: 17 59% 38%;
 
-  --popover: 40 18% 96%;
+  --popover: 40 30% 89%;  /* #f2e6d3 */
 
   --popover-foreground: 25 25% 15%;
 
@@ -65,7 +66,7 @@
 
   --secondary-foreground: 17 55% 25%;  /* Darker brown text for better contrast */
 
-  --muted: 40 12% 88%;  /* Slightly darker muted background */
+  --muted: 40 30% 89%;  /* #f2e6d3 - consistent beige background */
 
   --muted-foreground: 25 25% 35%;  /* Darker muted text for better readability */
 
@@ -84,7 +85,7 @@
 
   --info: 17 65% 35%;  /* More vibrant Cinnamon Brown for info states */
 
-  --input: 40 15% 95%;  /* Slightly tinted input background */
+  --input: 40 30% 89%;  /* #f2e6d3 - consistent beige background */
   --ring: 17 65% 35%;  /* More vibrant Cinnamon Brown for focus ring */
   --chart-1: 17 65% 35%;  /* Cinnamon Brown */
   --chart-2: 35 70% 48%;  /* Golden Brown */
@@ -1197,11 +1198,17 @@ img, video, iframe, embed, object {
   /* Ensure backgrounds don't interfere with text */
   :root .bg-gray-50,
   :root .bg-gray-100 {
-    background-color: hsl(40 12% 96%) !important; /* Use theme muted color */
+    background-color: #f2e6d3 !important; /* Consistent beige background */
   }
   
   :root .bg-gray-200 {
-    background-color: hsl(40 15% 92%) !important; /* Use theme muted color */
+    background-color: #f2e6d3 !important; /* Consistent beige background */
+  }
+  
+  /* Override slate backgrounds in light mode */
+  :root .bg-slate-50,
+  :root .bg-slate-100 {
+    background-color: #f2e6d3 !important; /* Consistent beige background */
   }
 }
 

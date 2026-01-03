@@ -83,7 +83,7 @@ router.get('/:id', async (req, res) => {
 
     // Get scores for this tournament's matches
     const matchIds = matchesData.map(m => m.id);
-    const scoresData = matchIds.length > 0
+    let scoresData = matchIds.length > 0
       ? await db
           .select({
             matchId: heatScores.matchId,
@@ -97,6 +97,34 @@ router.get('/:id', async (req, res) => {
           .leftJoin(users, eq(heatScores.judgeId, users.id))
           .where(inArray(heatScores.matchId, matchIds))
       : [];
+
+    // If no scores found but detailed scores exist, try to calculate them
+    if (scoresData.length === 0 && matchIds.length > 0) {
+      const { calculateAndStoreHeatScores } = await import('../utils/scoreCalculation');
+      // Try to calculate scores for matches that have detailed scores and cup positions
+      for (const matchId of matchIds) {
+        try {
+          await calculateAndStoreHeatScores(matchId);
+        } catch {
+          // Skip if calculation fails (cup positions not assigned, etc.)
+        }
+      }
+      // Re-fetch scores after calculation
+      scoresData = matchIds.length > 0
+        ? await db
+            .select({
+              matchId: heatScores.matchId,
+              judgeId: heatScores.judgeId,
+              competitorId: heatScores.competitorId,
+              segment: heatScores.segment,
+              score: heatScores.score,
+              judgeName: users.name
+            })
+            .from(heatScores)
+            .leftJoin(users, eq(heatScores.judgeId, users.id))
+            .where(inArray(heatScores.matchId, matchIds))
+        : [];
+    }
 
     // Get detailed scores for this tournament's matches  
     const detailedScoresData = matchIds.length > 0

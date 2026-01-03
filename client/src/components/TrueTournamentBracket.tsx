@@ -56,6 +56,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
     tournament: any;
     matches: Match[];
     participants: any[];
+    scores: Array<{ matchId: number; competitorId: number; score: number }>;
   }>({
     queryKey: [`/api/tournaments/${tournamentId}`],
     enabled: !!tournamentId,
@@ -144,14 +145,27 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
         };
       });
 
+      // Calculate scores for this match from tournament scores
+      const matchScores = tournamentData?.scores?.filter(s => s.matchId === match.id) || [];
+      const score1 = match.competitor1Id
+        ? matchScores
+            .filter(s => s.competitorId === match.competitor1Id)
+            .reduce((sum, s) => sum + (s.score || 0), 0)
+        : 0;
+      const score2 = match.competitor2Id
+        ? matchScores
+            .filter(s => s.competitorId === match.competitor2Id)
+            .reduce((sum, s) => sum + (s.score || 0), 0)
+        : 0;
+
       roundsMap.get(round)!.push({
         heatNumber: match.heatNumber || 0,
         station: stationName,
         competitor1: competitor1Name,
         competitor2: competitor2Name,
         winner: winnerName,
-        score1: 0, // Would need score data
-        score2: 0,
+        score1: score1 > 0 ? score1 : 0,
+        score2: score2 > 0 ? score2 : 0,
         judges,
       });
     });
@@ -428,7 +442,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
       </div>
       {/* Expanded Heat Dialog - Mobile Optimized */}
       <Dialog open={!!selectedHeat} onOpenChange={() => setSelectedHeat(null)}>
-        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto bg-[#ebe4ce] dark:bg-[#1f0e08]">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto bg-[#f2e6d3] dark:bg-[#1f0e08]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl md:text-2xl">
               <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-accent flex-shrink-0" />
@@ -491,7 +505,7 @@ const TrueTournamentBracket = ({ mode = 'results', tournamentId }: TrueTournamen
               </Card>
 
               {/* Match Info */}
-              <div className="bg-[#e8d5b7] dark:bg-muted/50 rounded-lg p-3 sm:p-4 border-2 border-primary/20 dark:border-primary/20">
+              <div className="bg-[#f2e6d3] dark:bg-muted/50 rounded-lg p-3 sm:p-4 border-2 border-primary/20 dark:border-primary/20">
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
                   <div>
                     <div className="text-[#9a4828] dark:text-muted-foreground text-xs mb-1 font-semibold">Heat Number</div>

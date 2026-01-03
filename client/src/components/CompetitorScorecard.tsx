@@ -66,7 +66,7 @@ export default function CompetitorScorecard({
 
   return (
     <Card className="w-full dark:bg-[hsl(17_59%_38%)] dark:border-[hsl(40_50%_72%)]" data-testid={`card-competitor-scorecard-${position}`}>
-      <CardHeader className={`pb-3 ${isWinner ? 'bg-chart-2/10 dark:bg-[hsl(40_50%_65%)]' : 'bg-slate-50 dark:bg-[hsl(17_59%_35%)]'}`}>
+      <CardHeader className={`pb-3 ${isWinner ? 'bg-chart-2/10 dark:bg-[hsl(40_50%_65%)]' : 'bg-[#f2e6d3] dark:bg-[hsl(17_59%_35%)]'}`}>
         <CardTitle className="flex items-center justify-between text-base sm:text-lg dark:text-[hsl(40_30%_95%)]">
           <div className="flex items-center gap-2">
             <span className={isWinner ? 'text-chart-2 dark:text-[hsl(40_50%_72%)]' : 'text-cinnamon-brown dark:text-[hsl(40_50%_72%)]'}>
@@ -88,7 +88,7 @@ export default function CompetitorScorecard({
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full border-collapse text-sm dark:text-[hsl(40_30%_90%)]">
             <thead>
-              <tr className="border-b bg-slate-50 dark:bg-[hsl(17_59%_35%)] dark:border-[hsl(40_50%_65%)]">
+              <tr className="border-b bg-[#f2e6d3] dark:bg-[hsl(17_59%_35%)] dark:border-[hsl(40_50%_65%)]">
                 <th className="p-2 text-left font-medium dark:text-[hsl(40_50%_72%)]">Judge</th>
                 <th className="p-2 text-left font-medium dark:text-[hsl(40_50%_72%)]">Beverage</th>
                 <th className="p-2 text-center font-medium dark:text-[hsl(40_50%_72%)]">Cup Code</th>

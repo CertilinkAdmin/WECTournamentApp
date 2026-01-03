@@ -124,6 +124,7 @@ export default function TournamentBracketWEC25({ tournamentId }: TournamentBrack
     tournament: any;
     matches: Match[];
     participants: any[];
+    scores: Array<{ matchId: number; competitorId: number; score: number }>;
   }>({
     queryKey: [`/api/tournaments/${currentTournamentId}`],
     enabled: !!currentTournamentId,
@@ -173,17 +174,41 @@ export default function TournamentBracketWEC25({ tournamentId }: TournamentBrack
           return station?.name || "A";
         };
 
+        // Calculate scores per match from tournament scores
+        const getMatchScores = (matchId: number) => {
+          const matchScores = tournamentData?.scores?.filter(s => s.matchId === matchId) || [];
+          const competitor1Id = roundMatches.find(m => m.id === matchId)?.competitor1Id;
+          const competitor2Id = roundMatches.find(m => m.id === matchId)?.competitor2Id;
+          
+          // Sum all scores for each competitor (scores are stored per segment/judge, so we sum them)
+          const score1 = competitor1Id 
+            ? matchScores
+                .filter(s => s.competitorId === competitor1Id)
+                .reduce((sum, s) => sum + (s.score || 0), 0)
+            : null;
+          const score2 = competitor2Id
+            ? matchScores
+                .filter(s => s.competitorId === competitor2Id)
+                .reduce((sum, s) => sum + (s.score || 0), 0)
+            : null;
+          
+          return { score1, score2 };
+        };
+
         const processedMatches = roundMatches
           .sort((a, b) => (a.heatNumber || 0) - (b.heatNumber || 0))
-          .map(match => ({
-            heatNumber: match.heatNumber || 0,
-            station: getStationName(match.stationId),
-            competitor1: getCompetitorName(match.competitor1Id),
-            competitor2: getCompetitorName(match.competitor2Id),
-            winner: match.winnerId ? getCompetitorName(match.winnerId) : undefined,
-            score1: null, // Would need score data from segments
-            score2: null,
-          }));
+          .map(match => {
+            const { score1, score2 } = getMatchScores(match.id);
+            return {
+              heatNumber: match.heatNumber || 0,
+              station: getStationName(match.stationId),
+              competitor1: getCompetitorName(match.competitor1Id),
+              competitor2: getCompetitorName(match.competitor2Id),
+              winner: match.winnerId ? getCompetitorName(match.winnerId) : undefined,
+              score1: score1 !== null && score1 > 0 ? score1 : null,
+              score2: score2 !== null && score2 > 0 ? score2 : null,
+            };
+          });
 
         const roundTitle = roundNum === 1 ? 'Round 1' : 
                           roundNum === 2 ? 'Round 2' : 
@@ -295,7 +320,7 @@ export default function TournamentBracketWEC25({ tournamentId }: TournamentBrack
                       transformOrigin: 'left center',
                     }}
                   >
-                    <Card className="bg-gradient-to-br from-[#DECCA7] to-[#F5F0E8] border-2 border-[#994D27] shadow-xl">
+                    <Card className="bg-gradient-to-br from-[#f2e6d3] to-[#f2e6d3] border-2 border-[#994D27] shadow-xl">
                       <CardContent className="p-4">
                         <div className="text-center mb-4 pb-2 border-b-2 border-[#994D27]">
                           <h2 className="text-xl font-bold text-[#994D27] mb-1">{round.title}</h2>

@@ -20,9 +20,12 @@ import {
   Award,
   Target,
   Activity,
-  ArrowLeft
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
-import type { Station, Match, User, HeatSegment, HeatJudge } from '@shared/schema';
+import type { Station, Match, User, HeatSegment, HeatJudge, JudgeDetailedScore, MatchCupPosition } from '@shared/schema';
+import MiniJudgeScorecard from '@/components/MiniJudgeScorecard';
 
 export default function FullStationPage() {
   const { stationId } = useParams<{ stationId: string }>();
@@ -90,7 +93,7 @@ export default function FullStationPage() {
       : 0;
 
     // Get current round
-    const rounds = [...new Set(stationMatches.map(m => m.round))].sort((a, b) => a - b);
+    const rounds = Array.from(new Set(stationMatches.map(m => m.round))).sort((a, b) => a - b);
     const currentRound = rounds.length > 0 ? Math.max(...rounds) : 1;
     const currentRoundMatches = stationMatches.filter(m => m.round === currentRound);
     const currentRoundCompleted = currentRoundMatches.filter(m => m.status === 'DONE').length;
@@ -221,7 +224,7 @@ export default function FullStationPage() {
       </Card>
 
       {/* Statistics Dashboard */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 landscape:grid-cols-3 landscape:sm:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between min-h-[3.5rem] sm:min-h-[4rem]">
@@ -423,7 +426,7 @@ export default function FullStationPage() {
 
         {/* Heats Tab */}
         <TabsContent value="heats" className="space-y-4 mt-4 sm:mt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 landscape:grid-cols-2 landscape:sm:grid-cols-3 gap-3 sm:gap-4">
             {stationMatches
               .sort((a, b) => a.heatNumber - b.heatNumber)
               .map((match) => (
@@ -514,10 +517,54 @@ function UpcomingHeatCard({ match, getUserById }: { match: Match; getUserById: (
   );
 }
 
-function HeatCard({ match, getUserById }: { match: Match; getUserById: (id: number | null | undefined) => User | null }) {
+function HeatCard({ match, getUserById }: { match: Match & { competitor1Score?: number; competitor2Score?: number }; getUserById: (id: number | null | undefined) => User | null }) {
   const comp1 = getUserById(match.competitor1Id);
   const comp2 = getUserById(match.competitor2Id);
   const winner = getUserById(match.winnerId);
+  const [showScorecards, setShowScorecards] = useState(false);
+  const [selectedCompetitor, setSelectedCompetitor] = useState<'comp1' | 'comp2'>('comp1');
+
+  // Get scores from match object (already calculated by API)
+  const comp1Score = (match as any).competitor1Score;
+  const comp2Score = (match as any).competitor2Score;
+
+  // Fetch detailed scores for this match
+  const { data: detailedScores = [] } = useQuery<JudgeDetailedScore[]>({
+    queryKey: [`/api/matches/${match.id}/detailed-scores`],
+    enabled: !!match.id && match.status === 'DONE',
+  });
+
+  // Fetch cup positions for this match
+  const { data: cupPositions = [] } = useQuery<MatchCupPosition[]>({
+    queryKey: [`/api/matches/${match.id}/cup-positions`],
+    enabled: !!match.id && match.status === 'DONE',
+  });
+
+  // Fetch participants for cup codes
+  const { data: participants = [] } = useQuery<any[]>({
+    queryKey: ['/api/tournaments', match.tournamentId, 'participants'],
+    enabled: !!match.tournamentId,
+  });
+
+  // Determine competitor positions (left/right) based on cup positions
+  const competitorPositions = useMemo<{ comp1Position: 'left' | 'right'; comp2Position: 'left' | 'right' }>(() => {
+    if (cupPositions.length === 0 || !comp1 || !comp2) {
+      return { comp1Position: 'left', comp2Position: 'right' };
+    }
+
+    const comp1Participant = participants.find(p => p.userId === match.competitor1Id);
+    const comp2Participant = participants.find(p => p.userId === match.competitor2Id);
+    const comp1CupCode = comp1Participant?.cupCode;
+    const comp2CupCode = comp2Participant?.cupCode;
+
+    const leftPosition = cupPositions.find(p => p.position === 'left');
+    const rightPosition = cupPositions.find(p => p.position === 'right');
+
+    const comp1Position: 'left' | 'right' = leftPosition?.cupCode === comp1CupCode ? 'left' : 'right';
+    const comp2Position: 'left' | 'right' = comp1Position === 'left' ? 'right' : 'left';
+
+    return { comp1Position, comp2Position };
+  }, [cupPositions, comp1, comp2, match.competitor1Id, match.competitor2Id, participants]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -528,9 +575,11 @@ function HeatCard({ match, getUserById }: { match: Match; getUserById: (id: numb
     }
   };
 
+  const hasScorecards = detailedScores.length > 0 && cupPositions.length > 0;
+
   return (
-    <Card className={getStatusColor(match.status)}>
-      <CardContent className="p-3 sm:p-4 min-h-[8rem]">
+    <Card className={`${getStatusColor(match.status)} heat-card-landscape`}>
+      <CardContent className="p-3 sm:p-4 landscape-mobile-compact">
         <div className="flex items-center justify-between mb-2 sm:mb-3">
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
@@ -539,9 +588,33 @@ function HeatCard({ match, getUserById }: { match: Match; getUserById: (id: numb
           <Badge variant="outline" className="text-xs flex-shrink-0">R{match.round}</Badge>
         </div>
         <div className="space-y-1.5 sm:space-y-2">
-          <div className="text-xs sm:text-sm font-medium truncate">{comp1?.name || 'TBD'}</div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <span className="text-xs sm:text-sm font-medium truncate">{comp1?.name || 'TBD'}</span>
+              {winner?.id === match.competitor1Id && (
+                <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 flex-shrink-0 drop-shadow-lg" />
+              )}
+            </div>
+            {comp1Score !== undefined && comp1Score !== null && (
+              <div className="text-base sm:text-lg font-bold text-primary bg-primary/20 px-2.5 py-1 rounded-full flex-shrink-0 border border-primary/30">
+                {comp1Score}
+              </div>
+            )}
+          </div>
           <div className="text-center text-xs text-muted-foreground">VS</div>
-          <div className="text-xs sm:text-sm font-medium truncate">{comp2?.name || 'TBD'}</div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <span className="text-xs sm:text-sm font-medium truncate">{comp2?.name || 'TBD'}</span>
+              {winner?.id === match.competitor2Id && (
+                <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 flex-shrink-0 drop-shadow-lg" />
+              )}
+            </div>
+            {comp2Score !== undefined && comp2Score !== null && (
+              <div className="text-base sm:text-lg font-bold text-primary bg-primary/20 px-2.5 py-1 rounded-full flex-shrink-0 border border-primary/30">
+                {comp2Score}
+              </div>
+            )}
+          </div>
         </div>
         {winner && (
           <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t">
@@ -551,9 +624,87 @@ function HeatCard({ match, getUserById }: { match: Match; getUserById: (id: numb
             </Badge>
           </div>
         )}
-        <div className="mt-2">
+        <div className="mt-2 flex items-center justify-between">
           <Badge variant="secondary" className="text-xs">{match.status}</Badge>
+          {hasScorecards && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-6 px-2"
+              onClick={() => setShowScorecards(!showScorecards)}
+            >
+              {showScorecards ? (
+                <>
+                  <ChevronUp className="h-3 w-3 mr-1" />
+                  Hide Scores
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3 mr-1" />
+                  View Scores
+                </>
+              )}
+            </Button>
+          )}
         </div>
+
+        {/* Mini Scorecards */}
+        {showScorecards && hasScorecards && (
+          <div className="mt-3 pt-3 border-t">
+            <Tabs value={selectedCompetitor} onValueChange={(value) => setSelectedCompetitor(value as 'comp1' | 'comp2')} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-3 h-8">
+                <TabsTrigger value="comp1" className="text-xs">
+                  {comp1?.name || 'Competitor 1'}
+                </TabsTrigger>
+                <TabsTrigger value="comp2" className="text-xs" disabled={!comp2}>
+                  {comp2?.name || 'Competitor 2'}
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Competitor 1 Scorecards */}
+              <TabsContent value="comp1" className="mt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {detailedScores.map((score, idx) => {
+                    const cupCode = competitorPositions.comp1Position === 'left' 
+                      ? (score.leftCupCode || '') 
+                      : (score.rightCupCode || '');
+                    return (
+                      <MiniJudgeScorecard
+                        key={idx}
+                        judgeScore={score}
+                        competitorCupCode={cupCode}
+                        competitorPosition={competitorPositions.comp1Position}
+                        competitorName={comp1?.name || 'Competitor 1'}
+                      />
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              {/* Competitor 2 Scorecards */}
+              {comp2 && (
+                <TabsContent value="comp2" className="mt-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {detailedScores.map((score, idx) => {
+                      const cupCode = competitorPositions.comp2Position === 'left' 
+                        ? (score.leftCupCode || '') 
+                        : (score.rightCupCode || '');
+                      return (
+                        <MiniJudgeScorecard
+                          key={idx}
+                          judgeScore={score}
+                          competitorCupCode={cupCode}
+                          competitorPosition={competitorPositions.comp2Position}
+                          competitorName={comp2.name}
+                        />
+                      );
+                    })}
+                  </div>
+                </TabsContent>
+              )}
+            </Tabs>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

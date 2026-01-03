@@ -10,6 +10,8 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "db:clear-test-data": "tsx scripts/clear-all-test-data.ts",
+    "db:recalculate-scores": "tsx scripts/recalculate-round1-scores.ts",
+    "db:recalculate-round2": "tsx scripts/recalculate-round2-scores.ts",
     "opux:diagnostic": "tsx scripts/opux-diagnostic.ts"
   },
   "dependencies": {

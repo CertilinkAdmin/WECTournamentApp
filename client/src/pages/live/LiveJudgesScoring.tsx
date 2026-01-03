@@ -226,6 +226,41 @@ export default function LiveJudgesScoring() {
     return matchesByRound[selectedRound] || [];
   }, [selectedRound, matchesByRound]);
 
+  // Fetch global lock status for all matches in the selected round to determine if all judges have submitted
+  const { data: allMatchesLockStatus = {} } = useQuery<Record<number, {
+    isLocked: boolean;
+    allSegmentsEnded: boolean;
+    allJudgesSubmitted: boolean;
+  }>>({
+    queryKey: ['/api/matches/global-lock-status', selectedRound],
+    queryFn: async () => {
+      if (!selectedRound || roundMatches.length === 0) return {};
+      
+      // Fetch lock status for all matches in the round
+      const statusPromises = roundMatches.map(async (match) => {
+        try {
+          const response = await fetch(`/api/matches/${match.id}/global-lock-status`);
+          if (!response.ok) return { matchId: match.id, status: null };
+          const status = await response.json();
+          return { matchId: match.id, status };
+        } catch {
+          return { matchId: match.id, status: null };
+        }
+      });
+      
+      const results = await Promise.all(statusPromises);
+      const statusMap: Record<number, any> = {};
+      results.forEach(({ matchId, status }) => {
+        if (status) {
+          statusMap[matchId] = status;
+        }
+      });
+      return statusMap;
+    },
+    enabled: !!selectedRound && roundMatches.length > 0,
+    refetchInterval: 5000, // Poll every 5 seconds to detect when all judges submit
+  });
+
   // Reset selected heat when round changes
   React.useEffect(() => {
     setSelectedHeatId(null);
@@ -428,11 +463,18 @@ export default function LiveJudgesScoring() {
                   <SelectValue placeholder="Select heat..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {roundMatches.map((match) => (
-                    <SelectItem key={match.id} value={match.id.toString()}>
-                      Heat {match.heatNumber} - {match.status}
-                    </SelectItem>
-                  ))}
+                  {roundMatches.map((match) => {
+                    // Check if all judges have submitted for this heat
+                    const lockStatus = allMatchesLockStatus[match.id];
+                    const allJudgesSubmitted = lockStatus?.allJudgesSubmitted || false;
+                    const heatStatus = allJudgesSubmitted ? 'done' : 'pending';
+                    
+                    return (
+                      <SelectItem key={match.id} value={match.id.toString()}>
+                        Heat {match.heatNumber} - {heatStatus}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

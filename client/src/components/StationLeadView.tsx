@@ -1001,7 +1001,7 @@ export default function StationLeadView() {
   }, [stationTimingAlert, toast]);
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 dark:bg-background bg-[#ecdcbb]">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 dark:bg-background bg-[#f2e6d3]">
       <Card className="bg-[var(--brand-light-sand)]/80 dark:bg-primary/10 border border-[var(--brand-light-sand)]/70 shadow-sm">
         <CardHeader className="flex flex-col space-y-1.5 p-4 sm:p-6 dark:bg-transparent bg-[#bd490f]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-[#9a4828]">
@@ -1014,7 +1014,7 @@ export default function StationLeadView() {
               <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide text-center">
                 {currentSegmentName}
               </div>
-              <div className="rounded-lg p-1.5 sm:p-2 border-2 border-primary/50 shadow-lg shadow-primary/20 w-full sm:w-auto max-w-[200px] sm:max-w-none bg-[#f6f4ee]">
+              <div className="rounded-lg p-1.5 sm:p-2 w-full sm:w-auto max-w-[200px] sm:max-w-none">
                 <SevenSegmentTimer 
                   timeRemaining={currentSegmentTimeRemaining} 
                   isPaused={pausedSegmentId === runningSegment?.id}
@@ -1172,7 +1172,7 @@ export default function StationLeadView() {
                   competitor: competitor2?.name || "Waiting",
                 }
               ].map((slot) => (
-                <div key={slot.label} className="rounded-xl border border-primary/30 dark:bg-black/40 p-3 sm:p-4 space-y-2 sm:space-y-3 min-h-[3rem] sm:min-h-[3.5rem] shadow-sm bg-[#ecdcbb]">
+                <div key={slot.label} className="rounded-xl border border-primary/30 dark:bg-black/40 p-3 sm:p-4 space-y-2 sm:space-y-3 min-h-[3rem] sm:min-h-[3.5rem] shadow-sm bg-[#f2e6d3]">
                   <div className="flex items-center justify-between text-[10px] sm:text-xs text-foreground/70 dark:text-white/70">
                     <span>{slot.label}</span>
                     <Coffee className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -1201,7 +1201,7 @@ export default function StationLeadView() {
                 return (
                   <div
                     key={segmentCode}
-                    className="rounded-xl border p-3 sm:p-4 dark:bg-black/30 min-h-[3rem] sm:min-h-[3.5rem] shadow-sm border-[var(--brand-light-sand)]/70 bg-[#ecdcbb]"
+                    className="rounded-xl border p-3 sm:p-4 dark:bg-black/30 min-h-[3rem] sm:min-h-[3.5rem] shadow-sm border-[var(--brand-light-sand)]/70 bg-[#f2e6d3]"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0 flex-1">

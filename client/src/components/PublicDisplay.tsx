@@ -870,7 +870,7 @@ export default function PublicDisplay() {
         .main-card {
           width: 100%;
           height: 100%;
-          background: linear-gradient(135deg, #DECCA7 0%, #E8D5B7 50%, #F0E0C7 100%);
+          background: linear-gradient(135deg, #f2e6d3 0%, #f2e6d3 50%, #f2e6d3 100%);
           border-radius: 12px;
           position: relative;
           overflow: hidden;

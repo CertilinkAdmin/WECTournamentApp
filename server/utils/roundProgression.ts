@@ -193,6 +193,27 @@ export async function completeRound(
     throw new Error(`Round ${round} is not complete. All matches must be DONE.`);
   }
   
+  // Calculate and store heat scores for all matches in this round before computing round scores
+  // This ensures scores are available for leaderboard and round completion calculations
+  try {
+    const { calculateAndStoreHeatScores } = await import('./scoreCalculation');
+    const matches = await storage.getTournamentMatches(tournamentId);
+    const roundMatches = matches.filter(m => m.round === round);
+    
+    console.log(`📊 Calculating heat scores for Round ${round} (${roundMatches.length} matches)...`);
+    for (const match of roundMatches) {
+      try {
+        await calculateAndStoreHeatScores(match.id);
+      } catch (error) {
+        console.warn(`⚠️  Failed to calculate scores for match ${match.id}:`, error);
+      }
+    }
+    console.log(`✅ Heat scores calculated for Round ${round}`);
+  } catch (error) {
+    console.warn(`⚠️  Failed to calculate heat scores for Round ${round}:`, error);
+    // Don't fail round completion if score calculation fails
+  }
+  
   const roundType = determineRoundType(round, tournament.totalRounds);
   const scores = await computeRoundScores(tournamentId, round);
   
