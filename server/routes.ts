@@ -3187,6 +3187,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (pendingMatches.length > 0) {
         // Start the next heat in queue
         const nextPendingMatch = pendingMatches[0];
+        
+        // CRITICAL: Ensure segments exist and are reset for the next heat
+        // Check if segments exist for this match
+        const existingSegments = await storage.getMatchSegments(nextPendingMatch.id);
+        const requiredSegments = ['DIAL_IN', 'CAPPUCCINO', 'ESPRESSO'];
+        const hasAllSegments = requiredSegments.every(segmentType => 
+          existingSegments.some(s => s.segment === segmentType)
+        );
+
+        if (!hasAllSegments) {
+          // Delete any existing segments (in case of partial creation)
+          for (const segment of existingSegments) {
+            await db.delete(heatSegments).where(eq(heatSegments.id, segment.id));
+          }
+
+          // Get round times for this match
+          const tournament = await storage.getTournament(nextPendingMatch.tournamentId);
+          let roundTimes = await storage.getRoundTimes(nextPendingMatch.tournamentId, nextPendingMatch.round);
+          if (!roundTimes) {
+            roundTimes = await storage.setRoundTimes({
+              tournamentId: nextPendingMatch.tournamentId,
+              round: nextPendingMatch.round,
+              dialInMinutes: 10,
+              cappuccinoMinutes: 3,
+              espressoMinutes: 2,
+              totalMinutes: 15
+            });
+          }
+
+          // Create fresh segments with IDLE status
+          await storage.createHeatSegment({
+            matchId: nextPendingMatch.id,
+            segment: 'DIAL_IN',
+            status: 'IDLE',
+            plannedMinutes: roundTimes.dialInMinutes
+          });
+          await storage.createHeatSegment({
+            matchId: nextPendingMatch.id,
+            segment: 'CAPPUCCINO',
+            status: 'IDLE',
+            plannedMinutes: roundTimes.cappuccinoMinutes
+          });
+          await storage.createHeatSegment({
+            matchId: nextPendingMatch.id,
+            segment: 'ESPRESSO',
+            status: 'IDLE',
+            plannedMinutes: roundTimes.espressoMinutes
+          });
+          
+          console.log(`✅ Created/reset segments for Heat ${nextPendingMatch.heatNumber} (Match ${nextPendingMatch.id})`);
+        } else {
+          // Reset existing segments to IDLE status (in case they were in a different state)
+          for (const segmentType of requiredSegments) {
+            const segment = existingSegments.find(s => s.segment === segmentType);
+            if (segment && segment.status !== 'IDLE') {
+              await storage.updateHeatSegment(segment.id, {
+                status: 'IDLE',
+                startTime: null,
+                endTime: null,
+                leftCupCode: null,
+                rightCupCode: null
+              });
+            }
+          }
+          console.log(`✅ Reset segments to IDLE for Heat ${nextPendingMatch.heatNumber} (Match ${nextPendingMatch.id})`);
+        }
+
         nextMatch = await storage.updateMatch(nextPendingMatch.id, {
           status: 'READY',
           startTime: new Date()
