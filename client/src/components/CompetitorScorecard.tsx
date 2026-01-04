@@ -65,7 +65,7 @@ export default function CompetitorScorecard({
   const totalScore = judgeScores.reduce((sum, score) => sum + score.subtotal, 0);
 
   return (
-    <Card className="w-full dark:bg-[hsl(17_59%_38%)] dark:border-[hsl(40_50%_72%)]" data-testid={`card-competitor-scorecard-${position}`}>
+    <Card className="w-full bg-[#f2e6d3] dark:bg-[hsl(17_59%_38%)] border border-primary/20 dark:border-[hsl(40_50%_72%)]" data-testid={`card-competitor-scorecard-${position}`}>
       <CardHeader className={`pb-3 ${isWinner ? 'bg-chart-2/10 dark:bg-[hsl(40_50%_65%)]' : 'bg-[#f2e6d3] dark:bg-[hsl(17_59%_35%)]'}`}>
         <CardTitle className="flex items-center justify-between text-base sm:text-lg dark:text-[hsl(40_30%_95%)]">
           <div className="flex items-center gap-2">
@@ -83,12 +83,12 @@ export default function CompetitorScorecard({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4 dark:text-[hsl(40_30%_95%)]">
+      <CardContent className="p-3 sm:p-4 lg:p-6 dark:text-[hsl(40_30%_95%)]">
         {/* Desktop View - Table */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto -mx-4 px-4">
           <table className="w-full border-collapse text-sm dark:text-[hsl(40_30%_90%)]">
             <thead>
-              <tr className="border-b bg-[#f2e6d3] dark:bg-[hsl(17_59%_35%)] dark:border-[hsl(40_50%_65%)]">
+              <tr className="border-b bg-[#f2e6d3] dark:bg-[hsl(17_59%_35%)] border-primary/20 dark:border-[hsl(40_50%_65%)]">
                 <th className="p-2 text-left font-medium dark:text-[hsl(40_50%_72%)]">Judge</th>
                 <th className="p-2 text-left font-medium dark:text-[hsl(40_50%_72%)]">Beverage</th>
                 <th className="p-2 text-center font-medium dark:text-[hsl(40_50%_72%)]">Cup Code</th>
@@ -129,8 +129,8 @@ export default function CompetitorScorecard({
         {/* Mobile View - Cards */}
         <div className="md:hidden space-y-3">
           {judgeScores.map((score, idx) => (
-            <Card key={idx} className="border-l-4 border-l-golden" data-testid={`card-judge-${idx}`}>
-              <CardContent className="p-3 space-y-2">
+            <Card key={idx} className="border-l-4 border-l-golden bg-[#f2e6d3] dark:bg-card" data-testid={`card-judge-${idx}`}>
+              <CardContent className="p-3 sm:p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-semibold text-sm">{score.judgeName}</div>
@@ -141,26 +141,26 @@ export default function CompetitorScorecard({
                   </Badge>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex justify-between">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                  <div className="flex justify-between items-center gap-2">
                     <span className="text-muted-foreground">Visual:</span>
-                    <span className="font-bold text-primary">{score.visualLatteArt || '—'}</span>
+                    <span className="font-bold text-primary text-right">{score.visualLatteArt || '—'}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center gap-2">
                     <span className="text-muted-foreground">Taste:</span>
-                    <span className="font-bold text-primary">{score.taste || '—'}</span>
+                    <span className="font-bold text-primary text-right">{score.taste || '—'}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center gap-2">
                     <span className="text-muted-foreground">Tactile:</span>
-                    <span className="font-bold text-primary">{score.tactile || '—'}</span>
+                    <span className="font-bold text-primary text-right">{score.tactile || '—'}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center gap-2">
                     <span className="text-muted-foreground">Flavour:</span>
-                    <span className="font-bold text-primary">{score.flavour || '—'}</span>
+                    <span className="font-bold text-primary text-right">{score.flavour || '—'}</span>
                   </div>
-                  <div className="flex justify-between col-span-2">
-                    <span className="text-muted-foreground">Overall:</span>
-                    <span className="font-bold text-primary">{score.overall || '—'}</span>
+                  <div className="flex justify-between items-center gap-2 col-span-2 pt-1 border-t border-primary/10">
+                    <span className="text-muted-foreground font-semibold">Overall:</span>
+                    <span className="font-bold text-primary text-right">{score.overall || '—'}</span>
                   </div>
                 </div>
 

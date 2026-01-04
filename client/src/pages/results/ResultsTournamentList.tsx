@@ -70,13 +70,9 @@ export default function ResultsTournamentList() {
       // Navigate to overview page which shows rounds cards
       navigate(`/results/${slug}`);
     } else {
-      // Fallback: For WEC 2025 Milano, use WEC2025 slug
-      if (tournament.name.includes('2025') && tournament.name.toLowerCase().includes('milano')) {
-        navigate(`/results/WEC2025`);
-      } else {
-        // Fallback to WEC2025 if slug can't be extracted
-        navigate(`/results/WEC2025`);
-      }
+      // If no slug can be extracted, use the tournament name as slug (lowercase, hyphenated)
+      const nameSlug = tournament.name.toLowerCase().replace(/\s+/g, '-');
+      navigate(`/results/${nameSlug}`);
     }
     setDropdownOpen(false);
   };

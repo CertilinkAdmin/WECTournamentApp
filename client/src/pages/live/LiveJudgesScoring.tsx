@@ -299,6 +299,76 @@ export default function LiveJudgesScoring() {
     enabled: !!activatedMatchId,
   });
 
+  // Fetch scores for selected heat to check judge completion status
+  const { data: selectedHeatScores = [] } = useQuery<JudgeDetailedScore[]>({
+    queryKey: [`/api/matches/${selectedHeatId}/detailed-scores`],
+    queryFn: async () => {
+      if (!selectedHeatId) return [];
+      const response = await fetch(`/api/matches/${selectedHeatId}/detailed-scores`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!selectedHeatId,
+    refetchInterval: 5000, // Poll every 5 seconds to detect completion
+  });
+
+  // Check if each judge has completed their scorecard for the selected heat
+  const judgeCompletionStatus = useMemo(() => {
+    if (!selectedHeatId || !selectedHeatScores.length) return {};
+    
+    const status: Record<number, boolean> = {};
+    const matchJudges = allMatchJudges[selectedHeatId] || [];
+    
+    matchJudges.forEach(({ judgeId, role }) => {
+      const judge = approvedJudges.find(j => j.user.id === judgeId);
+      if (!judge) return;
+      
+      const judgeScores = selectedHeatScores.filter(
+        score => score.judgeName === judge.user.name
+      );
+      
+      if (judgeScores.length === 0) {
+        status[judgeId] = false;
+        return;
+      }
+      
+      // Check if latte art is submitted (required for all judges)
+      const latteArtSubmitted = judgeScores.some(
+        score => score.visualLatteArt === 'left' || score.visualLatteArt === 'right'
+      );
+      
+      if (!latteArtSubmitted) {
+        status[judgeId] = false;
+        return;
+      }
+      
+      // Check sensory scoring based on judge role
+      if (role === 'CAPPUCCINO') {
+        const cappuccinoSensoryComplete = judgeScores.some(score =>
+          score.sensoryBeverage === 'Cappuccino' &&
+          (score.taste === 'left' || score.taste === 'right') &&
+          (score.tactile === 'left' || score.tactile === 'right') &&
+          (score.flavour === 'left' || score.flavour === 'right') &&
+          (score.overall === 'left' || score.overall === 'right')
+        );
+        status[judgeId] = cappuccinoSensoryComplete;
+      } else if (role === 'ESPRESSO') {
+        const espressoSensoryComplete = judgeScores.some(score =>
+          score.sensoryBeverage === 'Espresso' &&
+          (score.taste === 'left' || score.taste === 'right') &&
+          (score.tactile === 'left' || score.tactile === 'right') &&
+          (score.flavour === 'left' || score.flavour === 'right') &&
+          (score.overall === 'left' || score.overall === 'right')
+        );
+        status[judgeId] = espressoSensoryComplete;
+      } else {
+        status[judgeId] = false;
+      }
+    });
+    
+    return status;
+  }, [selectedHeatId, selectedHeatScores, allMatchJudges, approvedJudges]);
+
   // Fetch global lock status for activated match
   const { data: globalLockStatus } = useQuery<{
     isLocked: boolean;
@@ -524,16 +594,27 @@ export default function LiveJudgesScoring() {
                       No judges assigned to this heat
                     </div>
                   ) : (
-                    approvedJudges.map((judge) => (
-                      <SelectItem key={judge.user.id} value={judge.user.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <span>{judge.user.name}</span>
-                          <Badge variant={judge.role === 'ESPRESSO' ? 'default' : 'secondary'} className="text-xs">
-                            {judge.role}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))
+                    approvedJudges.map((judge) => {
+                      const isComplete = judgeCompletionStatus[judge.user.id] || false;
+                      return (
+                        <SelectItem key={judge.user.id} value={judge.user.id.toString()}>
+                          <div className="flex items-center justify-between w-full gap-2">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className={isComplete ? 'line-through opacity-60' : ''}>{judge.user.name}</span>
+                              <Badge variant={judge.role === 'ESPRESSO' ? 'default' : 'secondary'} className="text-xs flex-shrink-0">
+                                {judge.role}
+                              </Badge>
+                            </div>
+                            {isComplete && (
+                              <Badge variant="outline" className="bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 text-xs flex-shrink-0">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Complete
+                              </Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })
                   )}
                 </SelectContent>
               </Select>

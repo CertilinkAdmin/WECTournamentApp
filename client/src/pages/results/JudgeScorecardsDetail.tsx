@@ -72,40 +72,10 @@ const JudgeScorecardsDetail: React.FC = () => {
         const wecTournament = findTournamentBySlug(tournaments, tournament);
         
         if (!wecTournament) {
-          // Fallback: try to find by name containing 'wec' or 'world espresso'
-          const fallbackTournament = tournaments.find((t: any) => 
-            t.name?.toLowerCase().includes('wec') || 
-            t.name?.toLowerCase().includes('world espresso') ||
-            t.name?.toLowerCase().includes('2025')
-          );
-          
-          if (!fallbackTournament) {
-            console.error('No tournament found. Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
-            throw new Error(`Tournament not found. Looking for: ${tournament}. Available: ${tournaments.map((t: any) => t.name).join(', ')}`);
-          }
-          
-          const tournamentId = fallbackTournament.id;
-          console.log('Using fallback tournament:', fallbackTournament.name, 'ID:', tournamentId);
-          const response = await fetch(`/api/tournaments/${tournamentId}`);
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Failed to fetch tournament data:', errorText);
-            throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}`);
-          }
-          
-          const data = await response.json();
-          console.log('Fetched tournament data:', { 
-            tournament: data.tournament?.name, 
-            matchesCount: data.matches?.length, 
-            detailedScoresCount: data.detailedScores?.length 
-          });
-          
-          const transformedData = transformTournamentData(data);
-          setTournamentData(transformedData);
-          return;
+          console.error('No tournament found. Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
+          throw new Error(`Tournament not found for slug: ${tournament}. Available tournaments: ${tournaments.map((t: any) => t.name).join(', ')}`);
         }
-
+        
         const tournamentId = wecTournament.id;
         console.log('Using tournament:', wecTournament.name, 'ID:', tournamentId);
         const response = await fetch(`/api/tournaments/${tournamentId}`);

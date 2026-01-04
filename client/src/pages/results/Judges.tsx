@@ -72,8 +72,8 @@ const Judges: React.FC<JudgesProps> = () => {
           tournamentId = tournament?.id || null;
         }
         
-        // Fallback: try to find WEC 2025 Milano if no slug provided or not found
-        if (!tournamentId) {
+        // Only fallback if no slug was provided at all
+        if (!tournamentId && !tournamentSlug) {
           const wec2025 = tournaments.find((t: any) => 
             t.name === 'World Espresso Championships 2025 Milano'
           );
@@ -81,7 +81,9 @@ const Judges: React.FC<JudgesProps> = () => {
         }
         
         if (!tournamentId) {
-          console.warn('Tournament not found, using fallback judges');
+          console.error('Tournament not found for slug:', tournamentSlug);
+          console.error('Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
+          setError(`Tournament not found for slug: ${tournamentSlug || 'none'}`);
           setTournamentData(null);
           setLoading(false);
           return;

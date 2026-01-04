@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink, Coffee, ArrowRight, AlertTriangle, Loader2, Edit2, Save, X } from "lucide-react";
+import { MapPin, Users, Clock, Play, Square, Pause, CheckCircle2, Info, ChevronDown, ExternalLink, Coffee, ArrowRight, AlertTriangle, Loader2, Edit2, Save, X, Trophy } from "lucide-react";
 import type { Station, Match, HeatSegment, User } from "@shared/schema";
 import { getMainStationsForTournament, normalizeStationName } from '@/utils/stationUtils';
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -131,6 +131,17 @@ export default function StationLeadView() {
   });
 
   const isCurrentRoundComplete = roundCompletionStatus?.isComplete ?? false;
+
+  // Detect if we're in the final round
+  // Final round = only 1 match in current round with 2 competitors
+  const isFinalRound = React.useMemo(() => {
+    if (!currentRound || allMatches.length === 0) return false;
+    const matchesWithStations = allMatches.filter(m => m.stationId !== null);
+    const currentRoundMatches = matchesWithStations.filter(m => m.round === currentRound);
+    return currentRoundMatches.length === 1 && 
+           currentRoundMatches[0].competitor1Id !== null && 
+           currentRoundMatches[0].competitor2Id !== null;
+  }, [currentRound, allMatches]);
 
   // Filter matches for this station, prioritizing current round matches
   const stationMatches = allMatches.filter(m => m.stationId === selectedStation);
@@ -569,10 +580,23 @@ export default function StationLeadView() {
       queryClient.invalidateQueries({ queryKey: ['/api/stations'] });
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${currentTournamentId}/participants`] });
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] }); // Refresh tournament list
-      toast({
-        title: "Next Round Populated",
-        description: `Round ${data.nextRound} has been created with ${data.advancingCompetitors || data.matchesCreated} matches. Ready to start heats!`,
-      });
+      
+      if (data.tournamentComplete) {
+        toast({
+          title: "🏆 Tournament Complete!",
+          description: `Tournament has been finalized! Calculating results...`,
+        });
+        // Navigate to results page after a short delay
+        setTimeout(() => {
+          const tournamentSlug = currentTournament?.name?.toLowerCase().replace(/\s+/g, '-') || 'tournament';
+          window.location.href = `/results/${tournamentSlug}/final-results`;
+        }, 1500);
+      } else {
+        toast({
+          title: "Next Round Populated",
+          description: `Round ${data.nextRound} has been created with ${data.advancingCompetitors || data.matchesCreated} matches. Ready to start heats!`,
+        });
+      }
     },
     onError: (error: any) => {
       // Log full error details to console for debugging
@@ -1624,37 +1648,79 @@ export default function StationLeadView() {
         <Card className="bg-[var(--brand-light-sand)]/50 dark:bg-primary/5 border-primary/20 border-[var(--brand-light-sand)]/60">
           <CardHeader className="bg-[var(--brand-light-sand)]/50 dark:bg-transparent">
             <CardTitle className="flex items-center gap-2 text-primary">
-              <Users className="h-5 w-5" />
-              Round Complete - Station A Lead Controls
+              {isFinalRound ? (
+                <Trophy className="h-5 w-5" />
+              ) : (
+                <Users className="h-5 w-5" />
+              )}
+              {isFinalRound ? 'Final Round Complete - Station A Lead Controls' : 'Round Complete - Station A Lead Controls'}
             </CardTitle>
           </CardHeader>
           <CardContent className="bg-[var(--brand-light-sand)]/50 dark:bg-transparent">
             <div className="space-y-4">
-              <div className="bg-[var(--brand-light-sand)]/40 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
+              <div className={`bg-[var(--brand-light-sand)]/40 border rounded-lg p-4 ${
+                isFinalRound 
+                  ? 'dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' 
+                  : 'dark:bg-green-900/20 border-green-200 dark:border-green-800'
+              }`}>
+                <div className={`flex items-center gap-2 mb-2 ${
+                  isFinalRound 
+                    ? 'text-yellow-700 dark:text-yellow-400' 
+                    : 'text-green-700 dark:text-green-400'
+                }`}>
                   <CheckCircle2 className="h-4 w-4" />
-                  <span className="font-medium">Round {currentRound} Complete</span>
+                  <span className="font-medium">
+                    {isFinalRound ? `Final Round (Round ${currentRound}) Complete` : `Round ${currentRound} Complete`}
+                  </span>
                 </div>
-                <p className="text-sm text-green-600 dark:text-green-300">
-                  All heats in this round are complete across all stations
+                <p className={`text-sm ${
+                  isFinalRound 
+                    ? 'text-yellow-600 dark:text-yellow-300' 
+                    : 'text-green-600 dark:text-green-300'
+                }`}>
+                  {isFinalRound 
+                    ? 'The final heat is complete! Ready to finalize the tournament and crown the champion.'
+                    : 'All heats in this round are complete across all stations'
+                  }
                 </p>
               </div>
 
               <Button
-                variant="default"
+                variant={isFinalRound ? "default" : "default"}
                 size="lg"
-                className="w-full"
+                className={`w-full ${isFinalRound ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : ''}`}
                 onClick={handlePopulateNextRound}
                 disabled={populateNextRoundMutation.isPending}
-                data-testid="button-setup-next-round"
+                data-testid={isFinalRound ? "button-finalize-tournament" : "button-setup-next-round"}
               >
-                <Users className="h-5 w-5 mr-2" />
-                {populateNextRoundMutation.isPending ? "Setting Up Next Round..." : "Set Up Next Round"}
+                {isFinalRound ? (
+                  <>
+                    <Trophy className="h-5 w-5 mr-2" />
+                    {populateNextRoundMutation.isPending ? "Finalizing Tournament..." : "Finalize Tournament"}
+                  </>
+                ) : (
+                  <>
+                    <Users className="h-5 w-5 mr-2" />
+                    {populateNextRoundMutation.isPending ? "Setting Up Next Round..." : "Set Up Next Round"}
+                  </>
+                )}
               </Button>
 
-              <div className="bg-[var(--brand-light-sand)]/40 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  <strong>Next Round Setup:</strong> This will create new bracket with advancing competitors distributed across stations A, B, and C based on their wins from the current round.
+              <div className={`bg-[var(--brand-light-sand)]/40 border rounded-lg p-3 ${
+                isFinalRound 
+                  ? 'dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' 
+                  : 'dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+              }`}>
+                <p className={`text-xs ${
+                  isFinalRound 
+                    ? 'text-yellow-700 dark:text-yellow-300' 
+                    : 'text-blue-700 dark:text-blue-300'
+                }`}>
+                  <strong>{isFinalRound ? 'Tournament Finalization:' : 'Next Round Setup:'}</strong>{' '}
+                  {isFinalRound 
+                    ? 'This will finalize the tournament, update the winner, and mark the tournament as complete.'
+                    : 'This will create new bracket with advancing competitors distributed across stations A, B, and C based on their wins from the current round.'
+                  }
                 </p>
               </div>
             </div>

@@ -110,70 +110,10 @@ const HeatResults: React.FC = () => {
         const wecTournament = findTournamentBySlug(tournaments, tournament);
         
         if (!wecTournament) {
-          const fallbackTournament = tournaments.find((t: any) => 
-            t.name?.toLowerCase().includes('wec') || 
-            t.name?.toLowerCase().includes('world espresso') ||
-            t.name?.toLowerCase().includes('2025')
-          );
-          
-          if (!fallbackTournament) {
-            console.error('No tournament found. Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
-            throw new Error(`Tournament not found. Looking for: ${tournament}. Available: ${tournaments.map((t: any) => t.name).join(', ')}`);
-          }
-          
-          const tournamentId = fallbackTournament.id;
-          console.log('[HeatResults] Step 4: Using fallback tournament:', fallbackTournament.name, 'ID:', tournamentId);
-          console.log('[HeatResults] Step 5: Fetching tournament data from /api/tournaments/' + tournamentId);
-          let response: Response;
-          try {
-            response = await fetch(`/api/tournaments/${tournamentId}`);
-          } catch (fetchErr: any) {
-            console.error('[HeatResults] Network error fetching tournament:', fetchErr);
-            throw new Error(`Network error: ${fetchErr?.message || 'Failed to connect to server'}`);
-          }
-          
-          console.log('[HeatResults] Step 6: Tournament response status:', response.status, response.statusText);
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[HeatResults] Failed to fetch tournament data:', errorText);
-            throw new Error(`Failed to fetch tournament data: ${response.status} ${response.statusText}. Response: ${errorText}`);
-          }
-          
-          console.log('[HeatResults] Step 7: Parsing tournament JSON');
-          let data: any;
-          try {
-            data = await response.json();
-          } catch (jsonErr: any) {
-            console.error('[HeatResults] JSON parse error:', jsonErr);
-            const responseText = await response.text();
-            console.error('[HeatResults] Response text:', responseText);
-            throw new Error(`Invalid JSON response: ${jsonErr?.message || 'Unknown parse error'}`);
-          }
-          console.log('[HeatResults] Step 8: Fetched tournament data:', { 
-            tournament: data.tournament?.name, 
-            matchesCount: data.matches?.length, 
-            detailedScoresCount: data.detailedScores?.length,
-            dataKeys: Object.keys(data)
-          });
-          
-          console.log('[HeatResults] Step 9: Transforming tournament data');
-          let transformedData: TournamentData;
-          try {
-            transformedData = transformTournamentData(data);
-            console.log('[HeatResults] Step 10: Transformation successful:', {
-              matchesCount: transformedData.matches?.length,
-              detailedScoresCount: transformedData.detailedScores?.length
-            });
-          } catch (transformErr: any) {
-            console.error('[HeatResults] Transformation error:', transformErr);
-            console.error('[HeatResults] Transform error stack:', transformErr?.stack);
-            throw new Error(`Data transformation failed: ${transformErr?.message || 'Unknown error'}`);
-          }
-          
-          setTournamentData(transformedData);
-          return;
+          console.error('[HeatResults] No tournament found. Available tournaments:', tournaments.map((t: any) => ({ id: t.id, name: t.name })));
+          throw new Error(`Tournament not found for slug: ${tournament}. Available tournaments: ${tournaments.map((t: any) => t.name).join(', ')}`);
         }
-
+        
         const tournamentId = wecTournament.id;
         console.log('[HeatResults] Step 4: Using tournament:', wecTournament.name, 'ID:', tournamentId);
         console.log('[HeatResults] Step 5: Fetching tournament data from /api/tournaments/' + tournamentId);

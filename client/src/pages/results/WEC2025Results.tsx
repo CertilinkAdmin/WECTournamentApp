@@ -277,8 +277,8 @@ const WEC2025Results = () => {
         tournamentId = tournament?.id || null;
       }
 
-      // Fallback: try to find WEC 2025 Milano if no slug provided
-      if (!tournamentId) {
+      // Only fallback if no slug was provided at all
+      if (!tournamentId && !tournamentSlug) {
         const wec2025 = tournaments.find((t: any) => 
           t.name === 'World Espresso Championships 2025 Milano'
         );
@@ -286,7 +286,7 @@ const WEC2025Results = () => {
       }
 
       if (!tournamentId) {
-        throw new Error('Tournament not found');
+        throw new Error(`Tournament not found for slug: ${tournamentSlug || 'none'}. Available tournaments: ${tournaments.map((t: any) => t.name).join(', ')}`);
       }
 
       // Fetch tournament data by ID

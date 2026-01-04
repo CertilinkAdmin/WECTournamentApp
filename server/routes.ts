@@ -2529,6 +2529,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
 
+            // Determine 3rd place: Find the semi-finalists who lost to the finalists
+            // In a bracket, 3rd place is typically the semi-finalist who lost to the eventual winner
+            // (or the better performing semi-final loser if we have performance data)
+            const semiFinalRound = currentRound - 1;
+            if (semiFinalRound > 0) {
+              const semiFinalMatches = allTournamentMatches.filter(m => m.round === semiFinalRound && m.status === 'DONE');
+              
+              // Find the semi-final match where the eventual winner competed
+              const winnerSemiFinalMatch = semiFinalMatches.find(m => 
+                m.winnerId === finalWinners[0] || 
+                m.competitor1Id === finalWinners[0] || 
+                m.competitor2Id === finalWinners[0]
+              );
+              
+              // Find the other semi-final match (the one the runner-up came from)
+              const runnerUpSemiFinalMatch = semiFinalMatches.find(m => 
+                (m.competitor1Id === runnerUpId || m.competitor2Id === runnerUpId) &&
+                m.id !== winnerSemiFinalMatch?.id
+              );
+              
+              // 3rd place is the loser of the semi-final match where the eventual winner competed
+              // (the person who lost to the champion in the semi-finals)
+              if (winnerSemiFinalMatch && winnerSemiFinalMatch.competitor1Id && winnerSemiFinalMatch.competitor2Id) {
+                const thirdPlaceId = winnerSemiFinalMatch.winnerId === winnerSemiFinalMatch.competitor1Id
+                  ? winnerSemiFinalMatch.competitor2Id
+                  : winnerSemiFinalMatch.competitor1Id;
+                
+                const thirdPlaceParticipant = allParticipants.find(p => p.userId === thirdPlaceId);
+                if (thirdPlaceParticipant) {
+                  await db.update(tournamentParticipants)
+                    .set({ finalRank: 3, eliminatedRound: semiFinalRound })
+                    .where(eq(tournamentParticipants.id, thirdPlaceParticipant.id));
+                  console.log(`✅ Updated 3rd place finalRank: Participant ${thirdPlaceParticipant.id} (User ${thirdPlaceId}) → Rank 3`);
+                }
+              }
+            }
+
             io.to(`tournament:${tournamentId}`).emit("tournament:complete", {
               tournamentId,
               winnerId: finalWinners[0],

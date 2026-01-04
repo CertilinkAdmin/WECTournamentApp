@@ -28,6 +28,7 @@ import BaristaDetail from './pages/results/BaristaDetail';
 import Judges from './pages/results/Judges';
 import HeatResults from './pages/results/HeatResults';
 import HeatCarouselDemo from './pages/results/HeatCarouselDemo';
+import TournamentFinalResults from './pages/results/TournamentFinalResults';
 import ResultsInputPage from './pages/admin/ResultsInputPage';
 import BracketBuilder from './pages/admin/BracketBuilder';
 import AdminTournaments from './pages/admin/AdminTournaments';
@@ -105,6 +106,7 @@ const App: React.FC = () => {
             <Route path="scorecards" element={<JudgeScorecardsResults />} />
             <Route path="scorecards/:judgeName" element={<JudgeScorecardsDetail />} />
           </Route>
+          <Route path="/results/:tournamentSlug/final-results" element={<TournamentFinalResults />} />
         </Routes>
         </div>
       </Router>
