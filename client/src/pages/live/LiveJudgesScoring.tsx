@@ -395,12 +395,7 @@ export default function LiveJudgesScoring() {
   // A judge is only "fully scored" when:
   // 1. Latte art is submitted (all judges must do this)
   // 2. Sensory scoring is complete (Cappuccino judge for Cappuccino sensory, Espresso judge for Espresso sensory)
-  // OR if global lock is active (all segments ended AND all judges submitted)
   const activatedMatchScored = useMemo(() => {
-    // If global lock is active, consider the match as scored (locked)
-    if (globalLockStatus?.isLocked) {
-      return true;
-    }
     if (!activatedMatchId || !selectedJudge || !activatedMatchScores.length) return false;
     
     const judgeScores = activatedMatchScores.filter(
@@ -442,7 +437,24 @@ export default function LiveJudgesScoring() {
     }
     
     return false;
-  }, [activatedMatchId, selectedJudge, activatedMatchScores, globalLockStatus]);
+  }, [activatedMatchId, selectedJudge, activatedMatchScores]);
+
+  // Determine if scorecard should be read-only
+  // Lock only if:
+  // 1. This judge has completed their scorecard, OR
+  // 2. All segments ended AND all judges submitted (global lock)
+  const isScorecardLocked = useMemo(() => {
+    // If this judge has completed, lock it
+    if (activatedMatchScored) {
+      return true;
+    }
+    // Only lock globally if all segments ended AND all judges submitted
+    // This ensures judges can still submit even if segments have ended, as long as not all judges have submitted
+    if (globalLockStatus?.isLocked && globalLockStatus?.allJudgesSubmitted) {
+      return true;
+    }
+    return false;
+  }, [activatedMatchScored, globalLockStatus]);
 
   // Auto-activate match when judge is selected
   React.useEffect(() => {
@@ -672,7 +684,7 @@ export default function LiveJudgesScoring() {
                 judgeId={selectedJudgeId}
                 matchId={activatedMatch.id}
                 judgeRole={(activatedMatch as any).judgeRole || (allMatchJudges[activatedMatch.id]?.find(j => j.judgeId === selectedJudgeId)?.role || undefined)}
-                isReadOnly={activatedMatchScored || globalLockStatus?.isLocked || false}
+                isReadOnly={isScorecardLocked}
                 onScoreSubmitted={() => {
                   // Refresh scores and global lock status after submission
                   queryClient.invalidateQueries({ queryKey: [`/api/matches/${activatedMatch.id}/detailed-scores`] });
