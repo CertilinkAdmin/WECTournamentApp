@@ -2,21 +2,13 @@
  * Photo Album Configuration
  * WEC25 Milano Championship Photos
  * 
- * To use OneDrive images:
- * 1. Open each image in OneDrive
- * 2. Click "..." menu -> "Embed"
- * 3. Or right-click -> "Get link" -> "Anyone with link can view"
- * 4. Extract the direct image URL
- * 
- * OneDrive Direct Link Format:
- * https://onedrive.live.com/download?resid=XXXXXX&authkey=XXXXXX
- * 
- * Alternative: Place images in client/public/images/ and reference as:
- * "/images/photo1.jpg"
+ * Supports both local paths and external URLs:
+ * - Local: '/images/photo.jpg' (from client/public/images/)
+ * - URL: 'https://example.com/photo.jpg'
  */
 
 export const wecPhotoAlbum: string[] = [
-  // Local WEC images from client/public/images/
+  // Local images from client/public/images/
   '/images/wec.png',
   '/images/wec3.png',
   '/images/wec4.png',
@@ -24,6 +16,9 @@ export const wecPhotoAlbum: string[] = [
   '/images/MJ106438 copy.jpg',
   '/images/MJ106534 copy.jpg',
   '/images/MJ106643 copy.jpg',
+  
+  // External URLs also work - just add the full URL:
+  // 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1920&q=80',
 ];
 
 /**
