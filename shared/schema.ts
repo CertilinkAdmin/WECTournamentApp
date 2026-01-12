@@ -164,10 +164,12 @@ export const insertHeatScoreSchema = createInsertSchema(heatScores).omit({ id: t
 export type InsertHeatScore = z.infer<typeof insertHeatScoreSchema>;
 export type HeatScore = typeof heatScores.$inferSelect;
 
-// Match Cup Positions - Admin-assigned left/right positions for cup codes
+// Match Cup Positions - Per-judge left/right positions for cup codes
+// judgeId is null for legacy global assignments, set for per-judge assignments
 export const matchCupPositions = pgTable("match_cup_positions", {
   id: serial("id").primaryKey(),
   matchId: integer("match_id").notNull().references(() => matches.id),
+  judgeId: integer("judge_id").references(() => users.id), // null = legacy global, set = per-judge
   cupCode: text("cup_code").notNull(),
   position: text("position").notNull(), // 'left' or 'right'
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),

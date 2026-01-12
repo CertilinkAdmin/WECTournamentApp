@@ -1414,6 +1414,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Per-judge cup position submission - each judge enters their own cup code assignment
+  app.post("/api/matches/:matchId/judge-cup-positions", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+
+      // Validate match exists
+      const match = await storage.getMatch(matchId);
+      if (!match) {
+        return res.status(404).json({ error: 'Match not found' });
+      }
+
+      // Get judgeId from request body
+      const { judgeId, positions } = req.body;
+      if (!judgeId) {
+        return res.status(400).json({ error: 'judgeId is required' });
+      }
+
+      // Validate judge exists
+      const judge = await storage.getUser(judgeId);
+      if (!judge || judge.role !== 'JUDGE') {
+        return res.status(400).json({ error: 'Invalid judge ID' });
+      }
+
+      // Check if judge has submitted scores for this match
+      const detailedScores = await storage.getMatchDetailedScores(matchId);
+      const judgeScores = detailedScores.filter(s => s.judgeName === judge.name);
+      if (judgeScores.length === 0) {
+        return res.status(400).json({
+          error: 'Judge must submit scores before entering cup positions'
+        });
+      }
+
+      // Validate request body positions
+      if (!Array.isArray(positions) || positions.length !== 2) {
+        return res.status(400).json({ error: 'Must provide exactly 2 cup positions (left and right)' });
+      }
+
+      // Validate positions have required fields
+      for (const pos of positions) {
+        if (!pos.cupCode || !pos.position || !['left', 'right'].includes(pos.position)) {
+          return res.status(400).json({ error: 'Each position must have cupCode and position (left or right)' });
+        }
+      }
+
+      // Validate both left and right are present
+      const hasLeft = positions.some((p: { position: string }) => p.position === 'left');
+      const hasRight = positions.some((p: { position: string }) => p.position === 'right');
+      if (!hasLeft || !hasRight) {
+        return res.status(400).json({ error: 'Must assign both left and right positions' });
+      }
+
+      // Set per-judge cup positions
+      const result = await storage.setJudgeCupPositions(matchId, judgeId, positions);
+
+      // Emit to tournament room
+      const updatedMatch = await storage.getMatch(matchId);
+      if (updatedMatch) {
+        io.to(`tournament:${updatedMatch.tournamentId}`).emit("judge-cup-positions:assigned", {
+          matchId,
+          judgeId,
+          positions: result
+        });
+      }
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Failed to assign judge cup positions' });
+    }
+  });
+
+  // Get a specific judge's cup positions for a match
+  app.get("/api/matches/:matchId/judge-cup-positions/:judgeId", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      const judgeId = parseInt(req.params.judgeId);
+      const positions = await storage.getJudgeCupPositions(matchId, judgeId);
+      res.json(positions);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Failed to get judge cup positions' });
+    }
+  });
+
+  // Get all judges' cup positions for a match
+  app.get("/api/matches/:matchId/all-judge-cup-positions", async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      const positions = await storage.getAllJudgeCupPositions(matchId);
+      res.json(positions);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Failed to get all judge cup positions' });
+    }
+  });
+
   // Get judge completion status for a segment
   app.get("/api/matches/:id/segments/:segmentCode/judges-completion", async (req, res) => {
     try {

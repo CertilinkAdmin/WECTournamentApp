@@ -36,7 +36,6 @@ import CreateTournament from './pages/admin/CreateTournament';
 import ManageBaristas from './pages/admin/ManageBaristas';
 import ManageJudges from './pages/admin/ManageJudges';
 import JudgeScoringView from './components/JudgeScoringView';
-import AdminCupPositionAssignmentPage from './pages/admin/AdminCupPositionAssignmentPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import BottomNav from './components/BottomNav';
@@ -67,7 +66,6 @@ const App: React.FC = () => {
             <Route path="competitors" element={<ManageBaristas />} />
             <Route path="judges" element={<ManageJudges />} />
             <Route path="judges/scoring/:tournamentId" element={<JudgeScoringView />} />
-            <Route path="cup-positions/:matchId" element={<AdminCupPositionAssignmentPage />} />
             <Route path="results-input" element={<ResultsInputPage />} />
             <Route path="bracket-builder" element={<BracketBuilder />} />
             <Route path="stations" element={<div>Stations</div>} />

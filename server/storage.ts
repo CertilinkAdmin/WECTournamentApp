@@ -15,7 +15,7 @@ import {
   type JudgeDetailedScore, type InsertJudgeDetailedScore,
   type MatchCupPosition, type InsertMatchCupPosition
 } from "@shared/schema";
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, desc, inArray, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -691,6 +691,59 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(matchCupPositions)
       .where(eq(matchCupPositions.matchId, matchId));
+  }
+
+  // Per-judge cup positions
+  async setJudgeCupPositions(matchId: number, judgeId: number, positions: Array<{ cupCode: string; position: 'left' | 'right' }>, assignedBy?: number): Promise<MatchCupPosition[]> {
+    // Delete existing positions for this match AND this judge
+    await db.delete(matchCupPositions).where(
+      and(
+        eq(matchCupPositions.matchId, matchId),
+        eq(matchCupPositions.judgeId, judgeId)
+      )
+    );
+
+    // Insert new positions with judgeId
+    const insertData: InsertMatchCupPosition[] = positions.map(p => ({
+      matchId,
+      judgeId,
+      cupCode: p.cupCode,
+      position: p.position,
+      assignedBy: assignedBy || judgeId,
+    }));
+
+    const result = await db.insert(matchCupPositions).values(insertData).returning();
+    return result;
+  }
+
+  async getJudgeCupPositions(matchId: number, judgeId: number): Promise<MatchCupPosition[]> {
+    return await db.select()
+      .from(matchCupPositions)
+      .where(
+        and(
+          eq(matchCupPositions.matchId, matchId),
+          eq(matchCupPositions.judgeId, judgeId)
+        )
+      );
+  }
+
+  async getAllJudgeCupPositions(matchId: number): Promise<MatchCupPosition[]> {
+    // Get all cup positions for this match (both legacy and per-judge)
+    return await db.select()
+      .from(matchCupPositions)
+      .where(eq(matchCupPositions.matchId, matchId));
+  }
+
+  async getLegacyCupPositions(matchId: number): Promise<MatchCupPosition[]> {
+    // Get legacy global cup positions (where judgeId is null)
+    return await db.select()
+      .from(matchCupPositions)
+      .where(
+        and(
+          eq(matchCupPositions.matchId, matchId),
+          isNull(matchCupPositions.judgeId)
+        )
+      );
   }
 
   async clearTournamentData(tournamentId: number): Promise<void> {

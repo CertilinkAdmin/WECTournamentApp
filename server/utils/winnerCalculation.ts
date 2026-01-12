@@ -1,6 +1,7 @@
 /**
  * Winner Calculation Utility
  * Automatically calculates match winners based on detailed scores and cup positions
+ * Supports per-judge cup positions for blind judging integrity
  */
 
 import { storage } from '../storage';
@@ -14,6 +15,13 @@ export interface WinnerCalculationResult {
   tie: boolean;
   tieBreakerReason?: string;
   error?: string;
+}
+
+// Helper to get judge ID from judge name
+async function getJudgeIdFromName(judgeName: string): Promise<number | null> {
+  const users = await storage.getAllUsers();
+  const judge = users.find(u => u.name === judgeName && u.role === 'JUDGE');
+  return judge?.id || null;
 }
 
 /**
@@ -97,18 +105,68 @@ export async function calculateMatchWinner(matchId: number): Promise<WinnerCalcu
       };
     }
 
-    // Calculate scores for both competitors
-    const competitor1Score = calculateCompetitorScore(
-      cupCode1,
-      detailedScores,
-      cupPositions.map(p => ({ cupCode: p.cupCode, position: p.position }))
-    );
+    // Get all cup positions (both legacy and per-judge)
+    const allCupPositions = await storage.getAllJudgeCupPositions(matchId);
 
-    const competitor2Score = calculateCompetitorScore(
-      cupCode2,
-      detailedScores,
-      cupPositions.map(p => ({ cupCode: p.cupCode, position: p.position }))
-    );
+    // Check if we have per-judge positions (judgeId is not null)
+    const hasPerJudgePositions = allCupPositions.some(p => p.judgeId !== null);
+
+    let competitor1Score = 0;
+    let competitor2Score = 0;
+
+    if (hasPerJudgePositions) {
+      // Use per-judge cup positions for calculation
+      // Group scores by judge and calculate using each judge's own cup positions
+      const uniqueJudgeNames = [...new Set(detailedScores.map(s => s.judgeName))];
+
+      for (const judgeName of uniqueJudgeNames) {
+        const judgeId = await getJudgeIdFromName(judgeName);
+        const judgeScores = detailedScores.filter(s => s.judgeName === judgeName);
+
+        // Get this judge's cup positions
+        let judgePositions: MatchCupPosition[] = [];
+        if (judgeId) {
+          judgePositions = await storage.getJudgeCupPositions(matchId, judgeId);
+        }
+
+        // If judge hasn't entered their cup positions, try legacy positions as fallback
+        if (judgePositions.length === 0) {
+          judgePositions = await storage.getLegacyCupPositions(matchId);
+        }
+
+        // If still no positions, skip this judge's scores
+        if (judgePositions.length === 0) {
+          console.warn(`No cup positions found for judge ${judgeName} (ID: ${judgeId}) - skipping their scores`);
+          continue;
+        }
+
+        // Calculate this judge's contribution to each competitor's score
+        competitor1Score += calculateCompetitorScore(
+          cupCode1,
+          judgeScores,
+          judgePositions.map(p => ({ cupCode: p.cupCode, position: p.position }))
+        );
+
+        competitor2Score += calculateCompetitorScore(
+          cupCode2,
+          judgeScores,
+          judgePositions.map(p => ({ cupCode: p.cupCode, position: p.position }))
+        );
+      }
+    } else {
+      // Legacy mode: use global cup positions for all judges
+      competitor1Score = calculateCompetitorScore(
+        cupCode1,
+        detailedScores,
+        cupPositions.map(p => ({ cupCode: p.cupCode, position: p.position }))
+      );
+
+      competitor2Score = calculateCompetitorScore(
+        cupCode2,
+        detailedScores,
+        cupPositions.map(p => ({ cupCode: p.cupCode, position: p.position }))
+      );
+    }
 
     // Determine winner
     if (competitor1Score > competitor2Score) {
@@ -127,7 +185,8 @@ export async function calculateMatchWinner(matchId: number): Promise<WinnerCalcu
       };
     } else {
       // Tied scores - use tie-breaker
-      return await breakTie(match, detailedScores, cupPositions, cupCode1, cupCode2, competitor1Score);
+      // For tie-breaking, we need to pass per-judge position info if available
+      return await breakTie(match, matchId, detailedScores, allCupPositions, cupCode1, cupCode2, competitor1Score, hasPerJudgePositions);
     }
   } catch (error: any) {
     return {
@@ -149,26 +208,14 @@ export async function calculateMatchWinner(matchId: number): Promise<WinnerCalcu
  */
 async function breakTie(
   match: Match,
+  matchId: number,
   detailedScores: JudgeDetailedScore[],
-  cupPositions: MatchCupPosition[],
+  allCupPositions: MatchCupPosition[],
   cupCode1: string,
   cupCode2: string,
-  tiedScore: number
+  tiedScore: number,
+  hasPerJudgePositions: boolean
 ): Promise<WinnerCalculationResult> {
-  // Create position mapping
-  const positionToCupCode: Record<'left' | 'right', string> = {
-    left: '',
-    right: ''
-  };
-  cupPositions.forEach(pos => {
-    positionToCupCode[pos.position] = pos.cupCode;
-  });
-
-  const isLeft1 = positionToCupCode.left === cupCode1;
-  const isRight1 = positionToCupCode.right === cupCode1;
-  const isLeft2 = positionToCupCode.left === cupCode2;
-  const isRight2 = positionToCupCode.right === cupCode2;
-
   // Count category wins for each competitor
   let competitor1OverallWins = 0;
   let competitor2OverallWins = 0;
@@ -177,15 +224,24 @@ async function breakTie(
   let competitor1SensoryWins = 0;
   let competitor2SensoryWins = 0;
 
-  for (const score of detailedScores) {
+  // Helper to count wins for a single score with given positions
+  const countWinsForScore = (
+    score: JudgeDetailedScore,
+    positionToCupCode: Record<'left' | 'right', string>
+  ) => {
+    const isLeft1 = positionToCupCode.left === cupCode1;
+    const isRight1 = positionToCupCode.right === cupCode1;
+    const isLeft2 = positionToCupCode.left === cupCode2;
+    const isRight2 = positionToCupCode.right === cupCode2;
+
     // Overall wins (5pt)
     if (score.overall === 'left' && isLeft1) competitor1OverallWins++;
     if (score.overall === 'right' && isRight1) competitor1OverallWins++;
     if (score.overall === 'left' && isLeft2) competitor2OverallWins++;
     if (score.overall === 'right' && isRight2) competitor2OverallWins++;
 
-    // Latte Art wins (3pt) - only for Cappuccino judge
-    if (score.sensoryBeverage === 'Cappuccino' && score.visualLatteArt) {
+    // Latte Art wins (3pt)
+    if (score.visualLatteArt) {
       if (score.visualLatteArt === 'left' && isLeft1) competitor1LatteArtWins++;
       if (score.visualLatteArt === 'right' && isRight1) competitor1LatteArtWins++;
       if (score.visualLatteArt === 'left' && isLeft2) competitor2LatteArtWins++;
@@ -207,6 +263,51 @@ async function breakTie(
     if (score.flavour === 'right' && isRight1) competitor1SensoryWins++;
     if (score.flavour === 'left' && isLeft2) competitor2SensoryWins++;
     if (score.flavour === 'right' && isRight2) competitor2SensoryWins++;
+  };
+
+  if (hasPerJudgePositions) {
+    // Use per-judge positions for tie-breaking
+    const uniqueJudgeNames = [...new Set(detailedScores.map(s => s.judgeName))];
+
+    for (const judgeName of uniqueJudgeNames) {
+      const judgeId = await getJudgeIdFromName(judgeName);
+      const judgeScores = detailedScores.filter(s => s.judgeName === judgeName);
+
+      // Get this judge's cup positions
+      let judgePositions: MatchCupPosition[] = [];
+      if (judgeId) {
+        judgePositions = await storage.getJudgeCupPositions(matchId, judgeId);
+      }
+
+      // If judge hasn't entered their cup positions, try legacy positions as fallback
+      if (judgePositions.length === 0) {
+        judgePositions = await storage.getLegacyCupPositions(matchId);
+      }
+
+      // Skip if no positions found
+      if (judgePositions.length === 0) continue;
+
+      // Build position mapping for this judge
+      const positionToCupCode: Record<'left' | 'right', string> = { left: '', right: '' };
+      judgePositions.forEach(pos => {
+        positionToCupCode[pos.position] = pos.cupCode;
+      });
+
+      // Count wins for this judge's scores
+      for (const score of judgeScores) {
+        countWinsForScore(score, positionToCupCode);
+      }
+    }
+  } else {
+    // Legacy mode: use global cup positions
+    const positionToCupCode: Record<'left' | 'right', string> = { left: '', right: '' };
+    allCupPositions.forEach(pos => {
+      positionToCupCode[pos.position] = pos.cupCode;
+    });
+
+    for (const score of detailedScores) {
+      countWinsForScore(score, positionToCupCode);
+    }
   }
 
   // Tie-breaker 1: Most overall wins

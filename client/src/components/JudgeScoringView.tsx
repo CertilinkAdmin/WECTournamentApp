@@ -97,6 +97,11 @@ export default function JudgeScoringView({
   const [espressoTactile, setEspressoTactile] = useState<'left' | 'right' | null>(null);
   const [espressoFlavour, setEspressoFlavour] = useState<'left' | 'right' | null>(null);
   const [espressoOverall, setEspressoOverall] = useState<'left' | 'right' | null>(null);
+
+  // Cup code entry state (per-judge cup position assignment)
+  const [judgeCupCodeLeft, setJudgeCupCodeLeft] = useState<string>('');
+  const [judgeCupCodeRight, setJudgeCupCodeRight] = useState<string>('');
+
   const [notifications, setNotifications] = useState<Array<{
     matchId: number;
     heatNumber: number;
@@ -389,6 +394,20 @@ export default function JudgeScoringView({
     },
     enabled: !!selectedMatchId,
     // Invalidate when match changes to prevent cup code carryover
+    staleTime: 0,
+  });
+
+  // Fetch judge's cup positions for selected match
+  const { data: judgeCupPositions = [] } = useQuery<Array<{ cupCode: string; position: 'left' | 'right' }>>({
+    queryKey: [`/api/matches/${selectedMatchId}/judge-cup-positions/${effectiveJudgeId}`],
+    queryFn: async () => {
+      if (!selectedMatchId || !effectiveJudgeId) return [];
+      const response = await fetch(`/api/matches/${selectedMatchId}/judge-cup-positions/${effectiveJudgeId}`);
+      if (!response.ok) return [];
+      const positions = await response.json();
+      return positions.map((p: any) => ({ cupCode: p.cupCode, position: p.position }));
+    },
+    enabled: !!selectedMatchId && !!effectiveJudgeId,
     staleTime: 0,
   });
 
@@ -830,6 +849,106 @@ export default function JudgeScoringView({
       });
     },
   });
+
+  // Submit cup positions mutation (per-judge)
+  const submitCupPositionsMutation = useMutation({
+    mutationFn: async (data: { judgeId: number; positions: Array<{ cupCode: string; position: 'left' | 'right' }> }) => {
+      const response = await fetch(`/api/matches/${selectedMatchId}/judge-cup-positions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to submit cup positions');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/judge-cup-positions/${effectiveJudgeId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${selectedMatchId}/cup-positions`] });
+      toast({
+        title: 'Cup Positions Submitted',
+        description: 'Your cup code assignments have been recorded.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to submit cup positions',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Handle cup position submission
+  const handleSubmitCupPositions = () => {
+    if (!effectiveJudgeId || !selectedMatchId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a judge and match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!judgeCupCodeLeft || !judgeCupCodeRight) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select both left and right cup codes',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (judgeCupCodeLeft === judgeCupCodeRight) {
+      toast({
+        title: 'Validation Error',
+        description: 'Left and right cup codes must be different',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    submitCupPositionsMutation.mutate({
+      judgeId: effectiveJudgeId,
+      positions: [
+        { cupCode: judgeCupCodeLeft, position: 'left' },
+        { cupCode: judgeCupCodeRight, position: 'right' },
+      ],
+    });
+  };
+
+  // Determine if judge can enter cup codes (all required scores submitted)
+  const canEnterCupCodes = useMemo(() => {
+    // Judge must have submitted latte art AND their sensory scores
+    if (!latteArtSubmitted) return false;
+
+    if (effectiveJudgeRole === 'CAPPUCCINO') {
+      return cappuccinoSensorySubmitted;
+    } else if (effectiveJudgeRole === 'ESPRESSO') {
+      return espressoSensorySubmitted;
+    }
+    return false;
+  }, [effectiveJudgeRole, latteArtSubmitted, cappuccinoSensorySubmitted, espressoSensorySubmitted]);
+
+  // Check if judge has already submitted cup positions
+  const judgeCupPositionsSubmitted = judgeCupPositions.length === 2;
+
+  // Populate existing cup positions when data is loaded
+  useEffect(() => {
+    if (judgeCupPositions.length === 2) {
+      const left = judgeCupPositions.find(p => p.position === 'left');
+      const right = judgeCupPositions.find(p => p.position === 'right');
+      if (left && left.cupCode !== judgeCupCodeLeft) {
+        setJudgeCupCodeLeft(left.cupCode);
+      }
+      if (right && right.cupCode !== judgeCupCodeRight) {
+        setJudgeCupCodeRight(right.cupCode);
+      }
+    }
+  }, [judgeCupPositions]);
 
   // Submit Latte Art score (all judges)
   const handleSubmitLatteArt = () => {
@@ -1875,6 +1994,153 @@ export default function JudgeScoringView({
                         {espressoSensorySubmitted && 'Score already submitted'}
                         {propIsReadOnly && 'Read-only mode'}
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Cup Code Entry - Only visible after all scores submitted */}
+              {selectedMatch && (competitor1 || competitor2) && (
+                <Card className="border-l-4 border-l-blue-500 bg-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                      <Coffee className="h-5 w-5" />
+                      <span className="font-bold">Cup Code Assignment</span>
+                      {judgeCupPositionsSubmitted && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 ml-auto">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Submitted
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 p-4 sm:p-6">
+                    {!canEnterCupCodes && (
+                      <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        <AlertTitle className="text-amber-800 dark:text-amber-200">Complete Scoring First</AlertTitle>
+                        <AlertDescription className="text-amber-700 dark:text-amber-300">
+                          Submit all your scores (Latte Art and Sensory) before entering cup codes.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {canEnterCupCodes && (
+                      <>
+                        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            Now identify which cup code was in the left and right positions during your evaluation.
+                          </p>
+                        </div>
+
+                        <div className="p-4 bg-muted rounded-lg">
+                          <Label className="text-sm font-semibold mb-3 block">Available Cup Codes</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-sm font-mono font-bold">{competitor1?.cupCode || 'N/A'}</div>
+                              <div className="text-xs text-muted-foreground">{competitor1?.user?.name || 'Competitor 1'}</div>
+                            </div>
+                            <div>
+                              <div className="text-sm font-mono font-bold">{competitor2?.cupCode || 'N/A'}</div>
+                              <div className="text-xs text-muted-foreground">{competitor2?.user?.name || 'Competitor 2'}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="left-cup-code" className="text-sm font-medium">Left Position</Label>
+                            <Select
+                              value={judgeCupCodeLeft}
+                              onValueChange={setJudgeCupCodeLeft}
+                              disabled={judgeCupPositionsSubmitted || propIsReadOnly}
+                            >
+                              <SelectTrigger id="left-cup-code" className="w-full min-h-[44px]">
+                                <SelectValue placeholder="Select cup code" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {competitor1?.cupCode && (
+                                  <SelectItem
+                                    value={competitor1.cupCode}
+                                    disabled={judgeCupCodeRight === competitor1.cupCode}
+                                  >
+                                    {competitor1.cupCode}
+                                  </SelectItem>
+                                )}
+                                {competitor2?.cupCode && (
+                                  <SelectItem
+                                    value={competitor2.cupCode}
+                                    disabled={judgeCupCodeRight === competitor2.cupCode}
+                                  >
+                                    {competitor2.cupCode}
+                                  </SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="right-cup-code" className="text-sm font-medium">Right Position</Label>
+                            <Select
+                              value={judgeCupCodeRight}
+                              onValueChange={setJudgeCupCodeRight}
+                              disabled={judgeCupPositionsSubmitted || propIsReadOnly}
+                            >
+                              <SelectTrigger id="right-cup-code" className="w-full min-h-[44px]">
+                                <SelectValue placeholder="Select cup code" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {competitor1?.cupCode && (
+                                  <SelectItem
+                                    value={competitor1.cupCode}
+                                    disabled={judgeCupCodeLeft === competitor1.cupCode}
+                                  >
+                                    {competitor1.cupCode}
+                                  </SelectItem>
+                                )}
+                                {competitor2?.cupCode && (
+                                  <SelectItem
+                                    value={competitor2.cupCode}
+                                    disabled={judgeCupCodeLeft === competitor2.cupCode}
+                                  >
+                                    {competitor2.cupCode}
+                                  </SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {judgeCupPositionsSubmitted && (
+                          <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                            <div className="flex items-center gap-2 text-green-700 dark:text-green-300 text-sm">
+                              <CheckCircle2 className="h-4 w-4" />
+                              <span className="font-medium">Cup positions submitted</span>
+                            </div>
+                          </div>
+                        )}
+
+                        <Button
+                          onClick={handleSubmitCupPositions}
+                          disabled={!judgeCupCodeLeft || !judgeCupCodeRight || submitCupPositionsMutation.isPending || judgeCupPositionsSubmitted || propIsReadOnly}
+                          className="w-full min-h-[2.75rem] sm:min-h-[2.5rem]"
+                          size="lg"
+                        >
+                          {submitCupPositionsMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Submitting...
+                            </>
+                          ) : judgeCupPositionsSubmitted ? (
+                            <>
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Cup Positions Submitted
+                            </>
+                          ) : (
+                            'Submit Cup Positions'
+                          )}
+                        </Button>
+                      </>
                     )}
                   </CardContent>
                 </Card>

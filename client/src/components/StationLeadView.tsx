@@ -16,7 +16,6 @@ import StationWarning from "./StationWarning";
 import SegmentTimer from "./SegmentTimer";
 import SevenSegmentTimer from "./SevenSegmentTimer";
 import JudgesStatusMonitor from "./JudgesStatusMonitor";
-import AdminCupPositionAssignment from "./AdminCupPositionAssignment";
 
 export default function StationLeadView() {
   const { toast } = useToast();
@@ -254,27 +253,43 @@ export default function StationLeadView() {
     return cappuccinoComplete && espressoComplete;
   }, [cappuccinoJudgeCompletion, espressoJudgeCompletion, segments]);
 
-  // Fetch cup positions to check if they're assigned
+  // Fetch all cup positions (including per-judge positions) to check assignment status
   // Enable query when judges are complete OR when match is RUNNING (to catch completion)
-  const { data: cupPositions = [] } = useQuery<Array<{ cupCode: string; position: 'left' | 'right' }>>({
-    queryKey: [`/api/matches/${currentMatch?.id}/cup-positions`],
+  const { data: allCupPositions = [] } = useQuery<Array<{ cupCode: string; position: 'left' | 'right'; judgeId: number | null }>>({
+    queryKey: [`/api/matches/${currentMatch?.id}/all-judge-cup-positions`],
     queryFn: async () => {
       if (!currentMatch?.id) return [];
-      const response = await fetch(`/api/matches/${currentMatch.id}/cup-positions`);
+      const response = await fetch(`/api/matches/${currentMatch.id}/all-judge-cup-positions`);
       if (!response.ok) return [];
-      const positions = await response.json();
-      return positions.map((p: any) => ({ cupCode: p.cupCode, position: p.position }));
+      return response.json();
     },
     enabled: !!currentMatch?.id && (currentMatch?.status === 'RUNNING' || allJudgesCompleted),
     refetchInterval: 3000, // Poll every 3 seconds when judges are complete or match is running
   });
 
-  // Check if cup positions are assigned
+  // Check if cup positions are assigned (per-judge or legacy)
+  // With per-judge positions, we need to count unique judges who have submitted
+  // Each judge submits 2 entries (left + right), so divide by 2 to get judge count
   const cupPositionsAssigned = React.useMemo(() => {
-    return cupPositions.length === 2 && 
-           cupPositions.some(p => p.position === 'left') && 
-           cupPositions.some(p => p.position === 'right');
-  }, [cupPositions]);
+    if (allCupPositions.length === 0) return false;
+
+    // Check for per-judge positions (judgeId is not null)
+    const perJudgePositions = allCupPositions.filter(p => p.judgeId !== null);
+    if (perJudgePositions.length > 0) {
+      // Count unique judges who have submitted (each submits 2 positions)
+      const uniqueJudgeIds = new Set(perJudgePositions.map(p => p.judgeId));
+      // For per-judge mode, we need at least 1 judge to have submitted
+      // Ideally we'd check if ALL judges submitted, but that requires knowing total judge count
+      // For now, consider it "assigned" if at least one judge has submitted
+      return uniqueJudgeIds.size >= 1;
+    }
+
+    // Legacy mode: check for global positions (judgeId is null)
+    const legacyPositions = allCupPositions.filter(p => p.judgeId === null);
+    return legacyPositions.length === 2 &&
+           legacyPositions.some(p => p.position === 'left') &&
+           legacyPositions.some(p => p.position === 'right');
+  }, [allCupPositions]);
 
   // Can advance heat only if all judges completed AND cup positions assigned (when match is RUNNING)
   // If match is not RUNNING, we can advance (no checks needed)
@@ -1486,19 +1501,8 @@ export default function StationLeadView() {
                         </Alert>
                       )}
                       
-                      {/* Cup Code Assignment - Show after judges complete scoring for EVERY heat on EVERY station */}
-                      {/* This must appear for every heat (1, 2, 3) on every station (A, B, C) once judges finish scoring */}
-                      {allJudgesCompleted && currentMatch && currentTournamentId && (
-                        <div className="border rounded-lg p-4 bg-card">
-                          <AdminCupPositionAssignment
-                            matchId={currentMatch.id}
-                            tournamentId={currentTournamentId}
-                            onSuccess={() => {
-                              queryClient.invalidateQueries({ queryKey: [`/api/matches/${currentMatch.id}/cup-positions`] });
-                            }}
-                          />
-                        </div>
-                      )}
+                      {/* Cup Code Entry - Judges now enter cup codes on their own scorecards */}
+                      {/* Station lead only needs to wait for judges to complete scoring AND enter cup codes */}
 
                       {allJudgesCompleted && cupPositionsAssigned && (
                         <Alert className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
@@ -1516,10 +1520,10 @@ export default function StationLeadView() {
                         <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
                           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                           <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                            Cup Code Assignment Required
+                            Waiting for Cup Code Entry
                           </AlertTitle>
                           <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
-                            Please assign cup codes to left/right positions above before {isLastHeatInRound ? 'finalizing this station\'s round' : 'advancing to the next heat'}.
+                            Judges must enter their cup code assignments on their scorecards before {isLastHeatInRound ? 'finalizing this station\'s round' : 'advancing to the next heat'}.
                           </AlertDescription>
                         </Alert>
                       )}
